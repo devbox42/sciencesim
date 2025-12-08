@@ -1,1 +1,1012 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caesar-Chiffre – Simulation</title>
+    <meta name="subject" content="Informatik">
+    <meta name="topic" content="Codierung">
+    <meta name="grade" content="7">
+    <meta name="description" content="Interaktive Codierscheibe für die Caesar-Verschlüsselung">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .breadcrumb a {
+            color: #b35c00;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .wheel-container,
+        .controls,
+        .text-area,
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .wheel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 360px;
+            height: 360px;
+            margin: 10px auto;
+        }
+
+        @media (max-width: 420px) {
+            .wheel-wrapper {
+                width: 320px;
+                height: 320px;
+            }
+        }
+
+        .wheel {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .outer-wheel {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border: 2px solid #1a5276;
+        }
+
+        /* Innerer Ring noch näher am äußeren: 82% */
+        .inner-wheel {
+            width: 82%;
+            height: 82%;
+            background: #fff;
+            border: 2px solid #c0392b;
+            cursor: grab;
+            top: 9%;
+            left: 9%;
+        }
+
+        .inner-wheel:active {
+            cursor: grabbing;
+        }
+
+        .center-hub {
+            width: 38%;
+            height: 38%;
+            background: #fff;
+            border: 1px solid #999;
+            top: 31%;
+            left: 31%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72em;
+            color: #333;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .center-hub .label-key {
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 2px;
+        }
+
+        .center-hub .label-hint {
+            color: #666;
+            font-size: 0.8em;
+            font-style: italic;
+            margin-bottom: 6px;
+        }
+
+        .center-hub .label-cipher {
+            color: #c0392b;
+            font-size: 0.95em;
+        }
+
+        .center-hub .label-plain {
+            color: #1a5276;
+            font-size: 0.95em;
+        }
+
+        .center-hub .crosshair {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #aaa;
+            border-radius: 50%;
+            bottom: 10px;
+        }
+
+        .center-hub .crosshair::before,
+        .center-hub .crosshair::after {
+            content: '';
+            position: absolute;
+            background: #aaa;
+        }
+
+        .center-hub .crosshair::before {
+            width: 1px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .center-hub .crosshair::after {
+            width: 100%;
+            height: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .key-marker {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .key-marker .arrow {
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-top: 10px solid #27ae60;
+        }
+
+        .key-marker .key-label {
+            background: #27ae60;
+            color: #fff;
+            font-size: 0.65em;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 2px;
+            margin-bottom: 2px;
+        }
+
+        .guide-line {
+            position: absolute;
+            background: #bbb;
+            transform-origin: center;
+        }
+
+        .outer-guide {
+            width: 1px;
+            height: 8px;
+        }
+
+        .inner-guide {
+            width: 1px;
+            height: 6px;
+        }
+
+        .letter {
+            position: absolute;
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            text-align: center;
+            user-select: none;
+        }
+
+        /* Äußere Buchstaben - Klartext (blau) */
+        .outer-letter {
+            font-size: 15px;
+            width: 22px;
+            height: 22px;
+            line-height: 22px;
+            color: #1a5276;
+        }
+
+        /* Innere Buchstaben - Geheimschrift (rot) - näher am äußeren Ring */
+        .inner-letter {
+            font-size: 14px;
+            width: 20px;
+            height: 20px;
+            line-height: 20px;
+            color: #c0392b;
+        }
+
+        @media (max-width: 420px) {
+            .outer-letter {
+                font-size: 13px;
+                width: 20px;
+                height: 20px;
+                line-height: 20px;
+            }
+            .inner-letter {
+                font-size: 12px;
+                width: 18px;
+                height: 18px;
+                line-height: 18px;
+            }
+        }
+
+        .letter.highlight {
+            background: #27ae60;
+            color: #fff;
+            border-radius: 50%;
+        }
+
+        .wheel-legend {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-top: 12px;
+            font-size: 0.85em;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.plain {
+            background: #1a5276;
+        }
+
+        .legend-dot.cipher {
+            background: #c0392b;
+        }
+
+        .hint {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .controls h3,
+        .text-area h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .shift-display {
+            font-weight: bold;
+        }
+
+        .shift-number {
+            color: #27ae60;
+            font-size: 1.3em;
+        }
+
+        .shift-letter {
+            color: #c0392b;
+            font-size: 1.1em;
+            margin-left: 3px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #27ae60;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #27ae60;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        .shift-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .shift-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-size: 1.1em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .shift-buttons button:hover {
+            background: #f5f5f5;
+        }
+
+        .mode-select {
+            display: flex;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+
+        .mode-btn:first-child {
+            border-right: 1px solid #ccc;
+        }
+
+        .mode-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .mode-btn.active {
+            background: #b35c00;
+            color: #fff;
+        }
+
+        .mapping-table {
+            font-size: 0.7em;
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+        }
+
+        .mapping-row {
+            display: flex;
+            min-width: 468px;
+        }
+
+        .mapping-cell {
+            flex: 1;
+            padding: 3px 1px;
+            text-align: center;
+            border-right: 1px solid #eee;
+            min-width: 18px;
+            font-family: Arial, sans-serif;
+        }
+
+        .mapping-cell:last-child {
+            border-right: none;
+        }
+
+        .mapping-row.plain-row .mapping-cell {
+            color: #1a5276;
+            font-weight: bold;
+        }
+
+        .mapping-row.cipher-row .mapping-cell {
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        .text-area {
+            margin-bottom: 15px;
+        }
+
+        .text-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .text-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            display: block;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        label.plain-label {
+            color: #1a5276;
+        }
+
+        label.cipher-label {
+            color: #c0392b;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.95em;
+            resize: vertical;
+            text-transform: uppercase;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #b35c00;
+        }
+
+        .input-plain textarea {
+            border-color: #1a5276;
+            border-width: 2px;
+        }
+
+        .output-cipher textarea {
+            background: #fdf2f2;
+            border: 2px solid #c0392b;
+            color: #c0392b;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 0.9em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #f5f5f5;
+        }
+
+        button.primary {
+            background: #b35c00;
+            color: #fff;
+            border-color: #b35c00;
+        }
+
+        button.primary:hover {
+            background: #994d00;
+        }
+
+        .info-box {
+            margin-top: 20px;
+        }
+
+        .info-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .info-box p {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .example {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .example .plain {
+            color: #1a5276;
+            font-weight: bold;
+        }
+
+        .example .cipher {
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        .example .key {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            .controls button,
+            .button-row {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Informatik · Codierung</p>
+            <h1>Caesar-Chiffre – Codierscheibe</h1>
+        </header>
+
+        <div class="simulation-area">
+            <div class="wheel-container">
+                <div class="wheel-wrapper">
+                    <div class="key-marker">
+                        <span class="key-label">Schlüssel</span>
+                        <span class="arrow"></span>
+                    </div>
+                    
+                    <div class="wheel outer-wheel" id="outerWheel"></div>
+                    <div class="wheel inner-wheel" id="innerWheel"></div>
+                    <div class="wheel center-hub">
+                        <span class="label-key">Schlüssel: <span id="keyDisplay">0 (A)</span></span>
+                        <span class="label-hint">(Der Schlüssel ist das rote Zeichen unter dem grünen Pfeil)</span>
+                        <span class="label-cipher">Geheimschrift</span>
+                        <span class="label-plain">Klartext</span>
+                        <span class="crosshair"></span>
+                    </div>
+                </div>
+
+                <div class="wheel-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot plain"></span>
+                        <span>Klartext (außen)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot cipher"></span>
+                        <span>Geheimschrift (innen)</span>
+                    </div>
+                </div>
+
+                <p class="hint">Drehe den inneren Ring mit der Maus oder per Touch</p>
+            </div>
+
+            <div class="controls">
+                <h3>Einstellungen</h3>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Verschiebung</span>
+                        <span class="shift-display">
+                            <span class="shift-number" id="shiftValue">0</span>
+                            <span class="shift-letter">(<span id="shiftLetter">A</span>)</span>
+                        </span>
+                    </div>
+                    <input type="range" id="shiftSlider" min="0" max="25" value="0">
+                    <div class="shift-buttons">
+                        <button id="btnMinus">− 1</button>
+                        <button id="btnPlus">+ 1</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Modus</span>
+                    </div>
+                    <div class="mode-select">
+                        <button class="mode-btn active" data-mode="encrypt">Verschlüsseln</button>
+                        <button class="mode-btn" data-mode="decrypt">Entschlüsseln</button>
+                    </div>
+                </div>
+
+                <div class="mapping-table" id="mappingTable"></div>
+            </div>
+        </div>
+
+        <div class="text-area">
+            <h3>Text umwandeln</h3>
+            <div class="text-grid">
+                <div class="input-plain">
+                    <label class="plain-label" for="inputText" id="inputLabel">KLARTEXT EINGEBEN:</label>
+                    <textarea id="inputText" placeholder="GIB HIER DEINEN TEXT EIN..."></textarea>
+                </div>
+                <div class="output-cipher">
+                    <label class="cipher-label" for="outputText" id="outputLabel">GEHEIMSCHRIFT:</label>
+                    <textarea id="outputText" readonly placeholder="DAS ERGEBNIS ERSCHEINT HIER..."></textarea>
+                </div>
+            </div>
+            <div class="button-row">
+                <button class="primary" id="processBtn">Umwandeln</button>
+                <button id="swapBtn">↔ Tauschen</button>
+                <button id="copyBtn">Kopieren</button>
+                <button id="clearBtn">Löschen</button>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>So funktioniert die Caesar-Verschlüsselung</h3>
+            <p>
+                Die Caesar-Chiffre wurde vom römischen Feldherrn Julius Caesar für seine 
+                militärische Korrespondenz verwendet. Bei diesem Verfahren wird jeder 
+                Buchstabe um eine feste Anzahl von Stellen im Alphabet verschoben.
+            </p>
+            <div class="example">
+                <strong>Beispiel mit Schlüssel <span class="key">3 (D)</span>:</strong><br><br>
+                <span class="plain">Klartext:</span> A B C D E ... X Y Z<br>
+                <span class="cipher">Geheimschrift:</span> D E F G H ... A B C<br><br>
+                Das Wort „<span class="plain">HALLO</span>" wird zu „<span class="cipher">KDOOR</span>"
+            </div>
+            <p>
+                <strong>Der Schlüssel</strong> kann als Zahl (Verschiebung) oder als Buchstabe 
+                (der unter A steht) angegeben werden. Schlüssel 3 entspricht dem Buchstaben D.
+            </p>
+            <p>
+                <strong>Sicherheit:</strong> Die Caesar-Chiffre ist sehr unsicher, da es nur 
+                25 mögliche Schlüssel gibt. Ein Angreifer kann alle durchprobieren (Brute-Force).
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let currentShift = 0;
+        let isEncryptMode = true;
+
+        const outerWheel = document.getElementById('outerWheel');
+        const innerWheel = document.getElementById('innerWheel');
+        const shiftSlider = document.getElementById('shiftSlider');
+        const shiftValue = document.getElementById('shiftValue');
+        const shiftLetter = document.getElementById('shiftLetter');
+        const keyDisplay = document.getElementById('keyDisplay');
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const mappingTable = document.getElementById('mappingTable');
+
+        function init() {
+            createGuideLines();
+            createWheelLetters();
+            updateMapping();
+            setupEventListeners();
+        }
+
+        // Leitlinien zwischen den Buchstaben erstellen
+        function createGuideLines() {
+            const outerGuideRadius = 44;
+            const innerGuideRadius = 39;
+
+            for (let i = 0; i < 26; i++) {
+                const angle = ((i + 0.5) * 360 / 26) - 90;
+                const rad = angle * Math.PI / 180;
+
+                // Äußere Leitlinien
+                const outerGuide = document.createElement('div');
+                outerGuide.className = 'guide-line outer-guide';
+                outerGuide.style.left = `${50 + outerGuideRadius * Math.cos(rad)}%`;
+                outerGuide.style.top = `${50 + outerGuideRadius * Math.sin(rad)}%`;
+                outerGuide.style.transform = `translate(-50%, -50%) rotate(${angle + 90}deg)`;
+                outerWheel.appendChild(outerGuide);
+
+                // Innere Leitlinien
+                const innerGuide = document.createElement('div');
+                innerGuide.className = 'guide-line inner-guide';
+                innerGuide.style.left = `${50 + innerGuideRadius * Math.cos(rad)}%`;
+                innerGuide.style.top = `${50 + innerGuideRadius * Math.sin(rad)}%`;
+                innerGuide.style.transform = `translate(-50%, -50%) rotate(${angle + 90}deg)`;
+                innerWheel.appendChild(innerGuide);
+            }
+        }
+
+        function createWheelLetters() {
+            // Buchstaben sehr nah beieinander: äußerer bei 46%, innerer bei 43%
+            const outerRadius = 46;
+            const innerRadius = 43;
+
+            for (let i = 0; i < 26; i++) {
+                const angle = (i * 360 / 26) - 90;
+                const rad = angle * Math.PI / 180;
+
+                const outerLetter = document.createElement('div');
+                outerLetter.className = 'letter outer-letter';
+                outerLetter.textContent = ALPHABET[i];
+                outerLetter.dataset.index = i;
+                outerLetter.style.left = `${50 + outerRadius * Math.cos(rad)}%`;
+                outerLetter.style.top = `${50 + outerRadius * Math.sin(rad)}%`;
+                outerLetter.style.transform = 'translate(-50%, -50%)';
+                outerWheel.appendChild(outerLetter);
+
+                const innerLetter = document.createElement('div');
+                innerLetter.className = 'letter inner-letter';
+                innerLetter.textContent = ALPHABET[i];
+                innerLetter.dataset.index = i;
+                innerLetter.style.left = `${50 + innerRadius * Math.cos(rad)}%`;
+                innerLetter.style.top = `${50 + innerRadius * Math.sin(rad)}%`;
+                innerLetter.style.transform = 'translate(-50%, -50%)';
+                innerWheel.appendChild(innerLetter);
+            }
+        }
+
+        function rotateInnerWheel(shift) {
+            const rotation = (shift * 360 / 26);
+            innerWheel.style.transform = `rotate(${rotation}deg)`;
+
+            const innerLetters = innerWheel.querySelectorAll('.inner-letter');
+            innerLetters.forEach(letter => {
+                letter.style.transform = `translate(-50%, -50%) rotate(${-rotation}deg)`;
+            });
+        }
+
+        function updateMapping() {
+            let html = '<div class="mapping-row plain-row">';
+            for (let i = 0; i < 26; i++) {
+                html += `<div class="mapping-cell">${ALPHABET[i]}</div>`;
+            }
+            html += '</div><div class="mapping-row cipher-row">';
+            for (let i = 0; i < 26; i++) {
+                const shiftedIndex = (i + currentShift) % 26;
+                html += `<div class="mapping-cell">${ALPHABET[shiftedIndex]}</div>`;
+            }
+            html += '</div>';
+            mappingTable.innerHTML = html;
+        }
+
+        function setShift(shift) {
+            currentShift = ((shift % 26) + 26) % 26;
+            shiftValue.textContent = currentShift;
+            shiftSlider.value = currentShift;
+            
+            const keyLetter = ALPHABET[currentShift];
+            shiftLetter.textContent = keyLetter;
+            // Schlüssel als Zahl und Buchstabe anzeigen
+            keyDisplay.textContent = `${currentShift} (${keyLetter})`;
+            
+            rotateInnerWheel(currentShift);
+            updateMapping();
+
+            if (inputText.value.trim()) {
+                processText();
+            }
+        }
+
+        function caesarCipher(text, shift, encrypt = true) {
+            const effectiveShift = encrypt ? shift : (26 - shift) % 26;
+
+            // Immer in Großbuchstaben umwandeln
+            return text.toUpperCase().split('').map(char => {
+                const index = ALPHABET.indexOf(char);
+
+                if (index === -1) return char;
+
+                const newIndex = (index + effectiveShift) % 26;
+                return ALPHABET[newIndex];
+            }).join('');
+        }
+
+        function processText() {
+            const input = inputText.value;
+            const result = caesarCipher(input, currentShift, isEncryptMode);
+            outputText.value = result;
+        }
+
+        function setMode(encrypt) {
+            isEncryptMode = encrypt;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', (btn.dataset.mode === 'encrypt') === encrypt);
+            });
+
+            const inputBox = document.querySelector('.text-grid > div:first-child');
+            const outputBox = document.querySelector('.text-grid > div:last-child');
+            const inputLabel = document.getElementById('inputLabel');
+            const outputLabel = document.getElementById('outputLabel');
+
+            if (encrypt) {
+                inputLabel.textContent = 'KLARTEXT EINGEBEN:';
+                inputLabel.className = 'plain-label';
+                outputLabel.textContent = 'GEHEIMSCHRIFT:';
+                outputLabel.className = 'cipher-label';
+                inputBox.className = 'input-plain';
+                outputBox.className = 'output-cipher';
+            } else {
+                inputLabel.textContent = 'GEHEIMSCHRIFT EINGEBEN:';
+                inputLabel.className = 'cipher-label';
+                outputLabel.textContent = 'KLARTEXT:';
+                outputLabel.className = 'plain-label';
+                inputBox.className = 'output-cipher';
+                outputBox.className = 'input-plain';
+            }
+
+            if (inputText.value.trim()) {
+                processText();
+            }
+        }
+
+        function setupEventListeners() {
+            shiftSlider.addEventListener('input', (e) => {
+                setShift(parseInt(e.target.value));
+            });
+
+            document.getElementById('btnPlus').addEventListener('click', () => {
+                setShift(currentShift + 1);
+            });
+
+            document.getElementById('btnMinus').addEventListener('click', () => {
+                setShift(currentShift - 1);
+            });
+
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setMode(btn.dataset.mode === 'encrypt');
+                });
+            });
+
+            document.getElementById('processBtn').addEventListener('click', processText);
+
+            inputText.addEventListener('input', () => {
+                if (inputText.value.trim()) {
+                    processText();
+                } else {
+                    outputText.value = '';
+                }
+            });
+
+            document.getElementById('copyBtn').addEventListener('click', () => {
+                if (outputText.value) {
+                    navigator.clipboard.writeText(outputText.value).then(() => {
+                        const btn = document.getElementById('copyBtn');
+                        btn.textContent = '✓ Kopiert';
+                        setTimeout(() => btn.textContent = 'Kopieren', 1500);
+                    });
+                }
+            });
+
+            document.getElementById('swapBtn').addEventListener('click', () => {
+                if (outputText.value) {
+                    inputText.value = outputText.value;
+                    setMode(!isEncryptMode);
+                }
+            });
+
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                inputText.value = '';
+                outputText.value = '';
+            });
+
+            let isDragging = false;
+            let startAngle = 0;
+            let startShift = 0;
+
+            function getAngle(e, element) {
+                const rect = element.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return Math.atan2(clientY - centerY, clientX - centerX) * 180 / Math.PI;
+            }
+
+            innerWheel.addEventListener('mousedown', startDrag);
+            innerWheel.addEventListener('touchstart', startDrag, { passive: false });
+
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+                startAngle = getAngle(e, innerWheel);
+                startShift = currentShift;
+            }
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, { passive: false });
+
+            function drag(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const currentAngle = getAngle(e, innerWheel);
+                let deltaAngle = currentAngle - startAngle;
+
+                if (deltaAngle > 180) deltaAngle -= 360;
+                if (deltaAngle < -180) deltaAngle += 360;
+
+                const deltaShift = Math.round(deltaAngle / (360 / 26));
+                setShift(startShift + deltaShift);
+            }
+
+            document.addEventListener('mouseup', () => isDragging = false);
+            document.addEventListener('touchend', () => isDragging = false);
+
+            outerWheel.querySelectorAll('.outer-letter').forEach(letter => {
+                letter.addEventListener('click', () => {
+                    setShift(parseInt(letter.dataset.index));
+                });
+                letter.style.cursor = 'pointer';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
