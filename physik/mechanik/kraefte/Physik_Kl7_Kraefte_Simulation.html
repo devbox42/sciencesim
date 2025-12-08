@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kräfte – Interaktive Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Mechanik">
+    <meta name="grade" content="7">
+    <meta name="description" content="Interaktive Simulation zu Kraft als physikalische Größe: Federkraftmesser, Kräfteaddition, Kraftpfeile">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 15px;
+            color: #222;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        header { margin-bottom: 15px; }
+        .breadcrumb { font-size: 0.85em; color: #666; margin-bottom: 5px; }
+        .breadcrumb a { color: #2c5aa0; text-decoration: none; }
+        h1 { font-size: 1.4em; font-weight: 600; color: #222; }
+        .tab-nav { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 15px; border-bottom: 2px solid #2c5aa0; }
+        .tab-btn { padding: 10px 14px; font-size: 0.85em; border: 1px solid #ddd; border-bottom: none; background: #fff; cursor: pointer; font-family: inherit; color: #555; border-radius: 3px 3px 0 0; }
+        .tab-btn:hover { background: #f5f5f5; }
+        .tab-btn.active { background: #2c5aa0; color: #fff; border-color: #2c5aa0; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .simulation-area { display: grid; grid-template-columns: 1fr 260px; gap: 15px; }
+        @media (max-width: 700px) { .simulation-area { grid-template-columns: 1fr; } }
+        .canvas-container, .controls, .info-box { background: #fff; border: 1px solid #ddd; padding: 15px; }
+        .canvas-container { min-height: 300px; display: flex; flex-direction: column; }
+        canvas { display: block; width: 100%; background: #fafafa; border: 1px solid #eee; }
+        canvas.draggable { cursor: grab; }
+        canvas.dragging { cursor: grabbing; }
+        .controls h3, .info-box h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 12px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .control-group { margin-bottom: 18px; }
+        .control-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85em; color: #555; }
+        .control-value { font-weight: 600; color: #2c5aa0; }
+        input[type="range"] { width: 100%; margin: 5px 0; }
+        button { padding: 8px 12px; font-size: 0.85em; border: 1px solid #ccc; background: #fff; cursor: pointer; font-family: inherit; border-radius: 2px; }
+        button:hover { background: #f5f5f5; }
+        button.primary { background: #2c5aa0; color: #fff; border-color: #2c5aa0; }
+        button.primary:hover { background: #1e4080; }
+        .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+        .btn-group button { flex: 1; min-width: 60px; }
+        .btn-group button.active { background: #333; color: #fff; border-color: #333; }
+        .toggle-group { display: flex; border: 1px solid #ddd; border-radius: 2px; overflow: hidden; }
+        .toggle-group button { flex: 1; border: none; border-radius: 0; padding: 8px; }
+        .toggle-group button.active { background: #2c5aa0; color: #fff; }
+        .info-box { margin-top: 15px; }
+        .info-box p { font-size: 0.85em; color: #555; line-height: 1.5; margin-bottom: 8px; }
+        .formula { background: #f8f8f8; padding: 10px; text-align: center; font-family: "Times New Roman", Georgia, serif; font-size: 1.1em; margin: 10px 0; border-left: 3px solid #2c5aa0; }
+        .feedback { padding: 10px; margin-top: 10px; font-size: 0.9em; border-radius: 2px; }
+        .feedback.correct { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .feedback.incorrect { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .feedback.neutral { background: #e7f1ff; border: 1px solid #b8daff; color: #004085; }
+        .score-display { font-size: 0.9em; padding: 8px; background: #f8f8f8; border: 1px solid #eee; text-align: center; margin-bottom: 12px; }
+        .score-display span { font-weight: 600; color: #2c5aa0; }
+        input[type="number"] { width: 80px; padding: 6px 8px; font-size: 0.9em; border: 1px solid #ccc; border-radius: 2px; font-family: inherit; }
+        .quiz-option { display: block; padding: 10px; margin: 5px 0; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 0.9em; text-align: left; width: 100%; }
+        .quiz-option:hover { background: #f5f5f5; }
+        .quiz-option.correct { border-color: #28a745; background: #d4edda; }
+        .quiz-option.wrong { border-color: #dc3545; background: #f8d7da; }
+        .team-display { display: flex; justify-content: space-between; margin: 10px 0; font-size: 0.9em; }
+        .team-label { font-weight: 600; }
+        .team-left { color: #dc3545; }
+        .team-right { color: #28a745; }
+        .result-display { text-align: center; padding: 12px; background: #f8f8f8; border: 1px solid #ddd; margin-top: 10px; }
+        .result-value { font-size: 1.3em; font-weight: 600; color: #2c5aa0; }
+        .result-direction { font-size: 0.9em; color: #555; margin-top: 5px; }
+        .weight-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin-bottom: 10px; }
+        .weight-btn { padding: 8px; font-size: 0.8em; }
+        .hint-text { font-size: 0.8em; color: #888; font-style: italic; margin-top: 5px; }
+        @media (max-width: 500px) { .tab-btn { padding: 8px 10px; font-size: 0.75em; } h1 { font-size: 1.2em; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Mechanik</p>
+            <h1>Kräfte – Interaktive Simulation</h1>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="federkraft">Federkraftmesser</button>
+            <button class="tab-btn" data-tab="addition">Kräfteaddition</button>
+            <button class="tab-btn" data-tab="zeichner">Kraftpfeil-Zeichner</button>
+            <button class="tab-btn" data-tab="tauziehen">Tauziehen</button>
+        </nav>
+
+        <!-- TAB 1: FEDERKRAFTMESSER -->
+        <div id="tab-federkraft" class="tab-content active">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas-feder" width="500" height="420"></canvas>
+                </div>
+                <div class="controls">
+                    <h3>Steuerung</h3>
+                    <div class="control-group">
+                        <div class="control-label"><span>Messbereich:</span></div>
+                        <div class="btn-group">
+                            <button class="active" data-scale="4">0–4 N</button>
+                            <button data-scale="10">0–10 N</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label"><span>Gewicht anhängen:</span></div>
+                        <div class="weight-buttons">
+                            <button class="weight-btn" data-mass="50">+50 g</button>
+                            <button class="weight-btn" data-mass="100">+100 g</button>
+                            <button class="weight-btn" data-mass="200">+200 g</button>
+                            <button class="weight-btn" data-mass="500">+500 g</button>
+                        </div>
+                        <button id="btn-reset-feder" style="width:100%">Zurücksetzen</button>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Angehängte Masse:</span>
+                            <span class="control-value" id="mass-display">0 g</span>
+                        </div>
+                    </div>
+                    <div class="score-display">Punkte: <span id="score-feder">0</span> / <span id="total-feder">0</span></div>
+                    <div class="control-group">
+                        <div class="control-label"><span>Kraft ablesen:</span></div>
+                        <div style="display:flex;gap:5px;align-items:center;">
+                            <input type="number" id="input-kraft" step="0.5" min="0" max="10" placeholder="?">
+                            <span>N</span>
+                            <button id="btn-check-feder" class="primary">Prüfen</button>
+                        </div>
+                    </div>
+                    <div id="feedback-feder" class="feedback neutral" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Merke</h3>
+                <p><strong>Gewichtskraft:</strong> Ein Körper mit der Masse 100 g wird von der Erde mit einer Kraft von etwa 1 N angezogen.</p>
+                <div class="formula">100 g ≙ 1 N</div>
+                <p>Der <strong>Federkraftmesser</strong> misst Kräfte. Je mehr Gewicht angehängt wird, desto mehr dehnt sich die Feder und der Zeiger wandert nach unten.</p>
+            </div>
+        </div>
+
+        <!-- TAB 2: KRÄFTEADDITION -->
+        <div id="tab-addition" class="tab-content">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas-addition" width="500" height="300"></canvas>
+                    <div class="result-display">
+                        <div>Resultierende Kraft:</div>
+                        <div class="result-value" id="result-fres">0 N</div>
+                        <div class="result-direction" id="result-dir"></div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <h3>Kräfte einstellen</h3>
+                    <div class="control-group">
+                        <div class="control-label"><span>F₁ (blau):</span><span class="control-value"><span id="val-f1">3</span> N</span></div>
+                        <input type="range" id="slider-f1" min="0" max="10" value="3" step="1">
+                        <div class="toggle-group">
+                            <button class="active" data-dir1="right">→ rechts</button>
+                            <button data-dir1="left">← links</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label"><span>F₂ (rot):</span><span class="control-value"><span id="val-f2">2</span> N</span></div>
+                        <input type="range" id="slider-f2" min="0" max="10" value="2" step="1">
+                        <div class="toggle-group">
+                            <button class="active" data-dir2="right">→ rechts</button>
+                            <button data-dir2="left">← links</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button id="btn-quiz-addition" class="primary" style="width:100%">Quiz-Modus</button>
+                    </div>
+                    <div id="quiz-addition-area" style="display:none;">
+                        <div class="control-label"><span>Berechne F<sub>res</sub>:</span></div>
+                        <div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;">
+                            <input type="number" id="input-fres" step="1" min="0" max="20" placeholder="?"><span>N</span>
+                        </div>
+                        <div class="control-label"><span>Richtung:</span></div>
+                        <div class="btn-group" id="dir-btns">
+                            <button data-guess="left">← links</button>
+                            <button data-guess="right">→ rechts</button>
+                            <button data-guess="none">keine</button>
+                        </div>
+                        <button id="btn-check-addition" class="primary" style="width:100%;margin-top:10px;">Prüfen</button>
+                        <div id="feedback-addition" class="feedback neutral" style="display:none;margin-top:10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Kräfte auf einer Linie zusammensetzen</h3>
+                <p><strong>Gleiche Richtung:</strong> Die Beträge werden addiert.</p>
+                <div class="formula">F<sub>res</sub> = F₁ + F₂</div>
+                <p><strong>Entgegengesetzte Richtung:</strong> Die Beträge werden subtrahiert.</p>
+                <div class="formula">F<sub>res</sub> = |F₁ − F₂|</div>
+            </div>
+        </div>
+
+        <!-- TAB 3: KRAFTPFEIL-ZEICHNER -->
+        <div id="tab-zeichner" class="tab-content">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas-zeichner" width="500" height="320" class="draggable"></canvas>
+                    <p class="hint-text">💡 Tipp: Ziehe den Körper mit der Maus auf dem Raster!</p>
+                </div>
+                <div class="controls">
+                    <h3>Kraftpfeil erstellen</h3>
+                    <div class="control-group">
+                        <div class="control-label"><span>Kraft F:</span><span class="control-value"><span id="val-kraft">4</span> N</span></div>
+                        <input type="range" id="slider-kraft" min="1" max="10" value="4" step="1">
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label"><span>Maßstab:</span></div>
+                        <div class="btn-group" id="scale-btns">
+                            <button class="active" data-mscale="1">1 cm ≙ 1 N</button>
+                            <button data-mscale="2">1 cm ≙ 2 N</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label"><span>Richtung:</span></div>
+                        <div class="btn-group" id="dir-kraft-btns">
+                            <button class="active" data-richtung="right">→</button>
+                            <button data-richtung="left">←</button>
+                            <button data-richtung="up">↑</button>
+                            <button data-richtung="down">↓</button>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button id="btn-umkehr" style="width:100%">Umkehr-Modus</button>
+                    </div>
+                    <div id="umkehr-area" style="display:none;">
+                        <p style="font-size:0.85em;margin-bottom:10px;">Welche Kraft zeigt der Pfeil?</p>
+                        <div style="display:flex;gap:5px;align-items:center;">
+                            <input type="number" id="input-umkehr" step="1" min="1" max="10" placeholder="?"><span>N</span>
+                            <button id="btn-check-umkehr" class="primary">Prüfen</button>
+                        </div>
+                        <div id="feedback-umkehr" class="feedback neutral" style="display:none;margin-top:10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Der Kraftpfeil</h3>
+                <p>• <strong>Angriffspunkt:</strong> Wo greift die Kraft am Körper an?</p>
+                <p>• <strong>Richtung:</strong> Wohin wirkt die Kraft?</p>
+                <p>• <strong>Betrag (Länge):</strong> Wie stark ist die Kraft?</p>
+            </div>
+        </div>
+
+        <!-- TAB 5: TAUZIEHEN -->
+        <div id="tab-tauziehen" class="tab-content">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas-tauziehen" width="500" height="300"></canvas>
+                    <div class="result-display">
+                        <div class="team-display">
+                            <span class="team-label team-left">Team Links: <span id="kraft-links">0</span> N</span>
+                            <span class="team-label team-right">Team Rechts: <span id="kraft-rechts">0</span> N</span>
+                        </div>
+                        <div>Resultierende Kraft:</div>
+                        <div class="result-value" id="result-tauz">0 N</div>
+                        <div class="result-direction" id="winner-tauz"></div>
+                    </div>
+                </div>
+                <div class="controls">
+                    <h3>Teams aufstellen</h3>
+                    <div class="control-group">
+                        <div class="control-label"><span style="color:#dc3545;">Team Links:</span><span class="control-value"><span id="val-links">2</span> Personen</span></div>
+                        <input type="range" id="slider-links" min="0" max="5" value="2" step="1">
+                        <p style="font-size:0.8em;color:#888;">Jede Person: 50 N</p>
+                    </div>
+                    <div class="control-group">
+                        <div class="control-label"><span style="color:#28a745;">Team Rechts:</span><span class="control-value"><span id="val-rechts">3</span> Personen</span></div>
+                        <input type="range" id="slider-rechts" min="0" max="5" value="3" step="1">
+                        <p style="font-size:0.8em;color:#888;">Jede Person: 50 N</p>
+                    </div>
+                    <button id="btn-animate-tauz" class="primary" style="width:100%">Animation starten</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <h3>Tauziehen – Kräfte im Alltag</h3>
+                <div class="formula">F<sub>res</sub> = |F<sub>links</sub> − F<sub>rechts</sub>|</div>
+                <p>Bei gleichen Kräften: <strong>Kräftegleichgewicht</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PX_PER_CM = 30;
+        
+        // Tab-Wechsel
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+            const headLen = 12;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+            };
+        }
+
+        // ===== TAB 1: FEDERKRAFTMESSER (KORRIGIERT) =====
+        (function() {
+            const canvas = document.getElementById('canvas-feder');
+            const ctx = canvas.getContext('2d');
+            let currentMass = 0, maxScale = 4, score = 0, total = 0;
+
+            document.querySelectorAll('[data-scale]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-scale]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    maxScale = parseInt(btn.dataset.scale);
+                    currentMass = 0;
+                    updateDisplay();
+                    drawFeder();
+                });
+            });
+
+            document.querySelectorAll('.weight-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const add = parseInt(btn.dataset.mass);
+                    const maxMass = maxScale * 100;
+                    if (currentMass + add <= maxMass) {
+                        currentMass += add;
+                        updateDisplay();
+                        drawFeder();
+                    }
+                });
+            });
+
+            document.getElementById('btn-reset-feder').addEventListener('click', () => {
+                currentMass = 0;
+                updateDisplay();
+                drawFeder();
+                document.getElementById('input-kraft').value = '';
+                document.getElementById('feedback-feder').style.display = 'none';
+            });
+
+            document.getElementById('btn-check-feder').addEventListener('click', () => {
+                const input = parseFloat(document.getElementById('input-kraft').value.replace(',', '.'));
+                const correct = currentMass / 100;
+                total++;
+                document.getElementById('total-feder').textContent = total;
+                const fb = document.getElementById('feedback-feder');
+                if (!isNaN(input) && Math.abs(input - correct) <= 0.25) {
+                    score++;
+                    document.getElementById('score-feder').textContent = score;
+                    fb.className = 'feedback correct';
+                    fb.innerHTML = '✓ Richtig! ' + correct + ' N';
+                } else {
+                    fb.className = 'feedback incorrect';
+                    fb.innerHTML = '✗ Falsch. Richtig: ' + correct + ' N';
+                }
+                fb.style.display = 'block';
+            });
+
+            function updateDisplay() {
+                document.getElementById('mass-display').textContent = currentMass + ' g';
+            }
+
+            function drawFeder() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const centerX = canvas.width / 2;
+                const kraft = currentMass / 100;
+                
+                // Aufhängung
+                ctx.fillStyle = '#555';
+                ctx.fillRect(centerX - 50, 0, 100, 15);
+                ctx.fillStyle = '#777';
+                ctx.fillRect(centerX - 8, 15, 16, 15);
+
+                // Gehäuse - dehnt sich mit der Feder
+                const basisHoehe = 200;
+                const dehnung = (kraft / maxScale) * 120;
+                const gehaeuseHoehe = basisHoehe + dehnung;
+                
+                ctx.fillStyle = maxScale === 4 ? '#e3f0ff' : '#e8ffe3';
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(centerX - 45, 25, 90, gehaeuseHoehe, 5);
+                ctx.fill();
+                ctx.stroke();
+
+                // Skala: 0 OBEN, maxScale UNTEN
+                const skalaTop = 50;
+                const skalaHeight = 140;
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(centerX - 32, skalaTop, 64, skalaHeight);
+                ctx.strokeStyle = '#ddd';
+                ctx.strokeRect(centerX - 32, skalaTop, 64, skalaHeight);
+
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'right';
+                
+                for (let i = 0; i <= maxScale; i++) {
+                    // i=0 oben (0 N), i=maxScale unten (maxScale N)
+                    const y = skalaTop + (i / maxScale) * skalaHeight;
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - 32, y);
+                    ctx.lineTo(centerX - 18, y);
+                    ctx.stroke();
+                    ctx.fillText(i, centerX - 35, y + 4);
+                    
+                    // Zwischenstriche
+                    if (i < maxScale) {
+                        const halfY = y + (skalaHeight / maxScale) / 2;
+                        ctx.strokeStyle = '#888';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(centerX - 32, halfY);
+                        ctx.lineTo(centerX - 24, halfY);
+                        ctx.stroke();
+                    }
+                }
+                ctx.fillText('N', centerX - 35, skalaTop + skalaHeight + 18);
+
+                // Zeiger-Position: mehr Kraft = weiter UNTEN
+                const zeigerY = skalaTop + (kraft / maxScale) * skalaHeight;
+
+                // Feder zeichnen
+                const federTop = 28;
+                const federBottom = zeigerY - 5;
+                const federHeight = Math.max(federBottom - federTop, 30);
+                const coils = 12;
+                const coilH = federHeight / coils;
+                
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(centerX, federTop);
+                for (let i = 0; i < coils; i++) {
+                    const y1 = federTop + i * coilH;
+                    const amplitude = 14;
+                    ctx.bezierCurveTo(
+                        centerX + amplitude, y1 + coilH * 0.25,
+                        centerX - amplitude, y1 + coilH * 0.75,
+                        centerX, y1 + coilH
+                    );
+                }
+                ctx.stroke();
+
+                // Roter Zeiger - bewegt sich mit Feder nach unten
+                ctx.strokeStyle = '#dc3545';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(centerX - 28, zeigerY);
+                ctx.lineTo(centerX + 28, zeigerY);
+                ctx.stroke();
+                
+                // Zeiger-Dreieck
+                ctx.fillStyle = '#dc3545';
+                ctx.beginPath();
+                ctx.moveTo(centerX + 28, zeigerY);
+                ctx.lineTo(centerX + 20, zeigerY - 6);
+                ctx.lineTo(centerX + 20, zeigerY + 6);
+                ctx.closePath();
+                ctx.fill();
+
+                // Haken
+                const hakenY = 25 + gehaeuseHoehe;
+                ctx.strokeStyle = '#555';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(centerX, hakenY);
+                ctx.lineTo(centerX, hakenY + 18);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(centerX + 10, hakenY + 18, 10, Math.PI, 0, true);
+                ctx.stroke();
+
+                // Gewicht
+                if (currentMass > 0) {
+                    const gewY = hakenY + 33;
+                    const gewH = 40 + currentMass / 25;
+                    ctx.fillStyle = '#4a90d9';
+                    ctx.strokeStyle = '#2c5aa0';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.roundRect(centerX - 30, gewY, 60, gewH, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(currentMass + ' g', centerX, gewY + gewH/2 + 5);
+                }
+
+                ctx.fillStyle = '#666';
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Federkraftmesser ' + maxScale + ' N', centerX, canvas.height - 10);
+            }
+
+            drawFeder();
+        })();
+
+        // ===== TAB 2: KRÄFTEADDITION =====
+        (function() {
+            const canvas = document.getElementById('canvas-addition');
+            const ctx = canvas.getContext('2d');
+            let f1 = 3, f2 = 2, dir1 = 1, dir2 = 1, quizMode = false, guessedDir = null;
+
+            document.getElementById('slider-f1').addEventListener('input', e => { f1 = +e.target.value; document.getElementById('val-f1').textContent = f1; if (!quizMode) update(); });
+            document.getElementById('slider-f2').addEventListener('input', e => { f2 = +e.target.value; document.getElementById('val-f2').textContent = f2; if (!quizMode) update(); });
+            document.querySelectorAll('[data-dir1]').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('[data-dir1]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); dir1 = btn.dataset.dir1 === 'right' ? 1 : -1; if (!quizMode) update(); }));
+            document.querySelectorAll('[data-dir2]').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('[data-dir2]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); dir2 = btn.dataset.dir2 === 'right' ? 1 : -1; if (!quizMode) update(); }));
+            document.querySelectorAll('[data-guess]').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('[data-guess]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); guessedDir = btn.dataset.guess; }));
+
+            document.getElementById('btn-quiz-addition').addEventListener('click', () => {
+                quizMode = !quizMode;
+                document.getElementById('btn-quiz-addition').textContent = quizMode ? 'Übungs-Modus' : 'Quiz-Modus';
+                document.getElementById('quiz-addition-area').style.display = quizMode ? 'block' : 'none';
+                if (quizMode) {
+                    f1 = Math.floor(Math.random() * 8) + 1; f2 = Math.floor(Math.random() * 8) + 1;
+                    dir1 = Math.random() > 0.5 ? 1 : -1; dir2 = Math.random() > 0.5 ? 1 : -1;
+                    document.getElementById('slider-f1').value = f1; document.getElementById('slider-f2').value = f2;
+                    document.getElementById('val-f1').textContent = f1; document.getElementById('val-f2').textContent = f2;
+                    document.querySelectorAll('[data-dir1]').forEach(b => b.classList.toggle('active', (b.dataset.dir1 === 'right') === (dir1 === 1)));
+                    document.querySelectorAll('[data-dir2]').forEach(b => b.classList.toggle('active', (b.dataset.dir2 === 'right') === (dir2 === 1)));
+                    document.getElementById('result-fres').textContent = '? N'; document.getElementById('result-dir').textContent = '';
+                } else { document.getElementById('feedback-addition').style.display = 'none'; }
+                draw(quizMode);
+            });
+
+            document.getElementById('btn-check-addition').addEventListener('click', () => {
+                const r = calc();
+                const inp = +document.getElementById('input-fres').value;
+                const ok = inp === r.fres && guessedDir === r.dir;
+                const fb = document.getElementById('feedback-addition');
+                fb.className = ok ? 'feedback correct' : 'feedback incorrect';
+                fb.innerHTML = ok ? '✓ Richtig!' : '✗ Falsch. Richtig: ' + r.fres + ' N ' + (r.dir === 'right' ? '→' : r.dir === 'left' ? '←' : '(Gleichgewicht)');
+                fb.style.display = 'block';
+                document.getElementById('result-fres').textContent = r.fres + ' N';
+                document.getElementById('result-dir').textContent = r.fres === 0 ? 'Kräftegleichgewicht' : (r.dir === 'right' ? '→ rechts' : '← links');
+                draw(false);
+            });
+
+            function calc() { const s = f1 * dir1 + f2 * dir2; return { fres: Math.abs(s), dir: s > 0 ? 'right' : s < 0 ? 'left' : 'none' }; }
+            function update() { const r = calc(); document.getElementById('result-fres').textContent = r.fres + ' N'; document.getElementById('result-dir').textContent = r.fres === 0 ? 'Kräftegleichgewicht' : (r.dir === 'right' ? '→ rechts' : '← links'); draw(false); }
+            function draw(hide) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const cx = canvas.width / 2, cy = 150, sc = 22;
+                ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += sc) { ctx.beginPath(); ctx.moveTo(x, 40); ctx.lineTo(x, 260); ctx.stroke(); }
+                ctx.fillStyle = '#ddd'; ctx.strokeStyle = '#999'; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(cx - 30, cy - 25, 60, 50, 5); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#666'; ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.fillText('Körper', cx, cy + 5);
+                if (f1 > 0) { drawArrow(ctx, cx + dir1 * 30, cy - 10, cx + dir1 * 30 + dir1 * f1 * sc, cy - 10, '#2c5aa0', 3); ctx.fillStyle = '#2c5aa0'; ctx.fillText('F₁=' + f1 + 'N', cx + dir1 * 30 + dir1 * f1 * sc / 2, cy - 22); }
+                if (f2 > 0) { drawArrow(ctx, cx + dir2 * 30, cy + 10, cx + dir2 * 30 + dir2 * f2 * sc, cy + 10, '#dc3545', 3); ctx.fillStyle = '#dc3545'; ctx.fillText('F₂=' + f2 + 'N', cx + dir2 * 30 + dir2 * f2 * sc / 2, cy + 35); }
+                if (!hide) { const r = calc(); if (r.fres > 0) { const d = r.dir === 'right' ? 1 : -1; drawArrow(ctx, cx, cy + 55, cx + d * r.fres * sc, cy + 55, '#28a745', 4); ctx.fillStyle = '#28a745'; ctx.fillText('F_res=' + r.fres + 'N', cx + d * r.fres * sc / 2, cy + 75); } }
+                ctx.fillStyle = '#888'; ctx.font = '11px Arial'; ctx.textAlign = 'left'; ctx.fillText('Maßstab: 1 cm ≈ 1 N', 10, 285);
+            }
+            update();
+        })();
+
+        // ===== TAB 3: KRAFTPFEIL-ZEICHNER MIT DRAG =====
+        (function() {
+            const canvas = document.getElementById('canvas-zeichner');
+            const ctx = canvas.getContext('2d');
+            let kraft = 4, masstab = 1, richtung = 'right', umkehrMode = false, umkehrKraft = 0;
+            let koerperX = 120, koerperY = 160, isDragging = false, dragOX = 0, dragOY = 0;
+            const koerperW = 70, koerperH = 50;
+
+            document.getElementById('slider-kraft').addEventListener('input', e => { kraft = +e.target.value; document.getElementById('val-kraft').textContent = kraft; if (!umkehrMode) draw(); });
+            document.querySelectorAll('[data-mscale]').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('[data-mscale]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); masstab = +btn.dataset.mscale; if (!umkehrMode) draw(); }));
+            document.querySelectorAll('[data-richtung]').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('[data-richtung]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); richtung = btn.dataset.richtung; if (!umkehrMode) draw(); }));
+
+            document.getElementById('btn-umkehr').addEventListener('click', () => {
+                umkehrMode = !umkehrMode;
+                document.getElementById('btn-umkehr').textContent = umkehrMode ? 'Normal-Modus' : 'Umkehr-Modus';
+                document.getElementById('umkehr-area').style.display = umkehrMode ? 'block' : 'none';
+                if (umkehrMode) {
+                    umkehrKraft = Math.floor(Math.random() * 8) + 2;
+                    masstab = Math.random() > 0.5 ? 1 : 2;
+                    richtung = ['right', 'left', 'up', 'down'][Math.floor(Math.random() * 4)];
+                    document.querySelectorAll('[data-mscale]').forEach(b => b.classList.toggle('active', +b.dataset.mscale === masstab));
+                    document.querySelectorAll('[data-richtung]').forEach(b => b.classList.toggle('active', b.dataset.richtung === richtung));
+                    kraft = umkehrKraft;
+                } else { document.getElementById('feedback-umkehr').style.display = 'none'; }
+                draw();
+            });
+
+            document.getElementById('btn-check-umkehr').addEventListener('click', () => {
+                const inp = +document.getElementById('input-umkehr').value;
+                const fb = document.getElementById('feedback-umkehr');
+                fb.className = inp === umkehrKraft ? 'feedback correct' : 'feedback incorrect';
+                fb.innerHTML = inp === umkehrKraft ? '✓ Richtig! ' + umkehrKraft + ' N' : '✗ Falsch. Richtig: ' + umkehrKraft + ' N';
+                fb.style.display = 'block';
+            });
+
+            function getPos(e) { const r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height }; }
+            function inKoerper(x, y) { return x >= koerperX - koerperW/2 && x <= koerperX + koerperW/2 && y >= koerperY - koerperH/2 && y <= koerperY + koerperH/2; }
+            canvas.addEventListener('mousedown', e => { const p = getPos(e); if (inKoerper(p.x, p.y)) { isDragging = true; dragOX = p.x - koerperX; dragOY = p.y - koerperY; canvas.classList.add('dragging'); } });
+            canvas.addEventListener('mousemove', e => { const p = getPos(e); if (isDragging) { koerperX = Math.max(koerperW/2 + 10, Math.min(canvas.width - koerperW/2 - 10, p.x - dragOX)); koerperY = Math.max(koerperH/2 + 20, Math.min(canvas.height - koerperH/2 - 40, p.y - dragOY)); draw(); } else { canvas.style.cursor = inKoerper(p.x, p.y) ? 'grab' : 'default'; } });
+            canvas.addEventListener('mouseup', () => { isDragging = false; canvas.classList.remove('dragging'); });
+            canvas.addEventListener('mouseleave', () => { isDragging = false; canvas.classList.remove('dragging'); });
+            canvas.addEventListener('touchstart', e => { e.preventDefault(); const p = getPos(e.touches[0]); if (inKoerper(p.x, p.y)) { isDragging = true; dragOX = p.x - koerperX; dragOY = p.y - koerperY; } });
+            canvas.addEventListener('touchmove', e => { e.preventDefault(); if (isDragging) { const p = getPos(e.touches[0]); koerperX = Math.max(koerperW/2 + 10, Math.min(canvas.width - koerperW/2 - 10, p.x - dragOX)); koerperY = Math.max(koerperH/2 + 20, Math.min(canvas.height - koerperH/2 - 40, p.y - dragOY)); draw(); } });
+            canvas.addEventListener('touchend', () => { isDragging = false; });
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Raster
+                ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 0.5;
+                for (let x = 0; x < canvas.width; x += PX_PER_CM / 2) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+                for (let y = 0; y < canvas.height; y += PX_PER_CM / 2) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+                ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+                for (let x = 0; x < canvas.width; x += PX_PER_CM) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+                for (let y = 0; y < canvas.height; y += PX_PER_CM) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke(); }
+                // Körper
+                ctx.fillStyle = isDragging ? '#c5d8f0' : '#ddd';
+                ctx.strokeStyle = isDragging ? '#2c5aa0' : '#999';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.roundRect(koerperX - koerperW/2, koerperY - koerperH/2, koerperW, koerperH, 5); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#555'; ctx.font = '11px Arial'; ctx.textAlign = 'center'; ctx.fillText('Körper', koerperX, koerperY + 4);
+                // Angriffspunkt
+                let sX = koerperX, sY = koerperY;
+                if (richtung === 'right') sX = koerperX + koerperW/2;
+                else if (richtung === 'left') sX = koerperX - koerperW/2;
+                else if (richtung === 'up') sY = koerperY - koerperH/2;
+                else if (richtung === 'down') sY = koerperY + koerperH/2;
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(sX, sY, 4, 0, Math.PI * 2); ctx.fill();
+                // Pfeil
+                const len = (kraft / masstab) * PX_PER_CM;
+                let eX = sX, eY = sY;
+                if (richtung === 'right') eX = sX + len;
+                else if (richtung === 'left') eX = sX - len;
+                else if (richtung === 'up') eY = sY - len;
+                else if (richtung === 'down') eY = sY + len;
+                drawArrow(ctx, sX, sY, eX, eY, '#2c5aa0', 3);
+                // Label
+                ctx.fillStyle = '#2c5aa0'; ctx.font = 'bold 13px Arial'; ctx.textAlign = 'center';
+                let lX = (sX + eX) / 2, lY = (sY + eY) / 2;
+                if (richtung === 'right' || richtung === 'left') lY -= 15; else lX += 25;
+                ctx.fillText(umkehrMode ? 'F = ? N' : 'F = ' + kraft + ' N', lX, lY);
+                // Maßstab
+                ctx.fillStyle = '#666'; ctx.font = '11px Arial'; ctx.textAlign = 'left';
+                ctx.fillText('Maßstab: 1 cm ≙ ' + masstab + ' N', 10, canvas.height - 10);
+                // Lineal
+                ctx.strokeStyle = '#888'; ctx.lineWidth = 1; ctx.fillStyle = '#888'; ctx.font = '9px Arial'; ctx.textAlign = 'center';
+                const lY2 = canvas.height - 35;
+                ctx.beginPath(); ctx.moveTo(10, lY2); ctx.lineTo(10 + 8 * PX_PER_CM, lY2); ctx.stroke();
+                for (let i = 0; i <= 8; i++) { const x = 10 + i * PX_PER_CM; ctx.beginPath(); ctx.moveTo(x, lY2); ctx.lineTo(x, lY2 - (i % 2 === 0 ? 6 : 4)); ctx.stroke(); if (i % 2 === 0) ctx.fillText(i, x, lY2 + 10); }
+                ctx.fillText('cm', 10 + 8 * PX_PER_CM + 15, lY2 + 3);
+            }
+            draw();
+        })();
+
+        // ===== TAB 4: TAUZIEHEN =====
+        (function() {
+            const canvas = document.getElementById('canvas-tauziehen');
+            const ctx = canvas.getContext('2d');
+            let persL = 2, persR = 3, animating = false, offset = 0, target = 0;
+
+            document.getElementById('slider-links').addEventListener('input', e => { persL = +e.target.value; document.getElementById('val-links').textContent = persL; update(); });
+            document.getElementById('slider-rechts').addEventListener('input', e => { persR = +e.target.value; document.getElementById('val-rechts').textContent = persR; update(); });
+            document.getElementById('btn-animate-tauz').addEventListener('click', () => { if (!animating) { animating = true; offset = 0; animate(); } });
+
+            function update() {
+                const kL = persL * 50, kR = persR * 50, fres = Math.abs(kL - kR);
+                document.getElementById('kraft-links').textContent = kL;
+                document.getElementById('kraft-rechts').textContent = kR;
+                document.getElementById('result-tauz').textContent = fres + ' N';
+                document.getElementById('winner-tauz').textContent = fres === 0 ? 'Kräftegleichgewicht!' : (kL > kR ? '← Team Links!' : '→ Team Rechts!');
+                target = kL > kR ? -50 : kL < kR ? 50 : 0;
+                if (!animating) { offset = 0; draw(); }
+            }
+
+            function animate() {
+                const diff = target - offset;
+                if (Math.abs(diff) > 1) { offset += diff * 0.04; draw(); requestAnimationFrame(animate); }
+                else { offset = target; draw(); animating = false; }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const cx = canvas.width / 2 + offset, gY = 220;
+                ctx.fillStyle = '#8B4513'; ctx.fillRect(0, gY, canvas.width, 80);
+                ctx.fillStyle = '#228B22'; ctx.fillRect(0, gY, canvas.width, 5);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.setLineDash([10, 5]);
+                ctx.beginPath(); ctx.moveTo(canvas.width / 2, gY); ctx.lineTo(canvas.width / 2, gY + 80); ctx.stroke(); ctx.setLineDash([]);
+                ctx.strokeStyle = '#8B6914'; ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.moveTo(50 + offset, 150); ctx.lineTo(canvas.width - 50 + offset, 150); ctx.stroke();
+                ctx.fillStyle = '#dc3545'; ctx.fillRect(cx - 5, 145, 10, 20);
+                for (let i = 0; i < persL; i++) drawPerson(120 - i * 40 + offset, gY, '#dc3545', -1);
+                for (let i = 0; i < persR; i++) drawPerson(canvas.width - 120 + i * 40 + offset, gY, '#28a745', 1);
+                const kL = persL * 50, kR = persR * 50, sc = 0.7;
+                if (kL > 0) { drawArrow(ctx, cx, 95, cx - kL * sc, 95, '#dc3545', 4); ctx.fillStyle = '#dc3545'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText(kL + ' N', cx - kL * sc / 2, 82); }
+                if (kR > 0) { drawArrow(ctx, cx, 95, cx + kR * sc, 95, '#28a745', 4); ctx.fillStyle = '#28a745'; ctx.font = 'bold 12px Arial'; ctx.textAlign = 'center'; ctx.fillText(kR + ' N', cx + kR * sc / 2, 82); }
+            }
+
+            function drawPerson(x, gY, col, dir) {
+                ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, gY - 55, 14, 22, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#FFE4C4'; ctx.beginPath(); ctx.arc(x, gY - 92, 14, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#FFE4C4'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x, gY - 65); ctx.lineTo(x - dir * 28, gY - 75); ctx.stroke();
+                ctx.strokeStyle = '#333'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x, gY - 33); ctx.lineTo(x + dir * 8, gY); ctx.moveTo(x, gY - 33); ctx.lineTo(x - dir * 5, gY); ctx.stroke();
+            }
+            update();
+        })();
+    </script>
+</body>
+</html>
