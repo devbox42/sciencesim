@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wörtersuchrätsel-Generator – sciencesim</title>
+    <meta name="subject" content="Tools">
+    <meta name="topic" content="Unterrichtsmaterial">
+    <meta name="grade" content="5-12">
+    <meta name="description" content="Erstelle Wörtersuchrätsel für Physik, Chemie, Englisch und Spanisch">
+    
+    <!-- jsPDF für PDF-Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        /* ================================================
+           SCIENCESIM Design-Richtlinien
+           - Kein KI-typisches Design
+           - Keine Gradients, kein Glasmorphism
+           - Dezente Farben, funktional
+           ================================================ */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        /* Header - schlicht */
+        header {
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+        }
+
+        h2 {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        /* Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Boxen - schlicht, kein Schatten */
+        .box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        /* Formulare */
+        label {
+            display: block;
+            font-size: 0.9em;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 140px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: "Consolas", "Monaco", monospace;
+            font-size: 0.9em;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            font-family: inherit;
+            font-size: 0.9em;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #0066cc;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .hint {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* Checkboxen */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            font-weight: 400;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+
+        .checkbox-label input {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Buttons - schlicht */
+        button {
+            padding: 10px 16px;
+            font-size: 0.9em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #f5f5f5;
+        }
+
+        button.primary {
+            background: #333;
+            color: #fff;
+            border-color: #333;
+        }
+
+        button.primary:hover {
+            background: #444;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Vorlagen-Buttons */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .template-btn {
+            padding: 6px 8px;
+            font-size: 0.8em;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .template-btn:hover {
+            border-color: #0066cc;
+            color: #0066cc;
+        }
+
+        .template-category {
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 10px 0 6px 0;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+        }
+
+        .template-category:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        /* Puzzle-Anzeige */
+        .puzzle-area {
+            min-height: 400px;
+        }
+
+        .puzzle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .puzzle-title-input {
+            font-size: 1.1em;
+            font-weight: 600;
+            border: 1px dashed #ccc;
+            background: transparent;
+            padding: 6px 10px;
+            max-width: 280px;
+        }
+
+        .puzzle-title-input:focus {
+            border-style: solid;
+            border-color: #0066cc;
+        }
+
+        /* Grid */
+        #puzzle-grid {
+            display: inline-grid;
+            gap: 1px;
+            background: #ccc;
+            padding: 1px;
+            margin: 0 auto;
+            font-family: "Consolas", "Monaco", monospace;
+        }
+
+        .grid-cell {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            font-size: 0.95em;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .grid-cell.filler {
+            color: #888;
+        }
+
+        .grid-cell.word-letter {
+            color: #222;
+        }
+
+        .grid-cell.highlighted {
+            background: #ffffcc;
+        }
+
+        /* Wortliste */
+        .word-list-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .word-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .word-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #f0f0f0;
+            font-size: 0.85em;
+        }
+
+        .word-tag.not-placed {
+            background: #ffcccc;
+            text-decoration: line-through;
+        }
+
+        /* Statistik */
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 12px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        /* Leer-Zustand */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #888;
+        }
+
+        .empty-state p {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* Info-Box */
+        .info-box {
+            background: #f8f8f8;
+            border-left: 3px solid #0066cc;
+            padding: 10px 12px;
+            font-size: 0.85em;
+            margin-bottom: 12px;
+        }
+
+        .info-box code {
+            background: #e8e8e8;
+            padding: 1px 4px;
+            font-family: "Consolas", monospace;
+            font-size: 0.9em;
+        }
+
+        /* Trennzeichen-Info */
+        .separator-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .separator-info span {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            margin: 2px;
+            font-family: monospace;
+        }
+
+        /* Print */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .sidebar, .breadcrumb, .btn-row, .stats, header {
+                display: none !important;
+            }
+            
+            .main-grid {
+                display: block;
+            }
+            
+            .box {
+                border: none;
+                padding: 0;
+            }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 0.8em;
+            color: #888;
+            text-align: center;
+        }
+
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../">← Übersicht</a> · Tools</p>
+            <h1>Wörtersuchrätsel-Generator</h1>
+        </header>
+
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                
+                <!-- Wörter eingeben -->
+                <div class="box">
+                    <h2>Wörter eingeben</h2>
+                    
+                    <div class="info-box">
+                        Wörter per Copy &amp; Paste einfügen. Trennzeichen werden automatisch erkannt.
+                    </div>
+
+                    <!-- Vorlagen -->
+                    <div class="template-category">Naturwissenschaften</div>
+                    <div class="template-grid">
+                        <button class="template-btn" data-template="physik-waerme">🔥 Wärmelehre</button>
+                        <button class="template-btn" data-template="physik-optik">💡 Optik</button>
+                        <button class="template-btn" data-template="chemie-atome">⚛️ Atombau</button>
+                        <button class="template-btn" data-template="chemie-stoffe">🧪 Stoffe</button>
+                    </div>
+
+                    <div class="template-category">Englisch</div>
+                    <div class="template-grid">
+                        <button class="template-btn" data-template="en-colors">🎨 Colors</button>
+                        <button class="template-btn" data-template="en-animals">🐾 Animals</button>
+                        <button class="template-btn" data-template="en-school">📚 School</button>
+                        <button class="template-btn" data-template="en-food">🍎 Food</button>
+                        <button class="template-btn" data-template="en-family">👨‍👩‍👧 Family</button>
+                        <button class="template-btn" data-template="en-weather">🌤️ Weather</button>
+                    </div>
+
+                    <div class="template-category">Spanisch</div>
+                    <div class="template-grid">
+                        <button class="template-btn" data-template="es-colores">🎨 Colores</button>
+                        <button class="template-btn" data-template="es-animales">🐾 Animales</button>
+                        <button class="template-btn" data-template="es-escuela">📚 Escuela</button>
+                        <button class="template-btn" data-template="es-comida">🍎 Comida</button>
+                        <button class="template-btn" data-template="es-familia">👨‍👩‍👧 Familia</button>
+                        <button class="template-btn" data-template="es-cuerpo">🧍 Cuerpo</button>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 12px;">
+                        <label for="word-input">Wortliste</label>
+                        <textarea id="word-input" placeholder="ENERGIE
+TEMPERATUR
+WAERME
+CELSIUS
+..."></textarea>
+                        <div class="separator-info">
+                            Erkannte Trennzeichen: 
+                            <span>Zeilenumbruch</span>
+                            <span>,</span>
+                            <span>;</span>
+                            <span>Tab</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="puzzle-title">Titel</label>
+                        <input type="text" id="puzzle-title" value="Wörtersuchrätsel" placeholder="z.B. Physik - Wärmelehre">
+                    </div>
+                </div>
+
+                <!-- Einstellungen -->
+                <div class="box">
+                    <h2>Einstellungen</h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="grid-size">Gittergröße</label>
+                            <select id="grid-size">
+                                <option value="10">10 × 10</option>
+                                <option value="12">12 × 12</option>
+                                <option value="15" selected>15 × 15</option>
+                                <option value="18">18 × 18</option>
+                                <option value="20">20 × 20</option>
+                                <option value="custom">Benutzerdefiniert</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="custom-size-group" style="display: none;">
+                            <label for="custom-size">m × m</label>
+                            <input type="number" id="custom-size" value="15" min="8" max="25">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="max-words">Max. Wörter</label>
+                        <select id="max-words">
+                            <option value="0">Alle verwenden</option>
+                            <option value="8">8 Wörter</option>
+                            <option value="10">10 Wörter</option>
+                            <option value="12" selected>12 Wörter</option>
+                            <option value="15">15 Wörter</option>
+                            <option value="20">20 Wörter</option>
+                        </select>
+                        <p class="hint">Begrenzt die Anzahl (längste zuerst)</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficulty">Schwierigkeit</label>
+                        <select id="difficulty">
+                            <option value="easy">Leicht – nur → und ↓</option>
+                            <option value="medium" selected>Mittel – inkl. ↘ ↙</option>
+                            <option value="hard">Schwer – alle Richtungen</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="uppercase" checked>
+                            Großbuchstaben
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-word-list" checked>
+                            Wortliste anzeigen
+                        </label>
+                    </div>
+
+                    <button class="primary" id="generate-btn" style="width: 100%;">
+                        Rätsel generieren
+                    </button>
+                </div>
+
+                <!-- Export -->
+                <div class="box">
+                    <h2>Export</h2>
+                    <div class="btn-row">
+                        <button id="export-pdf-btn" disabled>PDF Rätsel</button>
+                        <button id="export-solution-btn" disabled>PDF Lösung</button>
+                    </div>
+                    <p class="hint" style="margin-top: 8px;">Oder: Strg+P zum Drucken</p>
+                </div>
+            </aside>
+
+            <!-- Hauptbereich -->
+            <main class="puzzle-area">
+                <div class="box" id="puzzle-container">
+                    
+                    <div id="empty-state" class="empty-state">
+                        <p>Gib links Wörter ein und klicke auf "Rätsel generieren".</p>
+                    </div>
+
+                    <div id="puzzle-display" style="display: none;">
+                        <div class="puzzle-header">
+                            <input type="text" class="puzzle-title-input" id="display-title" value="Wörtersuchrätsel">
+                            <div class="btn-row">
+                                <button id="shuffle-btn">🔄 Neu mischen</button>
+                                <label class="checkbox-label" style="margin: 0;">
+                                    <input type="checkbox" id="show-solution">
+                                    Lösung zeigen
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <div id="puzzle-grid"></div>
+                        </div>
+
+                        <div class="word-list-section" id="word-list-section">
+                            <h3>Finde diese Wörter:</h3>
+                            <div class="word-tags" id="word-list"></div>
+                        </div>
+
+                        <div class="stats" id="stats"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer>
+            <a href="https://github.com/jpcrusius-hub/sciencesim" target="_blank">sciencesim</a> · 
+            Open Source unter MIT-Lizenz
+        </footer>
+    </div>
+
+    <script>
+    // ============================================
+    // WÖRTERSUCHRÄTSEL-GENERATOR
+    // MIT License - sciencesim
+    // ============================================
+
+    class WordSearchGenerator {
+        constructor(options = {}) {
+            this.size = options.size || 15;
+            this.difficulty = options.difficulty || 'medium';
+            this.uppercase = options.uppercase !== false;
+            this.maxWords = options.maxWords || 0;
+            
+            this.directions = this.getDirections();
+            this.grid = [];
+            this.solution = [];
+            this.placedWords = [];
+            this.unplacedWords = [];
+        }
+
+        getDirections() {
+            // [dx, dy]
+            const easy = [
+                [1, 0],    // →
+                [0, 1],    // ↓
+            ];
+            
+            const medium = [
+                ...easy,
+                [1, 1],    // ↘
+                [-1, 1],   // ↙
+            ];
+            
+            const hard = [
+                [1, 0],    // →
+                [-1, 0],   // ← (rückwärts)
+                [0, 1],    // ↓
+                [0, -1],   // ↑ (rückwärts)
+                [1, 1],    // ↘
+                [-1, -1],  // ↖ (rückwärts)
+                [-1, 1],   // ↙
+                [1, -1],   // ↗ (rückwärts)
+            ];
+
+            switch (this.difficulty) {
+                case 'easy': return easy;
+                case 'hard': return hard;
+                default: return medium;
+            }
+        }
+
+        // ============================================
+        // TRENNZEICHEN-LOGIK
+        // ============================================
+        // Akzeptiert:
+        //   ✓ Zeilenumbruch (\n, \r\n, \r)
+        //   ✓ Komma (,)
+        //   ✓ Semikolon (;)
+        //   ✓ Tabulator (\t)
+        // 
+        // NICHT akzeptiert:
+        //   ✗ Leerzeichen (da Wörter Leerzeichen enthalten könnten)
+        //
+        // Beispiele gültiger Eingaben:
+        //   "WORT1\nWORT2\nWORT3"
+        //   "WORT1, WORT2, WORT3"
+        //   "WORT1; WORT2; WORT3"
+        //   "WORT1\tWORT2\tWORT3" (aus Excel kopiert)
+        // ============================================
+        parseWords(input) {
+            // Normalisiere alle Trennzeichen zu Zeilenumbrüchen
+            let normalized = input
+                .replace(/[,;\t]+/g, '\n')   // Komma, Semikolon, Tab → Zeilenumbruch
+                .replace(/\r\n/g, '\n')       // Windows-Zeilenumbrüche
+                .replace(/\r/g, '\n');        // Mac-Zeilenumbrüche
+            
+            // In einzelne Wörter aufteilen und normalisieren
+            let words = normalized
+                .split('\n')
+                .map(w => this.normalizeWord(w.trim()))
+                .filter(w => w.length >= 2);  // Min. 2 Buchstaben
+            
+            // Duplikate entfernen
+            words = [...new Set(words)];
+            
+            // Nach Länge sortieren (längste zuerst - bessere Platzierung)
+            words.sort((a, b) => b.length - a.length);
+            
+            // Max. Wörter begrenzen
+            if (this.maxWords > 0 && words.length > this.maxWords) {
+                words = words.slice(0, this.maxWords);
+            }
+            
+            return words;
+        }
+
+        // Umlaute und Sonderzeichen normalisieren
+        normalizeWord(word) {
+            return word
+                .toUpperCase()
+                // Deutsche Umlaute
+                .replace(/Ä/g, 'AE')
+                .replace(/Ö/g, 'OE')
+                .replace(/Ü/g, 'UE')
+                .replace(/ß/g, 'SS')
+                // Spanische Sonderzeichen
+                .replace(/Ñ/g, 'N')
+                .replace(/[ÁÀÂÃ]/g, 'A')
+                .replace(/[ÉÈÊË]/g, 'E')
+                .replace(/[ÍÌÎÏ]/g, 'I')
+                .replace(/[ÓÒÔÕ]/g, 'O')
+                .replace(/[ÚÙÛÜ]/g, 'U')
+                // Nur Buchstaben behalten
+                .replace(/[^A-Z]/g, '');
+        }
+
+        initGrid() {
+            this.grid = [];
+            this.solution = [];
+            for (let y = 0; y < this.size; y++) {
+                this.grid[y] = new Array(this.size).fill(null);
+                this.solution[y] = new Array(this.size).fill(false);
+            }
+        }
+
+        canPlace(word, startX, startY, dx, dy) {
+            const endX = startX + (word.length - 1) * dx;
+            const endY = startY + (word.length - 1) * dy;
+
+            if (endX < 0 || endX >= this.size || endY < 0 || endY >= this.size) return false;
+            if (startX < 0 || startX >= this.size || startY < 0 || startY >= this.size) return false;
+
+            for (let i = 0; i < word.length; i++) {
+                const x = startX + i * dx;
+                const y = startY + i * dy;
+                const cell = this.grid[y][x];
+                // Zelle muss leer sein ODER denselben Buchstaben haben (Überlappung)
+                if (cell !== null && cell !== word[i]) return false;
+            }
+            return true;
+        }
+
+        placeWord(word, startX, startY, dx, dy) {
+            for (let i = 0; i < word.length; i++) {
+                const x = startX + i * dx;
+                const y = startY + i * dy;
+                this.grid[y][x] = word[i];
+                this.solution[y][x] = true;
+            }
+            
+            this.placedWords.push({ word, startX, startY, dx, dy });
+        }
+
+        shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        tryPlaceWord(word, maxAttempts = 100) {
+            const shuffledDirs = this.shuffle([...this.directions]);
+            
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                const x = Math.floor(Math.random() * this.size);
+                const y = Math.floor(Math.random() * this.size);
+                
+                for (const [dx, dy] of shuffledDirs) {
+                    if (this.canPlace(word, x, y, dx, dy)) {
+                        this.placeWord(word, x, y, dx, dy);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        fillEmptyCells() {
+            // Buchstabenhäufigkeit (deutsch/englisch/spanisch gemischt)
+            const letters = 'EEEEEEENNNNNNRRRRRIIIIITTTTSSSSAAAALLLHHHDDDUUUCCMMGGOOBBWWFFKKZZPPVVJJYYXXQQ';
+            
+            for (let y = 0; y < this.size; y++) {
+                for (let x = 0; x < this.size; x++) {
+                    if (this.grid[y][x] === null) {
+                        this.grid[y][x] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+        }
+
+        generate(wordInput) {
+            const words = this.parseWords(wordInput);
+            
+            if (words.length === 0) {
+                throw new Error('Keine gültigen Wörter gefunden.');
+            }
+
+            this.initGrid();
+            this.placedWords = [];
+            this.unplacedWords = [];
+
+            for (const word of words) {
+                if (word.length > this.size) {
+                    this.unplacedWords.push(word);
+                    continue;
+                }
+                
+                if (!this.tryPlaceWord(word)) {
+                    this.unplacedWords.push(word);
+                }
+            }
+
+            this.fillEmptyCells();
+
+            if (!this.uppercase) {
+                for (let y = 0; y < this.size; y++) {
+                    for (let x = 0; x < this.size; x++) {
+                        this.grid[y][x] = this.grid[y][x].toLowerCase();
+                    }
+                }
+            }
+
+            return {
+                grid: this.grid,
+                solution: this.solution,
+                placedWords: this.placedWords,
+                unplacedWords: this.unplacedWords,
+                size: this.size
+            };
+        }
+    }
+
+    // ============================================
+    // WORTLISTEN (altersgerecht, lizenzfrei)
+    // ============================================
+
+    const TEMPLATES = {
+        // NATURWISSENSCHAFTEN (Deutsch)
+        'physik-waerme': {
+            title: 'Physik – Wärmelehre',
+            words: `TEMPERATUR, WAERME, CELSIUS, KELVIN, THERMOMETER,
+                    WAERMELEITUNG, KONVEKTION, STRAHLUNG, SCHMELZEN,
+                    VERDAMPFEN, KONDENSIEREN, ERSTARREN, ENERGIE, JOULE`
+        },
+        'physik-optik': {
+            title: 'Physik – Optik',
+            words: `LICHT, REFLEXION, BRECHUNG, LINSE, SPIEGEL,
+                    BRENNPUNKT, PRISMA, SPEKTRUM, REGENBOGEN,
+                    SCHATTEN, STRAHL, WINKEL, KONKAV, KONVEX`
+        },
+        'chemie-atome': {
+            title: 'Chemie – Atombau',
+            words: `ATOM, PROTON, NEUTRON, ELEKTRON, ATOMKERN,
+                    ATOMHUELLE, ORDNUNGSZAHL, ELEMENT, ISOTOP,
+                    SCHALE, PERIODE, HAUPTGRUPPE, EDELGAS`
+        },
+        'chemie-stoffe': {
+            title: 'Chemie – Stoffeigenschaften',
+            words: `DICHTE, MASSE, VOLUMEN, SCHMELZPUNKT, SIEDEPUNKT,
+                    FEST, FLUESSIG, GASFOERMIG, LEITFAEHIGKEIT,
+                    LOESLICHKEIT, BRENNBAR, MAGNETISCH`
+        },
+
+        // ENGLISCH (altersgerecht Klasse 5-8)
+        'en-colors': {
+            title: 'English – Colors',
+            words: `RED, BLUE, GREEN, YELLOW, ORANGE, PURPLE, PINK,
+                    BLACK, WHITE, BROWN, GREY, GOLD, SILVER, VIOLET`
+        },
+        'en-animals': {
+            title: 'English – Animals',
+            words: `DOG, CAT, BIRD, FISH, HORSE, COW, PIG, SHEEP,
+                    RABBIT, MOUSE, ELEPHANT, LION, TIGER, MONKEY,
+                    SNAKE, FROG, BEAR, WOLF, FOX, DEER`
+        },
+        'en-school': {
+            title: 'English – School',
+            words: `TEACHER, STUDENT, CLASSROOM, DESK, CHAIR, BOARD,
+                    BOOK, PENCIL, PEN, RULER, ERASER, NOTEBOOK,
+                    HOMEWORK, LESSON, EXAM, BREAK, LUNCH`
+        },
+        'en-food': {
+            title: 'English – Food',
+            words: `APPLE, BANANA, ORANGE, BREAD, BUTTER, CHEESE,
+                    MILK, WATER, JUICE, MEAT, FISH, RICE, PASTA,
+                    SALAD, SOUP, PIZZA, SANDWICH, CAKE`
+        },
+        'en-family': {
+            title: 'English – Family',
+            words: `MOTHER, FATHER, SISTER, BROTHER, GRANDMOTHER,
+                    GRANDFATHER, AUNT, UNCLE, COUSIN, DAUGHTER,
+                    SON, PARENTS, FAMILY, BABY, CHILD`
+        },
+        'en-weather': {
+            title: 'English – Weather',
+            words: `SUNNY, CLOUDY, RAINY, WINDY, STORMY, SNOWY,
+                    HOT, COLD, WARM, COOL, THUNDER, LIGHTNING,
+                    RAINBOW, FOG, FROST, TEMPERATURE`
+        },
+
+        // SPANISCH (altersgerecht Klasse 6-9)
+        'es-colores': {
+            title: 'Español – Colores',
+            words: `ROJO, AZUL, VERDE, AMARILLO, NARANJA, MORADO,
+                    ROSA, NEGRO, BLANCO, MARRON, GRIS, DORADO,
+                    PLATEADO, VIOLETA, CELESTE`
+        },
+        'es-animales': {
+            title: 'Español – Animales',
+            words: `PERRO, GATO, PAJARO, PEZ, CABALLO, VACA, CERDO,
+                    OVEJA, CONEJO, RATON, ELEFANTE, LEON, TIGRE,
+                    MONO, SERPIENTE, RANA, OSO, LOBO, ZORRO`
+        },
+        'es-escuela': {
+            title: 'Español – Escuela',
+            words: `PROFESOR, ALUMNO, CLASE, MESA, SILLA, PIZARRA,
+                    LIBRO, LAPIZ, BOLIGRAFO, REGLA, GOMA, CUADERNO,
+                    DEBERES, LECCION, EXAMEN, RECREO`
+        },
+        'es-comida': {
+            title: 'Español – Comida',
+            words: `MANZANA, PLATANO, NARANJA, PAN, MANTEQUILLA,
+                    QUESO, LECHE, AGUA, ZUMO, CARNE, PESCADO,
+                    ARROZ, PASTA, ENSALADA, SOPA, PIZZA`
+        },
+        'es-familia': {
+            title: 'Español – Familia',
+            words: `MADRE, PADRE, HERMANA, HERMANO, ABUELA, ABUELO,
+                    TIA, TIO, PRIMA, PRIMO, HIJA, HIJO, PADRES,
+                    FAMILIA, BEBE, NINO`
+        },
+        'es-cuerpo': {
+            title: 'Español – El Cuerpo',
+            words: `CABEZA, OJO, NARIZ, BOCA, OREJA, PELO, MANO,
+                    BRAZO, PIERNA, PIE, DEDO, ESPALDA, PECHO,
+                    RODILLA, HOMBRO, CUELLO`
+        }
+    };
+
+    // ============================================
+    // UI Controller
+    // ============================================
+
+    class WordSearchUI {
+        constructor() {
+            this.puzzle = null;
+            this.currentInput = '';
+            this.bindElements();
+            this.bindEvents();
+        }
+
+        bindElements() {
+            this.wordInput = document.getElementById('word-input');
+            this.puzzleTitle = document.getElementById('puzzle-title');
+            this.displayTitle = document.getElementById('display-title');
+            this.gridSize = document.getElementById('grid-size');
+            this.customSize = document.getElementById('custom-size');
+            this.customSizeGroup = document.getElementById('custom-size-group');
+            this.maxWords = document.getElementById('max-words');
+            this.difficulty = document.getElementById('difficulty');
+            this.uppercase = document.getElementById('uppercase');
+            this.showWordList = document.getElementById('show-word-list');
+            this.generateBtn = document.getElementById('generate-btn');
+            this.shuffleBtn = document.getElementById('shuffle-btn');
+            this.exportPdfBtn = document.getElementById('export-pdf-btn');
+            this.exportSolutionBtn = document.getElementById('export-solution-btn');
+            this.showSolution = document.getElementById('show-solution');
+            this.puzzleGrid = document.getElementById('puzzle-grid');
+            this.wordList = document.getElementById('word-list');
+            this.wordListSection = document.getElementById('word-list-section');
+            this.stats = document.getElementById('stats');
+            this.emptyState = document.getElementById('empty-state');
+            this.puzzleDisplay = document.getElementById('puzzle-display');
+        }
+
+        bindEvents() {
+            this.generateBtn.addEventListener('click', () => this.generate());
+            this.shuffleBtn.addEventListener('click', () => this.generate());
+            this.exportPdfBtn.addEventListener('click', () => this.exportPDF(false));
+            this.exportSolutionBtn.addEventListener('click', () => this.exportPDF(true));
+            this.showSolution.addEventListener('change', () => this.toggleSolution());
+            
+            this.puzzleTitle.addEventListener('input', () => {
+                this.displayTitle.value = this.puzzleTitle.value;
+            });
+            this.displayTitle.addEventListener('input', () => {
+                this.puzzleTitle.value = this.displayTitle.value;
+            });
+
+            // Custom size toggle
+            this.gridSize.addEventListener('change', () => {
+                this.customSizeGroup.style.display = 
+                    this.gridSize.value === 'custom' ? 'block' : 'none';
+            });
+
+            // Template buttons
+            document.querySelectorAll('.template-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const template = TEMPLATES[btn.dataset.template];
+                    if (template) {
+                        this.wordInput.value = template.words.replace(/\s+/g, '\n').trim();
+                        this.puzzleTitle.value = template.title;
+                        this.displayTitle.value = template.title;
+                    }
+                });
+            });
+
+            // Ctrl+Enter to generate
+            this.wordInput.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    this.generate();
+                }
+            });
+        }
+
+        getSize() {
+            if (this.gridSize.value === 'custom') {
+                return parseInt(this.customSize.value) || 15;
+            }
+            return parseInt(this.gridSize.value) || 15;
+        }
+
+        generate() {
+            const input = this.wordInput.value.trim();
+            if (!input) {
+                alert('Bitte gib mindestens ein Wort ein.');
+                return;
+            }
+
+            this.currentInput = input;
+
+            const generator = new WordSearchGenerator({
+                size: this.getSize(),
+                difficulty: this.difficulty.value,
+                uppercase: this.uppercase.checked,
+                maxWords: parseInt(this.maxWords.value) || 0
+            });
+
+            try {
+                this.puzzle = generator.generate(input);
+                this.renderPuzzle();
+                this.enableExport();
+            } catch (error) {
+                alert('Fehler: ' + error.message);
+            }
+        }
+
+        renderPuzzle() {
+            if (!this.puzzle) return;
+
+            this.emptyState.style.display = 'none';
+            this.puzzleDisplay.style.display = 'block';
+
+            // Grid
+            this.puzzleGrid.innerHTML = '';
+            this.puzzleGrid.style.gridTemplateColumns = `repeat(${this.puzzle.size}, 28px)`;
+
+            for (let y = 0; y < this.puzzle.size; y++) {
+                for (let x = 0; x < this.puzzle.size; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.textContent = this.puzzle.grid[y][x];
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    
+                    cell.classList.add(this.puzzle.solution[y][x] ? 'word-letter' : 'filler');
+                    this.puzzleGrid.appendChild(cell);
+                }
+            }
+
+            // Word list
+            this.wordList.innerHTML = '';
+            this.puzzle.placedWords.forEach(pw => {
+                const tag = document.createElement('span');
+                tag.className = 'word-tag';
+                tag.textContent = pw.word;
+                this.wordList.appendChild(tag);
+            });
+
+            this.puzzle.unplacedWords.forEach(word => {
+                const tag = document.createElement('span');
+                tag.className = 'word-tag not-placed';
+                tag.textContent = word;
+                tag.title = 'Konnte nicht platziert werden';
+                this.wordList.appendChild(tag);
+            });
+
+            this.wordListSection.style.display = this.showWordList.checked ? 'block' : 'none';
+
+            // Stats
+            const placed = this.puzzle.placedWords.length;
+            const notPlaced = this.puzzle.unplacedWords.length;
+            this.stats.innerHTML = `
+                ${this.puzzle.size} × ${this.puzzle.size} · 
+                ${placed} Wörter platziert
+                ${notPlaced > 0 ? ` · <span style="color:#c00">${notPlaced} nicht platziert</span>` : ''}
+            `;
+
+            this.showSolution.checked = false;
+        }
+
+        toggleSolution() {
+            const cells = this.puzzleGrid.querySelectorAll('.grid-cell');
+            cells.forEach(cell => {
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+                
+                if (this.puzzle.solution[y][x]) {
+                    cell.classList.toggle('highlighted', this.showSolution.checked);
+                }
+            });
+        }
+
+        enableExport() {
+            this.exportPdfBtn.disabled = false;
+            this.exportSolutionBtn.disabled = false;
+        }
+
+        exportPDF(withSolution) {
+            if (!this.puzzle) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 15;
+            const title = this.displayTitle.value || 'Wörtersuchrätsel';
+
+            // Titel
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title + (withSolution ? ' – LÖSUNG' : ''), pageWidth / 2, margin + 5, { align: 'center' });
+
+            // Schwierigkeit
+            const diffText = {
+                'easy': 'Leicht (→↓)',
+                'medium': 'Mittel (→↓↘↙)',
+                'hard': 'Schwer (alle Richtungen)'
+            };
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.text(diffText[this.difficulty.value], pageWidth - margin, margin + 5, { align: 'right' });
+
+            // Grid
+            const size = this.puzzle.size;
+            const maxGridWidth = pageWidth - 2 * margin;
+            const cellSize = Math.min(maxGridWidth / size, 7);
+            const gridStartX = (pageWidth - size * cellSize) / 2;
+            const gridStartY = margin + 15;
+
+            doc.setFontSize(cellSize * 2.2);
+            doc.setFont('courier', 'normal');
+
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const cellX = gridStartX + x * cellSize;
+                    const cellY = gridStartY + y * cellSize;
+                    
+                    if (withSolution && this.puzzle.solution[y][x]) {
+                        doc.setFillColor(255, 255, 180);
+                        doc.rect(cellX, cellY, cellSize, cellSize, 'F');
+                    }
+                    
+                    doc.setDrawColor(180);
+                    doc.rect(cellX, cellY, cellSize, cellSize, 'S');
+                    
+                    doc.setTextColor(this.puzzle.solution[y][x] ? 0 : 120);
+                    doc.text(
+                        this.puzzle.grid[y][x],
+                        cellX + cellSize / 2,
+                        cellY + cellSize * 0.72,
+                        { align: 'center' }
+                    );
+                }
+            }
+
+            // Wortliste
+            const wordListY = gridStartY + size * cellSize + 10;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0);
+            doc.text('Finde diese Wörter:', margin, wordListY);
+
+            doc.setFont('helvetica', 'normal');
+            const words = this.puzzle.placedWords.map(pw => pw.word);
+            const wordsPerRow = 5;
+            const wordColWidth = (pageWidth - 2 * margin) / wordsPerRow;
+            
+            words.forEach((word, i) => {
+                const row = Math.floor(i / wordsPerRow);
+                const col = i % wordsPerRow;
+                doc.text(word, margin + col * wordColWidth, wordListY + 6 + row * 5);
+            });
+
+            // Download
+            const filename = title.replace(/[^a-zA-Z0-9äöüÄÖÜß\-]/g, '_') + 
+                           (withSolution ? '_Loesung' : '') + '.pdf';
+            doc.save(filename);
+        }
+    }
+
+    // Start
+    document.addEventListener('DOMContentLoaded', () => {
+        window.app = new WordSearchUI();
+    });
+    </script>
+</body>
+</html>
