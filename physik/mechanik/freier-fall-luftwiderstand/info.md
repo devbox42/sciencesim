@@ -6,74 +6,68 @@ unterthema: Kinematik und Dynamik
 klassenstufe: 10-12
 kurzbeschreibung: Interaktive Simulation zum Vergleich von freiem Fall im Vakuum und in Luft. Zeigt Grenzgeschwindigkeit, Kräfteverhältnisse und den Einfluss des Luftwiderstands.
 stichworte: freier Fall, Luftwiderstand, Grenzgeschwindigkeit, Fallbeschleunigung, Newton, Kräfte, Vakuum, Fallschirmspringer
+materialien:
+  - datei: arbeitsblatt-einfuehrung.html
+    titel: Arbeitsblatt
+    beschreibung: Beobachtungsaufgaben und Berechnungen zum freien Fall
+  - datei: unterrichtshinweise.html
+    titel: Unterrichtshinweise
+    beschreibung: Verlaufsvorschlag, Lösungen und didaktische Hinweise
+  - datei: tafelbild.html
+    titel: Tafelbild
+    beschreibung: Druckbares Tafelbild (A4 quer)
 ---
 
 ## Beschreibung
 
-Diese Simulation ermöglicht den direkten Vergleich zwischen dem freien Fall im Vakuum und dem Fall in Luft mit Luftwiderstand. Schülerinnen und Schüler können verschiedene Objekte fallen lassen und beobachten, wie sich Geschwindigkeit, Beschleunigung und die wirkenden Kräfte über die Zeit verändern.
+Diese Simulation ermöglicht den direkten Vergleich zwischen dem freien Fall im Vakuum und dem Fall in Luft mit Luftwiderstand. Verschiedene Objekte können fallen gelassen werden, wobei Geschwindigkeit, Beschleunigung und die wirkenden Kräfte in Echtzeit dargestellt werden.
 
-Ein besonderes Feature ist der Fallschirmspringer mit Zweiphasen-Sprung: In der ersten Phase fällt er mit hoher Grenzgeschwindigkeit (~53 m/s), nach der einstellbaren Schirmöffnung reduziert sich diese auf etwa 6 m/s.
+Ein besonderes Feature ist der Fallschirmspringer mit Zweiphasen-Sprung: In der ersten Phase fällt er mit hoher Grenzgeschwindigkeit (~54 m/s), nach der einstellbaren Schirmöffnung reduziert sich diese auf etwa 5 m/s.
 
 ## Lernziele
 
-- Die Bewegungsgleichungen des freien Falls im Vakuum verstehen (h(t), v(t), a = const)
+- Die Bewegungsgleichungen des freien Falls im Vakuum verstehen
 - Den Einfluss des Luftwiderstands auf die Fallbewegung erkennen
-- Das Konzept der Grenzgeschwindigkeit verstehen (F_L = F_G → a = 0)
-- Die Formel für den Luftwiderstand anwenden: F_L = ½ · ρ · c_w · A · v²
+- Das Konzept der Grenzgeschwindigkeit verstehen (Kräftegleichgewicht)
+- Die Formel für den Luftwiderstand anwenden: F_L = ½·ρ·c_w·A·v²
 - Kräftediagramme interpretieren (F_G, F_L, F_Res)
-- Den Zusammenhang zwischen Masse, Querschnittsfläche und Grenzgeschwindigkeit erkennen
 
 ## Fachlicher Hintergrund
 
 ### Freier Fall im Vakuum
-Im Vakuum wirkt nur die Gewichtskraft F_G = m · g. Die Beschleunigung ist konstant:
-- a = g (etwa 9,81 m/s² auf der Erde)
-- v(t) = v₀ + g · t
-- h(t) = h₀ + v₀ · t + ½ · g · t²
+
+Im Vakuum wirkt nur die Gewichtskraft F_G = m·g. Die Beschleunigung ist konstant:
+- a = g
+- v(t) = g·t
+- h(t) = h₀ − ½gt²
 
 ### Fall mit Luftwiderstand
-In Luft wirkt zusätzlich die Luftwiderstandskraft:
-- F_L = ½ · ρ · c_w · A · v²
 
-Die Beschleunigung ist nicht mehr konstant:
-- a = g - F_L/m = g - (ρ · c_w · A · v²) / (2m)
+In Luft wirkt zusätzlich die Luftwiderstandskraft:
+- F_L = ½·ρ·c_w·A·v²
+
+Die Beschleunigung nimmt mit steigender Geschwindigkeit ab.
 
 ### Grenzgeschwindigkeit
-Wenn F_L = F_G, wird a = 0. Das Objekt fällt mit konstanter Geschwindigkeit:
-- v_gr = √(2mg / (ρ · c_w · A))
 
-Je größer die Masse und je kleiner die Querschnittsfläche, desto höher die Grenzgeschwindigkeit.
+Bei Kräftegleichgewicht (F_L = F_G) wird a = 0:
+- v_gr = √(2mg / ρ·c_w·A)
 
 ## Bedienung
 
-1. **Medium wählen**: Vakuum oder Luft (Umschalter oben)
+1. **Medium wählen**: Vakuum oder Luft
 2. **Parameter einstellen**: Fallhöhe, Anfangsgeschwindigkeit, Planet, Objekt
-3. **Simulation starten**: Start-Button oder Einzelschritt für detaillierte Analyse
-4. **Beobachten**: Live-Werte, Kraftvektoren (optional) und Diagramme
+3. **Simulation starten**: Start-Button oder Einzelschritt
+4. **Beobachten**: Live-Werte, Kraftvektoren und Diagramme
 
-### Spezielle Funktionen
-- **Fallschirmspringer**: Zeigt Zweiphasen-Sprung mit einstellbarer Schirmöffnungshöhe
-- **Kraftvektoren**: Visualisierung von F_G, F_L und F_Res
-- **Zeitlupe**: Verlangsamte Darstellung für detaillierte Beobachtung
-- **Einzelschritt**: Schrittweise Simulation mit 0,1 s Intervallen
+### Funktionen
 
-## Didaktische Hinweise
+- Kraftvektoren: Visualisierung von F_G, F_L und F_Res
+- Zeitlupe: Verlangsamte Darstellung
+- Einzelschritt: Schrittweise Simulation (0,1 s)
+- Fallschirmspringer: Zweiphasen-Sprung mit einstellbarer Schirmöffnungshöhe
 
-### Einstieg (Phänomenologisch)
-- Verschiedene Objekte im Vakuum fallen lassen → alle gleich schnell!
-- Dann auf "Luft" umschalten → unterschiedliche Geschwindigkeiten
-
-### Erarbeitung
-- Kraftvektoren aktivieren und beobachten, wie F_L mit v wächst
-- Grenzgeschwindigkeit verschiedener Objekte vergleichen
-- Einfluss von Masse und Querschnittsfläche diskutieren
-
-### Vertiefung
-- Fallschirmspringer: Warum öffnet man den Schirm nicht sofort?
-- Mathematische Herleitung der Grenzgeschwindigkeit
-- Vergleich mit realen Daten (z.B. Felix Baumgartner)
-
-## Physikalische Grundwerte
+## Physikalische Werte der Objekte
 
 | Objekt | Masse | c_w | A | v_gr (Luft) |
 |--------|-------|-----|---|-------------|
@@ -83,16 +77,3 @@ Je größer die Masse und je kleiner die Querschnittsfläche, desto höher die G
 | Springer (Freifall) | 80 kg | 0,9 | 0,5 m² | ~54 m/s |
 | Springer (Schirm) | 80 kg | 1,4 | 35 m² | ~5 m/s |
 | Feder | 0,003 kg | 1,2 | 0,0015 m² | ~5 m/s |
-
-Die Werte sind so gewählt, dass sie physikalisch plausible Grenzgeschwindigkeiten ergeben. Die tatsächlichen Werte in der Realität können je nach Objektform und -größe variieren.
-
-## Bezug zum Rahmenplan MV
-
-**Klasse 10E/Sek II - Mechanik:**
-- Gleichförmige und gleichmäßig beschleunigte Bewegung
-- Newtonsche Axiome und Kräftegleichgewicht
-- Anwendung der Kinematik auf reale Bewegungen
-
-**Kompetenzbereich Erkenntnisgewinnung:**
-- Nutzen von Simulationen zur Untersuchung physikalischer Phänomene
-- Auswerten von Diagrammen und Messdaten
