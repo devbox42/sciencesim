@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beugung am Gitter – Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Wellen">
+    <meta name="grade" content="11-12">
+    <meta name="description" content="Interaktive Simulation zur Beugung am Gitter, Doppelspalt und Einzelspalt">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+        }
+
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .canvas-container canvas {
+            width: 100%;
+            display: block;
+            background: #1a1a2e;
+        }
+
+        .controls {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .controls h2 {
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 8px 5px;
+            font-size: 0.8em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .mode-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .mode-btn.active {
+            background: #2c5aa0;
+            color: #fff;
+            border-color: #2c5aa0;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .control-label span:last-child {
+            font-weight: 500;
+            color: #222;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #ddd;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #2c5aa0;
+            cursor: pointer;
+        }
+
+        .wavelength-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-indicator {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #ccc;
+        }
+
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .formula {
+            background: #f5f5f5;
+            padding: 10px;
+            text-align: center;
+            font-family: "Times New Roman", serif;
+            font-size: 1.1em;
+            margin: 10px 0;
+            border-left: 3px solid #2c5aa0;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 6px 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .results-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        .results-table tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .param-info {
+            font-size: 0.85em;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        .param-info strong {
+            color: #222;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8em;
+            color: #888;
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">Uebersicht</a> · Physik · Wellen</p>
+            <h1>Beugung am Gitter, Doppelspalt und Einzelspalt</h1>
+        </header>
+
+        <div class="simulation-area">
+            <div class="canvas-container">
+                <canvas id="mainCanvas" width="700" height="400"></canvas>
+            </div>
+
+            <div class="controls">
+                <h2>Steuerung</h2>
+
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="grating">Gitter</button>
+                    <button class="mode-btn" data-mode="double">Doppelspalt</button>
+                    <button class="mode-btn" data-mode="single">Einzelspalt</button>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Wellenlaenge</span>
+                        <span class="wavelength-display">
+                            <span class="color-indicator" id="colorIndicator"></span>
+                            <span id="wavelengthValue">632</span> nm
+                        </span>
+                    </div>
+                    <input type="range" id="wavelengthSlider" min="380" max="750" value="632">
+                </div>
+
+                <div class="control-group" id="gratingParams">
+                    <div class="control-label">
+                        <span>Liniendichte N</span>
+                        <span><span id="densityValue">300</span> /mm</span>
+                    </div>
+                    <input type="range" id="densitySlider" min="20" max="1200" value="300">
+                    <div class="control-label" style="margin-top:5px;">
+                        <span>Gitterkonstante b</span>
+                        <span id="gratingConstant">3.33 µm</span>
+                    </div>
+                </div>
+
+                <div class="control-group hidden" id="doubleParams">
+                    <div class="control-label">
+                        <span>Spaltabstand g</span>
+                        <span><span id="slitDistanceValue">0.50</span> mm</span>
+                    </div>
+                    <input type="range" id="slitDistanceSlider" min="0.05" max="5" step="0.05" value="0.5">
+                    <div class="control-label" style="margin-top:10px;">
+                        <span>Spaltbreite b</span>
+                        <span><span id="slitWidthDoubleValue">0.10</span> mm</span>
+                    </div>
+                    <input type="range" id="slitWidthDoubleSlider" min="0.01" max="1" step="0.01" value="0.1">
+                </div>
+
+                <div class="control-group hidden" id="singleParams">
+                    <div class="control-label">
+                        <span>Spaltbreite b</span>
+                        <span><span id="slitWidthValue">0.10</span> mm</span>
+                    </div>
+                    <input type="range" id="slitWidthSlider" min="0.01" max="1" step="0.01" value="0.1">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Schirmabstand e</span>
+                        <span><span id="distanceValue">1.00</span> m</span>
+                    </div>
+                    <input type="range" id="distanceSlider" min="0.2" max="5" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Schirmbreite</span>
+                        <span><span id="screenWidthValue">50</span> cm</span>
+                    </div>
+                    <input type="range" id="screenWidthSlider" min="10" max="200" step="5" value="50">
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>Formeln</h3>
+            <div class="formula" id="formulaDisplay">
+                sin θ<sub>k</sub> = k · λ / b &nbsp;&nbsp;&nbsp; (Maxima)
+            </div>
+            <div class="formula">
+                tan θ<sub>k</sub> = s<sub>k</sub> / e
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>Beugungsordnungen</h3>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>k</th>
+                        <th>θ<sub>k</sub></th>
+                        <th>s<sub>k</sub></th>
+                    </tr>
+                </thead>
+                <tbody id="maximaBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="info-box">
+            <h3>Aktuelle Parameter</h3>
+            <p class="param-info" id="paramInfo">
+                <strong>Wellenlaenge:</strong> λ = 632 nm<br>
+                <strong>Gitterkonstante:</strong> b = 3.33 µm<br>
+                <strong>Schirmabstand:</strong> e = 1.00 m
+            </p>
+        </div>
+
+        <footer>
+            Beugung am Gitter, Doppelspalt und Einzelspalt
+        </footer>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const wavelengthSlider = document.getElementById('wavelengthSlider');
+        const densitySlider = document.getElementById('densitySlider');
+        const distanceSlider = document.getElementById('distanceSlider');
+        const screenWidthSlider = document.getElementById('screenWidthSlider');
+        const slitDistanceSlider = document.getElementById('slitDistanceSlider');
+        const slitWidthDoubleSlider = document.getElementById('slitWidthDoubleSlider');
+        const slitWidthSlider = document.getElementById('slitWidthSlider');
+
+        let mode = 'grating';
+        let wavelength = 632;
+        let lineDensity = 300;
+        let slitDistance = 0.5;
+        let slitWidthDouble = 0.1;
+        let slitWidth = 0.1;
+        let screenDistance = 1.0;
+        let screenWidth = 0.5;
+
+        function wavelengthToRGB(wl) {
+            let r, g, b;
+            if (wl >= 380 && wl < 440) {
+                r = -(wl - 440) / (440 - 380); g = 0; b = 1;
+            } else if (wl >= 440 && wl < 490) {
+                r = 0; g = (wl - 440) / (490 - 440); b = 1;
+            } else if (wl >= 490 && wl < 510) {
+                r = 0; g = 1; b = -(wl - 510) / (510 - 490);
+            } else if (wl >= 510 && wl < 580) {
+                r = (wl - 510) / (580 - 510); g = 1; b = 0;
+            } else if (wl >= 580 && wl < 645) {
+                r = 1; g = -(wl - 645) / (645 - 580); b = 0;
+            } else if (wl >= 645 && wl <= 750) {
+                r = 1; g = 0; b = 0;
+            } else {
+                r = 0; g = 0; b = 0;
+            }
+            let factor = 1.0;
+            if (wl >= 380 && wl < 420) factor = 0.3 + 0.7 * (wl - 380) / (420 - 380);
+            else if (wl >= 700 && wl <= 750) factor = 0.3 + 0.7 * (750 - wl) / (750 - 700);
+            return `rgb(${Math.round(r * factor * 255)}, ${Math.round(g * factor * 255)}, ${Math.round(b * factor * 255)})`;
+        }
+
+        function calculateMaxima() {
+            const maxima = [];
+            const lambda = wavelength * 1e-9;
+            let d;
+            
+            if (mode === 'grating') {
+                d = 1 / (lineDensity * 1000);
+            } else if (mode === 'double') {
+                d = slitDistance * 1e-3;
+            } else {
+                d = slitWidth * 1e-3;
+            }
+
+            for (let k = 0; k <= 20; k++) {
+                if (mode === 'single' && k === 0) continue;
+                
+                const sinTheta = k * lambda / d;
+                if (sinTheta > 1) break;
+                
+                const theta = Math.asin(sinTheta);
+                const thetaDeg = theta * 180 / Math.PI;
+                const s = screenDistance * Math.tan(theta);
+                
+                if (Math.abs(s) <= screenWidth / 2) {
+                    maxima.push({ k, theta, thetaDeg, s, sinTheta });
+                }
+            }
+            return maxima;
+        }
+
+        function draw() {
+            const W = canvas.width;
+            const H = canvas.height;
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, W, H);
+
+            const laserX = 50;
+            const laserY = H / 2;
+            const gratingX = 180;
+            const screenX = W - 60;
+            const lightColor = wavelengthToRGB(wavelength);
+
+            // Laser
+            ctx.fillStyle = '#444';
+            ctx.fillRect(laserX - 30, laserY - 15, 40, 30);
+            ctx.fillStyle = lightColor;
+            ctx.fillRect(laserX + 10, laserY - 3, gratingX - laserX - 10, 6);
+
+            // Beugungsobjekt
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 2;
+            if (mode === 'grating') {
+                ctx.beginPath();
+                ctx.moveTo(gratingX, laserY - 60);
+                ctx.lineTo(gratingX, laserY + 60);
+                ctx.stroke();
+                for (let i = -5; i <= 5; i++) {
+                    ctx.fillStyle = '#666';
+                    ctx.fillRect(gratingX - 2, laserY + i * 10 - 3, 4, 6);
+                }
+            } else if (mode === 'double') {
+                ctx.fillStyle = '#333';
+                ctx.fillRect(gratingX - 3, laserY - 60, 6, 45);
+                ctx.fillRect(gratingX - 3, laserY + 15, 6, 45);
+                ctx.fillRect(gratingX - 3, laserY - 5, 6, 10);
+            } else {
+                ctx.fillStyle = '#333';
+                ctx.fillRect(gratingX - 3, laserY - 60, 6, 50);
+                ctx.fillRect(gratingX - 3, laserY + 10, 6, 50);
+            }
+
+            // Schirm
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(screenX, laserY - 120, 8, 240);
+
+            // Maxima berechnen und zeichnen
+            const maxima = calculateMaxima();
+            const scale = 200 / (screenWidth / 2);
+
+            maxima.forEach(m => {
+                const screenY = laserY - m.s * scale;
+                
+                if (screenY > laserY - 120 && screenY < laserY + 120) {
+                    ctx.strokeStyle = lightColor;
+                    ctx.globalAlpha = 0.6;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(gratingX, laserY);
+                    ctx.lineTo(screenX, screenY);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+
+                    ctx.fillStyle = lightColor;
+                    ctx.beginPath();
+                    ctx.arc(screenX + 4, screenY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    if (m.k <= 3) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '11px sans-serif';
+                        ctx.fillText('k=' + m.k, screenX + 15, screenY + 4);
+                    }
+
+                    if (m.k > 0) {
+                        const screenYNeg = laserY + m.s * scale;
+                        if (screenYNeg > laserY - 120 && screenYNeg < laserY + 120) {
+                            ctx.strokeStyle = lightColor;
+                            ctx.globalAlpha = 0.6;
+                            ctx.beginPath();
+                            ctx.moveTo(gratingX, laserY);
+                            ctx.lineTo(screenX, screenYNeg);
+                            ctx.stroke();
+                            ctx.globalAlpha = 1;
+
+                            ctx.fillStyle = lightColor;
+                            ctx.beginPath();
+                            ctx.arc(screenX + 4, screenYNeg, 4, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            });
+
+            // Beschriftungen
+            ctx.fillStyle = '#888';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Laser', laserX - 20, laserY + 35);
+            
+            let objectLabel = mode === 'grating' ? 'Gitter' : (mode === 'double' ? 'Doppelspalt' : 'Einzelspalt');
+            ctx.fillText(objectLabel, gratingX - 20, laserY + 80);
+            ctx.fillText('Schirm', screenX - 10, laserY + 140);
+
+            // Schirmabstand e
+            ctx.strokeStyle = '#ffcc00';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(gratingX, laserY + 95);
+            ctx.lineTo(screenX, laserY + 95);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillText('e', (gratingX + screenX) / 2, laserY + 92);
+
+            // Tabelle aktualisieren
+            updateTable(maxima);
+            updateParamInfo();
+        }
+
+        function updateTable(maxima) {
+            const tbody = document.getElementById('maximaBody');
+            tbody.innerHTML = '';
+            
+            const label = mode === 'single' ? 'k (Min)' : 'k';
+            
+            maxima.slice(0, 8).forEach(m => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${m.k}</td>
+                    <td>${m.thetaDeg.toFixed(2)}°</td>
+                    <td>${(m.s * 100).toFixed(2)} cm</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateParamInfo() {
+            const info = document.getElementById('paramInfo');
+            let b;
+            if (mode === 'grating') {
+                b = (1000 / lineDensity).toFixed(2) + ' µm';
+            } else if (mode === 'double') {
+                b = slitDistance.toFixed(2) + ' mm (g), ' + slitWidthDouble.toFixed(2) + ' mm (b)';
+            } else {
+                b = slitWidth.toFixed(2) + ' mm';
+            }
+            
+            info.innerHTML = `
+                <strong>Wellenlaenge:</strong> λ = ${wavelength} nm<br>
+                <strong>${mode === 'double' ? 'Spaltparameter' : (mode === 'grating' ? 'Gitterkonstante' : 'Spaltbreite')}:</strong> ${b}<br>
+                <strong>Schirmabstand:</strong> e = ${screenDistance.toFixed(2)} m
+            `;
+        }
+
+        function updateFormula() {
+            const formulaDiv = document.getElementById('formulaDisplay');
+            if (mode === 'single') {
+                formulaDiv.innerHTML = 'sin θ<sub>k</sub> = k · λ / b &nbsp;&nbsp;&nbsp; (Minima, k ≥ 1)';
+            } else {
+                formulaDiv.innerHTML = 'sin θ<sub>k</sub> = k · λ / ' + (mode === 'double' ? 'g' : 'b') + ' &nbsp;&nbsp;&nbsp; (Maxima)';
+            }
+        }
+
+        // Event-Listener
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+
+                document.getElementById('gratingParams').classList.toggle('hidden', mode !== 'grating');
+                document.getElementById('doubleParams').classList.toggle('hidden', mode !== 'double');
+                document.getElementById('singleParams').classList.toggle('hidden', mode !== 'single');
+
+                updateFormula();
+                draw();
+            });
+        });
+
+        wavelengthSlider.addEventListener('input', () => {
+            wavelength = parseInt(wavelengthSlider.value);
+            document.getElementById('wavelengthValue').textContent = wavelength;
+            document.getElementById('colorIndicator').style.background = wavelengthToRGB(wavelength);
+            draw();
+        });
+
+        densitySlider.addEventListener('input', () => {
+            lineDensity = parseInt(densitySlider.value);
+            document.getElementById('densityValue').textContent = lineDensity;
+            document.getElementById('gratingConstant').textContent = (1000 / lineDensity).toFixed(2) + ' µm';
+            draw();
+        });
+
+        distanceSlider.addEventListener('input', () => {
+            screenDistance = parseFloat(distanceSlider.value);
+            document.getElementById('distanceValue').textContent = screenDistance.toFixed(2);
+            draw();
+        });
+
+        screenWidthSlider.addEventListener('input', () => {
+            screenWidth = parseInt(screenWidthSlider.value) / 100;
+            document.getElementById('screenWidthValue').textContent = parseInt(screenWidthSlider.value);
+            draw();
+        });
+
+        slitDistanceSlider.addEventListener('input', () => {
+            slitDistance = parseFloat(slitDistanceSlider.value);
+            document.getElementById('slitDistanceValue').textContent = slitDistance.toFixed(2);
+            draw();
+        });
+
+        slitWidthDoubleSlider.addEventListener('input', () => {
+            slitWidthDouble = parseFloat(slitWidthDoubleSlider.value);
+            document.getElementById('slitWidthDoubleValue').textContent = slitWidthDouble.toFixed(2);
+            draw();
+        });
+
+        slitWidthSlider.addEventListener('input', () => {
+            slitWidth = parseFloat(slitWidthSlider.value);
+            document.getElementById('slitWidthValue').textContent = slitWidth.toFixed(2);
+            draw();
+        });
+
+        // Initialisierung
+        document.getElementById('colorIndicator').style.background = wavelengthToRGB(wavelength);
+        document.getElementById('gratingConstant').textContent = (1000 / lineDensity).toFixed(2) + ' µm';
+        draw();
+    </script>
+</body>
+</html>
