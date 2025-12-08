@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freier Fall mit Luftwiderstand – Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Mechanik">
+    <meta name="grade" content="10-12">
+    <meta name="description" content="Interaktive Simulation zum Vergleich von freiem Fall im Vakuum und in Luft mit Luftwiderstand. Zeigt Grenzgeschwindigkeit und Kräfteverhältnisse.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 15px;
+            color: #222;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            margin-bottom: 15px;
+        }
+        
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .breadcrumb a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+        }
+        
+        h2 {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+        
+        h3 {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+        }
+        
+        /* Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 15px;
+        }
+        
+        @media (max-width: 1100px) {
+            .main-grid {
+                grid-template-columns: 260px 1fr;
+            }
+            .charts-panel {
+                grid-column: 1 / -1;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Panels */
+        .panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 12px;
+        }
+        
+        .controls-panel {
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        
+        /* Controls */
+        .control-group {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #555;
+        }
+        
+        .control-value {
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2c5aa0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.9em;
+            border: 1px solid #ccc;
+            background: #fff;
+            font-family: inherit;
+        }
+        
+        /* Medium Toggle */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .toggle-btn {
+            display: flex;
+            border: 1px solid #ccc;
+        }
+        
+        .toggle-btn button {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border: none;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .toggle-btn button:first-child {
+            border-right: 1px solid #ccc;
+        }
+        
+        .toggle-btn button.active {
+            background: #2c5aa0;
+            color: #fff;
+        }
+        
+        .toggle-btn button:hover:not(.active) {
+            background: #f5f5f5;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            background: #f9f9f9;
+            border-left: 3px solid #2c5aa0;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.85em;
+        }
+        
+        .info-box.warning {
+            border-left-color: #d4a300;
+            background: #fffbf0;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+        
+        .info-row .label {
+            color: #666;
+        }
+        
+        .info-row .value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        /* Checkboxes */
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: 0.85em;
+        }
+        
+        .checkbox-row input {
+            width: 16px;
+            height: 16px;
+        }
+        
+        /* Buttons */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 10px;
+            font-size: 0.9em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #f5f5f5;
+        }
+        
+        button.primary {
+            grid-column: 1 / -1;
+            background: #2c5aa0;
+            color: #fff;
+            border-color: #2c5aa0;
+        }
+        
+        button.primary:hover {
+            background: #244a85;
+        }
+        
+        /* Canvas */
+        .canvas-container {
+            position: relative;
+            min-height: 400px;
+        }
+        
+        #simulationCanvas {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            background: #fff;
+            border: 1px solid #ddd;
+        }
+        
+        /* Live values */
+        .live-values {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .live-value {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .live-value .lbl {
+            font-size: 0.7em;
+            color: #888;
+            text-transform: uppercase;
+        }
+        
+        .live-value .num {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c5aa0;
+            font-family: "Courier New", monospace;
+        }
+        
+        .live-value .unit {
+            font-size: 0.75em;
+            color: #888;
+        }
+        
+        /* Force values */
+        .force-values {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .force-value {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            border-top: 3px solid #888;
+        }
+        
+        .force-value.fg { border-top-color: #d4a300; }
+        .force-value.fl { border-top-color: #2c5aa0; }
+        .force-value.fres { border-top-color: #7b2d8e; }
+        .force-value.acalc { border-top-color: #2a7a4b; }
+        
+        /* Charts */
+        .chart-container {
+            margin-bottom: 10px;
+        }
+        
+        .chart-canvas {
+            width: 100%;
+            height: 100px;
+            background: #fff;
+            border: 1px solid #ddd;
+        }
+        
+        /* Data table */
+        .data-table {
+            max-height: 140px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8em;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 5px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table th {
+            background: #2c5aa0;
+            color: #fff;
+            position: sticky;
+            top: 0;
+        }
+        
+        /* Formulas */
+        .formula-box {
+            background: #f9f9f9;
+            padding: 10px;
+            margin-top: 10px;
+            border-left: 3px solid #2c5aa0;
+        }
+        
+        .formula {
+            font-family: "Times New Roman", serif;
+            font-size: 0.95em;
+            margin: 4px 0;
+            padding: 3px 6px;
+            background: #fff;
+        }
+        
+        /* Skydiver info */
+        .skydiver-box {
+            background: #f0f7f0;
+            border: 1px solid #acd4ac;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.85em;
+        }
+        
+        .skydiver-box.hidden {
+            display: none;
+        }
+        
+        .phase-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        
+        .deploy-row {
+            background: #fffbf0;
+            border: 1px solid #e6d5a8;
+            margin: 6px -4px;
+            padding: 6px;
+        }
+        
+        @media (max-width: 700px) {
+            .live-values {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .force-values {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Mechanik</p>
+            <h1>Freier Fall mit Luftwiderstand</h1>
+        </header>
+        
+        <div class="main-grid">
+            <!-- Controls Panel -->
+            <div class="panel controls-panel">
+                <h2>Einstellungen</h2>
+                
+                <div class="control-group">
+                    <div class="toggle-row">
+                        <span style="font-weight:600;">Medium:</span>
+                        <div class="toggle-btn">
+                            <button id="btnVacuum" class="active">Vakuum</button>
+                            <button id="btnAir">Luft</button>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box" id="airInfo" style="display:none;">
+                        <div class="info-row"><span class="label">Luftdichte ρ:</span><span class="value">1,2 kg/m³</span></div>
+                        <div class="info-row"><span class="label">c_w-Wert:</span><span class="value" id="cwDisplay">0,45</span></div>
+                        <div class="info-row"><span class="label">Querschnitt A:</span><span class="value" id="areaDisplay">0,008 m²</span></div>
+                        <div class="info-row"><span class="label">Masse m:</span><span class="value" id="massDisplay">0,5 kg</span></div>
+                    </div>
+                    
+                    <div class="info-box warning" id="terminalBox" style="display:none;">
+                        <div class="info-row">
+                            <span class="label">Grenzgeschwindigkeit:</span>
+                            <span class="value" id="terminalDisplay">-- m/s</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Fallhöhe h₀</span>
+                        <span class="control-value" id="heightValue">50 m</span>
+                    </div>
+                    <input type="range" id="heightSlider" min="10" max="500" value="50" step="10">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Anfangsgeschwindigkeit v₀</span>
+                        <span class="control-value" id="v0Value">0 m/s</span>
+                    </div>
+                    <input type="range" id="v0Slider" min="-20" max="20" value="0" step="1">
+                    <small style="color:#888; font-size:0.8em;">Positiv = nach oben geworfen (senkrechter Wurf)</small>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label"><span>Planet</span></div>
+                    <select id="planetSelect">
+                        <option value="9.81" data-name="Erde">Erde (g = 9,81 m/s²)</option>
+                        <option value="1.62" data-name="Mond">Mond (g = 1,62 m/s²)</option>
+                        <option value="3.71" data-name="Mars">Mars (g = 3,71 m/s²)</option>
+                        <option value="10" data-name="Vereinfacht">Vereinfacht (g = 10 m/s²)</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label"><span>Objekt</span></div>
+                    <select id="objectSelect">
+                        <option value="ball" data-mass="0.15" data-cw="0.47" data-area="0.0038">Tennisball (150 g)</option>
+                        <option value="apple" data-mass="0.18" data-cw="0.50" data-area="0.0030">Apfel (180 g)</option>
+                        <option value="stone" data-mass="0.5" data-cw="0.80" data-area="0.0020">Stein (500 g)</option>
+                        <option value="skydiver" data-mass="80" data-cw="0.9" data-area="0.5" data-cw2="1.4" data-area2="35" data-deploy="200">Fallschirmspringer (80 kg)</option>
+                        <option value="feather" data-mass="0.003" data-cw="1.2" data-area="0.0015">Feder (3 g)</option>
+                    </select>
+                    
+                    <div class="skydiver-box hidden" id="skydiverBox">
+                        <strong>Zweiphasen-Sprung:</strong>
+                        <div class="phase-row">
+                            <span>Phase 1 (Freifall):</span>
+                            <span>v_gr1 ≈ <span id="vTerm1">53</span> m/s</span>
+                        </div>
+                        <div class="deploy-row">
+                            <div class="control-label">
+                                <span>Schirmöffnung bei h =</span>
+                                <span class="control-value" id="deployValue">200 m</span>
+                            </div>
+                            <input type="range" id="deploySlider" min="50" max="400" value="200" step="10">
+                        </div>
+                        <div class="phase-row">
+                            <span>Phase 2 (Schirm):</span>
+                            <span>v_gr2 ≈ <span id="vTerm2">6</span> m/s</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="showTrail" checked>
+                        <label for="showTrail">Spur anzeigen</label>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="showVectors">
+                        <label for="showVectors">Kraftvektoren anzeigen</label>
+                    </div>
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="slowMotion">
+                        <label for="slowMotion">Zeitlupe (0,25×)</label>
+                    </div>
+                </div>
+                
+                <div class="button-grid">
+                    <button class="primary" id="startBtn">▶ Start</button>
+                    <button id="pauseBtn">⏸ Pause</button>
+                    <button id="resetBtn">↺ Reset</button>
+                    <button id="stepBtn" style="grid-column: 1 / -1;">⏭ Einzelschritt (+0,1 s)</button>
+                </div>
+                
+                <div class="formula-box">
+                    <h3>Formeln</h3>
+                    <div class="formula">Vakuum: a = g</div>
+                    <div class="formula">Luftwiderstand: F_L = ½·ρ·c_w·A·v²</div>
+                    <div class="formula">Resultierende: F_Res = F_G − F_L</div>
+                    <div class="formula">Beschleunigung: a = F_Res / m</div>
+                    <div class="formula">Grenzgeschw.: v_gr = √(2mg / ρ·c_w·A)</div>
+                </div>
+            </div>
+            
+            <!-- Simulation Panel -->
+            <div class="panel">
+                <h2>Simulation</h2>
+                <div class="canvas-container">
+                    <canvas id="simulationCanvas"></canvas>
+                </div>
+                
+                <div class="live-values">
+                    <div class="live-value"><div class="lbl">Zeit</div><div class="num" id="liveTime">0,00</div><div class="unit">s</div></div>
+                    <div class="live-value"><div class="lbl">Höhe</div><div class="num" id="liveHeight">50,0</div><div class="unit">m</div></div>
+                    <div class="live-value"><div class="lbl">Geschw. v</div><div class="num" id="liveVelocity">0,0</div><div class="unit">m/s</div></div>
+                    <div class="live-value"><div class="lbl">Beschl. a</div><div class="num" id="liveAccel">9,81</div><div class="unit">m/s²</div></div>
+                    <div class="live-value"><div class="lbl">v_gr</div><div class="num" id="liveTerminal">--</div><div class="unit">m/s</div></div>
+                </div>
+                
+                <div class="force-values" id="forcePanel">
+                    <div class="force-value fg"><div class="lbl">F_G (Gewicht)</div><div class="num" id="liveFg">--</div><div class="unit">N</div></div>
+                    <div class="force-value fl"><div class="lbl">F_L (Luftwid.)</div><div class="num" id="liveFl">--</div><div class="unit">N</div></div>
+                    <div class="force-value fres"><div class="lbl">F_Res</div><div class="num" id="liveFres">--</div><div class="unit">N</div></div>
+                    <div class="force-value acalc"><div class="lbl">a = F_Res/m</div><div class="num" id="liveAcalc">--</div><div class="unit">m/s²</div></div>
+                </div>
+            </div>
+            
+            <!-- Charts Panel -->
+            <div class="panel charts-panel">
+                <h2>Diagramme</h2>
+                
+                <div class="chart-container">
+                    <h3>v(t) – Geschwindigkeit</h3>
+                    <canvas id="velocityChart" class="chart-canvas"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>a(t) – Beschleunigung</h3>
+                    <canvas id="accelChart" class="chart-canvas"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>h(t) – Höhe</h3>
+                    <canvas id="heightChart" class="chart-canvas"></canvas>
+                </div>
+                
+                <div class="data-table">
+                    <table>
+                        <thead><tr><th>t (s)</th><th>h (m)</th><th>v (m/s)</th><th>a (m/s²)</th></tr></thead>
+                        <tbody id="dataTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // ============================================================
+    // PHYSIK-ENGINE: Freier Fall mit Luftwiderstand
+    // ============================================================
+    // Verwendete Formeln:
+    // - Gewichtskraft: F_G = m · g
+    // - Luftwiderstand: F_L = ½ · ρ · c_w · A · v²
+    // - Resultierende Kraft: F_Res = F_G - F_L (beim Fallen)
+    // - Beschleunigung: a = F_Res / m = g - (ρ · c_w · A · v²) / (2m)
+    // - Grenzgeschwindigkeit: v_gr = √(2mg / (ρ · c_w · A))
+    //   (wenn F_L = F_G, also a = 0)
+    // ============================================================
+    
+    class FreeFallSimulation {
+        constructor() {
+            // Physikalische Konstanten
+            this.rho = 1.2;  // Luftdichte in kg/m³
+            
+            // Simulationsparameter
+            this.g = 9.81;   // Fallbeschleunigung in m/s²
+            this.h0 = 50;    // Starthöhe in m
+            this.v0 = 0;     // Startgeschwindigkeit in m/s (positiv = nach oben)
+            this.isVacuum = true;
+            
+            // Objekteigenschaften
+            this.mass = 0.5;    // Masse in kg
+            this.cw = 0.45;     // Strömungswiderstandskoeffizient
+            this.area = 0.008;  // Querschnittsfläche in m²
+            
+            // Fallschirmspringer Phase 2
+            this.cw2 = 1.3;
+            this.area2 = 40;
+            this.deployHeight = 200;
+            this.chuteDeployed = false;
+            this.isSkydiver = false;
+            
+            // Simulationszustand
+            this.t = 0;
+            this.h = this.h0;
+            this.v = this.v0;  // Konvention: negativ = nach unten
+            this.a = -this.g;
+            
+            this.dt = 0.016;  // Zeitschritt (~60fps)
+            this.running = false;
+            this.finished = false;
+            this.slowMotion = false;
+            
+            this.dataPoints = [];
+            
+            this.init();
+        }
+        
+        init() {
+            this.initElements();
+            this.initCanvas();
+            this.initEvents();
+            this.updateObjectProps();
+            this.reset();
+        }
+        
+        initElements() {
+            // Medium buttons
+            this.btnVacuum = document.getElementById('btnVacuum');
+            this.btnAir = document.getElementById('btnAir');
+            this.airInfo = document.getElementById('airInfo');
+            this.terminalBox = document.getElementById('terminalBox');
+            this.terminalDisplay = document.getElementById('terminalDisplay');
+            
+            // Sliders
+            this.heightSlider = document.getElementById('heightSlider');
+            this.heightValue = document.getElementById('heightValue');
+            this.v0Slider = document.getElementById('v0Slider');
+            this.v0Value = document.getElementById('v0Value');
+            this.planetSelect = document.getElementById('planetSelect');
+            this.objectSelect = document.getElementById('objectSelect');
+            
+            // Object displays
+            this.cwDisplay = document.getElementById('cwDisplay');
+            this.areaDisplay = document.getElementById('areaDisplay');
+            this.massDisplay = document.getElementById('massDisplay');
+            
+            // Skydiver
+            this.skydiverBox = document.getElementById('skydiverBox');
+            this.deploySlider = document.getElementById('deploySlider');
+            this.deployValue = document.getElementById('deployValue');
+            this.vTerm1 = document.getElementById('vTerm1');
+            this.vTerm2 = document.getElementById('vTerm2');
+            
+            // Checkboxes
+            this.showTrailCb = document.getElementById('showTrail');
+            this.showVectorsCb = document.getElementById('showVectors');
+            this.slowMotionCb = document.getElementById('slowMotion');
+            
+            // Buttons
+            this.startBtn = document.getElementById('startBtn');
+            this.pauseBtn = document.getElementById('pauseBtn');
+            this.resetBtn = document.getElementById('resetBtn');
+            this.stepBtn = document.getElementById('stepBtn');
+            
+            // Live values
+            this.liveTime = document.getElementById('liveTime');
+            this.liveHeight = document.getElementById('liveHeight');
+            this.liveVelocity = document.getElementById('liveVelocity');
+            this.liveAccel = document.getElementById('liveAccel');
+            this.liveTerminal = document.getElementById('liveTerminal');
+            
+            // Force values
+            this.liveFg = document.getElementById('liveFg');
+            this.liveFl = document.getElementById('liveFl');
+            this.liveFres = document.getElementById('liveFres');
+            this.liveAcalc = document.getElementById('liveAcalc');
+            
+            // Data table
+            this.dataTable = document.getElementById('dataTable');
+        }
+        
+        initCanvas() {
+            this.canvas = document.getElementById('simulationCanvas');
+            this.ctx = this.canvas.getContext('2d');
+            
+            this.vChart = document.getElementById('velocityChart');
+            this.vCtx = this.vChart.getContext('2d');
+            
+            this.aChart = document.getElementById('accelChart');
+            this.aCtx = this.aChart.getContext('2d');
+            
+            this.hChart = document.getElementById('heightChart');
+            this.hCtx = this.hChart.getContext('2d');
+            
+            this.resizeCanvases();
+            window.addEventListener('resize', () => this.resizeCanvases());
+        }
+        
+        resizeCanvases() {
+            const dpr = window.devicePixelRatio || 1;
+            [this.canvas, this.vChart, this.aChart, this.hChart].forEach(c => {
+                const rect = c.getBoundingClientRect();
+                c.width = rect.width * dpr;
+                c.height = rect.height * dpr;
+                c.getContext('2d').scale(dpr, dpr);
+            });
+            this.render();
+        }
+        
+        initEvents() {
+            // Medium toggle
+            this.btnVacuum.addEventListener('click', () => this.setMedium(true));
+            this.btnAir.addEventListener('click', () => this.setMedium(false));
+            
+            // Sliders
+            this.heightSlider.addEventListener('input', () => {
+                this.h0 = parseFloat(this.heightSlider.value);
+                this.heightValue.textContent = this.h0 + ' m';
+                if (!this.running) this.reset();
+            });
+            
+            this.v0Slider.addEventListener('input', () => {
+                this.v0 = parseFloat(this.v0Slider.value);
+                this.v0Value.textContent = this.v0 + ' m/s';
+                if (!this.running) this.reset();
+            });
+            
+            this.planetSelect.addEventListener('change', () => {
+                this.g = parseFloat(this.planetSelect.value);
+                this.updateTerminalVelocity();
+                if (!this.running) this.reset();
+            });
+            
+            this.objectSelect.addEventListener('change', () => {
+                this.updateObjectProps();
+                if (this.isSkydiver && this.h0 < 400) {
+                    this.h0 = 400;
+                    this.heightSlider.value = 400;
+                    this.heightValue.textContent = '400 m';
+                }
+                this.updateTerminalVelocity();
+                if (!this.running) this.reset();
+            });
+            
+            this.deploySlider.addEventListener('input', () => {
+                this.deployHeight = parseFloat(this.deploySlider.value);
+                this.deployValue.textContent = this.deployHeight + ' m';
+                if (this.h0 <= this.deployHeight + 50) {
+                    this.h0 = this.deployHeight + 200;
+                    this.heightSlider.value = this.h0;
+                    this.heightValue.textContent = this.h0 + ' m';
+                }
+                if (!this.running) this.reset();
+            });
+            
+            // Checkboxes
+            this.slowMotionCb.addEventListener('change', () => {
+                this.slowMotion = this.slowMotionCb.checked;
+            });
+            
+            // Buttons
+            this.startBtn.addEventListener('click', () => this.start());
+            this.pauseBtn.addEventListener('click', () => this.pause());
+            this.resetBtn.addEventListener('click', () => this.reset());
+            this.stepBtn.addEventListener('click', () => this.step(0.1));
+        }
+        
+        setMedium(vacuum) {
+            this.isVacuum = vacuum;
+            this.btnVacuum.classList.toggle('active', vacuum);
+            this.btnAir.classList.toggle('active', !vacuum);
+            this.airInfo.style.display = vacuum ? 'none' : 'block';
+            this.terminalBox.style.display = vacuum ? 'none' : 'block';
+            this.updateTerminalVelocity();
+            if (!this.running) this.reset();
+        }
+        
+        updateObjectProps() {
+            const opt = this.objectSelect.selectedOptions[0];
+            this.mass = parseFloat(opt.dataset.mass);
+            this.cw = parseFloat(opt.dataset.cw);
+            this.area = parseFloat(opt.dataset.area);
+            
+            this.isSkydiver = opt.value === 'skydiver';
+            if (this.isSkydiver) {
+                this.cw2 = parseFloat(opt.dataset.cw2);
+                this.area2 = parseFloat(opt.dataset.area2);
+                this.deployHeight = parseFloat(opt.dataset.deploy);
+                this.deploySlider.value = this.deployHeight;
+                this.deployValue.textContent = this.deployHeight + ' m';
+            }
+            
+            this.skydiverBox.classList.toggle('hidden', !this.isSkydiver);
+            
+            this.cwDisplay.textContent = this.cw.toFixed(2).replace('.', ',');
+            this.areaDisplay.textContent = this.area.toFixed(4).replace('.', ',') + ' m²';
+            this.massDisplay.textContent = this.mass < 1 ? 
+                (this.mass * 1000).toFixed(0) + ' g' : 
+                this.mass.toFixed(1).replace('.', ',') + ' kg';
+            
+            if (this.isSkydiver) {
+                this.vTerm1.textContent = this.calcTerminalV(false).toFixed(0);
+                this.vTerm2.textContent = this.calcTerminalV(true).toFixed(0);
+            }
+        }
+        
+        // Berechne Grenzgeschwindigkeit
+        // v_gr = √(2mg / (ρ · c_w · A))
+        calcTerminalV(withChute = null) {
+            let cw = this.cw, A = this.area;
+            if (this.isSkydiver) {
+                const useChute = withChute !== null ? withChute : this.chuteDeployed;
+                if (useChute) { cw = this.cw2; A = this.area2; }
+            }
+            return Math.sqrt((2 * this.mass * this.g) / (this.rho * cw * A));
+        }
+        
+        updateTerminalVelocity() {
+            const vT = this.calcTerminalV();
+            this.terminalDisplay.textContent = vT.toFixed(1).replace('.', ',') + ' m/s';
+            this.liveTerminal.textContent = this.isVacuum ? '--' : vT.toFixed(1).replace('.', ',');
+            
+            if (this.isSkydiver) {
+                this.vTerm1.textContent = this.calcTerminalV(false).toFixed(0);
+                this.vTerm2.textContent = this.calcTerminalV(true).toFixed(0);
+            }
+        }
+        
+        // Berechne aktuelle Beschleunigung
+        // a = g - F_L/m = g - (ρ · c_w · A · v²) / (2m)
+        // WICHTIG: Keine Seiteneffekte in dieser Funktion (wird von RK4 mehrfach aufgerufen)
+        calcAcceleration(velocity, height) {
+            if (this.isVacuum) return -this.g;
+            
+            let cw = this.cw, A = this.area;
+            
+            // Prüfe ob Schirm geöffnet werden sollte (basierend auf übergebenem Zustand)
+            const chuteActive = this.isSkydiver && (this.chuteDeployed || height <= this.deployHeight);
+            if (chuteActive) {
+                cw = this.cw2;
+                A = this.area2;
+            }
+            
+            const speed = Math.abs(velocity);
+            const F_drag = 0.5 * this.rho * cw * A * speed * speed;
+            const dragAccel = F_drag / this.mass;
+            
+            // Koordinatensystem: h nach oben positiv, v = dh/dt
+            // Beim Fallen (v < 0): Gravitation nach unten (-g), Drag nach oben (+)
+            // Beim Steigen (v > 0): Gravitation nach unten (-g), Drag auch nach unten (-)
+            if (velocity < 0) return -this.g + dragAccel;  // Fallen: Drag bremst
+            if (velocity > 0) return -this.g - dragAccel;  // Steigen: Drag + Gravitation
+            return -this.g;
+        }
+        
+        // Prüfe und setze Schirmöffnung (nur einmal pro Simulation)
+        checkChuteDeployment(height) {
+            if (this.isSkydiver && !this.chuteDeployed && height <= this.deployHeight) {
+                this.chuteDeployed = true;
+                this.updateTerminalVelocity();
+            }
+        }
+        
+        start() {
+            if (this.finished) this.reset();
+            this.running = true;
+            this.startBtn.textContent = '⏹ Stop';
+            this.animate();
+        }
+        
+        pause() {
+            this.running = false;
+            this.startBtn.textContent = '▶ Start';
+        }
+        
+        reset() {
+            this.t = 0;
+            this.h = this.h0;
+            this.v = this.v0;
+            this.chuteDeployed = false;
+            this.a = this.calcAcceleration(this.v, this.h);
+            this.running = false;
+            this.finished = false;
+            this.dataPoints = [];
+            this.startBtn.textContent = '▶ Start';
+            
+            this.addDataPoint();
+            this.updateDisplay();
+            this.updateTable();
+            this.updateTerminalVelocity();
+            this.render();
+        }
+        
+        step(dt) {
+            if (this.finished) return;
+            const substeps = 10;
+            for (let i = 0; i < substeps && !this.finished; i++) {
+                this.integrate(dt / substeps);
+            }
+            this.addDataPoint();
+            this.updateDisplay();
+            this.updateTable();
+            this.render();
+        }
+        
+        // Runge-Kutta 4. Ordnung für präzise Integration
+        integrate(dt) {
+            const h1 = this.h, v1 = this.v;
+            const a1 = this.calcAcceleration(v1, h1);
+            
+            const v2 = v1 + a1 * dt/2;
+            const h2 = h1 + v1 * dt/2;
+            const a2 = this.calcAcceleration(v2, h2);
+            
+            const v3 = v1 + a2 * dt/2;
+            const h3 = h1 + v2 * dt/2;
+            const a3 = this.calcAcceleration(v3, h3);
+            
+            const v4 = v1 + a3 * dt;
+            const h4 = h1 + v3 * dt;
+            const a4 = this.calcAcceleration(v4, h4);
+            
+            this.v = v1 + (a1 + 2*a2 + 2*a3 + a4) * dt / 6;
+            this.h = h1 + (v1 + 2*v2 + 2*v3 + v4) * dt / 6;
+            this.t += dt;
+            
+            // Prüfe Schirmöffnung NACH der Integration (Seiteneffekt hier erlaubt)
+            this.checkChuteDeployment(this.h);
+            
+            // Aktuelle Beschleunigung mit korrektem Schirmzustand
+            this.a = this.calcAcceleration(this.v, this.h);
+            
+            if (this.h <= 0) {
+                this.h = 0;
+                this.finished = true;
+                this.running = false;
+                this.startBtn.textContent = '↺ Neustart';
+            }
+        }
+        
+        animate() {
+            if (!this.running) return;
+            
+            const dt = this.slowMotion ? this.dt * 0.25 : this.dt;
+            for (let i = 0; i < 4 && !this.finished; i++) {
+                this.integrate(dt / 4);
+            }
+            
+            this.addDataPoint();
+            this.updateDisplay();
+            this.render();
+            
+            if (this.running) {
+                requestAnimationFrame(() => this.animate());
+            } else {
+                this.updateTable();
+            }
+        }
+        
+        addDataPoint() {
+            if (this.dataPoints.length > 800) this.dataPoints.shift();
+            this.dataPoints.push({
+                t: this.t,
+                h: Math.max(0, this.h),
+                v: Math.abs(this.v),
+                a: Math.abs(this.a)
+            });
+        }
+        
+        updateDisplay() {
+            const fmt = (x) => x.toFixed(2).replace('.', ',');
+            const fmt1 = (x) => x.toFixed(1).replace('.', ',');
+            
+            this.liveTime.textContent = fmt(this.t);
+            this.liveHeight.textContent = fmt1(Math.max(0, this.h));
+            this.liveVelocity.textContent = fmt1(Math.abs(this.v));
+            this.liveAccel.textContent = fmt(Math.abs(this.a));
+            
+            // Kräfte berechnen
+            const Fg = this.mass * this.g;
+            let cw = this.cw, A = this.area;
+            if (this.isSkydiver && this.chuteDeployed) { cw = this.cw2; A = this.area2; }
+            const Fl = this.isVacuum ? 0 : 0.5 * this.rho * cw * A * this.v * this.v;
+            const Fres = Fg - Fl;
+            const aCalc = Fres / this.mass;
+            
+            this.liveFg.textContent = fmt1(Fg);
+            this.liveFl.textContent = fmt1(Fl);
+            this.liveFres.textContent = fmt1(Fres);
+            this.liveAcalc.textContent = fmt(aCalc);
+        }
+        
+        updateTable() {
+            let html = '';
+            const vT = this.calcTerminalV();
+            
+            for (let targetT = 0; targetT <= Math.max(this.t, 5); targetT += 0.5) {
+                const p = this.dataPoints.find(pt => Math.abs(pt.t - targetT) < 0.05);
+                if (p) {
+                    const nearTerm = !this.isVacuum && Math.abs(p.v - vT) / vT < 0.05;
+                    const style = nearTerm ? ' style="background:#fffbf0"' : '';
+                    html += `<tr${style}>
+                        <td>${p.t.toFixed(1).replace('.', ',')}</td>
+                        <td>${p.h.toFixed(1).replace('.', ',')}</td>
+                        <td>${p.v.toFixed(1).replace('.', ',')}${nearTerm ? ' ≈v_gr' : ''}</td>
+                        <td>${p.a.toFixed(2).replace('.', ',')}</td>
+                    </tr>`;
+                }
+            }
+            
+            if (this.finished) {
+                html += `<tr style="background:#fff0f0;font-weight:600">
+                    <td>${this.t.toFixed(2).replace('.', ',')} ⚡</td>
+                    <td>0,0</td>
+                    <td>${Math.abs(this.v).toFixed(1).replace('.', ',')}</td>
+                    <td>--</td>
+                </tr>`;
+            }
+            
+            this.dataTable.innerHTML = html;
+        }
+        
+        render() {
+            this.renderSimulation();
+            this.renderCharts();
+        }
+        
+        renderSimulation() {
+            const ctx = this.ctx;
+            const w = this.canvas.width / (window.devicePixelRatio || 1);
+            const h = this.canvas.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            // Hintergrund
+            ctx.fillStyle = this.isVacuum ? '#1a1a2e' : '#e8f4fc';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Boden
+            const groundY = h - 30;
+            ctx.fillStyle = this.isVacuum ? '#444' : '#8bc34a';
+            ctx.fillRect(0, groundY, w, 30);
+            
+            // Skala
+            const maxH = Math.max(this.h0 * 1.15, 60);
+            const ppm = (groundY - 35) / maxH;
+            
+            ctx.strokeStyle = this.isVacuum ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.font = '10px Arial';
+            ctx.fillStyle = this.isVacuum ? '#888' : '#666';
+            ctx.textAlign = 'right';
+            
+            const step = maxH > 100 ? 50 : (maxH > 50 ? 10 : 5);
+            for (let ht = 0; ht <= maxH; ht += step) {
+                const y = groundY - ht * ppm;
+                ctx.beginPath();
+                ctx.moveTo(35, y);
+                ctx.lineTo(w - 10, y);
+                ctx.stroke();
+                ctx.fillText(ht + '', 32, y + 3);
+            }
+            
+            // Schirmöffnungslinie (Skydiver)
+            if (this.isSkydiver && !this.isVacuum && this.h0 > this.deployHeight) {
+                const deployY = groundY - this.deployHeight * ppm;
+                ctx.strokeStyle = '#d4a300';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.beginPath();
+                ctx.moveTo(35, deployY);
+                ctx.lineTo(w - 10, deployY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#d4a300';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('Schirmöffnung (' + this.deployHeight + ' m)', 40, deployY - 4);
+            }
+            
+            // Objekt Position
+            const curH = Math.max(0, this.h);
+            const oX = w / 2;
+            const oY = groundY - curH * ppm;
+            
+            // Spur
+            if (this.showTrailCb.checked && this.dataPoints.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = this.isVacuum ? 'rgba(100,180,255,0.5)' : 'rgba(44,90,160,0.5)';
+                ctx.lineWidth = 2;
+                this.dataPoints.forEach((p, i) => {
+                    const y = groundY - p.h * ppm;
+                    if (i === 0) ctx.moveTo(oX, y);
+                    else ctx.lineTo(oX, y);
+                });
+                ctx.stroke();
+            }
+            
+            // Kraftvektoren
+            if (this.showVectorsCb.checked) {
+                const Fg = this.mass * this.g;
+                let cw = this.cw, A = this.area;
+                if (this.isSkydiver && this.chuteDeployed) { cw = this.cw2; A = this.area2; }
+                const Fl = this.isVacuum ? 0 : 0.5 * this.rho * cw * A * this.v * this.v;
+                const Fres = Fg - Fl;
+                
+                // Skalierung: Fg = 50px Referenz
+                const fgLen = 50;
+                const scale = fgLen / Fg;
+                
+                const drawArrow = (x, y, len, color, label) => {
+                    if (Math.abs(len) < 3) return;
+                    ctx.strokeStyle = color;
+                    ctx.fillStyle = color;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(x, y + len);
+                    ctx.stroke();
+                    
+                    const dir = len > 0 ? 1 : -1;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + len);
+                    ctx.lineTo(x - 4, y + len - dir * 8);
+                    ctx.lineTo(x + 4, y + len - dir * 8);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    ctx.font = '9px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, x + 6, y + len / 2 + 4);
+                };
+                
+                // F_G (immer nach unten)
+                drawArrow(oX - 30, oY, fgLen, '#d4a300', 'F_G=' + Fg.toFixed(0) + 'N');
+                
+                // F_L (nach oben beim Fallen)
+                if (!this.isVacuum && Fl > 1) {
+                    const flLen = Fl * scale;
+                    const flDir = this.v < 0 ? -1 : 1;
+                    drawArrow(oX - 50, oY, flDir * flLen, '#2c5aa0', 'F_L=' + Fl.toFixed(0) + 'N');
+                }
+                
+                // F_Res
+                const fresLen = Math.abs(Fres) * scale;
+                const fresDir = Fres > 0 ? 1 : -1;
+                if (fresLen > 3) {
+                    drawArrow(oX - 70, oY, fresDir * fresLen, '#7b2d8e', 'F_Res=' + Fres.toFixed(0) + 'N');
+                } else if (!this.isVacuum) {
+                    ctx.fillStyle = '#7b2d8e';
+                    ctx.font = '9px Arial';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('F_Res≈0', oX - 75, oY);
+                }
+                
+                // v-Vektor
+                const vLen = Math.min(Math.abs(this.v) * 1.2, 80);
+                const vDir = this.v < 0 ? 1 : -1;
+                if (vLen > 3) {
+                    drawArrow(oX + 40, oY, vDir * vLen, '#c0392b', 'v=' + Math.abs(this.v).toFixed(1));
+                }
+            }
+            
+            // Objekt zeichnen
+            const objType = this.objectSelect.value;
+            let symbol = '●';
+            let objColor = '#c0392b';
+            
+            if (objType === 'skydiver') {
+                symbol = this.chuteDeployed ? '🪂' : '🧍';
+                ctx.font = '30px Arial';
+            } else {
+                const symbols = { ball: '●', apple: '●', stone: '●', feather: '○' };
+                const colors = { ball: '#c0392b', apple: '#4caf50', stone: '#666', feather: '#888' };
+                symbol = symbols[objType] || '●';
+                objColor = colors[objType] || '#c0392b';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = objColor;
+            }
+            
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(symbol, oX, oY);
+            
+            // Aufprall
+            if (this.finished && curH <= 0) {
+                ctx.strokeStyle = '#c0392b';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(oX, groundY - 10, 20, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.fillStyle = this.isVacuum ? '#fff' : '#333';
+                ctx.font = 'bold 11px Arial';
+                const label = (this.isSkydiver && this.chuteDeployed) ? 'Landung' : 'Aufprall';
+                ctx.fillText(label + ': ' + Math.abs(this.v).toFixed(1) + ' m/s', oX, groundY + 15);
+            }
+            
+            // Info oben links
+            ctx.fillStyle = this.isVacuum ? '#ccc' : '#333';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('t = ' + this.t.toFixed(2) + ' s', 10, 15);
+            ctx.fillText('h = ' + curH.toFixed(1) + ' m', 10, 28);
+            ctx.fillText('v = ' + Math.abs(this.v).toFixed(1) + ' m/s', 10, 41);
+            
+            // Medium-Anzeige
+            ctx.textAlign = 'right';
+            ctx.fillStyle = this.isVacuum ? '#6af' : '#2c5aa0';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText(this.isVacuum ? 'VAKUUM' : 'LUFT', w - 10, 15);
+        }
+        
+        renderCharts() {
+            this.renderVChart();
+            this.renderAChart();
+            this.renderHChart();
+        }
+        
+        renderVChart() {
+            const ctx = this.vCtx;
+            const w = this.vChart.width / (window.devicePixelRatio || 1);
+            const h = this.vChart.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            
+            const pad = { l: 40, r: 10, t: 8, b: 18 };
+            const cw = w - pad.l - pad.r;
+            const ch = h - pad.t - pad.b;
+            
+            const maxT = Math.max(this.t * 1.2, 5);
+            const vT1 = this.calcTerminalV(false);  // Phase 1 (ohne Schirm)
+            const vT2 = this.isSkydiver ? this.calcTerminalV(true) : vT1;  // Phase 2 (mit Schirm)
+            const vT = this.chuteDeployed ? vT2 : vT1;
+            const maxV = this.isVacuum ? Math.max(this.g * maxT, 50) : Math.max(vT1 * 1.3, 50);
+            
+            // Grenzgeschwindigkeitslinien
+            if (!this.isVacuum) {
+                // Phase 1 (Freifall) - immer anzeigen
+                const term1Y = h - pad.b - (vT1 / maxV) * ch;
+                ctx.strokeStyle = '#d4a300';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(pad.l, term1Y);
+                ctx.lineTo(w - pad.r, term1Y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#d4a300';
+                ctx.font = '8px Arial';
+                ctx.textAlign = 'left';
+                const label1 = this.isSkydiver ? 'v_gr1=' + vT1.toFixed(0) : 'v_gr=' + vT1.toFixed(0);
+                ctx.fillText(label1, pad.l + 2, term1Y - 2);
+                
+                // Phase 2 (Schirm) - nur bei Skydiver
+                if (this.isSkydiver) {
+                    const term2Y = h - pad.b - (vT2 / maxV) * ch;
+                    ctx.strokeStyle = '#2a7a4b';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(pad.l, term2Y);
+                    ctx.lineTo(w - pad.r, term2Y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = '#2a7a4b';
+                    ctx.fillText('v_gr2=' + vT2.toFixed(0) + ' 🪂', pad.l + 2, term2Y + 10);
+                }
+            }
+            
+            // Achsen
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, pad.t);
+            ctx.lineTo(pad.l, h - pad.b);
+            ctx.lineTo(w - pad.r, h - pad.b);
+            ctx.stroke();
+            
+            // Daten
+            if (this.dataPoints.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#2c5aa0';
+                ctx.lineWidth = 2;
+                this.dataPoints.forEach((p, i) => {
+                    const x = pad.l + (p.t / maxT) * cw;
+                    const y = h - pad.b - (p.v / maxV) * ch;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            // Labels
+            ctx.fillStyle = '#666';
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('t (s)', w / 2, h - 2);
+        }
+        
+        renderAChart() {
+            const ctx = this.aCtx;
+            const w = this.aChart.width / (window.devicePixelRatio || 1);
+            const h = this.aChart.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            
+            const pad = { l: 40, r: 10, t: 8, b: 18 };
+            const cw = w - pad.l - pad.r;
+            const ch = h - pad.t - pad.b;
+            
+            const maxT = Math.max(this.t * 1.2, 5);
+            const maxA = this.g * 1.2;
+            
+            // g-Linie
+            const gY = h - pad.b - (this.g / maxA) * ch;
+            ctx.strokeStyle = '#7b2d8e';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(pad.l, gY);
+            ctx.lineTo(w - pad.r, gY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#7b2d8e';
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('g=' + this.g.toFixed(1), pad.l + 2, gY - 2);
+            
+            // Achsen
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, pad.t);
+            ctx.lineTo(pad.l, h - pad.b);
+            ctx.lineTo(w - pad.r, h - pad.b);
+            ctx.stroke();
+            
+            // Daten
+            if (this.dataPoints.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#2a7a4b';
+                ctx.lineWidth = 2;
+                this.dataPoints.forEach((p, i) => {
+                    const x = pad.l + (p.t / maxT) * cw;
+                    const y = h - pad.b - (p.a / maxA) * ch;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('t (s)', w / 2, h - 2);
+        }
+        
+        renderHChart() {
+            const ctx = this.hCtx;
+            const w = this.hChart.width / (window.devicePixelRatio || 1);
+            const h = this.hChart.height / (window.devicePixelRatio || 1);
+            
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, w, h);
+            
+            const pad = { l: 40, r: 10, t: 8, b: 18 };
+            const cw = w - pad.l - pad.r;
+            const ch = h - pad.t - pad.b;
+            
+            const maxT = Math.max(this.t * 1.2, 5);
+            const maxH = this.h0 * 1.1;
+            
+            // Achsen
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, pad.t);
+            ctx.lineTo(pad.l, h - pad.b);
+            ctx.lineTo(w - pad.r, h - pad.b);
+            ctx.stroke();
+            
+            // Daten
+            if (this.dataPoints.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#2c5aa0';
+                ctx.lineWidth = 2;
+                this.dataPoints.forEach((p, i) => {
+                    const x = pad.l + (p.t / maxT) * cw;
+                    const y = h - pad.b - (p.h / maxH) * ch;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = '#666';
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('t (s)', w / 2, h - 2);
+        }
+    }
+    
+    // Start
+    document.addEventListener('DOMContentLoaded', () => {
+        window.sim = new FreeFallSimulation();
+    });
+    </script>
+</body>
+</html>
