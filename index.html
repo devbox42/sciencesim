@@ -136,6 +136,7 @@
         .sim-eintrag {
             display: flex;
             align-items: baseline;
+            flex-wrap: wrap;
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
@@ -178,10 +179,36 @@
             min-width: 50px;
         }
 
-        .hat-material::after {
-            content: "📎";
-            margin-left: 6px;
-            font-size: 0.9em;
+        .material-toggle {
+            cursor: pointer;
+            user-select: none;
+            padding: 2px 4px;
+        }
+
+        .material-toggle:hover {
+            background: #f0f0f0;
+        }
+
+        .material-dropdown {
+            display: none;
+            width: 100%;
+            padding: 8px 0 4px 20px;
+            font-size: 0.85em;
+        }
+
+        .material-dropdown.open {
+            display: block;
+        }
+
+        .material-dropdown a {
+            display: block;
+            color: #555;
+            text-decoration: none;
+            padding: 3px 0;
+        }
+
+        .material-dropdown a:hover {
+            color: #0066cc;
         }
 
         .qr-link {
@@ -516,12 +543,13 @@ function renderContent(simulationen) {
             html += `<div class="thema-titel">${thema}</div>`;
             html += `<ul class="sim-liste">`;
             
-            themen[thema].forEach(sim => {
+            themen[thema].forEach((sim, idx) => {
                 const stichworte = Array.isArray(sim.stichworte) ? sim.stichworte.join(' ') : sim.stichworte || '';
                 const hatMaterial = sim.materialien && sim.materialien.length > 0;
                 const fachThema = `${sim.fach} · ${sim.thema}`;
+                const matId = `mat-${fach}-${thema}-${idx}`.replace(/\s+/g, '-');
                 
-                html += `<li class="sim-eintrag" data-stichworte="${stichworte}" data-sim='${JSON.stringify(sim)}'>`;
+                html += `<li class="sim-eintrag" data-stichworte="${stichworte}">`;
                 html += `<a href="${sim.pfad}" class="sim-link">`;
                 html += `<span class="sim-titel">${sim.titel}</span>`;
                 if (sim.kurzbeschreibung) {
@@ -533,10 +561,20 @@ function renderContent(simulationen) {
                     html += `<span class="sim-klasse">Kl. ${sim.klassenstufe}</span>`;
                 }
                 if (hatMaterial) {
-                    html += `<span class="hat-material"></span>`;
+                    html += `<span class="material-toggle" onclick="toggleMaterial('${matId}')">📎</span>`;
                 }
                 html += `</span>`;
                 html += `<span class="qr-link" onclick="openQR('${sim.pfad}', '${sim.titel}', '${fachThema}')">QR</span>`;
+                
+                // Material-Dropdown
+                if (hatMaterial) {
+                    html += `<div id="${matId}" class="material-dropdown">`;
+                    sim.materialien.forEach(mat => {
+                        html += `<a href="${sim.pfad}${mat.datei}">${mat.titel}</a>`;
+                    });
+                    html += `</div>`;
+                }
+                
                 html += `</li>`;
             });
             
@@ -577,6 +615,13 @@ document.getElementById('suche').addEventListener('input', function(e) {
 });
 
 // QR-Code Funktionen
+function toggleMaterial(id) {
+    const dropdown = document.getElementById(id);
+    if (dropdown) {
+        dropdown.classList.toggle('open');
+    }
+}
+
 function openQR(pfad, titel, fach) {
     const modal = document.getElementById('qr-modal');
     const container = document.getElementById('qr-code-container');
