@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stehende Wellen – Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Wellen">
+    <meta name="grade" content="11-12">
+    <meta name="description" content="Interaktive Simulation zur Entstehung stehender Wellen durch Superposition und Mikrowellenexperiment zur Wellenlängenbestimmung">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            color: #222;
+        }
+        
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+        
+        header {
+            margin-bottom: 20px;
+        }
+        
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .breadcrumb a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+        }
+        
+        /* Tab-Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            border-bottom: 1px solid #ddd;
+            background: #fff;
+        }
+        
+        .tab-btn {
+            padding: 12px 20px;
+            font-size: 0.9em;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-family: inherit;
+            margin-bottom: -1px;
+            color: #555;
+        }
+        
+        .tab-btn:first-child {
+            border-radius: 3px 0 0 0;
+        }
+        
+        .tab-btn:last-child {
+            border-radius: 0 3px 0 0;
+        }
+        
+        .tab-btn.active {
+            background: #fff;
+            border-bottom: 1px solid #fff;
+            color: #222;
+            font-weight: 600;
+        }
+        
+        .tab-btn:hover:not(.active) {
+            background: #eee;
+        }
+        
+        .tab-content {
+            display: none;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Simulations-Bereich */
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 20px;
+        }
+        
+        @media (max-width: 750px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .canvas-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fafafa;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #555;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .legend-line {
+            width: 20px;
+            height: 3px;
+        }
+        
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        /* Controls */
+        .controls {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        
+        .controls h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .control-group {
+            margin-bottom: 18px;
+        }
+        
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9em;
+        }
+        
+        .control-value {
+            font-family: "SF Mono", "Monaco", "Consolas", monospace;
+            font-size: 0.85em;
+            color: #2c5aa0;
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2c5aa0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        /* Info-Box */
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .info-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .info-item {
+            background: #f5f5f5;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .info-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-family: "SF Mono", "Monaco", "Consolas", monospace;
+            font-size: 1em;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+        
+        .formula {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: center;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.1em;
+            margin: 12px 0;
+            border-left: 3px solid #2c5aa0;
+        }
+        
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        button.btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button.btn:hover {
+            background: #f5f5f5;
+        }
+        
+        button.btn.primary {
+            background: #2c5aa0;
+            color: #fff;
+            border-color: #2c5aa0;
+        }
+        
+        button.btn.primary:hover {
+            background: #234a85;
+        }
+        
+        /* Mikrowellen-Tab spezifisch */
+        .experiment-description {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .experiment-description h4 {
+            font-size: 0.95em;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .measurement-result {
+            background: #e8f4e8;
+            border: 1px solid #c3e6c3;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .measurement-result.error {
+            background: #fdeaea;
+            border-color: #f5c6c6;
+        }
+        
+        /* Materialien-Box */
+        .material-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .material-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .material-list {
+            list-style: none;
+        }
+        
+        .material-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+        
+        .material-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .material-list a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+        
+        .material-list a:hover {
+            text-decoration: underline;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            font-size: 0.8em;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Wellen</p>
+            <h1>Stehende Wellen</h1>
+        </header>
+        
+        <!-- Tab-Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="superposition">Superposition</button>
+            <button class="tab-btn" data-tab="mikrowellen">Mikrowellenexperiment</button>
+        </div>
+        
+        <!-- Tab 1: Superposition -->
+        <div id="superposition" class="tab-content active">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="waveCanvas" width="600" height="300"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #2c5aa0;"></div>
+                            <span>Welle →</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #c44;"></div>
+                            <span>Welle ←</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #2a7a4b; height: 4px;"></div>
+                            <span>Stehende Welle</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #d4a020;"></div>
+                            <span>Knoten</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #8b5cf6;"></div>
+                            <span>Bäuche</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <h3>Parameter</h3>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Wellenlänge λ</span>
+                            <span class="control-value" id="wavelengthValue">4,0 cm</span>
+                        </div>
+                        <input type="range" id="wavelength" min="2" max="8" value="4" step="0.5">
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Amplitude A</span>
+                            <span class="control-value" id="amplitudeValue">1,0 cm</span>
+                        </div>
+                        <input type="range" id="amplitude" min="0.5" max="2" value="1" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Frequenz f</span>
+                            <span class="control-value" id="frequencyValue">1,0 Hz</span>
+                        </div>
+                        <input type="range" id="frequency" min="0.3" max="2" value="1" step="0.1">
+                    </div>
+                    
+                    <h3 style="margin-top: 15px;">Anzeige</h3>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="showWaveRight" checked>
+                            <span>Welle nach rechts</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="showWaveLeft" checked>
+                            <span>Welle nach links</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="showStanding" checked>
+                            <span>Resultierende</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="showNodes" checked>
+                            <span>Knoten markieren</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" id="showAntinodes" checked>
+                            <span>Bäuche markieren</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <h3>Messwerte</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Knotenabstand</div>
+                        <div class="info-value" id="nodeDistance">2,0 cm</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">entspricht</div>
+                        <div class="info-value">λ/2</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Knoten–Bauch</div>
+                        <div class="info-value" id="nodeAntinodeDistance">1,0 cm</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">entspricht</div>
+                        <div class="info-value">λ/4</div>
+                    </div>
+                </div>
+                <div class="formula">
+                    y(x,t) = 2A · sin(kx) · cos(ωt)
+                </div>
+                <div class="btn-group">
+                    <button class="btn primary" id="playPauseBtn">⏸ Pause</button>
+                    <button class="btn" id="resetBtn">↺ Reset</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab 2: Mikrowellenexperiment -->
+        <div id="mikrowellen" class="tab-content">
+            <div class="experiment-description">
+                <h4>Versuchsaufbau</h4>
+                <p>Ein Mikrowellensender (f = 10 GHz) strahlt auf einen Reflektor. Durch Reflexion entstehen gegenläufige Wellen, die sich zu einer stehenden Welle überlagern. Mit einem beweglichen Detektor können Knoten (Minimum) und Bäuche (Maximum) lokalisiert werden.</p>
+            </div>
+            
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="microCanvas" width="600" height="280"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #2c5aa0;"></div>
+                            <span>Hinlaufende Welle</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #c44;"></div>
+                            <span>Reflektierte Welle</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #2a7a4b; height: 4px;"></div>
+                            <span>Stehende Welle</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <h3>Detektor</h3>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Position</span>
+                            <span class="control-value" id="detectorPosValue">10,0 cm</span>
+                        </div>
+                        <input type="range" id="detectorPos" min="2" max="18" value="10" step="0.1">
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Signalstärke</span>
+                            <span class="control-value" id="signalValue">0,00</span>
+                        </div>
+                        <div style="background: #eee; height: 20px; margin-top: 5px; border-radius: 2px; overflow: hidden;">
+                            <div id="signalBar" style="background: #2a7a4b; height: 100%; width: 50%; transition: width 0.1s;"></div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-top: 15px;">Messung</h3>
+                    <div class="control-group">
+                        <button class="btn" id="markNode1" style="width: 100%; margin-bottom: 8px;">Knoten 1 markieren</button>
+                        <button class="btn" id="markNode2" style="width: 100%;">Knoten 2 markieren</button>
+                    </div>
+                    
+                    <div class="info-item" style="margin-top: 15px;">
+                        <div class="info-label">Knoten 1</div>
+                        <div class="info-value" id="node1Pos">– cm</div>
+                    </div>
+                    <div class="info-item" style="margin-top: 8px;">
+                        <div class="info-label">Knoten 2</div>
+                        <div class="info-value" id="node2Pos">– cm</div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button class="btn primary" id="calculateLambda">λ berechnen</button>
+                        <button class="btn" id="resetMeasurement">↺ Reset</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="measurementResult" class="measurement-result" style="display: none;">
+                <strong>Ergebnis:</strong> <span id="resultText"></span>
+            </div>
+            
+            <div class="info-box">
+                <h3>Theorie</h3>
+                <div class="formula">
+                    Δx<sub>K</sub> = λ/2 → λ = 2 · Δx<sub>K</sub>
+                </div>
+                <p style="font-size: 0.9em; color: #555; margin-top: 10px;">
+                    Mit der Frequenz f = 10 GHz = 10 · 10⁹ Hz ergibt sich:<br>
+                    <strong>v = λ · f</strong> (Ausbreitungsgeschwindigkeit)
+                </p>
+            </div>
+        </div>
+        
+        <!-- Materialien-Box -->
+        <div class="material-box">
+            <h3>Materialien</h3>
+            <ul class="material-list">
+                <li><a href="arbeitsblatt-stehende-wellen.html">Arbeitsblatt: Stehende Wellen</a> – Mit Simulationsaufgaben (30 BE)</li>
+                <li><a href="unterrichtshinweise.html">Unterrichtshinweise</a> – Verlaufsplan und Musterlösung</li>
+            </ul>
+        </div>
+        
+        <footer>
+            © 2025 ScienceSim · Physik GK 12 · Mecklenburg-Vorpommern
+        </footer>
+    </div>
+
+    <script>
+        // ============ TAB NAVIGATION ============
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+        
+        // ============ TAB 1: SUPERPOSITION ============
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Skalierung: 1 cm = 30 px (für Darstellung)
+        const SCALE = 30; // px pro cm
+        const CANVAS_WIDTH_CM = canvas.width / SCALE; // ~20 cm
+        
+        // Parameter (in cm und Hz)
+        let wavelength = 4.0;  // cm
+        let amplitude = 1.0;   // cm
+        let frequency = 1.0;   // Hz
+        let time = 0;
+        let isPlaying = true;
+        
+        // Anzeige-Optionen
+        let showWaveRight = true;
+        let showWaveLeft = true;
+        let showStanding = true;
+        let showNodes = true;
+        let showAntinodes = true;
+        
+        // Farben
+        const colors = {
+            waveRight: '#2c5aa0',
+            waveLeft: '#c44',
+            standing: '#2a7a4b',
+            node: '#d4a020',
+            antinode: '#8b5cf6',
+            grid: '#e5e5e5',
+            axis: '#888'
+        };
+        
+        // DOM Elements
+        const wavelengthSlider = document.getElementById('wavelength');
+        const amplitudeSlider = document.getElementById('amplitude');
+        const frequencySlider = document.getElementById('frequency');
+        
+        wavelengthSlider.addEventListener('input', (e) => {
+            wavelength = parseFloat(e.target.value);
+            document.getElementById('wavelengthValue').textContent = wavelength.toFixed(1).replace('.', ',') + ' cm';
+            updateInfoDisplay();
+        });
+        
+        amplitudeSlider.addEventListener('input', (e) => {
+            amplitude = parseFloat(e.target.value);
+            document.getElementById('amplitudeValue').textContent = amplitude.toFixed(1).replace('.', ',') + ' cm';
+        });
+        
+        frequencySlider.addEventListener('input', (e) => {
+            frequency = parseFloat(e.target.value);
+            document.getElementById('frequencyValue').textContent = frequency.toFixed(1).replace('.', ',') + ' Hz';
+        });
+        
+        document.getElementById('showWaveRight').addEventListener('change', (e) => showWaveRight = e.target.checked);
+        document.getElementById('showWaveLeft').addEventListener('change', (e) => showWaveLeft = e.target.checked);
+        document.getElementById('showStanding').addEventListener('change', (e) => showStanding = e.target.checked);
+        document.getElementById('showNodes').addEventListener('change', (e) => showNodes = e.target.checked);
+        document.getElementById('showAntinodes').addEventListener('change', (e) => showAntinodes = e.target.checked);
+        
+        document.getElementById('playPauseBtn').addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            document.getElementById('playPauseBtn').textContent = isPlaying ? '⏸ Pause' : '▶ Start';
+        });
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            time = 0;
+            wavelength = 4.0;
+            amplitude = 1.0;
+            frequency = 1.0;
+            wavelengthSlider.value = 4;
+            amplitudeSlider.value = 1;
+            frequencySlider.value = 1;
+            document.getElementById('wavelengthValue').textContent = '4,0 cm';
+            document.getElementById('amplitudeValue').textContent = '1,0 cm';
+            document.getElementById('frequencyValue').textContent = '1,0 Hz';
+            updateInfoDisplay();
+        });
+        
+        function updateInfoDisplay() {
+            const halfLambda = wavelength / 2;
+            const quarterLambda = wavelength / 4;
+            document.getElementById('nodeDistance').textContent = halfLambda.toFixed(1).replace('.', ',') + ' cm';
+            document.getElementById('nodeAntinodeDistance').textContent = quarterLambda.toFixed(1).replace('.', ',') + ' cm';
+        }
+        
+        // Wellenfunktionen (x in cm, t in s)
+        function waveRight(x, t) {
+            const k = (2 * Math.PI) / wavelength;
+            const omega = 2 * Math.PI * frequency;
+            return amplitude * Math.sin(k * x - omega * t);
+        }
+        
+        function waveLeft(x, t) {
+            const k = (2 * Math.PI) / wavelength;
+            const omega = 2 * Math.PI * frequency;
+            return amplitude * Math.sin(k * x + omega * t);
+        }
+        
+        function standingWave(x, t) {
+            return waveRight(x, t) + waveLeft(x, t);
+        }
+        
+        function drawGrid() {
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 1;
+            
+            // Vertikale Linien (alle 1 cm)
+            for (let x = 0; x <= CANVAS_WIDTH_CM; x += 1) {
+                ctx.beginPath();
+                ctx.moveTo(x * SCALE, 0);
+                ctx.lineTo(x * SCALE, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Horizontale Linien
+            for (let y = 0; y <= canvas.height; y += SCALE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawAxis() {
+            const centerY = canvas.height / 2;
+            
+            ctx.strokeStyle = colors.axis;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+            
+            // Skala
+            ctx.fillStyle = colors.axis;
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            for (let x = 0; x <= CANVAS_WIDTH_CM; x += 2) {
+                ctx.fillText(x + '', x * SCALE, centerY + 15);
+            }
+            ctx.fillText('x (cm)', canvas.width - 25, centerY + 15);
+        }
+        
+        function drawWave(waveFunc, color, lineWidth = 2, dashed = false) {
+            const centerY = canvas.height / 2;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.setLineDash(dashed ? [6, 4] : []);
+            
+            ctx.beginPath();
+            for (let px = 0; px <= canvas.width; px++) {
+                const x_cm = px / SCALE;
+                const y_cm = waveFunc(x_cm, time);
+                const py = centerY - y_cm * SCALE;
+                if (px === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        function drawNodes() {
+            const centerY = canvas.height / 2;
+            
+            // Knoten bei x = n * λ/2
+            for (let n = 0; n * wavelength / 2 <= CANVAS_WIDTH_CM; n++) {
+                const x_cm = n * wavelength / 2;
+                const px = x_cm * SCALE;
+                
+                ctx.fillStyle = colors.node;
+                ctx.beginPath();
+                ctx.arc(px, centerY, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+        }
+        
+        function drawAntinodes() {
+            const centerY = canvas.height / 2;
+            const omega = 2 * Math.PI * frequency;
+            
+            // Bäuche bei x = (n + 0.5) * λ/2
+            for (let n = 0; (n + 0.5) * wavelength / 2 <= CANVAS_WIDTH_CM; n++) {
+                const x_cm = (n + 0.5) * wavelength / 2;
+                const px = x_cm * SCALE;
+                
+                const currentAmp = 2 * amplitude * Math.cos(omega * time);
+                const py = centerY - currentAmp * SCALE;
+                
+                ctx.fillStyle = colors.antinode;
+                ctx.beginPath();
+                ctx.arc(px, py, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Schwingungsbereich anzeigen
+                ctx.strokeStyle = colors.antinode;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(px, centerY - 2 * amplitude * SCALE);
+                ctx.lineTo(px, centerY + 2 * amplitude * SCALE);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawGrid();
+            drawAxis();
+            
+            if (showAntinodes) drawAntinodes();
+            if (showNodes) drawNodes();
+            
+            if (showWaveRight) drawWave(waveRight, colors.waveRight, 2, true);
+            if (showWaveLeft) drawWave(waveLeft, colors.waveLeft, 2, true);
+            if (showStanding) drawWave(standingWave, colors.standing, 3, false);
+            
+            if (isPlaying) {
+                time += 0.016;
+            }
+            
+            requestAnimationFrame(draw);
+        }
+        
+        updateInfoDisplay();
+        draw();
+        
+        // ============ TAB 2: MIKROWELLENEXPERIMENT ============
+        const microCanvas = document.getElementById('microCanvas');
+        const microCtx = microCanvas.getContext('2d');
+        
+        const MICRO_LAMBDA = 3.0; // cm (entspricht 10 GHz)
+        const MICRO_SCALE = 25; // px pro cm
+        let detectorPos = 10.0; // cm
+        let node1Pos = null;
+        let node2Pos = null;
+        let microTime = 0;
+        
+        document.getElementById('detectorPos').addEventListener('input', (e) => {
+            detectorPos = parseFloat(e.target.value);
+            document.getElementById('detectorPosValue').textContent = detectorPos.toFixed(1).replace('.', ',') + ' cm';
+            updateSignal();
+        });
+        
+        document.getElementById('markNode1').addEventListener('click', () => {
+            node1Pos = detectorPos;
+            document.getElementById('node1Pos').textContent = node1Pos.toFixed(1).replace('.', ',') + ' cm';
+        });
+        
+        document.getElementById('markNode2').addEventListener('click', () => {
+            node2Pos = detectorPos;
+            document.getElementById('node2Pos').textContent = node2Pos.toFixed(1).replace('.', ',') + ' cm';
+        });
+        
+        document.getElementById('calculateLambda').addEventListener('click', () => {
+            const resultDiv = document.getElementById('measurementResult');
+            const resultText = document.getElementById('resultText');
+            
+            if (node1Pos === null || node2Pos === null) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'measurement-result error';
+                resultText.innerHTML = 'Bitte beide Knoten markieren!';
+                return;
+            }
+            
+            const deltaX = Math.abs(node2Pos - node1Pos);
+            const lambda = 2 * deltaX;
+            const v = lambda / 100 * 10e9; // cm → m, dann * f
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'measurement-result';
+            resultText.innerHTML = `
+                Δx<sub>K</sub> = ${deltaX.toFixed(1).replace('.', ',')} cm<br>
+                λ = 2 · ${deltaX.toFixed(1).replace('.', ',')} cm = <strong>${lambda.toFixed(1).replace('.', ',')} cm</strong><br>
+                v = λ · f = ${(lambda/100).toFixed(3).replace('.', ',')} m · 10·10⁹ Hz = <strong>${(v/1e8).toFixed(1).replace('.', ',')} · 10⁸ m/s</strong>
+            `;
+        });
+        
+        document.getElementById('resetMeasurement').addEventListener('click', () => {
+            node1Pos = null;
+            node2Pos = null;
+            document.getElementById('node1Pos').textContent = '– cm';
+            document.getElementById('node2Pos').textContent = '– cm';
+            document.getElementById('measurementResult').style.display = 'none';
+        });
+        
+        function updateSignal() {
+            const k = (2 * Math.PI) / MICRO_LAMBDA;
+            // Signalstärke ~ |sin(kx)|² (Intensität der stehenden Welle)
+            const signal = Math.pow(Math.sin(k * detectorPos), 2);
+            document.getElementById('signalValue').textContent = signal.toFixed(2).replace('.', ',');
+            document.getElementById('signalBar').style.width = (signal * 100) + '%';
+        }
+        
+        function microWaveRight(x, t) {
+            const k = (2 * Math.PI) / MICRO_LAMBDA;
+            const omega = 2 * Math.PI * 2; // schnellere Animation
+            return 0.8 * Math.sin(k * x - omega * t);
+        }
+        
+        function microWaveLeft(x, t) {
+            const k = (2 * Math.PI) / MICRO_LAMBDA;
+            const omega = 2 * Math.PI * 2;
+            return 0.8 * Math.sin(k * x + omega * t);
+        }
+        
+        function microStandingWave(x, t) {
+            return microWaveRight(x, t) + microWaveLeft(x, t);
+        }
+        
+        function drawMicroExperiment() {
+            microCtx.fillStyle = '#fafafa';
+            microCtx.fillRect(0, 0, microCanvas.width, microCanvas.height);
+            
+            const centerY = microCanvas.height / 2 + 20;
+            const waveY = 80;
+            
+            // Sender (links)
+            microCtx.fillStyle = '#555';
+            microCtx.fillRect(10, centerY - 30, 30, 60);
+            microCtx.fillStyle = '#333';
+            microCtx.font = '10px sans-serif';
+            microCtx.textAlign = 'center';
+            microCtx.fillText('Sender', 25, centerY + 50);
+            
+            // Reflektor (rechts)
+            microCtx.fillStyle = '#888';
+            microCtx.fillRect(microCanvas.width - 30, centerY - 40, 15, 80);
+            microCtx.fillStyle = '#333';
+            microCtx.fillText('Reflektor', microCanvas.width - 22, centerY + 50);
+            
+            // Skala
+            microCtx.strokeStyle = '#ccc';
+            microCtx.lineWidth = 1;
+            microCtx.beginPath();
+            microCtx.moveTo(50, centerY + 25);
+            microCtx.lineTo(microCanvas.width - 40, centerY + 25);
+            microCtx.stroke();
+            
+            microCtx.fillStyle = '#888';
+            microCtx.font = '10px sans-serif';
+            for (let x = 0; x <= 20; x += 2) {
+                const px = 50 + x * MICRO_SCALE;
+                microCtx.fillText(x + '', px, centerY + 38);
+            }
+            microCtx.fillText('cm', microCanvas.width - 55, centerY + 38);
+            
+            // Wellen zeichnen (im oberen Bereich)
+            // Hinlaufende Welle
+            microCtx.strokeStyle = colors.waveRight;
+            microCtx.lineWidth = 1.5;
+            microCtx.setLineDash([4, 3]);
+            microCtx.beginPath();
+            for (let px = 50; px < microCanvas.width - 40; px++) {
+                const x_cm = (px - 50) / MICRO_SCALE;
+                const y = microWaveRight(x_cm, microTime);
+                const py = waveY - y * 25;
+                if (px === 50) microCtx.moveTo(px, py);
+                else microCtx.lineTo(px, py);
+            }
+            microCtx.stroke();
+            
+            // Reflektierte Welle
+            microCtx.strokeStyle = colors.waveLeft;
+            microCtx.beginPath();
+            for (let px = 50; px < microCanvas.width - 40; px++) {
+                const x_cm = (px - 50) / MICRO_SCALE;
+                const y = microWaveLeft(x_cm, microTime);
+                const py = waveY - y * 25;
+                if (px === 50) microCtx.moveTo(px, py);
+                else microCtx.lineTo(px, py);
+            }
+            microCtx.stroke();
+            microCtx.setLineDash([]);
+            
+            // Stehende Welle
+            microCtx.strokeStyle = colors.standing;
+            microCtx.lineWidth = 2.5;
+            microCtx.beginPath();
+            for (let px = 50; px < microCanvas.width - 40; px++) {
+                const x_cm = (px - 50) / MICRO_SCALE;
+                const y = microStandingWave(x_cm, microTime);
+                const py = waveY - y * 25;
+                if (px === 50) microCtx.moveTo(px, py);
+                else microCtx.lineTo(px, py);
+            }
+            microCtx.stroke();
+            
+            // Detektor
+            const detPx = 50 + detectorPos * MICRO_SCALE;
+            microCtx.fillStyle = '#2c5aa0';
+            microCtx.fillRect(detPx - 8, centerY - 20, 16, 40);
+            microCtx.fillStyle = '#fff';
+            microCtx.font = '8px sans-serif';
+            microCtx.textAlign = 'center';
+            microCtx.fillText('Det', detPx, centerY + 3);
+            
+            // Markierte Knoten
+            if (node1Pos !== null) {
+                const px = 50 + node1Pos * MICRO_SCALE;
+                microCtx.strokeStyle = colors.node;
+                microCtx.lineWidth = 2;
+                microCtx.beginPath();
+                microCtx.moveTo(px, waveY - 30);
+                microCtx.lineTo(px, waveY + 30);
+                microCtx.stroke();
+                microCtx.fillStyle = colors.node;
+                microCtx.fillText('K1', px, waveY - 35);
+            }
+            
+            if (node2Pos !== null) {
+                const px = 50 + node2Pos * MICRO_SCALE;
+                microCtx.strokeStyle = colors.node;
+                microCtx.lineWidth = 2;
+                microCtx.beginPath();
+                microCtx.moveTo(px, waveY - 30);
+                microCtx.lineTo(px, waveY + 30);
+                microCtx.stroke();
+                microCtx.fillStyle = colors.node;
+                microCtx.fillText('K2', px, waveY - 35);
+            }
+            
+            microTime += 0.016;
+            requestAnimationFrame(drawMicroExperiment);
+        }
+        
+        updateSignal();
+        drawMicroExperiment();
+    </script>
+</body>
+</html>
