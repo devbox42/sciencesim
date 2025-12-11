@@ -400,7 +400,7 @@
                         <span>Kraft F</span>
                         <span class="control-value" id="forceValue">40 N</span>
                     </div>
-                    <input type="range" id="forceSlider" min="10" max="200" value="40" step="10">
+                    <input type="range" id="forceSlider" min="10" max="5000" value="40" step="10">
                 </div>
 
                 <div class="control-group">
@@ -408,7 +408,7 @@
                         <span>Masse m</span>
                         <span class="control-value" id="massValue">20 kg</span>
                     </div>
-                    <input type="range" id="massSlider" min="5" max="100" value="20" step="5">
+                    <input type="range" id="massSlider" min="5" max="2000" value="20" step="5">
                 </div>
 
                 <div class="button-group">
@@ -419,10 +419,10 @@
                 <div class="presets">
                     <div class="presets-title">Beispiele</div>
                     <div class="preset-grid">
-                        <button class="preset-btn" onclick="setPreset(40, 20)">Einkaufswagen</button>
-                        <button class="preset-btn" onclick="setPreset(200, 100)">Auto</button>
-                        <button class="preset-btn" onclick="setPreset(150, 75)">Fahrrad</button>
-                        <button class="preset-btn" onclick="setPreset(50, 10)">Paket</button>
+                        <button class="preset-btn" onclick="setPreset(40, 20, 'cart')">Einkaufswagen</button>
+                        <button class="preset-btn" onclick="setPreset(3000, 1200, 'car')">Auto</button>
+                        <button class="preset-btn" onclick="setPreset(150, 85, 'bike')">Fahrrad</button>
+                        <button class="preset-btn" onclick="setPreset(20, 10, 'box')">Paket</button>
                     </div>
                 </div>
             </div>
@@ -469,6 +469,7 @@
         let isRunning = false;
         let animationId = null;
         let lastTime = 0;
+        let objectType = 'cart'; // 'cart', 'car', 'bike', 'box'
 
         // DOM Elemente
         const forceSlider = document.getElementById('forceSlider');
@@ -490,14 +491,22 @@
             updateDisplays();
         }
 
+        // Formatierung für große Zahlen
+        function formatNumber(num) {
+            if (num >= 1000) {
+                return (num / 1000).toFixed(1).replace('.', ',') + 'k';
+            }
+            return num.toString();
+        }
+
         // Anzeigen aktualisieren
         function updateDisplays() {
-            forceValue.textContent = force + ' N';
-            massValue.textContent = mass + ' kg';
-            forceDisplay.textContent = force + ' N';
-            massDisplay.textContent = mass + ' kg';
-            accelDisplay.textContent = acceleration.toFixed(1).replace('.', ',') + ' m/s²';
-            bigAccel.textContent = acceleration.toFixed(1).replace('.', ',');
+            forceValue.textContent = formatNumber(force) + ' N';
+            massValue.textContent = formatNumber(mass) + ' kg';
+            forceDisplay.textContent = formatNumber(force) + ' N';
+            massDisplay.textContent = formatNumber(mass) + ' kg';
+            accelDisplay.textContent = acceleration.toFixed(2).replace('.', ',') + ' m/s²';
+            bigAccel.textContent = acceleration.toFixed(2).replace('.', ',');
         }
 
         // Slider Events
@@ -509,18 +518,226 @@
 
         massSlider.addEventListener('input', function() {
             mass = parseInt(this.value);
+            // Objekttyp automatisch anpassen
+            if (mass > 500) objectType = 'car';
+            else if (mass > 50) objectType = 'bike';
+            else if (mass > 15) objectType = 'cart';
+            else objectType = 'box';
             calculateAcceleration();
             if (!isRunning) draw();
         });
 
         // Presets
-        function setPreset(f, m) {
+        function setPreset(f, m, type) {
             force = f;
             mass = m;
+            objectType = type;
             forceSlider.value = force;
             massSlider.value = mass;
             calculateAcceleration();
             resetSimulation();
+        }
+
+        // Einkaufswagen zeichnen
+        function drawCart(x, y, w, h) {
+            ctx.save();
+            
+            // Korb
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            ctx.moveTo(x - w/2, y - h);
+            ctx.lineTo(x + w/2, y - h);
+            ctx.lineTo(x + w/2 - 5, y - h/4);
+            ctx.lineTo(x - w/2 + 5, y - h/4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Gitter
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(x - w/2 + 5 + i * w/4, y - h);
+                ctx.lineTo(x - w/2 + 8 + i * w/4, y - h/4);
+                ctx.stroke();
+            }
+            
+            // Räder
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(x - w/3, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + w/3, y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Griff
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - w/2, y - h);
+            ctx.lineTo(x - w/2 - 15, y - h - 20);
+            ctx.lineTo(x - w/2 - 15, y - h/2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Auto zeichnen
+        function drawCar(x, y, w, h) {
+            ctx.save();
+            
+            // Karosserie unten
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.roundRect(x - w/2, y - h/2, w, h/2, 3);
+            ctx.fill();
+            
+            // Karosserie oben (Dach)
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(x - w/3, y - h/2);
+            ctx.lineTo(x - w/4, y - h);
+            ctx.lineTo(x + w/4, y - h);
+            ctx.lineTo(x + w/3, y - h/2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Fenster
+            ctx.fillStyle = '#85c1e9';
+            ctx.beginPath();
+            ctx.moveTo(x - w/3.5, y - h/2 - 3);
+            ctx.lineTo(x - w/5, y - h + 5);
+            ctx.lineTo(x + w/5, y - h + 5);
+            ctx.lineTo(x + w/3.5, y - h/2 - 3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Räder
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(x - w/3, y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + w/3, y, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Felgen
+            ctx.fillStyle = '#95a5a6';
+            ctx.beginPath();
+            ctx.arc(x - w/3, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + w/3, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Scheinwerfer
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(x + w/2 - 5, y - h/3, 4, 6);
+            
+            ctx.restore();
+        }
+
+        // Fahrrad mit Fahrer zeichnen
+        function drawBike(x, y, w, h) {
+            ctx.save();
+            
+            // Räder
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x - w/3, y - 5, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x + w/3, y - 5, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Rahmen
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - w/3, y - 5);
+            ctx.lineTo(x, y - 25);
+            ctx.lineTo(x + w/3, y - 5);
+            ctx.moveTo(x, y - 25);
+            ctx.lineTo(x - 5, y - 5);
+            ctx.moveTo(x, y - 25);
+            ctx.lineTo(x + 10, y - 35);
+            ctx.stroke();
+            
+            // Sattel
+            ctx.fillStyle = '#333';
+            ctx.fillRect(x - 8, y - 38, 12, 4);
+            
+            // Lenker
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y - 40);
+            ctx.lineTo(x + 15, y - 35);
+            ctx.stroke();
+            
+            // Fahrer (Strichmännchen)
+            ctx.fillStyle = '#e67e22';
+            // Kopf
+            ctx.beginPath();
+            ctx.arc(x, y - 60, 8, 0, Math.PI * 2);
+            ctx.fill();
+            // Körper
+            ctx.strokeStyle = '#e67e22';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 52);
+            ctx.lineTo(x - 5, y - 35);
+            ctx.stroke();
+            // Arme
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y - 45);
+            ctx.lineTo(x + 12, y - 38);
+            ctx.stroke();
+            // Beine
+            ctx.beginPath();
+            ctx.moveTo(x - 5, y - 35);
+            ctx.lineTo(x - 5, y - 10);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Paket zeichnen
+        function drawBox(x, y, w, h) {
+            ctx.save();
+            
+            // Hauptkarton
+            ctx.fillStyle = '#d4a574';
+            ctx.fillRect(x - w/2, y - h, w, h);
+            
+            // Schatten/Kanten
+            ctx.fillStyle = '#b8956e';
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y - h);
+            ctx.lineTo(x + w/2 + 8, y - h - 5);
+            ctx.lineTo(x + w/2 + 8, y - 5);
+            ctx.lineTo(x + w/2, y);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Oberseite
+            ctx.fillStyle = '#e6c9a8';
+            ctx.beginPath();
+            ctx.moveTo(x - w/2, y - h);
+            ctx.lineTo(x - w/2 + 8, y - h - 5);
+            ctx.lineTo(x + w/2 + 8, y - h - 5);
+            ctx.lineTo(x + w/2, y - h);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Klebeband
+            ctx.fillStyle = '#c9a86c';
+            ctx.fillRect(x - 3, y - h, 6, h);
+            ctx.fillRect(x - w/2, y - h/2 - 3, w, 6);
+            
+            ctx.restore();
         }
 
         // Zeichnen
@@ -541,66 +758,90 @@
             ctx.font = '10px sans-serif';
             ctx.textAlign = 'center';
             for (let i = 0; i <= 10; i++) {
-                const x = (i / 10) * w;
+                const xPos = (i / 10) * w;
                 ctx.fillStyle = '#ccc';
-                ctx.fillRect(x, h - 30, 1, 8);
+                ctx.fillRect(xPos, h - 30, 1, 8);
                 ctx.fillStyle = '#999';
-                ctx.fillText((i * 10) + 'm', x, h - 8);
+                ctx.fillText((i * 10) + 'm', xPos, h - 8);
             }
 
             // Objekt Position (skaliert auf 0-100m)
-            const objX = (position / 100) * (w - 80) + 40;
-            const objY = h - 55;
+            const objX = (position / 100) * (w - 100) + 50;
+            const objY = h - 35;
 
-            // Objektgröße basierend auf Masse
-            const objWidth = 40 + (mass / 100) * 30;
-            const objHeight = 30 + (mass / 100) * 15;
+            // Objektgröße
+            let objWidth, objHeight;
+            switch(objectType) {
+                case 'car':
+                    objWidth = 80;
+                    objHeight = 40;
+                    break;
+                case 'bike':
+                    objWidth = 60;
+                    objHeight = 70;
+                    break;
+                case 'cart':
+                    objWidth = 50;
+                    objHeight = 40;
+                    break;
+                case 'box':
+                default:
+                    objWidth = 35;
+                    objHeight = 30;
+                    break;
+            }
 
-            // Schatten
-            ctx.fillStyle = 'rgba(0,0,0,0.1)';
-            ctx.fillRect(objX - objWidth/2 + 3, h - 32, objWidth, 4);
-
-            // Objekt (Kasten)
-            ctx.fillStyle = '#2c5aa0';
-            ctx.fillRect(objX - objWidth/2, objY - objHeight/2, objWidth, objHeight);
-
-            // Rand
-            ctx.strokeStyle = '#1a3d6e';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(objX - objWidth/2, objY - objHeight/2, objWidth, objHeight);
+            // Objekt zeichnen
+            switch(objectType) {
+                case 'car':
+                    drawCar(objX, objY, objWidth, objHeight);
+                    break;
+                case 'bike':
+                    drawBike(objX, objY, objWidth, objHeight);
+                    break;
+                case 'cart':
+                    drawCart(objX, objY, objWidth, objHeight);
+                    break;
+                case 'box':
+                default:
+                    drawBox(objX, objY, objWidth, objHeight);
+                    break;
+            }
 
             // Masse-Label
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px sans-serif';
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(mass + ' kg', objX, objY + 4);
+            ctx.fillText(formatNumber(mass) + ' kg', objX, objY - objHeight - 10);
 
             // Kraft-Pfeil (wenn nicht am Ende)
-            if (position < 95) {
-                const arrowLength = 30 + (force / 200) * 60;
-                const arrowY = objY;
+            if (position < 95 && force > 0) {
+                const maxArrowLength = 80;
+                const arrowLength = 30 + (Math.min(force, 3000) / 3000) * 50;
+                const arrowY = objY - objHeight/2;
+                const arrowStartX = objX + objWidth/2 + 10;
 
                 // Linie
                 ctx.strokeStyle = '#c0392b';
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 4;
                 ctx.beginPath();
-                ctx.moveTo(objX + objWidth/2 + 5, arrowY);
-                ctx.lineTo(objX + objWidth/2 + 5 + arrowLength, arrowY);
+                ctx.moveTo(arrowStartX, arrowY);
+                ctx.lineTo(arrowStartX + arrowLength, arrowY);
                 ctx.stroke();
 
                 // Pfeilspitze
                 ctx.fillStyle = '#c0392b';
                 ctx.beginPath();
-                ctx.moveTo(objX + objWidth/2 + 5 + arrowLength + 10, arrowY);
-                ctx.lineTo(objX + objWidth/2 + 5 + arrowLength - 3, arrowY - 6);
-                ctx.lineTo(objX + objWidth/2 + 5 + arrowLength - 3, arrowY + 6);
+                ctx.moveTo(arrowStartX + arrowLength + 10, arrowY);
+                ctx.lineTo(arrowStartX + arrowLength - 3, arrowY - 6);
+                ctx.lineTo(arrowStartX + arrowLength - 3, arrowY + 6);
                 ctx.closePath();
                 ctx.fill();
 
                 // Label
                 ctx.fillStyle = '#c0392b';
                 ctx.font = 'bold 11px sans-serif';
-                ctx.fillText('F = ' + force + ' N', objX + objWidth/2 + 5 + arrowLength/2, arrowY - 12);
+                ctx.fillText('F = ' + formatNumber(force) + ' N', arrowStartX + arrowLength/2, arrowY - 12);
             }
         }
 
@@ -673,6 +914,22 @@
             timeValue.textContent = '0,0';
 
             draw();
+        }
+
+        // Polyfill für roundRect
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.beginPath();
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                this.closePath();
+                return this;
+            };
         }
 
         // Init
