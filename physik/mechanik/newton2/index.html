@@ -474,12 +474,16 @@
             ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, w, h);
             ctx.fillStyle = '#e0e0e0'; ctx.fillRect(0, h - 30, w, 30);
             ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+            // Dynamische Skala basierend auf Position
+            const maxPos = Math.max(100, Math.ceil(position / 100) * 100);
             for (let i = 0; i <= 10; i++) {
                 const xPos = (i / 10) * w;
                 ctx.fillStyle = '#ccc'; ctx.fillRect(xPos, h - 30, 1, 8);
-                ctx.fillStyle = '#999'; ctx.fillText((i * 10) + 'm', xPos, h - 8);
+                ctx.fillStyle = '#999'; ctx.fillText((i * maxPos / 10).toFixed(0) + 'm', xPos, h - 8);
             }
-            const objX = (position / 100) * (w - 100) + 50;
+            // Objekt bleibt im sichtbaren Bereich
+            const normalizedPos = Math.min(position / maxPos, 0.95);
+            const objX = normalizedPos * (w - 100) + 50;
             const objY = h - 35;
             let objW, objH;
             switch(objectType) {
@@ -496,7 +500,7 @@
             }
             ctx.fillStyle = '#333'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
             ctx.fillText(formatNumber(mass) + ' kg', objX, objY - objH - 10);
-            if (position < 95 && force > 0) {
+            if (position < maxPos * 0.95 && force > 0) {
                 const arrowLen = 30 + (Math.min(force, 3000) / 3000) * 50;
                 const arrowY = objY - objH/2;
                 const arrowX = objX + objW/2 + 10;
@@ -528,8 +532,14 @@
             context.translate(12, h / 2); context.rotate(-Math.PI / 2);
             context.fillText(yLabel, 0, 0);
             context.restore();
-            const maxT = Math.max(10, time + 2);
-            const maxY = data.length > 0 ? Math.max(yLabel === 'v in m/s' ? 20 : 100, Math.max(...data) * 1.2) : (yLabel === 'v in m/s' ? 20 : 100);
+            
+            // Dynamische Skalierung basierend auf aktuellen Daten
+            const currentMaxT = timeData.length > 0 ? timeData[timeData.length - 1] : 10;
+            const maxT = Math.max(10, currentMaxT * 1.1);
+            const currentMaxY = data.length > 0 ? Math.max(...data) : 10;
+            const minY = yLabel === 'v in m/s' ? 20 : 50;
+            const maxY = Math.max(minY, currentMaxY * 1.2);
+            
             context.strokeStyle = '#ddd'; context.fillStyle = '#666'; context.font = '9px sans-serif';
             context.textAlign = 'right';
             for (let i = 0; i <= 4; i++) {
@@ -540,7 +550,7 @@
             context.textAlign = 'center';
             for (let i = 0; i <= 5; i++) {
                 const x = pad + (i / 5) * gW;
-                context.fillText((maxT * i / 5).toFixed(0), x, h - pad + 22);
+                context.fillText((maxT * i / 5).toFixed(1), x, h - pad + 22);
             }
             // Theoretische Linie
             context.strokeStyle = '#aaa'; context.lineWidth = 1; context.setLineDash([5, 5]);
@@ -588,20 +598,25 @@
             time += dt * scale;
             velocity += acceleration * dt * scale;
             position += velocity * dt * scale * 2;
-            if (timeData.length < 200) {
-                timeData.push(time);
-                velocityData.push(velocity);
-                positionData.push(position);
+            
+            // Daten für Diagramme - unbegrenzt sammeln
+            timeData.push(time);
+            velocityData.push(velocity);
+            positionData.push(position);
+            
+            // Nur die letzten 1000 Punkte behalten für Performance
+            if (timeData.length > 1000) {
+                timeData.shift();
+                velocityData.shift();
+                positionData.shift();
             }
+            
             speedValue.textContent = velocity.toFixed(1).replace('.', ',');
             posValue.textContent = position.toFixed(1).replace('.', ',');
             timeValue.textContent = time.toFixed(1).replace('.', ',');
-            if (position >= 100) {
-                position = 100;
-                isRunning = false;
-                startBtn.textContent = '▶ Start';
-                startBtn.classList.remove('active');
-            }
+            
+            // KEINE Stopp-Bedingung mehr - läuft unbegrenzt
+            
             draw(); drawDiagrams();
             if (isRunning) animationId = requestAnimationFrame(animate);
         }
