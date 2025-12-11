@@ -1,26 +1,26 @@
 ---
-titel: Schweben, Sinken, Schwimmen
+titel: Sinken, Schweben, Steigen
 fach: Physik
 thema: Mechanik
 unterthema: Auftrieb
 klassenstufe: 7-8
 kurzbeschreibung: Interaktive Simulation zum Verhalten von Körpern in Flüssigkeiten. Schüler untersuchen, wie die Dichte eines Körpers sein Verhalten im Wasser bestimmt.
-stichworte: Dichte, Auftrieb, Sinken, Schweben, Schwimmen, Archimedes, Wasserdichte, Salzwasser
+stichworte: Dichte, Auftrieb, Sinken, Schweben, Steigen, Archimedes, Wasserdichte, Salzwasser
 ---
 
 ## Beschreibung
 
 Diese Simulation ermöglicht es Schülerinnen und Schülern, das Verhalten verschiedener Körper in Wasser selbstständig zu untersuchen. Durch Klicken auf verschiedene Materialien werden Kugeln in ein Wassergefäß (1 m Tiefe) gesetzt und zeigen physikalisch korrekt ihr Verhalten:
 
-- **Schwimmende Körper** steigen zur Oberfläche und ragen teilweise aus dem Wasser
+- **Steigende Körper** bewegen sich zur Oberfläche und ragen teilweise aus dem Wasser
 - **Schwebende Körper** bleiben an ihrer Position im Wasser
 - **Sinkende Körper** fallen zum Boden des Gefäßes
 
-Die Simulation enthält 11 verschiedene Materialien von Helium (ρ ≈ 0,0002 g/cm³) bis Blei (ρ = 11,34 g/cm³), darunter Wachs (ρ = 1,0 g/cm³) als Beispiel für Schweben.
+Die Simulation enthält 11 verschiedene Materialien von Helium (ρ ≈ 0,00016 g/cm³) bis Blei (ρ = 11,34 g/cm³), darunter Wachs (ρ = 1,0 g/cm³) als Beispiel für Schweben in Süßwasser und Eis (ρ = 0,92 g/cm³) für die Eisberg-Berechnung.
 
 ## Lernziele
 
-- Die Schülerinnen und Schüler können die Begriffe Sinken, Schweben und Schwimmen unterscheiden.
+- Die Schülerinnen und Schüler können die Begriffe Sinken, Schweben und Steigen unterscheiden.
 - Die Schülerinnen und Schüler können die Bedingungen für diese Zustände anhand der Dichte formulieren.
 - Die Schülerinnen und Schüler können Alltagsphänomene (z.B. Eisberg, Korken) mit dem Dichtekonzept erklären.
 - Die Schülerinnen und Schüler entwickeln durch systematisches Experimentieren eigene Erkenntnisse (entdeckendes Lernen).
@@ -33,13 +33,13 @@ Das Verhalten eines Körpers in einer Flüssigkeit wird durch das Verhältnis de
 |-----------|-----------|
 | ρ_Körper > ρ_Flüssigkeit | Sinken |
 | ρ_Körper = ρ_Flüssigkeit | Schweben |
-| ρ_Körper < ρ_Flüssigkeit | Schwimmen (Steigen) |
+| ρ_Körper < ρ_Flüssigkeit | Steigen |
 
 Die Referenzdichte ist Wasser mit ρ = 1,0 g/cm³ (Süßwasser) bzw. ρ = 1,025 g/cm³ (Salzwasser).
 
 **Physikalische Korrektheit der Simulation:**
 - Die Sink-/Steiggeschwindigkeit ist proportional zu √|Δρ| (entspricht der Terminal Velocity nach Stokes)
-- Schwimmende Körper ragen entsprechend ihrer Dichte aus dem Wasser (z.B. Eis: 8% über Wasser)
+- Steigende Körper ragen entsprechend ihrer Dichte aus dem Wasser (z.B. Eis: 8% über Wasser)
 - Der Wasserwiderstand dämpft die Bewegung realistisch
 
 ## Bedienung
@@ -57,7 +57,7 @@ Die Referenzdichte ist Wasser mit ρ = 1,0 g/cm³ (Süßwasser) bzw. ρ = 1,025 
   - (*) Materialien sortieren nach Verhalten
   - (**) Zusammenhang mit Dichte erkennen
   - (***) Erklärung von Alltagsphänomenen (Eisberg, Totes Meer)
-- **Experiment Salzwasser:** Wachs schwebt in Süßwasser, schwimmt aber in Salzwasser – zeigt, dass das Medium wichtig ist
+- **Experiment Salzwasser:** Wachs schwebt in Süßwasser, steigt aber in Salzwasser – zeigt, dass das Medium wichtig ist
 
 ## Bezug zum Rahmenplan MV
 

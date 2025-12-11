@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schweben, Sinken, Schwimmen – Simulation</title>
+    <title>Sinken, Schweben, Steigen – Simulation</title>
     <meta name="subject" content="Physik">
     <meta name="topic" content="Mechanik">
     <meta name="grade" content="7-8">
@@ -97,16 +97,16 @@
             cursor: pointer;
             font-family: inherit;
             text-align: left;
+            transition: background 0.1s;
         }
 
         .material-btn:hover {
             background: #f5f5f5;
         }
 
-        .material-btn.active {
-            background: #333;
-            color: #fff;
-            border-color: #333;
+        .material-btn.in-water {
+            background: #e3f2fd;
+            border-color: #2c5aa0;
         }
 
         .material-btn .density {
@@ -116,8 +116,8 @@
             margin-top: 2px;
         }
 
-        .material-btn.active .density {
-            color: #ccc;
+        .material-btn.in-water .density {
+            color: #2c5aa0;
         }
 
         .control-group {
@@ -189,56 +189,6 @@
             background: #fee;
         }
 
-        .info-box {
-            background: #fff;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-box h3 {
-            font-size: 0.95em;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .info-box p {
-            font-size: 0.9em;
-            color: #555;
-            line-height: 1.5;
-            margin-bottom: 10px;
-        }
-
-        .formula {
-            background: #f5f5f5;
-            padding: 10px;
-            text-align: center;
-            font-family: "Times New Roman", serif;
-            font-size: 1.1em;
-            margin: 10px 0;
-            border-left: 3px solid #2c5aa0;
-        }
-
-        .legend {
-            font-size: 0.85em;
-            color: #555;
-            margin-top: 10px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 12px;
-            margin-right: 8px;
-            border: 1px solid #999;
-        }
-
         .water-toggle {
             margin-top: 15px;
             padding-top: 15px;
@@ -253,33 +203,12 @@
             cursor: pointer;
         }
 
-        .material-box {
-            background: #fff;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .material-list {
-            list-style: none;
-        }
-
-        .material-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9em;
-        }
-
-        .material-list a {
-            color: #2c5aa0;
-            text-decoration: none;
-        }
-
         #simCanvas {
             display: block;
             width: 100%;
             max-width: 560px;
             border: 2px solid #333;
+            cursor: pointer;
         }
 
         .status-display {
@@ -294,13 +223,20 @@
         .density-hidden .density {
             visibility: hidden;
         }
+
+        .hint {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Mechanik</p>
-            <h1>Schweben, Sinken, Schwimmen</h1>
+            <h1>Sinken, Schweben, Steigen</h1>
         </header>
         
         <div class="simulation-area">
@@ -316,18 +252,19 @@
                 <div class="material-grid density-hidden" id="materialGrid">
                     <!-- Wird per JavaScript gefüllt -->
                 </div>
+                <p class="hint">Erneut klicken = entfernen</p>
                 
                 <div class="btn-row">
                     <button id="btnDensity">ρ anzeigen</button>
-                    <button id="btnClear" class="btn-clear">Leeren</button>
+                    <button id="btnClear" class="btn-clear">Alle leeren</button>
                 </div>
                 
                 <div class="control-group">
                     <div class="control-label">
                         <span>Eigener Körper</span>
-                        <span id="customDensityValue">1,0 g/cm³</span>
+                        <span id="customDensityValue">1,00 g/cm³</span>
                     </div>
-                    <input type="range" id="customSlider" min="0.1" max="12" step="0.1" value="1.0">
+                    <input type="range" id="customSlider" min="0.1" max="12" step="0.01" value="1.0">
                     <button id="btnCustom" style="margin-top: 8px; width: 100%;">Eigenen Körper einsetzen</button>
                 </div>
                 
@@ -339,37 +276,12 @@
                 </div>
             </div>
         </div>
-        
-        <div class="info-box">
-            <h3>Bedingungen für Sinken, Schweben und Schwimmen</h3>
-            <p>Das Verhalten eines Körpers in einer Flüssigkeit hängt vom Verhältnis der Dichten ab:</p>
-            <div class="formula">
-                ρ<sub>Körper</sub> &gt; ρ<sub>Flüssigkeit</sub> → <strong>Sinken</strong><br>
-                ρ<sub>Körper</sub> = ρ<sub>Flüssigkeit</sub> → <strong>Schweben</strong><br>
-                ρ<sub>Körper</sub> &lt; ρ<sub>Flüssigkeit</sub> → <strong>Schwimmen (Steigen)</strong>
-            </div>
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #64B5F6;"></div>
-                    <span>Wasser: ρ = 1,0 g/cm³ (Salzwasser: 1,025 g/cm³)</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="material-box">
-            <h3>Materialien</h3>
-            <ul class="material-list">
-                <li><a href="arbeitsblatt-einfuehrung.html">Arbeitsblatt: Einführung</a> – Beobachtungen und Schlussfolgerungen</li>
-                <li><a href="unterrichtshinweise.html">Unterrichtshinweise</a> – Für Lehrkräfte</li>
-            </ul>
-        </div>
     </div>
 
     <script>
         // ═══════════════════════════════════════════════════════════════
-        // PHYSIK-SIMULATION: SCHWEBEN, SINKEN, SCHWIMMEN
-        // Vanilla JavaScript - keine externen Abhängigkeiten
-        // VERSION 2.0 - Physik korrigiert
+        // PHYSIK-SIMULATION: SINKEN, SCHWEBEN, STEIGEN
+        // VERSION 3.0 - HYPERAKKURATE PHYSIK
         // ═══════════════════════════════════════════════════════════════
 
         const canvas = document.getElementById('simCanvas');
@@ -383,59 +295,95 @@
         const btnCustom = document.getElementById('btnCustom');
         const saltWaterToggle = document.getElementById('saltWaterToggle');
 
-        // Materialien mit Dichten (g/cm³)
+        // ═══════════════════════════════════════════════════════════════
+        // MATERIALIEN-DATENBANK (Dichten in g/cm³)
+        // ═══════════════════════════════════════════════════════════════
         const materials = [
-            { name: 'Helium', density: 0.0002, color: '#FF6B6B', isGas: true },
+            { name: 'Helium', density: 0.000164, color: '#FF6B6B', isGas: true },
             { name: 'Kork', density: 0.24, color: '#D2691E' },
             { name: 'Fichtenholz', density: 0.47, color: '#DEB887' },
             { name: 'Buchenholz', density: 0.72, color: '#8B4513' },
             { name: 'Eis', density: 0.92, color: '#87CEEB' },
-            { name: 'Wachs', density: 1.0, color: '#F5DEB3' },
+            { name: 'Wachs', density: 1.0, color: '#F5DEB3' },   // Schwebedemonstration: ρ = ρ_Wasser
             { name: 'Gummi', density: 1.1, color: '#2F4F4F' },
             { name: 'Aluminium', density: 2.7, color: '#A8A8A8' },
-            { name: 'Eisen', density: 7.85, color: '#696969' },
+            { name: 'Eisen', density: 7.87, color: '#696969' },
             { name: 'Kupfer', density: 8.96, color: '#B87333' },
             { name: 'Blei', density: 11.34, color: '#4A4A4A' }
         ];
 
-        // Simulations-Parameter
-        const WATER_SURFACE_Y = 120;  // Y-Position der Wasseroberfläche (Canvas: y=0 ist OBEN)
-        const CONTAINER_BOTTOM = 430; // Boden des Gefäßes
+        // ═══════════════════════════════════════════════════════════════
+        // PHYSIKALISCHE KONSTANTEN
+        // ═══════════════════════════════════════════════════════════════
+        const WATER_SURFACE_Y = 120;    // Wasseroberfläche (Canvas y=0 ist OBEN)
+        const CONTAINER_BOTTOM = 430;   // Gefäßboden
         const BALL_RADIUS = 22;
-        const WATER_DENSITY = 1.0;
+        const WATER_DENSITY = 1.0;      // g/cm³
         const SALT_WATER_DENSITY = 1.025;
+        const AIR_DENSITY = 0.00122;    // g/cm³ bei 20°C
+
+        // Physik-Parameter
+        const GRAVITY = 0.08;           // Beschleunigung
+        const WATER_DRAG = 0.92;        // Dämpfung im Wasser
+        const AIR_DRAG = 0.995;         // Dämpfung in Luft
+        const FLOAT_TOLERANCE = 0.001;  // Toleranz für "exakt gleich" (Schweben)
 
         let objects = [];
         let showDensityValues = false;
         let isSaltWater = false;
+        let materialButtons = [];
 
         // ═══════════════════════════════════════════════════════════════
         // MATERIALIEN-BUTTONS ERSTELLEN
         // ═══════════════════════════════════════════════════════════════
-
         materials.forEach((mat, index) => {
             const btn = document.createElement('button');
             btn.className = 'material-btn';
-            btn.innerHTML = `${mat.name}<span class="density">ρ = ${mat.density.toFixed(mat.density < 0.01 ? 4 : 2)} g/cm³</span>`;
+            btn.dataset.materialIndex = index;
+            
+            const densityStr = mat.density < 0.01 
+                ? mat.density.toFixed(4) 
+                : mat.density.toFixed(2);
+            btn.innerHTML = `${mat.name}<span class="density">ρ = ${densityStr} g/cm³</span>`;
             btn.style.borderLeftColor = mat.color;
             btn.style.borderLeftWidth = '4px';
-            btn.addEventListener('click', () => addObject(mat));
+            
+            btn.addEventListener('click', () => toggleMaterial(mat, btn));
             materialGrid.appendChild(btn);
+            materialButtons.push({ btn, material: mat });
         });
 
         // ═══════════════════════════════════════════════════════════════
-        // PHYSIK-FUNKTIONEN
+        // OBJEKT-VERWALTUNG
         // ═══════════════════════════════════════════════════════════════
 
         function getCurrentWaterDensity() {
             return isSaltWater ? SALT_WATER_DENSITY : WATER_DENSITY;
         }
 
-        function addObject(material) {
-            const startY = WATER_SURFACE_Y + 150; // Mitte des Wassers
+        function toggleMaterial(material, btn) {
+            // Prüfe ob Material bereits im Wasser ist
+            const existingIndex = objects.findIndex(obj => obj.name === material.name);
             
-            // Horizontale Position mit etwas Variation
-            const xOffset = (objects.length % 5) * 80 + 100;
+            if (existingIndex !== -1) {
+                // ENTFERNEN
+                objects.splice(existingIndex, 1);
+                btn.classList.remove('in-water');
+            } else {
+                // HINZUFÜGEN
+                addObject(material);
+                btn.classList.add('in-water');
+            }
+            updateStatus();
+        }
+
+        function addObject(material) {
+            // Startposition: Mitte des Wassers
+            const startY = WATER_SURFACE_Y + (CONTAINER_BOTTOM - WATER_SURFACE_Y) / 2;
+            
+            // Horizontale Position: verteilt
+            const existingCount = objects.length;
+            const xOffset = 80 + (existingCount % 6) * 75;
             
             const obj = {
                 x: xOffset,
@@ -445,29 +393,30 @@
                 color: material.color,
                 name: material.name,
                 isGas: material.isGas || false,
-                radius: BALL_RADIUS
+                radius: BALL_RADIUS,
+                id: Date.now() + Math.random()
             };
             
             objects.push(obj);
-            updateStatus();
         }
 
         function addCustomObject() {
             const density = parseFloat(customSlider.value);
             const waterDensity = getCurrentWaterDensity();
             
-            // Farbe basierend auf Dichte
+            // Farbe basierend auf Verhalten
             let color;
-            if (density < waterDensity) {
-                color = '#9370DB'; // Lila für schwimmend
-            } else if (Math.abs(density - waterDensity) < 0.03) {
+            const delta = density - waterDensity;
+            if (Math.abs(delta) < FLOAT_TOLERANCE) {
                 color = '#FFD700'; // Gold für schwebend
+            } else if (delta < 0) {
+                color = '#9370DB'; // Lila für steigend
             } else {
                 color = '#708090'; // Grau für sinkend
             }
             
-            const startY = WATER_SURFACE_Y + 150;
-            const xOffset = (objects.length % 5) * 80 + 100;
+            const startY = WATER_SURFACE_Y + (CONTAINER_BOTTOM - WATER_SURFACE_Y) / 2;
+            const xOffset = 80 + (objects.length % 6) * 75;
             
             const obj = {
                 x: xOffset,
@@ -475,72 +424,112 @@
                 vy: 0,
                 density: density,
                 color: color,
-                name: 'Eigener',
+                name: 'Eigen',
                 isGas: false,
-                radius: BALL_RADIUS
+                radius: BALL_RADIUS,
+                id: Date.now() + Math.random()
             };
             
             objects.push(obj);
             updateStatus();
         }
 
-        function updatePhysics() {
-            const waterDensity = getCurrentWaterDensity();
-            const g = 0.12;  // Gravitationskonstante (angepasst)
-            const dragCoeff = 0.94; // Wasserwiderstand
+        // Klick auf Canvas zum Entfernen
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
             
-            objects.forEach(obj => {
-                // WICHTIG: deltaDensity = Körperdichte - Wasserdichte
-                // Positiv = Körper schwerer als Wasser = sinkt
-                // Negativ = Körper leichter als Wasser = steigt
-                const deltaDensity = obj.density - waterDensity;
+            // Finde angeklicktes Objekt (von vorne nach hinten)
+            for (let i = objects.length - 1; i >= 0; i--) {
+                const obj = objects[i];
+                const dx = clickX - obj.x;
+                const dy = clickY - obj.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                const isUnderwater = obj.y > WATER_SURFACE_Y;
-                
-                if (isUnderwater) {
-                    // ═══════════════════════════════════════════════════════════
-                    // UNTER WASSER: Auftrieb und Widerstand
-                    // ═══════════════════════════════════════════════════════════
+                if (dist <= obj.radius) {
+                    // Objekt entfernen
+                    const removedName = obj.name;
+                    objects.splice(i, 1);
                     
-                    // Kraft auf den Körper (im Canvas-System: positiv = nach unten)
-                    // deltaDensity > 0: Körper sinkt (positive Kraft = y steigt)
-                    // deltaDensity < 0: Körper steigt (negative Kraft = y sinkt)
-                    const netForce = deltaDensity * g;
-                    
-                    // Terminal velocity ~ sqrt(|deltaDensity|) für physikalische Korrektheit
-                    const maxSpeed = 0.8 + Math.sqrt(Math.abs(deltaDensity)) * 2.0;
-                    
-                    // Beschleunigung anwenden
-                    obj.vy += netForce;
-                    
-                    // Wasserwiderstand (Dämpfung)
-                    obj.vy *= dragCoeff;
-                    
-                    // Geschwindigkeitsbegrenzung
-                    if (Math.abs(obj.vy) > maxSpeed) {
-                        obj.vy = Math.sign(obj.vy) * maxSpeed;
-                    }
-                    
-                    // Schweben: starke Dämpfung bei sehr kleiner Dichtedifferenz
-                    if (Math.abs(deltaDensity) < 0.03) {
-                        obj.vy *= 0.80;
-                        // Bei sehr kleiner Geschwindigkeit stoppen
-                        if (Math.abs(obj.vy) < 0.05) {
-                            obj.vy = 0;
+                    // Button-Status aktualisieren
+                    const btnData = materialButtons.find(mb => mb.material.name === removedName);
+                    if (btnData) {
+                        // Prüfe ob noch ein Objekt dieses Typs existiert
+                        const stillExists = objects.some(o => o.name === removedName);
+                        if (!stillExists) {
+                            btnData.btn.classList.remove('in-water');
                         }
                     }
                     
+                    updateStatus();
+                    return;
+                }
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════
+        // PHYSIK-ENGINE
+        // ═══════════════════════════════════════════════════════════════
+
+        function updatePhysics() {
+            const waterDensity = getCurrentWaterDensity();
+            
+            objects.forEach(obj => {
+                // Dichtedifferenz (positiv = schwerer als Medium)
+                const isUnderwater = obj.y > WATER_SURFACE_Y;
+                const isInWater = obj.y + obj.radius > WATER_SURFACE_Y;
+                
+                // Medium-Dichte bestimmen
+                let mediumDensity;
+                if (isUnderwater) {
+                    mediumDensity = waterDensity;
                 } else {
-                    // ═══════════════════════════════════════════════════════════
-                    // ÜBER WASSER (in der Luft)
-                    // ═══════════════════════════════════════════════════════════
+                    mediumDensity = AIR_DENSITY;
+                }
+                
+                // Nettokraft berechnen (Archimedes)
+                // F_net = (ρ_Körper - ρ_Medium) * V * g
+                // Im Canvas: positives vy = nach unten
+                const deltaDensity = obj.density - mediumDensity;
+                
+                // ═══════════════════════════════════════════════════════════
+                // FALL 1: Komplett unter Wasser
+                // ═══════════════════════════════════════════════════════════
+                if (isUnderwater) {
+                    // Beschleunigung proportional zur Dichtedifferenz
+                    const acceleration = deltaDensity * GRAVITY;
+                    obj.vy += acceleration;
                     
+                    // Wasserwiderstand (Dämpfung)
+                    obj.vy *= WATER_DRAG;
+                    
+                    // Terminal Velocity ~ sqrt(|Δρ|) für physikalische Korrektheit
+                    // Bei kleinem Δρ: sehr langsam (z.B. Wachs in Salzwasser)
+                    // Bei großem Δρ: schnell (z.B. Blei)
+                    const maxSpeed = 0.15 + Math.sqrt(Math.abs(deltaDensity)) * 1.8;
+                    if (Math.abs(obj.vy) > maxSpeed) {
+                        obj.vy = Math.sign(obj.vy) * maxSpeed;
+                    }
+                }
+                // ═══════════════════════════════════════════════════════════
+                // FALL 2: In der Luft
+                // ═══════════════════════════════════════════════════════════
+                else {
                     if (obj.isGas) {
-                        // Gas steigt auch in Luft auf
-                        obj.vy = -1.2;
+                        // Gas: steigt in Luft auf
+                        const gasAccel = (AIR_DENSITY - obj.density) * GRAVITY * 5;
+                        obj.vy += gasAccel;
+                        obj.vy *= AIR_DRAG;
+                        
+                        // Maximalgeschwindigkeit für Gas
+                        if (obj.vy < -2.0) obj.vy = -2.0;
                     } else {
-                        // Normale Körper fallen nach unten (Gravitation)
-                        obj.vy += g * 0.8;
+                        // Feste Körper: fallen
+                        obj.vy += GRAVITY * 2;
+                        obj.vy *= AIR_DRAG;
                     }
                 }
                 
@@ -548,26 +537,38 @@
                 obj.y += obj.vy;
                 
                 // ═══════════════════════════════════════════════════════════
-                // GRENZEN & GLEICHGEWICHTSPOSITIONEN
+                // GLEICHGEWICHTSPOSITIONEN & GRENZEN
                 // ═══════════════════════════════════════════════════════════
                 
-                // Schwimmende Objekte: Eintauchtiefe basierend auf Dichte
+                // Berechne Gleichgewichtsposition für dieses Objekt
+                const equilibriumY = calculateEquilibriumY(obj, waterDensity);
+                
                 if (obj.density < waterDensity && !obj.isGas) {
-                    // Archimedes: Eintauchanteil = Körperdichte / Wasserdichte
-                    const submergeFraction = obj.density / waterDensity;
-                    // Gleichgewichtsposition: Kugelmitte relativ zur Wasseroberfläche
-                    const equilibriumY = WATER_SURFACE_Y + obj.radius * (2 * submergeFraction - 1);
+                    // STEIGEND: Gleichgewicht an Wasseroberfläche
+                    // Sanft zur Gleichgewichtsposition ziehen
+                    const distToEquilibrium = obj.y - equilibriumY;
                     
-                    // Wenn Körper über Gleichgewicht, zurückziehen
-                    if (obj.y < equilibriumY) {
+                    if (Math.abs(distToEquilibrium) < 1) {
+                        // Nahe genug: Position fixieren
                         obj.y = equilibriumY;
+                        obj.vy = 0;
+                    } else if (obj.y < equilibriumY) {
+                        // Zu hoch: sanft nach unten drücken
+                        obj.vy += 0.05;
+                    }
+                    // Wenn zu tief: Auftrieb regelt das automatisch
+                }
+                else if (Math.abs(obj.density - waterDensity) < FLOAT_TOLERANCE && !obj.isGas) {
+                    // SCHWEBEND: starke Dämpfung, bleibt wo es ist
+                    obj.vy *= 0.7;
+                    if (Math.abs(obj.vy) < 0.02) {
                         obj.vy = 0;
                     }
                 }
                 
-                // Gas steigt aus dem Bild (Obergrenze)
-                if (obj.isGas && obj.y < -obj.radius * 2) {
-                    obj.y = -obj.radius * 2;
+                // Gas: obere Grenze
+                if (obj.isGas && obj.y < -obj.radius * 3) {
+                    obj.y = -obj.radius * 3;
                     obj.vy = 0;
                 }
                 
@@ -576,7 +577,30 @@
                     obj.y = CONTAINER_BOTTOM - obj.radius;
                     obj.vy = 0;
                 }
+                
+                // Sicherheit: nicht über Canvas hinaus
+                if (!obj.isGas && obj.y < obj.radius) {
+                    obj.y = obj.radius;
+                    obj.vy = 0;
+                }
             });
+        }
+
+        function calculateEquilibriumY(obj, waterDensity) {
+            // Für steigende Körper: Eintauchtiefe nach Archimedes
+            // Eintauchanteil f = ρ_Körper / ρ_Wasser
+            // Bei Kugel: Mitte der Kugel ist bei y = Wasseroberfläche + r*(2f - 1)
+            
+            if (obj.density >= waterDensity) {
+                // Sinkt: Gleichgewicht am Boden
+                return CONTAINER_BOTTOM - obj.radius;
+            }
+            
+            const f = obj.density / waterDensity;  // Eintauchanteil
+            // Bei f=0.5: Mitte auf Wasserlinie
+            // Bei f=0.9: Mitte bei Wasserlinie + 0.8*r (tiefer)
+            // Bei f=0.1: Mitte bei Wasserlinie - 0.8*r (höher)
+            return WATER_SURFACE_Y + obj.radius * (2 * f - 1);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -591,7 +615,7 @@
             ctx.fillRect(0, 0, canvas.width, WATER_SURFACE_Y);
             
             // Wasser
-            ctx.fillStyle = isSaltWater ? '#4FADB5' : '#64B5F6';
+            ctx.fillStyle = isSaltWater ? '#4AA8B0' : '#64B5F6';
             ctx.fillRect(0, WATER_SURFACE_Y, canvas.width, canvas.height - WATER_SURFACE_Y);
             
             // Wasserlinie
@@ -606,42 +630,41 @@
             
             // Tiefenmarkierungen
             ctx.fillStyle = '#1565C0';
-            ctx.font = '12px Arial';
+            ctx.font = '11px Arial';
             ctx.textAlign = 'right';
             
             const waterDepth = CONTAINER_BOTTOM - WATER_SURFACE_Y - 20;
-            const depths = [0, 0.25, 0.5, 0.75, 1.0];
-            depths.forEach(d => {
+            [0, 0.25, 0.5, 0.75, 1.0].forEach(d => {
                 const y = WATER_SURFACE_Y + d * waterDepth;
-                ctx.fillText(d.toFixed(2) + ' m', canvas.width - 10, y + 4);
-                ctx.strokeStyle = '#90CAF9';
+                ctx.fillText(d.toFixed(2) + ' m', canvas.width - 8, y + 4);
+                ctx.strokeStyle = 'rgba(144, 202, 249, 0.5)';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width - 50, y);
+                ctx.lineTo(canvas.width - 45, y);
                 ctx.stroke();
             });
             
             // Dichte-Anzeige Wasser
+            const waterDensity = getCurrentWaterDensity();
             ctx.fillStyle = '#fff';
-            ctx.fillRect(10, WATER_SURFACE_Y + 10, 130, 25);
+            ctx.fillRect(8, WATER_SURFACE_Y + 8, 135, 22);
             ctx.strokeStyle = '#1976D2';
             ctx.lineWidth = 1;
-            ctx.strokeRect(10, WATER_SURFACE_Y + 10, 130, 25);
+            ctx.strokeRect(8, WATER_SURFACE_Y + 8, 135, 22);
             ctx.fillStyle = '#1976D2';
             ctx.font = 'bold 11px Arial';
             ctx.textAlign = 'left';
-            const waterLabel = isSaltWater ? 'Salzwasser' : 'Wasser';
-            const waterDensityText = isSaltWater ? '1,025' : '1,0';
-            ctx.fillText(`${waterLabel}: ρ = ${waterDensityText} g/cm³`, 15, WATER_SURFACE_Y + 27);
+            const waterLabel = isSaltWater ? 'Salzwasser' : 'Süßwasser';
+            ctx.fillText(`${waterLabel}: ρ = ${waterDensity.toFixed(3)} g/cm³`, 12, WATER_SURFACE_Y + 23);
             
             // Objekte zeichnen
             objects.forEach(obj => {
-                // Schatten unter Wasser
-                if (obj.y > WATER_SURFACE_Y) {
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                // Schatten (nur unter Wasser)
+                if (obj.y > WATER_SURFACE_Y + obj.radius) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
                     ctx.beginPath();
-                    ctx.ellipse(obj.x + 3, obj.y + 3, obj.radius, obj.radius * 0.3, 0, 0, Math.PI * 2);
+                    ctx.ellipse(obj.x + 2, obj.y + 2, obj.radius, obj.radius * 0.25, 0, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 
@@ -657,33 +680,34 @@
                 ctx.stroke();
                 
                 // Glanzeffekt
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
                 ctx.beginPath();
-                ctx.arc(obj.x - obj.radius * 0.3, obj.y - obj.radius * 0.3, obj.radius * 0.3, 0, Math.PI * 2);
+                ctx.arc(obj.x - obj.radius * 0.3, obj.y - obj.radius * 0.3, obj.radius * 0.25, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Beschriftung
+                // Name
                 ctx.fillStyle = '#fff';
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 2;
-                ctx.font = 'bold 10px Arial';
+                ctx.font = 'bold 9px Arial';
                 ctx.textAlign = 'center';
-                ctx.strokeText(obj.name, obj.x, obj.y + 4);
-                ctx.fillText(obj.name, obj.x, obj.y + 4);
+                ctx.strokeText(obj.name, obj.x, obj.y + 3);
+                ctx.fillText(obj.name, obj.x, obj.y + 3);
                 
-                // Dichte anzeigen wenn aktiviert
+                // Dichte anzeigen
                 if (showDensityValues) {
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(obj.x - 28, obj.y + obj.radius + 5, 56, 16);
+                    const densityStr = obj.density < 0.01 
+                        ? obj.density.toFixed(4) 
+                        : obj.density.toFixed(3);
+                    
+                    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                    ctx.fillRect(obj.x - 30, obj.y + obj.radius + 4, 60, 14);
                     ctx.strokeStyle = obj.color;
                     ctx.lineWidth = 1;
-                    ctx.strokeRect(obj.x - 28, obj.y + obj.radius + 5, 56, 16);
+                    ctx.strokeRect(obj.x - 30, obj.y + obj.radius + 4, 60, 14);
                     ctx.fillStyle = '#333';
-                    ctx.font = '10px Arial';
-                    const densityText = obj.density < 0.01 
-                        ? obj.density.toFixed(4) 
-                        : obj.density.toFixed(2);
-                    ctx.fillText(`ρ = ${densityText}`, obj.x, obj.y + obj.radius + 17);
+                    ctx.font = '9px Arial';
+                    ctx.fillText(`ρ = ${densityStr}`, obj.x, obj.y + obj.radius + 14);
                 }
             });
             
@@ -695,28 +719,15 @@
 
         function updateStatus() {
             if (objects.length === 0) {
-                statusDisplay.textContent = 'Klicke auf ein Material, um es ins Wasser zu setzen.';
+                statusDisplay.textContent = 'Klicke auf ein Material, um es ins Wasser zu setzen. Klick auf Kugel = entfernen.';
                 return;
             }
             
-            const waterDensity = getCurrentWaterDensity();
             const lastObj = objects[objects.length - 1];
-            const delta = lastObj.density - waterDensity;
             
-            let behavior;
-            if (Math.abs(delta) < 0.03) {
-                behavior = 'schwebt';
-            } else if (delta < 0) {
-                behavior = lastObj.isGas ? 'steigt auf (Gas)' : 'schwimmt';
-            } else {
-                behavior = 'sinkt';
-            }
-            
-            const densityStr = lastObj.density < 0.01 
-                ? lastObj.density.toFixed(4) 
-                : lastObj.density.toFixed(2);
-            
-            statusDisplay.textContent = `${lastObj.name} (ρ = ${densityStr} g/cm³) ${behavior}. ${objects.length} Objekt(e) im Gefäß.`;
+            // Keine Verhaltensangabe - SuS sollen selbst beobachten!
+            statusDisplay.innerHTML = `<strong>${lastObj.name}</strong> eingesetzt. ` +
+                `${objects.length} Objekt(e) im Wasser. Klick auf Kugel = entfernen.`;
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -731,6 +742,8 @@
 
         btnClear.addEventListener('click', () => {
             objects = [];
+            // Alle Buttons zurücksetzen
+            materialButtons.forEach(mb => mb.btn.classList.remove('in-water'));
             updateStatus();
         });
 
@@ -738,11 +751,18 @@
 
         customSlider.addEventListener('input', () => {
             const val = parseFloat(customSlider.value);
-            customDensityValue.textContent = val.toFixed(1).replace('.', ',') + ' g/cm³';
+            customDensityValue.textContent = val.toFixed(2).replace('.', ',') + ' g/cm³';
         });
 
         saltWaterToggle.addEventListener('change', () => {
             isSaltWater = saltWaterToggle.checked;
+            // Bei Umschaltung: alle Objekte bekommen einen kleinen Impuls
+            // damit sie sich neu positionieren
+            objects.forEach(obj => {
+                if (!obj.isGas && Math.abs(obj.vy) < 0.1) {
+                    obj.vy = 0.01; // Minimaler Impuls zum "Aufwecken"
+                }
+            });
             updateStatus();
         });
 
