@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewegungsarten erforschen – Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Mechanik">
+    <meta name="grade" content="6">
+    <meta name="description" content="Interaktive Simulation zur Entdeckung und Klassifizierung von Bewegungen nach Bahnform und Bewegungsart">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 15px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { margin-bottom: 15px; }
+        h1 { font-size: 1.4em; font-weight: 600; color: #222; margin-bottom: 5px; }
+        .breadcrumb { font-size: 0.85em; color: #666; }
+        .breadcrumb a { color: #2c5aa0; text-decoration: none; }
+
+        .mode-tabs { display: flex; gap: 0; margin-bottom: 15px; border: 1px solid #ddd; background: #fff; }
+        .mode-tab {
+            flex: 1; padding: 12px; font-size: 0.9em; border: none; background: #fff;
+            cursor: pointer; font-family: inherit; border-right: 1px solid #ddd;
+        }
+        .mode-tab:last-child { border-right: none; }
+        .mode-tab:hover { background: #f5f5f5; }
+        .mode-tab.active { background: #2c5aa0; color: #fff; }
+
+        .mode-info {
+            background: #fff8e1; border: 1px solid #ffe082; border-left: 3px solid #ff9800;
+            padding: 12px 15px; margin-bottom: 15px; font-size: 0.85em; line-height: 1.5;
+        }
+        .mode-info strong { color: #e65100; }
+
+        .simulation-area { display: grid; grid-template-columns: 1fr 300px; gap: 15px; margin-bottom: 15px; }
+        @media (max-width: 800px) { .simulation-area { grid-template-columns: 1fr; } }
+
+        .canvas-container { background: #fff; border: 1px solid #ddd; padding: 10px; }
+        #simCanvas { width: 100%; height: 380px; display: block; background: #fafafa; border: 1px solid #eee; }
+        .canvas-legend { display: flex; justify-content: center; gap: 20px; margin-top: 10px; font-size: 0.8em; color: #666; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-line { width: 25px; height: 2px; background: #2c5aa0; }
+        .legend-line.dashed { background: repeating-linear-gradient(90deg, #2c5aa0, #2c5aa0 4px, transparent 4px, transparent 8px); }
+
+        .controls { background: #fff; border: 1px solid #ddd; padding: 15px; }
+        .controls h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 12px; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .movement-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 15px; }
+        .movement-btn {
+            padding: 10px 8px; font-size: 0.8em; border: 1px solid #ccc; background: #fff;
+            cursor: pointer; font-family: inherit; text-align: left; display: flex; align-items: center; gap: 6px;
+        }
+        .movement-btn:hover { background: #f5f5f5; }
+        .movement-btn.active { background: #2c5aa0; color: #fff; border-color: #2c5aa0; }
+        .movement-btn .num {
+            font-weight: 700; font-size: 0.9em; width: 18px; height: 18px; border-radius: 50%;
+            background: #eee; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .movement-btn.active .num { background: rgba(255,255,255,0.3); }
+        .movement-btn.done { border-color: #4caf50; }
+        .movement-btn.done .num { background: #4caf50; color: #fff; }
+        .movement-btn.wrong { border-color: #ff9800; }
+        .movement-btn.wrong .num { background: #ff9800; color: #fff; }
+
+        .info-section { margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        .info-section h4 { font-size: 0.85em; font-weight: 600; margin-bottom: 8px; color: #333; }
+        .current-info { background: #f9f9f9; padding: 10px; font-size: 0.8em; line-height: 1.5; border-left: 3px solid #2c5aa0; }
+        .current-info .label { color: #666; font-size: 0.9em; }
+        .current-info .value { font-weight: 600; color: #222; margin-bottom: 5px; }
+
+        .concept-box { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; }
+        .concept-box h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 12px; color: #333; }
+        .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 600px) { .concept-grid { grid-template-columns: 1fr; } }
+        .concept-card { background: #fafafa; border: 1px solid #eee; padding: 12px; }
+        .concept-card h4 { font-size: 0.9em; font-weight: 600; margin-bottom: 8px; color: #2c5aa0; }
+        .concept-card ul { list-style: none; font-size: 0.85em; }
+        .concept-card li { padding: 4px 0; padding-left: 15px; position: relative; }
+        .concept-card li::before { content: "•"; position: absolute; left: 0; color: #2c5aa0; }
+        .concept-card .example { font-size: 0.85em; color: #666; font-style: italic; }
+
+        .classification-box { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; display: none; }
+        .classification-box.visible { display: block; }
+        .classification-box h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 12px; color: #333; }
+        .classify-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .classify-group h4 { font-size: 0.85em; color: #555; margin-bottom: 8px; }
+        .classify-options { display: flex; flex-direction: column; gap: 6px; }
+        .classify-btn {
+            padding: 10px 12px; font-size: 0.85em; border: 1px solid #ccc; background: #fff;
+            cursor: pointer; font-family: inherit; text-align: center;
+        }
+        .classify-btn:hover { background: #f0f0f0; }
+        .classify-btn.selected { background: #e8f0f8; border-color: #2c5aa0; color: #2c5aa0; }
+        .classify-btn.correct { background: #e8f5e9; border-color: #4caf50; color: #2e7d32; }
+        .classify-btn.incorrect { background: #ffebee; border-color: #f44336; color: #c62828; }
+        .classify-btn:disabled { cursor: not-allowed; opacity: 0.7; }
+
+        .check-btn {
+            width: 100%; padding: 12px; font-size: 0.95em; border: 1px solid #2c5aa0;
+            background: #2c5aa0; color: #fff; cursor: pointer; font-family: inherit; margin-top: 15px;
+        }
+        .check-btn:hover { background: #1e4a8a; }
+        .check-btn:disabled { background: #ccc; border-color: #ccc; cursor: not-allowed; }
+
+        .result-box { margin-top: 12px; padding: 12px; font-size: 0.85em; display: none; line-height: 1.5; }
+        .result-box.correct { background: #e8f5e9; border: 1px solid #4caf50; color: #2e7d32; display: block; }
+        .result-box.incorrect { background: #fff3e0; border: 1px solid #ff9800; color: #e65100; display: block; }
+
+        .progress-section { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; }
+        .progress-section h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 10px; color: #333; }
+        .progress-bar { height: 24px; background: #eee; border: 1px solid #ddd; display: flex; }
+        .progress-segment {
+            height: 100%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75em; color: #fff; font-weight: 600;
+        }
+        .progress-segment.correct { background: #4caf50; }
+        .progress-segment.incorrect { background: #ff9800; }
+        .progress-segment.remaining { background: #e0e0e0; color: #666; }
+        .progress-text { font-size: 0.85em; color: #555; margin-top: 8px; text-align: center; }
+
+        .summary-section { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; display: none; }
+        .summary-section.visible { display: block; }
+        .summary-section h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 12px; color: #333; }
+        .summary-table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+        .summary-table th, .summary-table td { border: 1px solid #ddd; padding: 8px 6px; text-align: center; }
+        .summary-table th { background: #f5f5f5; font-weight: 600; }
+        .summary-table .correct-cell { background: #e8f5e9; }
+        .summary-table .incorrect-cell { background: #fff3e0; }
+        .summary-score { text-align: center; margin-top: 15px; padding: 15px; background: #f5f5f5; }
+        .summary-score .big { font-size: 2em; font-weight: 700; color: #2c5aa0; }
+        .summary-score .label { font-size: 0.9em; color: #666; }
+        .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .action-btn { flex: 1; padding: 12px; font-size: 0.9em; border: 1px solid #ccc; background: #fff; cursor: pointer; font-family: inherit; }
+        .action-btn:hover { background: #f5f5f5; }
+        .action-btn.primary { background: #2c5aa0; color: #fff; border-color: #2c5aa0; }
+        .action-btn.primary:hover { background: #1e4a8a; }
+
+        .material-box { background: #fff; border: 1px solid #ddd; padding: 15px; margin-top: 15px; }
+        .material-box h3 { font-size: 0.95em; font-weight: 600; margin-bottom: 10px; color: #333; }
+        .material-list { list-style: none; }
+        .material-list li { padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        .material-list li:last-child { border-bottom: none; }
+        .material-list a { color: #2c5aa0; text-decoration: none; }
+
+        .hint-box { background: #e3f2fd; border: 1px solid #90caf9; border-left: 3px solid #2196f3; padding: 12px; margin-top: 10px; font-size: 0.85em; }
+        .hint-box strong { color: #1565c0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Mechanik</p>
+            <h1>Bewegungsarten erforschen</h1>
+        </header>
+
+        <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="discover"><span>🔍</span> Entdecken</button>
+            <button class="mode-tab" data-mode="quiz"><span>✏️</span> Quiz</button>
+            <button class="mode-tab" data-mode="free"><span>🎮</span> Freies Erkunden</button>
+        </div>
+
+        <div class="mode-info" id="modeInfo">
+            <strong>Entdecken-Modus:</strong> Beobachte alle 8 Bewegungen und lerne die Unterschiede zwischen den Bahnformen und Bewegungsarten kennen. Die Erklärungen helfen dir dabei!
+        </div>
+
+        <div class="progress-section" id="progressSection" style="display: none;">
+            <h3>Dein Fortschritt</h3>
+            <div class="progress-bar" id="progressBar"><div class="progress-segment remaining" style="width: 100%">0 / 8</div></div>
+            <p class="progress-text" id="progressText">Klassifiziere alle 8 Bewegungen richtig!</p>
+        </div>
+
+        <div class="concept-box" id="conceptBox">
+            <h3>So unterscheiden sich Bewegungen</h3>
+            <div class="concept-grid">
+                <div class="concept-card">
+                    <h4>Bahnform – Welchen Weg nimmt das Objekt?</h4>
+                    <ul>
+                        <li><strong>Geradlinig:</strong> Der Weg ist eine gerade Linie<br><span class="example">z.B. Auto auf Autobahn, Rolltreppe</span></li>
+                        <li><strong>Kreisförmig:</strong> Der Weg ist ein Kreis<br><span class="example">z.B. Karussell, Uhrzeiger</span></li>
+                        <li><strong>Krummlinig:</strong> Der Weg ist eine andere Kurve<br><span class="example">z.B. Achterbahn, Schaukel</span></li>
+                    </ul>
+                </div>
+                <div class="concept-card">
+                    <h4>Bewegungsart – Wie schnell ist das Objekt?</h4>
+                    <ul>
+                        <li><strong>Gleichförmig:</strong> Die Geschwindigkeit bleibt gleich<br><span class="example">z.B. Rolltreppe, Uhrzeiger</span></li>
+                        <li><strong>Ungleichförmig:</strong> Die Geschwindigkeit ändert sich<br><span class="example">z.B. Anfahren, Bremsen, Schaukel</span></li>
+                    </ul>
+                    <div class="hint-box" style="background: #fff3e0; border-color: #ffcc80; border-left-color: #ff9800;">
+                        <strong style="color: #e65100;">Tipp:</strong> Achte auf die Pfeile – sie zeigen die Geschwindigkeit!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation-area">
+            <div class="canvas-container">
+                <canvas id="simCanvas"></canvas>
+                <div class="canvas-legend">
+                    <div class="legend-item"><div class="legend-line dashed"></div><span>Bahn</span></div>
+                    <div class="legend-item"><span style="color: #333; font-weight: 600;">→</span><span>Geschwindigkeit</span></div>
+                </div>
+            </div>
+            <div class="controls">
+                <h3>Wähle eine Bewegung</h3>
+                <div class="movement-buttons" id="movementButtons">
+                    <button class="movement-btn" data-id="0"><span class="num">1</span> Auto</button>
+                    <button class="movement-btn" data-id="1"><span class="num">2</span> Ball werfen</button>
+                    <button class="movement-btn" data-id="2"><span class="num">3</span> Karussell</button>
+                    <button class="movement-btn" data-id="3"><span class="num">4</span> Fahrrad</button>
+                    <button class="movement-btn" data-id="4"><span class="num">5</span> Uhrzeiger</button>
+                    <button class="movement-btn" data-id="5"><span class="num">6</span> Achterbahn</button>
+                    <button class="movement-btn" data-id="6"><span class="num">7</span> Schaukel</button>
+                    <button class="movement-btn" data-id="7"><span class="num">8</span> Rolltreppe</button>
+                </div>
+                <div class="info-section">
+                    <h4>Aktuelle Bewegung</h4>
+                    <div class="current-info" id="currentInfo"><p style="color: #888; font-style: italic;">Klicke auf eine Bewegung.</p></div>
+                </div>
+                <div class="info-section" id="solutionSection" style="display: none;">
+                    <h4>Klassifizierung</h4>
+                    <div class="current-info" id="solutionInfo" style="border-left-color: #4caf50;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="classification-box" id="classificationBox">
+            <h3>Klassifiziere: <span id="currentMovementName"></span></h3>
+            <div class="classify-grid">
+                <div class="classify-group">
+                    <h4>Bahnform</h4>
+                    <div class="classify-options" id="bahnformOptions">
+                        <button class="classify-btn" data-value="geradlinig">geradlinig</button>
+                        <button class="classify-btn" data-value="kreisförmig">kreisförmig</button>
+                        <button class="classify-btn" data-value="krummlinig">krummlinig (andere)</button>
+                    </div>
+                </div>
+                <div class="classify-group">
+                    <h4>Bewegungsart</h4>
+                    <div class="classify-options" id="bewegungsartOptions">
+                        <button class="classify-btn" data-value="gleichförmig">gleichförmig</button>
+                        <button class="classify-btn" data-value="ungleichförmig">ungleichförmig</button>
+                    </div>
+                </div>
+            </div>
+            <button class="check-btn" id="checkBtn" disabled>Überprüfen</button>
+            <div class="result-box" id="resultBox"></div>
+        </div>
+
+        <div class="summary-section" id="summarySection">
+            <h3>🎉 Geschafft!</h3>
+            <div class="summary-score"><div class="big" id="scoreDisplay">0/8</div><div class="label">richtig beim ersten Versuch</div></div>
+            <table class="summary-table"><thead><tr><th>#</th><th>Bewegung</th><th>Bahnform</th><th>Bewegungsart</th></tr></thead><tbody id="summaryBody"></tbody></table>
+            <div class="action-buttons">
+                <button class="action-btn" id="printBtn">🖨️ Drucken</button>
+                <button class="action-btn primary" id="restartBtn">🔄 Nochmal</button>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        const movements = [
+            { id: 0, name: "Auto auf Autobahn", description: "Ein Auto fährt mit konstanter Geschwindigkeit auf einer geraden Straße.", bahnform: "geradlinig", bewegungsart: "gleichförmig", erklaerung: "Das Auto bewegt sich auf einer geraden Linie (→ geradlinig). Die Geschwindigkeit bleibt gleich (→ gleichförmig)." },
+            { id: 1, name: "Ball hochwerfen", description: "Ein Ball wird senkrecht nach oben geworfen und fällt wieder herunter.", bahnform: "geradlinig", bewegungsart: "ungleichförmig", erklaerung: "Der Ball fliegt auf einer geraden Linie (→ geradlinig). Er wird oben langsamer und unten schneller (→ ungleichförmig)." },
+            { id: 2, name: "Karussell", description: "Ein Karussell dreht sich gleichmäßig im Kreis.", bahnform: "kreisförmig", bewegungsart: "gleichförmig", erklaerung: "Das Karussell bewegt sich im Kreis (→ kreisförmig). Es dreht sich immer gleich schnell (→ gleichförmig)." },
+            { id: 3, name: "Fahrrad anfahren", description: "Ein Fahrrad fährt los und wird immer schneller.", bahnform: "geradlinig", bewegungsart: "ungleichförmig", erklaerung: "Das Fahrrad fährt geradeaus (→ geradlinig). Es wird beim Anfahren schneller (→ ungleichförmig)." },
+            { id: 4, name: "Uhrzeiger", description: "Der Sekundenzeiger bewegt sich gleichmäßig im Kreis.", bahnform: "kreisförmig", bewegungsart: "gleichförmig", erklaerung: "Der Zeiger bewegt sich im Kreis (→ kreisförmig). Er dreht sich immer gleich schnell (→ gleichförmig)." },
+            { id: 5, name: "Achterbahn", description: "Eine Achterbahn fährt durch Kurven, bergauf und bergab.", bahnform: "krummlinig", bewegungsart: "ungleichförmig", erklaerung: "Die Bahn ist geschwungen, aber kein Kreis (→ krummlinig). Die Geschwindigkeit ändert sich ständig (→ ungleichförmig)." },
+            { id: 6, name: "Schaukel", description: "Eine Schaukel schwingt hin und her.", bahnform: "krummlinig", bewegungsart: "ungleichförmig", erklaerung: "Die Schaukel bewegt sich auf einem Bogen (→ krummlinig). Am Rand langsam, in der Mitte schnell (→ ungleichförmig)." },
+            { id: 7, name: "Rolltreppe", description: "Eine Rolltreppe bewegt sich mit konstanter Geschwindigkeit.", bahnform: "geradlinig", bewegungsart: "gleichförmig", erklaerung: "Die Rolltreppe bewegt sich geradeaus (→ geradlinig). Sie fährt immer gleich schnell (→ gleichförmig)." }
+        ];
+
+        let currentMode = 'discover', currentMovement = null, selectedBahnform = null, selectedBewegungsart = null;
+        let quizResults = {}, quizOrder = [], currentQuizIndex = 0, time = 0;
+
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth - 22;
+            canvas.height = 380;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function animate() {
+            time += 0.016;
+            if (currentMovement !== null) drawMovement(currentMovement);
+            else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#999';
+                ctx.font = '16px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('← Wähle eine Bewegung', canvas.width/2, canvas.height/2);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function drawMovement(id) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const w = canvas.width, h = canvas.height;
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(movements[id].name, 15, 25);
+            drawPath(id, w, h);
+            switch(id) {
+                case 0: drawCar(w, h); break;
+                case 1: drawBall(w, h); break;
+                case 2: drawCarousel(w, h); break;
+                case 3: drawBicycle(w, h); break;
+                case 4: drawClock(w, h); break;
+                case 5: drawRollercoaster(w, h); break;
+                case 6: drawSwing(w, h); break;
+                case 7: drawEscalator(w, h); break;
+            }
+        }
+
+        function drawPath(id, w, h) {
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            switch(id) {
+                case 0: case 3: ctx.moveTo(50, h/2 + 30); ctx.lineTo(w - 50, h/2 + 30); break;
+                case 1: ctx.moveTo(w/2, h - 60); ctx.lineTo(w/2, 80); break;
+                case 2: case 4: ctx.arc(w/2, h/2, 110, 0, Math.PI * 2); break;
+                case 5: ctx.moveTo(60, h/2 + 50); ctx.bezierCurveTo(w/4, 60, w/2, h - 60, w*3/4, 80); ctx.bezierCurveTo(w - 60, 130, w - 80, h/2, w - 60, h - 80); break;
+                case 6: ctx.arc(w/2, 60, 180, 0.4, Math.PI - 0.4); break;
+                case 7: ctx.moveTo(120, h - 80); ctx.lineTo(w - 120, 100); break;
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawArrow(x, y, length, angle, label) {
+            if (Math.abs(length) < 5) return;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            ctx.strokeStyle = '#333';
+            ctx.fillStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(length, 0);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(length, 0);
+            ctx.lineTo(length - 8, -5);
+            ctx.lineTo(length - 8, 5);
+            ctx.closePath();
+            ctx.fill();
+            if (label) {
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(label, length + 5, 4);
+            }
+            ctx.restore();
+        }
+
+        function drawCar(w, h) {
+            const x = 50 + ((time * 60) % (w - 150)), y = h/2;
+            ctx.fillStyle = '#e0e0e0';
+            ctx.fillRect(40, y + 15, w - 80, 30);
+            ctx.fillStyle = '#d32f2f';
+            ctx.fillRect(x, y - 15, 50, 18);
+            ctx.fillRect(x + 8, y - 28, 34, 13);
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(x + 12, y + 5, 7, 0, Math.PI * 2);
+            ctx.arc(x + 38, y + 5, 7, 0, Math.PI * 2);
+            ctx.fill();
+            drawArrow(x + 60, y - 10, 50, 0, 'v = const.');
+        }
+
+        function drawBall(w, h) {
+            const period = 2.5, t = (time % period) / period;
+            const y = h - 60 - Math.sin(t * Math.PI) * (h - 160);
+            ctx.fillStyle = '#ff9800';
+            ctx.beginPath();
+            ctx.arc(w/2, y, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.beginPath();
+            ctx.ellipse(w/2, h - 50, 15, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            const vy = Math.cos(t * Math.PI);
+            const arrowLength = Math.abs(vy) * 50;
+            const arrowAngle = vy > 0 ? -Math.PI/2 : Math.PI/2;
+            drawArrow(w/2 + 35, y, arrowLength, arrowAngle, 'v ändert sich');
+        }
+
+        function drawCarousel(w, h) {
+            const cx = w/2, cy = h/2, r = 110, angle = time * 0.6;
+            ctx.fillStyle = '#795548';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+            ctx.fill();
+            for (let i = 0; i < 6; i++) {
+                const a = angle + (i * Math.PI / 3);
+                const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+                ctx.strokeStyle = '#9e9e9e';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+                ctx.fillStyle = i === 0 ? '#e91e63' : '#9c27b0';
+                ctx.beginPath();
+                ctx.arc(px, py, 14, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            const mainX = cx + Math.cos(angle) * r, mainY = cy + Math.sin(angle) * r;
+            drawArrow(mainX, mainY - 25, 40, angle + Math.PI/2, 'v = const.');
+        }
+
+        function drawBicycle(w, h) {
+            const t = (time % 3.5), x = 50 + t * t * 25, y = h/2;
+            ctx.fillStyle = '#e0e0e0';
+            ctx.fillRect(40, y + 15, w - 80, 25);
+            ctx.strokeStyle = '#1976d2';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 18, y - 22);
+            ctx.lineTo(x + 38, y - 22);
+            ctx.lineTo(x + 48, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x, y, 13, 0, Math.PI * 2);
+            ctx.arc(x + 48, y, 13, 0, Math.PI * 2);
+            ctx.stroke();
+            const vLength = 20 + t * 18;
+            drawArrow(x + 60, y - 30, vLength, 0, 'v wächst');
+        }
+
+        function drawClock(w, h) {
+            const cx = w/2, cy = h/2, r = 110;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 12; i++) {
+                const a = (i * Math.PI / 6) - Math.PI/2;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(a) * (r - 10), cy + Math.sin(a) * (r - 10));
+                ctx.lineTo(cx + Math.cos(a) * (r - 22), cy + Math.sin(a) * (r - 22));
+                ctx.stroke();
+            }
+            const angle = time * 1.2 - Math.PI/2;
+            ctx.strokeStyle = '#d32f2f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle) * (r - 20), cy + Math.sin(angle) * (r - 20));
+            ctx.stroke();
+            const tipX = cx + Math.cos(angle) * (r - 20), tipY = cy + Math.sin(angle) * (r - 20);
+            ctx.fillStyle = '#d32f2f';
+            ctx.beginPath();
+            ctx.arc(tipX, tipY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            drawArrow(tipX + 15, tipY, 35, angle + Math.PI/2, 'v = const.');
+        }
+
+        function drawRollercoaster(w, h) {
+            ctx.strokeStyle = '#795548';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(60, h/2 + 50);
+            ctx.bezierCurveTo(w/4, 60, w/2, h - 60, w*3/4, 80);
+            ctx.bezierCurveTo(w - 60, 130, w - 80, h/2, w - 60, h - 80);
+            ctx.stroke();
+            const t = (time * 0.2) % 1;
+            const pos = bezierPoint(t, {x: 60, y: h/2 + 50}, {x: w/4, y: 60}, {x: w/2, y: h - 60}, {x: w*3/4, y: 80});
+            ctx.fillStyle = '#f44336';
+            ctx.fillRect(pos.x - 18, pos.y - 12, 36, 24);
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(pos.x - 10, pos.y + 14, 6, 0, Math.PI * 2);
+            ctx.arc(pos.x + 10, pos.y + 14, 6, 0, Math.PI * 2);
+            ctx.fill();
+            const speed = 25 + Math.sin(t * Math.PI * 2) * 20;
+            drawArrow(pos.x + 30, pos.y - 20, speed, 0, 'v ändert sich');
+        }
+
+        function bezierPoint(t, p0, p1, p2, p3) {
+            const mt = 1 - t;
+            return { x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x, y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y };
+        }
+
+        function drawSwing(w, h) {
+            const cx = w/2, anchorY = 60, ropeLength = 180, maxAngle = 0.7;
+            const angle = Math.sin(time * 1.8) * maxAngle;
+            const bobX = cx + Math.sin(angle) * ropeLength, bobY = anchorY + Math.cos(angle) * ropeLength;
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect(cx - 50, 45, 100, 15);
+            ctx.strokeStyle = '#8d6e63';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx, anchorY);
+            ctx.lineTo(bobX, bobY);
+            ctx.stroke();
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(bobX - 22, bobY, 44, 8);
+            ctx.fillStyle = '#ffb74d';
+            ctx.beginPath();
+            ctx.arc(bobX, bobY - 22, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1976d2';
+            ctx.fillRect(bobX - 10, bobY - 8, 20, 8);
+            const speed = Math.abs(Math.cos(time * 1.8)) * 45;
+            const direction = Math.cos(time * 1.8) > 0 ? 0 : Math.PI;
+            drawArrow(bobX + 35, bobY - 10, speed, direction, 'v ändert sich');
+        }
+
+        function drawEscalator(w, h) {
+            const startX = 120, startY = h - 80, endX = w - 120, endY = 100;
+            ctx.fillStyle = '#90a4ae';
+            ctx.beginPath();
+            ctx.moveTo(startX - 20, startY + 10);
+            ctx.lineTo(endX - 20, endY + 10);
+            ctx.lineTo(endX + 20, endY + 10);
+            ctx.lineTo(startX + 20, startY + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#607d8b';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(startX - 25, startY - 40);
+            ctx.lineTo(endX - 25, endY - 40);
+            ctx.stroke();
+            const steps = 10;
+            for (let i = 0; i < steps; i++) {
+                const t = ((time * 0.25 + i / steps) % 1);
+                const sx = startX + t * (endX - startX), sy = startY + t * (endY - startY);
+                ctx.fillStyle = '#78909c';
+                ctx.fillRect(sx - 12, sy - 4, 24, 8);
+            }
+            const personT = (time * 0.25) % 1;
+            const px = startX + personT * (endX - startX), py = startY + personT * (endY - startY);
+            ctx.fillStyle = '#1976d2';
+            ctx.fillRect(px - 10, py - 38, 20, 32);
+            ctx.fillStyle = '#ffb74d';
+            ctx.beginPath();
+            ctx.arc(px, py - 48, 10, 0, Math.PI * 2);
+            ctx.fill();
+            const ang = Math.atan2(endY - startY, endX - startX);
+            drawArrow(px + 25, py - 30, 45, ang, 'v = const.');
+        }
+
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentMode = tab.dataset.mode;
+                updateModeUI();
+            });
+        });
+
+        document.querySelectorAll('.movement-btn').forEach(btn => {
+            btn.addEventListener('click', () => selectMovement(parseInt(btn.dataset.id)));
+        });
+
+        document.querySelectorAll('#bahnformOptions .classify-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                document.querySelectorAll('#bahnformOptions .classify-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedBahnform = btn.dataset.value;
+                updateCheckButton();
+            });
+        });
+
+        document.querySelectorAll('#bewegungsartOptions .classify-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                document.querySelectorAll('#bewegungsartOptions .classify-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedBewegungsart = btn.dataset.value;
+                updateCheckButton();
+            });
+        });
+
+        document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+        document.getElementById('restartBtn').addEventListener('click', restartQuiz);
+        document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+        function updateModeUI() {
+            const modeInfo = document.getElementById('modeInfo');
+            const conceptBox = document.getElementById('conceptBox');
+            const progressSection = document.getElementById('progressSection');
+            document.getElementById('classificationBox').classList.remove('visible');
+            document.getElementById('summarySection').classList.remove('visible');
+            document.getElementById('solutionSection').style.display = 'none';
+            resetMovementButtons();
+
+            switch(currentMode) {
+                case 'discover':
+                    modeInfo.innerHTML = '<strong>Entdecken-Modus:</strong> Beobachte alle 8 Bewegungen und lerne die Unterschiede kennen. Die Erklärungen helfen dir dabei!';
+                    conceptBox.style.display = 'block';
+                    progressSection.style.display = 'none';
+                    break;
+                case 'quiz':
+                    modeInfo.innerHTML = '<strong>Quiz-Modus:</strong> Teste dein Wissen! Klassifiziere jede Bewegung nach Bahnform und Bewegungsart.';
+                    conceptBox.style.display = 'none';
+                    progressSection.style.display = 'block';
+                    startQuiz();
+                    break;
+                case 'free':
+                    modeInfo.innerHTML = '<strong>Freies Erkunden:</strong> Schaue dir alle Bewegungen ohne Erklärungen an. Perfekt zum Üben!';
+                    conceptBox.style.display = 'none';
+                    progressSection.style.display = 'none';
+                    break;
+            }
+            currentMovement = null;
+            document.getElementById('currentInfo').innerHTML = '<p style="color: #888; font-style: italic;">Klicke auf eine Bewegung.</p>';
+        }
+
+        function selectMovement(id) {
+            currentMovement = id;
+            const movement = movements[id];
+            document.querySelectorAll('.movement-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.id) === id) btn.classList.add('active');
+            });
+            document.getElementById('currentInfo').innerHTML = `<p class="label">Bewegung:</p><p class="value">${movement.name}</p><p class="label">Beschreibung:</p><p>${movement.description}</p>`;
+
+            if (currentMode === 'discover') {
+                document.getElementById('solutionSection').style.display = 'block';
+                document.getElementById('solutionInfo').innerHTML = `<p><strong>Bahnform:</strong> ${movement.bahnform}</p><p><strong>Bewegungsart:</strong> ${movement.bewegungsart}</p><p style="margin-top: 8px; color: #555;">${movement.erklaerung}</p>`;
+            } else if (currentMode === 'quiz') {
+                if (!quizResults[id]) {
+                    document.getElementById('classificationBox').classList.add('visible');
+                    document.getElementById('currentMovementName').textContent = movement.name;
+                    resetClassification();
+                } else {
+                    document.getElementById('classificationBox').classList.remove('visible');
+                }
+            } else {
+                document.getElementById('solutionSection').style.display = 'none';
+            }
+        }
+
+        function startQuiz() {
+            quizResults = {};
+            quizOrder = [0, 1, 2, 3, 4, 5, 6, 7].sort(() => Math.random() - 0.5);
+            currentQuizIndex = 0;
+            updateProgress();
+            resetMovementButtons();
+            selectMovement(quizOrder[0]);
+        }
+
+        function resetClassification() {
+            selectedBahnform = null;
+            selectedBewegungsart = null;
+            document.querySelectorAll('.classify-btn').forEach(btn => {
+                btn.classList.remove('selected', 'correct', 'incorrect');
+                btn.disabled = false;
+            });
+            document.getElementById('resultBox').className = 'result-box';
+            document.getElementById('resultBox').textContent = '';
+            document.getElementById('checkBtn').disabled = true;
+            document.getElementById('checkBtn').textContent = 'Überprüfen';
+            document.getElementById('checkBtn').onclick = checkAnswer;
+        }
+
+        function updateCheckButton() {
+            document.getElementById('checkBtn').disabled = !(selectedBahnform && selectedBewegungsart);
+        }
+
+        function checkAnswer() {
+            const movement = movements[currentMovement];
+            const bahnformCorrect = selectedBahnform === movement.bahnform;
+            const bewegungsartCorrect = selectedBewegungsart === movement.bewegungsart;
+            const allCorrect = bahnformCorrect && bewegungsartCorrect;
+
+            document.querySelectorAll('#bahnformOptions .classify-btn').forEach(btn => {
+                btn.disabled = true;
+                if (btn.dataset.value === movement.bahnform) btn.classList.add('correct');
+                else if (btn.classList.contains('selected')) btn.classList.add('incorrect');
+            });
+            document.querySelectorAll('#bewegungsartOptions .classify-btn').forEach(btn => {
+                btn.disabled = true;
+                if (btn.dataset.value === movement.bewegungsart) btn.classList.add('correct');
+                else if (btn.classList.contains('selected')) btn.classList.add('incorrect');
+            });
+
+            const resultBox = document.getElementById('resultBox');
+            if (allCorrect) {
+                resultBox.className = 'result-box correct';
+                resultBox.innerHTML = `<strong>✓ Richtig!</strong><br>${movement.erklaerung}`;
+            } else {
+                resultBox.className = 'result-box incorrect';
+                let feedback = '<strong>✗ Nicht ganz richtig.</strong><br>';
+                if (!bahnformCorrect) feedback += `Die Bahnform ist <strong>${movement.bahnform}</strong>. `;
+                if (!bewegungsartCorrect) feedback += `Die Bewegungsart ist <strong>${movement.bewegungsart}</strong>.`;
+                feedback += `<br><br>${movement.erklaerung}`;
+                resultBox.innerHTML = feedback;
+            }
+
+            const isFirstAttempt = !quizResults[currentMovement];
+            quizResults[currentMovement] = { bahnform: selectedBahnform, bewegungsart: selectedBewegungsart, correct: allCorrect, firstAttemptCorrect: isFirstAttempt && allCorrect };
+            document.querySelector(`.movement-btn[data-id="${currentMovement}"]`).classList.add(allCorrect ? 'done' : 'wrong');
+            document.getElementById('checkBtn').textContent = 'Weiter →';
+            document.getElementById('checkBtn').disabled = false;
+            document.getElementById('checkBtn').onclick = nextQuestion;
+            updateProgress();
+        }
+
+        function nextQuestion() {
+            currentQuizIndex++;
+            while (currentQuizIndex < quizOrder.length && quizResults[quizOrder[currentQuizIndex]]) currentQuizIndex++;
+            if (currentQuizIndex >= quizOrder.length || Object.keys(quizResults).length >= 8) showSummary();
+            else selectMovement(quizOrder[currentQuizIndex]);
+            document.getElementById('checkBtn').textContent = 'Überprüfen';
+            document.getElementById('checkBtn').onclick = checkAnswer;
+        }
+
+        function updateProgress() {
+            const answered = Object.keys(quizResults).length;
+            const correct = Object.values(quizResults).filter(r => r.firstAttemptCorrect).length;
+            const incorrect = answered - correct;
+            const remaining = 8 - answered;
+            const progressBar = document.getElementById('progressBar');
+            progressBar.innerHTML = '';
+            if (correct > 0) { const seg = document.createElement('div'); seg.className = 'progress-segment correct'; seg.style.width = (correct / 8 * 100) + '%'; seg.textContent = correct; progressBar.appendChild(seg); }
+            if (incorrect > 0) { const seg = document.createElement('div'); seg.className = 'progress-segment incorrect'; seg.style.width = (incorrect / 8 * 100) + '%'; seg.textContent = incorrect; progressBar.appendChild(seg); }
+            if (remaining > 0) { const seg = document.createElement('div'); seg.className = 'progress-segment remaining'; seg.style.width = (remaining / 8 * 100) + '%'; seg.textContent = `${answered} / 8`; progressBar.appendChild(seg); }
+            document.getElementById('progressText').textContent = answered === 8 ? 'Alle Bewegungen klassifiziert!' : `Noch ${remaining} Bewegung${remaining === 1 ? '' : 'en'} übrig`;
+        }
+
+        function showSummary() {
+            document.getElementById('classificationBox').classList.remove('visible');
+            document.getElementById('summarySection').classList.add('visible');
+            const correct = Object.values(quizResults).filter(r => r.firstAttemptCorrect).length;
+            document.getElementById('scoreDisplay').textContent = `${correct}/8`;
+            const tbody = document.getElementById('summaryBody');
+            tbody.innerHTML = '';
+            movements.forEach((m, i) => {
+                const r = quizResults[i] || {};
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${i + 1}</td><td style="text-align: left;">${m.name}</td><td class="${r.bahnform === m.bahnform ? 'correct-cell' : 'incorrect-cell'}">${m.bahnform}</td><td class="${r.bewegungsart === m.bewegungsart ? 'correct-cell' : 'incorrect-cell'}">${m.bewegungsart}</td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        function restartQuiz() { startQuiz(); document.getElementById('summarySection').classList.remove('visible'); }
+        function resetMovementButtons() { document.querySelectorAll('.movement-btn').forEach(btn => btn.classList.remove('active', 'done', 'wrong')); }
+
+        animate();
+        updateModeUI();
+    </script>
+</body>
+</html>
