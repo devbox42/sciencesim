@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton II: F = m · a – Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Mechanik">
+    <meta name="grade" content="10">
+    <meta name="description" content="Interaktive Simulation zum Grundgesetz der Mechanik: Zusammenhang zwischen Kraft, Masse und Beschleunigung">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+        }
+
+        /* Simulations-Bereich */
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        #simCanvas {
+            width: 100%;
+            height: 280px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            display: block;
+        }
+
+        /* Steuerung */
+        .controls {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .controls h2 {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .control-value {
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #2c5aa0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #2c5aa0;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #f5f5f5;
+        }
+
+        button.active {
+            background: #2c5aa0;
+            color: #fff;
+            border-color: #2c5aa0;
+        }
+
+        /* Presets */
+        .presets {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .presets-title {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .preset-btn {
+            padding: 8px;
+            font-size: 0.8em;
+            text-align: center;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        }
+
+        .preset-btn:hover {
+            background: #f0f0f0;
+            border-color: #2c5aa0;
+        }
+
+        /* Formel-Box */
+        .formula-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .formula {
+            background: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            font-family: "Times New Roman", serif;
+            font-size: 1.3em;
+            border-left: 3px solid #2c5aa0;
+        }
+
+        .formula-values {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .formula-item {
+            text-align: center;
+        }
+
+        .formula-item .label {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .formula-item .value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        /* Ergebnis */
+        .result-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-left: 3px solid #2c5aa0;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-box h3 {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: normal;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 2em;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        .result-unit {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Anzeige-Werte */
+        .display-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .display-item {
+            flex: 1;
+            background: #fafafa;
+            border: 1px solid #eee;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .display-item .label {
+            font-size: 0.75em;
+            color: #666;
+        }
+
+        .display-item .value {
+            font-size: 1em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Info-Box */
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .info-box p {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .info-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Materialien-Box */
+        .material-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .material-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .material-list {
+            list-style: none;
+        }
+
+        .material-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .material-list li:last-child {
+            border-bottom: none;
+        }
+
+        .material-list a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        .material-list a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Mechanik</p>
+            <h1>Newton II: F = m · a</h1>
+        </header>
+
+        <!-- Formel-Box -->
+        <div class="formula-box">
+            <div class="formula">
+                <strong>F = m · a</strong>
+            </div>
+            <div class="formula-values">
+                <div class="formula-item">
+                    <div class="label">Kraft F</div>
+                    <div class="value" id="forceDisplay">40 N</div>
+                </div>
+                <div class="formula-item">
+                    <div class="label">Masse m</div>
+                    <div class="value" id="massDisplay">20 kg</div>
+                </div>
+                <div class="formula-item">
+                    <div class="label">Beschleunigung a</div>
+                    <div class="value" id="accelDisplay">2,0 m/s²</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="simulation-area">
+            <!-- Canvas -->
+            <div class="canvas-container">
+                <canvas id="simCanvas"></canvas>
+                <div class="display-row">
+                    <div class="display-item">
+                        <div class="label">Geschwindigkeit</div>
+                        <div class="value"><span id="speedValue">0,0</span> m/s</div>
+                    </div>
+                    <div class="display-item">
+                        <div class="label">Strecke</div>
+                        <div class="value"><span id="posValue">0,0</span> m</div>
+                    </div>
+                    <div class="display-item">
+                        <div class="label">Zeit</div>
+                        <div class="value"><span id="timeValue">0,0</span> s</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steuerung -->
+            <div class="controls">
+                <h2>Einstellungen</h2>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Kraft F</span>
+                        <span class="control-value" id="forceValue">40 N</span>
+                    </div>
+                    <input type="range" id="forceSlider" min="10" max="200" value="40" step="10">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Masse m</span>
+                        <span class="control-value" id="massValue">20 kg</span>
+                    </div>
+                    <input type="range" id="massSlider" min="5" max="100" value="20" step="5">
+                </div>
+
+                <div class="button-group">
+                    <button id="startBtn" onclick="toggleSimulation()">▶ Start</button>
+                    <button onclick="resetSimulation()">↺ Reset</button>
+                </div>
+
+                <div class="presets">
+                    <div class="presets-title">Beispiele</div>
+                    <div class="preset-grid">
+                        <button class="preset-btn" onclick="setPreset(40, 20)">Einkaufswagen</button>
+                        <button class="preset-btn" onclick="setPreset(200, 100)">Auto</button>
+                        <button class="preset-btn" onclick="setPreset(150, 75)">Fahrrad</button>
+                        <button class="preset-btn" onclick="setPreset(50, 10)">Paket</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ergebnis -->
+        <div class="result-box">
+            <h3>Berechnete Beschleunigung</h3>
+            <span class="result-value" id="bigAccel">2,0</span>
+            <span class="result-unit">m/s²</span>
+        </div>
+
+        <!-- Info -->
+        <div class="info-box">
+            <h3>Das Grundgesetz der Mechanik</h3>
+            <p>Das zweite Newtonsche Gesetz beschreibt den Zusammenhang zwischen Kraft, Masse und Beschleunigung:</p>
+            <p><strong>Je größer die Kraft</strong>, desto größer die Beschleunigung bei gleicher Masse.</p>
+            <p><strong>Je größer die Masse</strong>, desto kleiner die Beschleunigung bei gleicher Kraft.</p>
+            <p>Die Einheit der Kraft ist das Newton: 1 N = 1 kg · m/s²</p>
+        </div>
+
+        <!-- Materialien -->
+        <div class="material-box">
+            <h3>Materialien</h3>
+            <ul class="material-list">
+                <li><a href="arbeitsblatt-einfuehrung.html">Arbeitsblatt: Einführung</a> – Grundlagen und erste Rechnungen</li>
+                <li><a href="unterrichtshinweise.html">Unterrichtshinweise</a> – Für Lehrkräfte</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Canvas Setup
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function setupCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        // Variablen
+        let force = 40;
+        let mass = 20;
+        let acceleration = 2;
+        let velocity = 0;
+        let position = 0;
+        let time = 0;
+        let isRunning = false;
+        let animationId = null;
+        let lastTime = 0;
+
+        // DOM Elemente
+        const forceSlider = document.getElementById('forceSlider');
+        const massSlider = document.getElementById('massSlider');
+        const forceValue = document.getElementById('forceValue');
+        const massValue = document.getElementById('massValue');
+        const forceDisplay = document.getElementById('forceDisplay');
+        const massDisplay = document.getElementById('massDisplay');
+        const accelDisplay = document.getElementById('accelDisplay');
+        const bigAccel = document.getElementById('bigAccel');
+        const speedValue = document.getElementById('speedValue');
+        const posValue = document.getElementById('posValue');
+        const timeValue = document.getElementById('timeValue');
+        const startBtn = document.getElementById('startBtn');
+
+        // Beschleunigung berechnen
+        function calculateAcceleration() {
+            acceleration = force / mass;
+            updateDisplays();
+        }
+
+        // Anzeigen aktualisieren
+        function updateDisplays() {
+            forceValue.textContent = force + ' N';
+            massValue.textContent = mass + ' kg';
+            forceDisplay.textContent = force + ' N';
+            massDisplay.textContent = mass + ' kg';
+            accelDisplay.textContent = acceleration.toFixed(1).replace('.', ',') + ' m/s²';
+            bigAccel.textContent = acceleration.toFixed(1).replace('.', ',');
+        }
+
+        // Slider Events
+        forceSlider.addEventListener('input', function() {
+            force = parseInt(this.value);
+            calculateAcceleration();
+            if (!isRunning) draw();
+        });
+
+        massSlider.addEventListener('input', function() {
+            mass = parseInt(this.value);
+            calculateAcceleration();
+            if (!isRunning) draw();
+        });
+
+        // Presets
+        function setPreset(f, m) {
+            force = f;
+            mass = m;
+            forceSlider.value = force;
+            massSlider.value = mass;
+            calculateAcceleration();
+            resetSimulation();
+        }
+
+        // Zeichnen
+        function draw() {
+            const w = canvas.getBoundingClientRect().width;
+            const h = canvas.getBoundingClientRect().height;
+
+            // Hintergrund
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(0, 0, w, h);
+
+            // Boden
+            ctx.fillStyle = '#e0e0e0';
+            ctx.fillRect(0, h - 30, w, 30);
+
+            // Skala
+            ctx.fillStyle = '#999';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 10; i++) {
+                const x = (i / 10) * w;
+                ctx.fillStyle = '#ccc';
+                ctx.fillRect(x, h - 30, 1, 8);
+                ctx.fillStyle = '#999';
+                ctx.fillText((i * 10) + 'm', x, h - 8);
+            }
+
+            // Objekt Position (skaliert auf 0-100m)
+            const objX = (position / 100) * (w - 80) + 40;
+            const objY = h - 55;
+
+            // Objektgröße basierend auf Masse
+            const objWidth = 40 + (mass / 100) * 30;
+            const objHeight = 30 + (mass / 100) * 15;
+
+            // Schatten
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(objX - objWidth/2 + 3, h - 32, objWidth, 4);
+
+            // Objekt (Kasten)
+            ctx.fillStyle = '#2c5aa0';
+            ctx.fillRect(objX - objWidth/2, objY - objHeight/2, objWidth, objHeight);
+
+            // Rand
+            ctx.strokeStyle = '#1a3d6e';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(objX - objWidth/2, objY - objHeight/2, objWidth, objHeight);
+
+            // Masse-Label
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(mass + ' kg', objX, objY + 4);
+
+            // Kraft-Pfeil (wenn nicht am Ende)
+            if (position < 95) {
+                const arrowLength = 30 + (force / 200) * 60;
+                const arrowY = objY;
+
+                // Linie
+                ctx.strokeStyle = '#c0392b';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(objX + objWidth/2 + 5, arrowY);
+                ctx.lineTo(objX + objWidth/2 + 5 + arrowLength, arrowY);
+                ctx.stroke();
+
+                // Pfeilspitze
+                ctx.fillStyle = '#c0392b';
+                ctx.beginPath();
+                ctx.moveTo(objX + objWidth/2 + 5 + arrowLength + 10, arrowY);
+                ctx.lineTo(objX + objWidth/2 + 5 + arrowLength - 3, arrowY - 6);
+                ctx.lineTo(objX + objWidth/2 + 5 + arrowLength - 3, arrowY + 6);
+                ctx.closePath();
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#c0392b';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText('F = ' + force + ' N', objX + objWidth/2 + 5 + arrowLength/2, arrowY - 12);
+            }
+        }
+
+        // Animation
+        function animate(currentTime) {
+            if (!isRunning) return;
+
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // Physik (skaliert für Visualisierung)
+            const timeScale = 0.5;
+            time += deltaTime * timeScale;
+            velocity += acceleration * deltaTime * timeScale;
+            position += velocity * deltaTime * timeScale * 2;
+
+            // Anzeigen
+            speedValue.textContent = velocity.toFixed(1).replace('.', ',');
+            posValue.textContent = position.toFixed(1).replace('.', ',');
+            timeValue.textContent = time.toFixed(1).replace('.', ',');
+
+            // Grenze
+            if (position >= 100) {
+                position = 100;
+                isRunning = false;
+                startBtn.textContent = '▶ Start';
+                startBtn.classList.remove('active');
+            }
+
+            draw();
+
+            if (isRunning) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // Start/Stop
+        function toggleSimulation() {
+            isRunning = !isRunning;
+
+            if (isRunning) {
+                startBtn.textContent = '⏸ Pause';
+                startBtn.classList.add('active');
+                lastTime = performance.now();
+                animationId = requestAnimationFrame(animate);
+            } else {
+                startBtn.textContent = '▶ Start';
+                startBtn.classList.remove('active');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+
+        // Reset
+        function resetSimulation() {
+            isRunning = false;
+            velocity = 0;
+            position = 0;
+            time = 0;
+            startBtn.textContent = '▶ Start';
+            startBtn.classList.remove('active');
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            speedValue.textContent = '0,0';
+            posValue.textContent = '0,0';
+            timeValue.textContent = '0,0';
+
+            draw();
+        }
+
+        // Init
+        window.addEventListener('load', function() {
+            setupCanvas();
+            calculateAcceleration();
+            draw();
+        });
+
+        window.addEventListener('resize', function() {
+            setupCanvas();
+            draw();
+        });
+    </script>
+</body>
+</html>
