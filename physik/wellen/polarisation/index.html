@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polarisation – Simulation</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Wellen">
+    <meta name="grade" content="11-12">
+    <meta name="description" content="Interaktive Simulation zur Polarisation: Seilwellen, Lichtpolarisation und Drei-Filter-Experiment">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 5px;
+        }
+
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .breadcrumb a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            background: #e8e8e8;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            border-bottom: 1px solid #fff;
+            margin-bottom: -1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tab-content {
+            display: none;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Simulation Area */
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-container {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+        }
+
+        /* Controls */
+        .controls {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .controls h3 {
+            font-size: 1em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .control-value {
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #2c5aa0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #2c5aa0;
+            background: #fff;
+            color: #2c5aa0;
+            font-size: 0.85em;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #2c5aa0;
+            color: #fff;
+        }
+
+        .btn.primary {
+            background: #2c5aa0;
+            color: #fff;
+        }
+
+        .btn.primary:hover {
+            background: #1e3d6f;
+        }
+
+        /* Info text */
+        .info-text {
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        .formula {
+            font-family: "Times New Roman", serif;
+            font-size: 1.1em;
+            margin: 10px 0;
+            border-left: 3px solid #2c5aa0;
+            padding-left: 10px;
+        }
+
+        .highlight {
+            background: #fffde7;
+            padding: 10px;
+            border-left: 3px solid #ffc107;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        /* Checkbox styling */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Results display */
+        .result-display {
+            background: #e8f4e8;
+            border: 1px solid #c3e6c3;
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .result-display.blocked {
+            background: #f8e8e8;
+            border-color: #e6c3c3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Wellen</p>
+            <h1>Polarisation</h1>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(0)">1. Seilwelle</button>
+            <button class="tab-btn" onclick="switchTab(1)">2. Lichtpolarisation</button>
+            <button class="tab-btn" onclick="switchTab(2)">3. Drei Filter</button>
+        </div>
+
+        <!-- Tab 1: Seilwelle -->
+        <div class="tab-content active" id="tab0">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas1" width="550" height="300"></canvas>
+                </div>
+                <div class="controls">
+                    <h3 style="font-size:0.95em; margin-bottom:15px;">Steuerung</h3>
+                    
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Schwingungsrichtung</span>
+                            <span class="control-value" id="dir1-value">0° (vertikal)</span>
+                        </div>
+                        <input type="range" id="direction1" min="0" max="90" value="0" step="5">
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Schlitzausrichtung</span>
+                            <span class="control-value" id="slit1-value">0° (vertikal)</span>
+                        </div>
+                        <input type="range" id="slit1" min="0" max="90" value="0" step="5">
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn primary" onclick="startWave1()">Start</button>
+                        <button class="btn" onclick="stopWave1()">Stopp</button>
+                        <button class="btn" onclick="resetWave1()">Reset</button>
+                    </div>
+
+                    <div class="result-display" id="result1">
+                        Welle passiert: <strong>Ja</strong>
+                    </div>
+
+                    <p class="info-text" style="margin-top:15px; font-size:0.8em;">
+                        Der Schlitz lässt nur die Schwingungskomponente durch, die parallel zu ihm verläuft.
+                        Bei 0° = vertikal, bei 90° = horizontal.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Lichtpolarisation -->
+        <div class="tab-content" id="tab1">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas2" width="550" height="300"></canvas>
+                </div>
+                <div class="controls">
+                    <h3 style="font-size:0.95em; margin-bottom:15px;">Steuerung</h3>
+                    
+                    <p class="info-text">
+                        Der Polarisator ist fest bei 0° (vertikal). Drehen Sie den Analysator:
+                    </p>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Analysator-Winkel</span>
+                            <span class="control-value" id="angle2-value">0°</span>
+                        </div>
+                        <input type="range" id="angle2" min="0" max="90" value="0" step="5">
+                    </div>
+
+                    <div class="result-display" id="result2">
+                        Intensität: <strong>I = I₀</strong> (100%)
+                    </div>
+
+                    <div class="formula">
+                        I = I₀ · cos²(α)
+                    </div>
+
+                    <p class="info-text" style="font-size:0.8em;">
+                        α = Winkel zwischen Polarisator und Analysator
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Drei Filter -->
+        <div class="tab-content" id="tab2">
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="canvas3" width="550" height="300"></canvas>
+                </div>
+                <div class="controls">
+                    <h3 style="font-size:0.95em; margin-bottom:15px;">Drei-Filter-Experiment</h3>
+                    
+                    <p class="info-text">
+                        Filter 1 (0°) und Filter 3 (90°) sind gekreuzt. Was passiert, wenn ein 45°-Filter dazwischen kommt?
+                    </p>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="filter2-active">
+                        <label for="filter2-active">Filter 2 einfügen</label>
+                    </div>
+
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Filter 2 Winkel</span>
+                            <span class="control-value" id="angle3-value">45°</span>
+                        </div>
+                        <input type="range" id="angle3" min="0" max="90" value="45" step="5">
+                    </div>
+
+                    <div class="result-display" id="result3">
+                        Intensität: <strong>I = 0</strong> (0%)
+                    </div>
+
+                    <div class="highlight">
+                        <strong>Überraschung:</strong> Ein zusätzlicher Filter kann mehr Licht durchlassen!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // Tab Switching
+        // =============================================
+        function switchTab(index) {
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+
+        // =============================================
+        // Tab 1: Seilwelle mit kontinuierlichem Schlitz
+        // =============================================
+        const canvas1 = document.getElementById('canvas1');
+        const ctx1 = canvas1.getContext('2d');
+        const direction1Slider = document.getElementById('direction1');
+        const slit1Slider = document.getElementById('slit1');
+
+        let wave1Phase = 0;
+        let wave1Running = false;
+        let wave1AnimId = null;
+
+        function getAngleLabel(angle) {
+            if (angle === 0) return '0° (vertikal)';
+            if (angle === 90) return '90° (horizontal)';
+            return angle + '°';
+        }
+
+        direction1Slider.addEventListener('input', () => {
+            const angle = parseInt(direction1Slider.value);
+            document.getElementById('dir1-value').textContent = getAngleLabel(angle);
+            updateResult1();
+            drawCanvas1();
+        });
+
+        slit1Slider.addEventListener('input', () => {
+            const angle = parseInt(slit1Slider.value);
+            document.getElementById('slit1-value').textContent = getAngleLabel(angle);
+            updateResult1();
+            drawCanvas1();
+        });
+
+        function updateResult1() {
+            const waveAngle = parseInt(direction1Slider.value);
+            const slitAngle = parseInt(slit1Slider.value);
+            const diff = Math.abs(waveAngle - slitAngle);
+            
+            // Berechne durchgelassene Amplitude (cos der Winkeldifferenz)
+            const transmission = Math.cos(diff * Math.PI / 180);
+            const percent = Math.round(transmission * transmission * 100);
+            
+            const result = document.getElementById('result1');
+            if (percent >= 50) {
+                result.innerHTML = `Durchlass: <strong>${percent}%</strong>`;
+                result.classList.remove('blocked');
+            } else if (percent > 0) {
+                result.innerHTML = `Durchlass: <strong>${percent}%</strong> (stark gedämpft)`;
+                result.classList.add('blocked');
+            } else {
+                result.innerHTML = 'Welle blockiert: <strong>0%</strong>';
+                result.classList.add('blocked');
+            }
+        }
+
+        function startWave1() {
+            if (wave1Running) return;
+            wave1Running = true;
+            animateWave1();
+        }
+
+        function stopWave1() {
+            wave1Running = false;
+            if (wave1AnimId) cancelAnimationFrame(wave1AnimId);
+        }
+
+        function resetWave1() {
+            stopWave1();
+            wave1Phase = 0;
+            drawCanvas1();
+        }
+
+        function animateWave1() {
+            if (!wave1Running) return;
+            wave1Phase += 0.1;
+            drawCanvas1();
+            wave1AnimId = requestAnimationFrame(animateWave1);
+        }
+
+        function drawCanvas1() {
+            const w = canvas1.width;
+            const h = canvas1.height;
+            const centerY = h / 2;
+            const amplitude = 40;
+            const wavelength = 60;
+            
+            const waveAngleDeg = parseInt(direction1Slider.value);
+            const slitAngleDeg = parseInt(slit1Slider.value);
+            const waveAngle = waveAngleDeg * Math.PI / 180;
+            const slitAngle = slitAngleDeg * Math.PI / 180;
+            const diff = Math.abs(waveAngleDeg - slitAngleDeg);
+            const transmission = Math.cos(diff * Math.PI / 180);
+            
+            ctx1.clearRect(0, 0, w, h);
+            
+            // Hintergrund
+            ctx1.fillStyle = '#fafafa';
+            ctx1.fillRect(0, 0, w, h);
+            
+            // Schlitz (Polarisator) - Holzrahmen
+            const slitX = 250;
+            const slitW = 30;
+            ctx1.fillStyle = '#8B4513';
+            ctx1.fillRect(slitX, 0, slitW, h);
+            
+            // Schlitzöffnung - als gedrehtes Rechteck
+            ctx1.save();
+            ctx1.translate(slitX + slitW/2, centerY);
+            ctx1.rotate(slitAngle); // 0° = vertikal, 90° = horizontal
+            ctx1.fillStyle = '#fafafa';
+            ctx1.fillRect(-6, -55, 12, 110); // Schmaler Schlitz
+            ctx1.restore();
+            
+            // Winkelanzeige am Schlitz
+            ctx1.fillStyle = '#333';
+            ctx1.font = '11px sans-serif';
+            ctx1.textAlign = 'center';
+            ctx1.fillText(slitAngleDeg + '°', slitX + slitW/2, 20);
+            
+            // Seil vor Schlitz (eingehende Welle)
+            ctx1.strokeStyle = '#333';
+            ctx1.lineWidth = 3;
+            ctx1.beginPath();
+            for (let x = 30; x < slitX; x++) {
+                const progress = (x - 30 + wave1Phase * 20) / wavelength;
+                const displacement = amplitude * Math.sin(progress * 2 * Math.PI);
+                // 0° = vertikal (dy), 90° = horizontal (dx)
+                const dx = displacement * Math.sin(waveAngle);
+                const dy = displacement * Math.cos(waveAngle);
+                
+                if (x === 30) {
+                    ctx1.moveTo(x + dx, centerY - dy);
+                } else {
+                    ctx1.lineTo(x + dx, centerY - dy);
+                }
+            }
+            ctx1.stroke();
+            
+            // Seil nach Schlitz
+            if (transmission > 0.01) {
+                // Durchgelassene Welle schwingt in Schlitzrichtung
+                const transmittedAmp = amplitude * Math.abs(transmission);
+                ctx1.strokeStyle = '#2c5aa0';
+                ctx1.lineWidth = 3 * Math.abs(transmission);
+                ctx1.beginPath();
+                for (let x = slitX + slitW; x < w - 30; x++) {
+                    const progress = (x - 30 + wave1Phase * 20) / wavelength;
+                    const displacement = transmittedAmp * Math.sin(progress * 2 * Math.PI);
+                    // Nach dem Schlitz: Schwingung in Schlitzrichtung
+                    const dx = displacement * Math.sin(slitAngle);
+                    const dy = displacement * Math.cos(slitAngle);
+                    
+                    if (x === slitX + slitW) {
+                        ctx1.moveTo(x + dx, centerY - dy);
+                    } else {
+                        ctx1.lineTo(x + dx, centerY - dy);
+                    }
+                }
+                ctx1.stroke();
+            } else {
+                // Blockiert - gestrichelte Linie
+                ctx1.strokeStyle = '#999';
+                ctx1.lineWidth = 2;
+                ctx1.setLineDash([5, 5]);
+                ctx1.beginPath();
+                ctx1.moveTo(slitX + slitW, centerY);
+                ctx1.lineTo(w - 30, centerY);
+                ctx1.stroke();
+                ctx1.setLineDash([]);
+            }
+            
+            // Beschriftungen
+            ctx1.fillStyle = '#333';
+            ctx1.font = '12px sans-serif';
+            ctx1.textAlign = 'center';
+            ctx1.fillText('Seilwelle', 100, 30);
+            ctx1.fillText('Schlitz', slitX + slitW/2, h - 10);
+            
+            // Schwingungsrichtung der Eingangswelle anzeigen
+            ctx1.save();
+            ctx1.translate(60, centerY);
+            ctx1.rotate(waveAngle);
+            ctx1.strokeStyle = '#c00';
+            ctx1.lineWidth = 2;
+            ctx1.beginPath();
+            ctx1.moveTo(0, -25);
+            ctx1.lineTo(0, 25);
+            ctx1.stroke();
+            // Pfeilspitzen
+            ctx1.beginPath();
+            ctx1.moveTo(0, -25);
+            ctx1.lineTo(-4, -18);
+            ctx1.moveTo(0, -25);
+            ctx1.lineTo(4, -18);
+            ctx1.moveTo(0, 25);
+            ctx1.lineTo(-4, 18);
+            ctx1.moveTo(0, 25);
+            ctx1.lineTo(4, 18);
+            ctx1.stroke();
+            ctx1.restore();
+            ctx1.fillStyle = '#c00';
+            ctx1.font = '10px sans-serif';
+            ctx1.fillText(waveAngleDeg + '°', 60, centerY + 40);
+            
+            // Pfeil Ausbreitungsrichtung
+            ctx1.strokeStyle = '#666';
+            ctx1.lineWidth = 1;
+            ctx1.beginPath();
+            ctx1.moveTo(50, h - 25);
+            ctx1.lineTo(w - 50, h - 25);
+            ctx1.stroke();
+            ctx1.beginPath();
+            ctx1.moveTo(w - 50, h - 25);
+            ctx1.lineTo(w - 60, h - 30);
+            ctx1.moveTo(w - 50, h - 25);
+            ctx1.lineTo(w - 60, h - 20);
+            ctx1.stroke();
+            ctx1.fillStyle = '#666';
+            ctx1.fillText('Ausbreitungsrichtung', w/2, h - 10);
+        }
+
+        // =============================================
+        // Tab 2: Lichtpolarisation
+        // =============================================
+        const canvas2 = document.getElementById('canvas2');
+        const ctx2 = canvas2.getContext('2d');
+        const angle2Slider = document.getElementById('angle2');
+
+        angle2Slider.addEventListener('input', () => {
+            const angle = parseInt(angle2Slider.value);
+            document.getElementById('angle2-value').textContent = angle + '°';
+            updateResult2();
+            drawCanvas2();
+        });
+
+        function updateResult2() {
+            const angle = parseInt(angle2Slider.value);
+            const intensity = Math.cos(angle * Math.PI / 180) ** 2;
+            const percent = Math.round(intensity * 100);
+            
+            const result = document.getElementById('result2');
+            if (percent === 100) {
+                result.innerHTML = 'Intensität: <strong>I = I₀</strong> (100%)';
+            } else if (percent === 0) {
+                result.innerHTML = 'Intensität: <strong>I = 0</strong> (0%)';
+            } else {
+                result.innerHTML = `Intensität: <strong>I = ${intensity.toFixed(2)} · I₀</strong> (${percent}%)`;
+            }
+            result.classList.toggle('blocked', percent === 0);
+        }
+
+        function drawCanvas2() {
+            const w = canvas2.width;
+            const h = canvas2.height;
+            const centerY = h / 2;
+            
+            const angle = parseInt(angle2Slider.value);
+            const intensity = Math.cos(angle * Math.PI / 180) ** 2;
+            
+            ctx2.clearRect(0, 0, w, h);
+            ctx2.fillStyle = '#fafafa';
+            ctx2.fillRect(0, 0, w, h);
+            
+            // Lichtquelle
+            ctx2.fillStyle = '#FFD700';
+            ctx2.beginPath();
+            ctx2.arc(40, centerY, 20, 0, 2 * Math.PI);
+            ctx2.fill();
+            ctx2.fillStyle = '#333';
+            ctx2.font = '11px sans-serif';
+            ctx2.textAlign = 'center';
+            ctx2.fillText('Lichtquelle', 40, centerY + 45);
+            ctx2.fillText('(unpolarisiert)', 40, centerY + 58);
+            
+            // Unpolarisiertes Licht (Strahlen in alle Richtungen)
+            ctx2.strokeStyle = '#FF8C00';
+            ctx2.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const a = i * Math.PI / 4;
+                ctx2.beginPath();
+                ctx2.moveTo(40 + Math.cos(a) * 15, centerY + Math.sin(a) * 15);
+                ctx2.lineTo(40 + Math.cos(a) * 25, centerY + Math.sin(a) * 25);
+                ctx2.stroke();
+            }
+            
+            // Lichtstrahl zum Polarisator
+            ctx2.strokeStyle = '#FFA500';
+            ctx2.lineWidth = 10;
+            ctx2.globalAlpha = 0.7;
+            ctx2.beginPath();
+            ctx2.moveTo(65, centerY);
+            ctx2.lineTo(160, centerY);
+            ctx2.stroke();
+            ctx2.globalAlpha = 1;
+            
+            // Polarisator (0° = vertikal)
+            ctx2.fillStyle = '#4169E1';
+            ctx2.globalAlpha = 0.3;
+            ctx2.fillRect(160, centerY - 60, 25, 120);
+            ctx2.globalAlpha = 1;
+            ctx2.strokeStyle = '#4169E1';
+            ctx2.lineWidth = 2;
+            ctx2.strokeRect(160, centerY - 60, 25, 120);
+            
+            // Vertikale Linien im Polarisator (Durchlassrichtung vertikal)
+            for (let x = 165; x <= 180; x += 8) {
+                ctx2.beginPath();
+                ctx2.moveTo(x, centerY - 50);
+                ctx2.lineTo(x, centerY + 50);
+                ctx2.stroke();
+            }
+            ctx2.fillStyle = '#333';
+            ctx2.fillText('Polarisator', 172, centerY + 80);
+            ctx2.fillText('(0°)', 172, centerY + 93);
+            
+            // Polarisiertes Licht (vertikal)
+            ctx2.strokeStyle = '#4169E1';
+            ctx2.lineWidth = 8;
+            ctx2.globalAlpha = 0.5;
+            ctx2.beginPath();
+            ctx2.moveTo(190, centerY);
+            ctx2.lineTo(310, centerY);
+            ctx2.stroke();
+            ctx2.globalAlpha = 1;
+            
+            // Schwingungspfeile (vertikal)
+            ctx2.strokeStyle = '#4169E1';
+            ctx2.lineWidth = 2;
+            for (let x = 220; x < 300; x += 40) {
+                ctx2.beginPath();
+                ctx2.moveTo(x, centerY - 20);
+                ctx2.lineTo(x, centerY + 20);
+                ctx2.stroke();
+                // Pfeilspitzen
+                ctx2.beginPath();
+                ctx2.moveTo(x, centerY - 20);
+                ctx2.lineTo(x - 4, centerY - 14);
+                ctx2.moveTo(x, centerY - 20);
+                ctx2.lineTo(x + 4, centerY - 14);
+                ctx2.stroke();
+            }
+            
+            // Analysator (drehbar)
+            ctx2.save();
+            ctx2.translate(335, centerY);
+            
+            ctx2.fillStyle = '#228B22';
+            ctx2.globalAlpha = 0.3;
+            ctx2.fillRect(-12, -60, 25, 120);
+            ctx2.globalAlpha = 1;
+            ctx2.strokeStyle = '#228B22';
+            ctx2.lineWidth = 2;
+            ctx2.strokeRect(-12, -60, 25, 120);
+            
+            // Linien im Analysator (vertikal bei 0°, dann gedreht)
+            ctx2.rotate(angle * Math.PI / 180);
+            for (let x = -8; x <= 8; x += 8) {
+                ctx2.beginPath();
+                ctx2.moveTo(x, -50);
+                ctx2.lineTo(x, 50);
+                ctx2.stroke();
+            }
+            ctx2.restore();
+            
+            ctx2.fillStyle = '#333';
+            ctx2.fillText('Analysator', 335, centerY + 80);
+            ctx2.fillText(`(${angle}°)`, 335, centerY + 93);
+            
+            // Durchgelassenes Licht
+            if (intensity > 0.01) {
+                const brightness = Math.round(255 * intensity);
+                ctx2.strokeStyle = `rgb(${brightness}, ${brightness}, 0)`;
+                ctx2.lineWidth = 8 * intensity;
+                ctx2.globalAlpha = 0.3 + 0.5 * intensity;
+                ctx2.beginPath();
+                ctx2.moveTo(360, centerY);
+                ctx2.lineTo(500, centerY);
+                ctx2.stroke();
+                ctx2.globalAlpha = 1;
+                
+                // Schwingungspfeil (diagonal entsprechend Analysator)
+                ctx2.strokeStyle = '#228B22';
+                ctx2.lineWidth = 2;
+                const rad = angle * Math.PI / 180;
+                for (let x = 400; x < 480; x += 40) {
+                    ctx2.beginPath();
+                    ctx2.moveTo(x - Math.sin(rad) * 15 * intensity, centerY - Math.cos(rad) * 15 * intensity);
+                    ctx2.lineTo(x + Math.sin(rad) * 15 * intensity, centerY + Math.cos(rad) * 15 * intensity);
+                    ctx2.stroke();
+                }
+            }
+            
+            // Detektor
+            ctx2.fillStyle = intensity > 0.01 ? `rgb(255, ${Math.round(200 * intensity)}, 0)` : '#666';
+            ctx2.fillRect(500, centerY - 30, 30, 60);
+            ctx2.strokeStyle = '#333';
+            ctx2.lineWidth = 1;
+            ctx2.strokeRect(500, centerY - 30, 30, 60);
+            ctx2.fillStyle = '#333';
+            ctx2.fillText('Detektor', 515, centerY + 50);
+        }
+
+        // =============================================
+        // Tab 3: Drei Filter
+        // =============================================
+        const canvas3 = document.getElementById('canvas3');
+        const ctx3 = canvas3.getContext('2d');
+        const filter2Checkbox = document.getElementById('filter2-active');
+        const angle3Slider = document.getElementById('angle3');
+
+        filter2Checkbox.addEventListener('change', () => {
+            updateResult3();
+            drawCanvas3();
+        });
+
+        angle3Slider.addEventListener('input', () => {
+            const angle = parseInt(angle3Slider.value);
+            document.getElementById('angle3-value').textContent = angle + '°';
+            updateResult3();
+            drawCanvas3();
+        });
+
+        function updateResult3() {
+            const filter2Active = filter2Checkbox.checked;
+            const filter2Angle = parseInt(angle3Slider.value);
+            
+            let intensity;
+            if (!filter2Active) {
+                // Nur Filter 1 (0°) und Filter 3 (90°) - gekreuzt
+                intensity = 0;
+            } else {
+                // Mit Filter 2 dazwischen
+                // I1 = I0 * cos²(filter2Angle - 0°) = I0 * cos²(filter2Angle)
+                // I2 = I1 * cos²(90° - filter2Angle)
+                const cos1 = Math.cos(filter2Angle * Math.PI / 180);
+                const cos2 = Math.cos((90 - filter2Angle) * Math.PI / 180);
+                intensity = 0.5 * cos1 * cos1 * cos2 * cos2; // 0.5 wegen erstem Polarisator
+            }
+            
+            const percent = Math.round(intensity * 100);
+            const result = document.getElementById('result3');
+            
+            if (percent === 0) {
+                result.innerHTML = 'Intensität: <strong>I = 0</strong> (0%)';
+                result.classList.add('blocked');
+            } else {
+                result.innerHTML = `Intensität: <strong>I = ${intensity.toFixed(3)} · I₀</strong> (${percent}%)`;
+                result.classList.remove('blocked');
+            }
+        }
+
+        function drawCanvas3() {
+            const w = canvas3.width;
+            const h = canvas3.height;
+            const centerY = h / 2;
+            
+            const filter2Active = filter2Checkbox.checked;
+            const filter2Angle = parseInt(angle3Slider.value);
+            
+            let intensity;
+            if (!filter2Active) {
+                intensity = 0;
+            } else {
+                const cos1 = Math.cos(filter2Angle * Math.PI / 180);
+                const cos2 = Math.cos((90 - filter2Angle) * Math.PI / 180);
+                intensity = 0.5 * cos1 * cos1 * cos2 * cos2;
+            }
+            
+            ctx3.clearRect(0, 0, w, h);
+            ctx3.fillStyle = '#fafafa';
+            ctx3.fillRect(0, 0, w, h);
+            
+            // Lichtquelle
+            ctx3.fillStyle = '#FFD700';
+            ctx3.beginPath();
+            ctx3.arc(30, centerY, 15, 0, 2 * Math.PI);
+            ctx3.fill();
+            
+            // Eingangsstrahl
+            ctx3.strokeStyle = '#FFA500';
+            ctx3.lineWidth = 8;
+            ctx3.globalAlpha = 0.6;
+            ctx3.beginPath();
+            ctx3.moveTo(50, centerY);
+            ctx3.lineTo(100, centerY);
+            ctx3.stroke();
+            ctx3.globalAlpha = 1;
+            
+            // Filter 1 (0°)
+            drawFilter(ctx3, 100, centerY, 0, '#4169E1', 'Filter 1', '0°');
+            
+            // Strahl nach Filter 1 (vertikal polarisiert)
+            ctx3.strokeStyle = '#4169E1';
+            ctx3.lineWidth = 6;
+            ctx3.globalAlpha = 0.5;
+            ctx3.beginPath();
+            ctx3.moveTo(125, centerY);
+            ctx3.lineTo(filter2Active ? 200 : 350, centerY);
+            ctx3.stroke();
+            ctx3.globalAlpha = 1;
+            
+            if (filter2Active) {
+                // Filter 2 (variabel)
+                drawFilter(ctx3, 200, centerY, filter2Angle, '#FFA500', 'Filter 2', filter2Angle + '°');
+                
+                // Strahl nach Filter 2
+                const int1 = Math.cos(filter2Angle * Math.PI / 180) ** 2;
+                if (int1 > 0.01) {
+                    ctx3.strokeStyle = '#FFA500';
+                    ctx3.lineWidth = 6 * int1;
+                    ctx3.globalAlpha = 0.3 + 0.4 * int1;
+                    ctx3.beginPath();
+                    ctx3.moveTo(225, centerY);
+                    ctx3.lineTo(350, centerY);
+                    ctx3.stroke();
+                    ctx3.globalAlpha = 1;
+                }
+            }
+            
+            // Filter 3 (90°)
+            drawFilter(ctx3, 350, centerY, 90, '#228B22', 'Filter 3', '90°');
+            
+            // Strahl nach Filter 3
+            if (intensity > 0.01) {
+                ctx3.strokeStyle = '#228B22';
+                ctx3.lineWidth = 6 * intensity;
+                ctx3.globalAlpha = 0.3 + 0.5 * intensity;
+                ctx3.beginPath();
+                ctx3.moveTo(375, centerY);
+                ctx3.lineTo(480, centerY);
+                ctx3.stroke();
+                ctx3.globalAlpha = 1;
+            }
+            
+            // Detektor
+            const detectorColor = intensity > 0.01 
+                ? `rgb(${Math.round(100 + 155 * intensity)}, ${Math.round(200 * intensity)}, 0)` 
+                : '#666';
+            ctx3.fillStyle = detectorColor;
+            ctx3.fillRect(480, centerY - 25, 40, 50);
+            ctx3.strokeStyle = '#333';
+            ctx3.lineWidth = 1;
+            ctx3.strokeRect(480, centerY - 25, 40, 50);
+            ctx3.fillStyle = '#333';
+            ctx3.fillText('Detektor', 500, centerY + 40);
+            
+            // Anzeige ob Licht durchkommt
+            ctx3.font = '14px sans-serif';
+            if (intensity > 0.01) {
+                ctx3.fillStyle = '#228B22';
+                ctx3.fillText('✓ Licht!', 500, centerY + 55);
+            } else {
+                ctx3.fillStyle = '#999';
+                ctx3.fillText('✗ kein Licht', 500, centerY + 55);
+            }
+        }
+
+        function drawFilter(ctx, x, y, angle, color, label, angleText) {
+            ctx.save();
+            ctx.translate(x, y);
+            
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.25;
+            ctx.fillRect(-10, -50, 20, 100);
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-10, -50, 20, 100);
+            
+            // Linien im Filter (vertikal bei 0°, dann gedreht)
+            ctx.rotate(angle * Math.PI / 180);
+            for (let xi = -6; xi <= 6; xi += 6) {
+                ctx.beginPath();
+                ctx.moveTo(xi, -40);
+                ctx.lineTo(xi, 40);
+                ctx.stroke();
+            }
+            ctx.restore();
+            
+            ctx.fillStyle = '#333';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x, y + 65);
+            ctx.fillText(angleText, x, y + 77);
+        }
+
+        // =============================================
+        // Initial Draw
+        // =============================================
+        drawCanvas1();
+        drawCanvas2();
+        drawCanvas3();
+        updateResult1();
+        updateResult2();
+        updateResult3();
+    </script>
+</body>
+</html>
