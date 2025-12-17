@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100m-Sprint – Geschwindigkeit messen</title>
+    <meta name="subject" content="Physik">
+    <meta name="topic" content="Mechanik">
+    <meta name="grade" content="6">
+    <meta name="description" content="Simulation eines 100m-Sprints zur Zeitmessung. Stoppe bei der Ziellinie!">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 3px;
+        }
+
+        .breadcrumb {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .breadcrumb a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+
+        /* Laufbahn-Bereich */
+        .track-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .track-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .track {
+            position: relative;
+            height: 90px;
+            background: linear-gradient(to bottom, #d4785a 0%, #c96842 50%, #d4785a 100%);
+            border: 2px solid #8b4513;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        /* Bahnlinien */
+        .track::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Streckenmarkierungen */
+        .markers {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .marker {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            height: 100%;
+            background: #fff;
+        }
+
+        .marker-label {
+            position: absolute;
+            bottom: -22px;
+            font-size: 0.8em;
+            color: #333;
+            font-weight: 600;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        .marker.start {
+            left: 8%;
+        }
+
+        .marker.finish {
+            left: 97%;
+        }
+
+        /* Läufer - GESPIEGELT (schaut nach rechts), LINKS von Startlinie */
+        .runner {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%) scaleX(-1);
+            left: 4%;
+            font-size: 2.2em;
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+
+        .runner.running {
+            animation: bob 0.12s infinite alternate;
+        }
+
+        .runner.hidden {
+            opacity: 0;
+        }
+
+        @keyframes bob {
+            from { transform: translateY(-50%) scaleX(-1) translateY(-3px); }
+            to { transform: translateY(-50%) scaleX(-1) translateY(3px); }
+        }
+
+        /* Streckenanzeige unter Bahn */
+        .distance-scale {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            margin-top: 28px;
+            font-size: 0.85em;
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* Steuerung und Anzeige */
+        .controls-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .controls-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .control-box h3 {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: normal;
+        }
+
+        /* Stoppuhr */
+        .stopwatch {
+            font-family: "Courier New", monospace;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #222;
+            background: #f0f0f0;
+            padding: 12px 20px;
+            border: 1px solid #ccc;
+            margin-bottom: 8px;
+        }
+
+        .stopwatch.running {
+            color: #060;
+            background: #e8ffe8;
+            border-color: #090;
+        }
+
+        .stopwatch.stopped {
+            color: #c00;
+            background: #fff0f0;
+            border-color: #c00;
+        }
+
+        /* Streckenanzeige */
+        .distance-display {
+            font-family: "Courier New", monospace;
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        .distance-unit {
+            font-size: 0.5em;
+            color: #666;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 14px 28px;
+            font-size: 1.1em;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            font-family: inherit;
+            border-radius: 2px;
+            font-weight: 500;
+        }
+
+        button:hover:not(:disabled) {
+            background: #f5f5f5;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: #2c5aa0;
+            color: #fff;
+            border-color: #2c5aa0;
+        }
+
+        button.primary:hover:not(:disabled) {
+            background: #1e4a8a;
+        }
+
+        button.danger {
+            background: #c00;
+            color: #fff;
+            border-color: #c00;
+            font-size: 1.3em;
+            padding: 18px 50px;
+        }
+
+        button.danger:hover:not(:disabled) {
+            background: #a00;
+        }
+
+        button.danger:disabled {
+            background: #ccc;
+            border-color: #ccc;
+        }
+
+        /* Messwert-Tabelle */
+        .measurement-section {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .measurement-section h3 {
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .measurement-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1em;
+        }
+
+        .measurement-table th,
+        .measurement-table td {
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            text-align: center;
+        }
+
+        .measurement-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        .measurement-table .new-row {
+            background: #fff8e0;
+            animation: highlight 0.5s ease;
+        }
+
+        @keyframes highlight {
+            from { background: #ffe000; }
+            to { background: #fff8e0; }
+        }
+
+        .measurement-table .symbol {
+            font-style: italic;
+            color: #2c5aa0;
+        }
+
+        /* Info-Box */
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .info-box p {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .info-box ul {
+            font-size: 0.9em;
+            color: #555;
+            margin-left: 20px;
+            line-height: 1.6;
+        }
+
+        /* Material-Box */
+        .material-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .material-box h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .material-list {
+            list-style: none;
+        }
+
+        .material-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .material-list a {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        /* Hinweis-Banner */
+        .hint {
+            background: #e8f4fd;
+            border-left: 3px solid #2c5aa0;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .hint strong {
+            color: #2c5aa0;
+        }
+
+        /* Status-Anzeige */
+        .status {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .status.ready { color: #666; }
+        .status.running { color: #060; font-weight: 500; }
+        .status.stopped { color: #c00; font-weight: 500; }
+
+        /* Mittelwert-Anzeige */
+        .average-row {
+            background: #e8f4fd !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <p class="breadcrumb"><a href="../../../">← Übersicht</a> · Physik · Mechanik</p>
+            <h1>🏃 100m-Sprint – Zeit messen</h1>
+        </header>
+
+        <div class="hint">
+            <strong>Aufgabe:</strong> Starte den Läufer und drücke <strong>STOPP</strong>, wenn er die Ziellinie bei 100 m erreicht. Miss <strong>3×</strong> und berechne den Mittelwert!
+        </div>
+
+        <!-- Laufbahn -->
+        <div class="track-container">
+            <div class="track-label">100-Meter-Laufbahn</div>
+            <div class="track">
+                <div class="markers">
+                    <div class="marker start"><span class="marker-label">Start (0 m)</span></div>
+                    <div class="marker finish"><span class="marker-label">Ziel (100 m)</span></div>
+                </div>
+                <div class="runner" id="runner">🏃</div>
+            </div>
+            <div class="distance-scale">
+                <span>0 m</span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span>100 m</span>
+            </div>
+        </div>
+
+        <!-- Anzeigen -->
+        <div class="controls-row">
+            <div class="control-box">
+                <h3>⏱️ Stoppuhr</h3>
+                <div class="stopwatch" id="stopwatch">0,00 s</div>
+                <div class="status ready" id="stopwatch-status">bereit</div>
+            </div>
+            <div class="control-box">
+                <h3>📏 Strecke (aktuell)</h3>
+                <div class="distance-display" id="distance">0,00 <span class="distance-unit">m</span></div>
+                <div class="status" id="distance-status">&nbsp;</div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="control-box" style="margin-bottom: 15px;">
+            <div class="btn-group">
+                <button id="btn-start" class="primary">▶️ START</button>
+                <button id="btn-stop" class="danger" disabled>⏹️ STOPP</button>
+                <button id="btn-reset">🔄 Neu</button>
+            </div>
+        </div>
+
+        <!-- Messwert-Tabelle (nur Zeiten!) -->
+        <div class="measurement-section">
+            <h3>📋 Deine Zeitmessungen für 100 m</h3>
+            <table class="measurement-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Messung</th>
+                        <th style="width: 70%;">Zeit <span class="symbol">t</span> (in s)</th>
+                    </tr>
+                </thead>
+                <tbody id="measurement-body">
+                    <tr>
+                        <td>1. Messung</td>
+                        <td id="time1" style="color: #999;">–</td>
+                    </tr>
+                    <tr>
+                        <td>2. Messung</td>
+                        <td id="time2" style="color: #999;">–</td>
+                    </tr>
+                    <tr>
+                        <td>3. Messung</td>
+                        <td id="time3" style="color: #999;">–</td>
+                    </tr>
+                    <tr class="average-row">
+                        <td><strong>Mittelwert</strong></td>
+                        <td id="time-avg" style="color: #999;">–</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="margin-top: 10px;">
+                <button id="btn-clear-table" style="font-size: 0.85em; padding: 6px 12px;">🗑️ Tabelle leeren</button>
+            </div>
+        </div>
+
+        <!-- Info-Box -->
+        <div class="info-box">
+            <h3>ℹ️ So funktioniert's</h3>
+            <ul>
+                <li><strong>START</strong> – Der Läufer sprintet los, die Stoppuhr läuft</li>
+                <li><strong>STOPP</strong> – Du stoppst die Zeit → wird automatisch eingetragen</li>
+                <li><strong>NEU</strong> – Läufer zurück an den Start für die nächste Messung</li>
+                <li>Miss <strong>3× die 100 m</strong> und berechne dann die Geschwindigkeit!</li>
+            </ul>
+            <p style="margin-top: 10px; background: #f5f5f5; padding: 8px; border-left: 3px solid #2c5aa0;">
+                <strong>Zur Berechnung:</strong> Strecke <em>s</em> = 100 m ist bekannt. Mit deinem Mittelwert für <em>t</em> berechnest du: <strong><em>v</em> = <em>s</em> / <em>t</em></strong>
+            </p>
+        </div>
+
+        <!-- Materialien -->
+        <div class="material-box">
+            <h3>📎 Materialien</h3>
+            <ul class="material-list">
+                <li><a href="arbeitsblatt-geschwindigkeit.html">Arbeitsblatt: Geschwindigkeit messen</a> – Für Simulation & Schulhof</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // === KONFIGURATION ===
+        const SPRINT_SPEED = 8.0;      // m/s (Sprint)
+        const ACCEL_TIME = 0.3;        // Beschleunigungszeit in s
+        const TRACK_LENGTH = 100;      // Meter (Ziellinie)
+        const MAX_DISTANCE = 140;      // Läufer läuft bis hierhin weiter (dann verschwindet er)
+        const RUNNER_START = 4;        // Läufer startet bei 4% (LINKS von Startlinie bei 8%)
+        const TRACK_START = 8;         // Startlinie bei 8%
+        const TRACK_END = 97;          // Ziellinie bei 97%
+
+        // === STATE ===
+        let isRunning = false;
+        let isStopped = false;
+        let startTime = 0;
+        let currentTime = 0;
+        let stoppedTime = null;
+        let currentDistance = 0;
+        let animationId = null;
+        let measurementCount = 0;
+        let times = [null, null, null];
+
+        // === DOM ELEMENTS ===
+        const runner = document.getElementById('runner');
+        const stopwatchEl = document.getElementById('stopwatch');
+        const stopwatchStatus = document.getElementById('stopwatch-status');
+        const distanceEl = document.getElementById('distance');
+        const distanceStatus = document.getElementById('distance-status');
+        const btnStart = document.getElementById('btn-start');
+        const btnStop = document.getElementById('btn-stop');
+        const btnReset = document.getElementById('btn-reset');
+        const btnClear = document.getElementById('btn-clear-table');
+        const time1El = document.getElementById('time1');
+        const time2El = document.getElementById('time2');
+        const time3El = document.getElementById('time3');
+        const timeAvgEl = document.getElementById('time-avg');
+
+        // === HELPER FUNCTIONS ===
+        function formatTime(seconds) {
+            return seconds.toFixed(2).replace('.', ',') + ' s';
+        }
+
+        function formatDistance(meters) {
+            return meters.toFixed(2).replace('.', ',');
+        }
+
+        function distanceToPercent(meters) {
+            // 0m = TRACK_START (8%), 100m = TRACK_END (97%)
+            const range = TRACK_END - TRACK_START;
+            return TRACK_START + (meters / TRACK_LENGTH) * range;
+        }
+
+        function calculateDistance(elapsedTime) {
+            if (elapsedTime <= 0) return 0;
+
+            if (elapsedTime < ACCEL_TIME) {
+                const a = SPRINT_SPEED / ACCEL_TIME;
+                return 0.5 * a * elapsedTime * elapsedTime;
+            } else {
+                const a = SPRINT_SPEED / ACCEL_TIME;
+                const accelDistance = 0.5 * a * ACCEL_TIME * ACCEL_TIME;
+                const constTime = elapsedTime - ACCEL_TIME;
+                return accelDistance + SPRINT_SPEED * constTime;
+            }
+        }
+
+        function updateTable() {
+            // Zeit 1
+            if (times[0] !== null) {
+                time1El.textContent = formatTime(times[0]);
+                time1El.style.color = '#000';
+                time1El.style.fontWeight = 'bold';
+            } else {
+                time1El.textContent = '–';
+                time1El.style.color = '#999';
+                time1El.style.fontWeight = 'normal';
+            }
+
+            // Zeit 2
+            if (times[1] !== null) {
+                time2El.textContent = formatTime(times[1]);
+                time2El.style.color = '#000';
+                time2El.style.fontWeight = 'bold';
+            } else {
+                time2El.textContent = '–';
+                time2El.style.color = '#999';
+                time2El.style.fontWeight = 'normal';
+            }
+
+            // Zeit 3
+            if (times[2] !== null) {
+                time3El.textContent = formatTime(times[2]);
+                time3El.style.color = '#000';
+                time3El.style.fontWeight = 'bold';
+            } else {
+                time3El.textContent = '–';
+                time3El.style.color = '#999';
+                time3El.style.fontWeight = 'normal';
+            }
+
+            // Mittelwert berechnen wenn alle 3 vorhanden
+            const validTimes = times.filter(t => t !== null);
+            if (validTimes.length === 3) {
+                const avg = (times[0] + times[1] + times[2]) / 3;
+                timeAvgEl.textContent = formatTime(avg);
+                timeAvgEl.style.color = '#2c5aa0';
+                timeAvgEl.style.fontWeight = 'bold';
+            } else {
+                timeAvgEl.textContent = '–';
+                timeAvgEl.style.color = '#999';
+                timeAvgEl.style.fontWeight = 'normal';
+            }
+        }
+
+        function saveTime(time) {
+            if (measurementCount < 3) {
+                times[measurementCount] = time;
+                measurementCount++;
+                updateTable();
+
+                // Highlight der neuen Zeile
+                const rows = document.querySelectorAll('.measurement-table tbody tr');
+                rows.forEach(row => row.classList.remove('new-row'));
+                if (measurementCount <= 3) {
+                    rows[measurementCount - 1].classList.add('new-row');
+                }
+            }
+        }
+
+        // === ANIMATION ===
+        function animate(timestamp) {
+            if (!isRunning) return;
+
+            const elapsed = (timestamp - startTime) / 1000;
+            currentTime = elapsed;
+            currentDistance = calculateDistance(elapsed);
+
+            // Update Stoppuhr (nur wenn nicht gestoppt)
+            if (!isStopped) {
+                stopwatchEl.textContent = formatTime(currentTime);
+            }
+            
+            // Strecke immer anzeigen
+            distanceEl.innerHTML = formatDistance(currentDistance) + ' <span class="distance-unit">m</span>';
+
+            // Läufer bewegen (über 100% hinaus möglich!)
+            const runnerPercent = RUNNER_START + (currentDistance / TRACK_LENGTH) * (TRACK_END - TRACK_START);
+            runner.style.left = runnerPercent + '%';
+
+            // Läufer verschwindet sanft wenn er aus dem Bild läuft
+            if (runnerPercent > 105) {
+                runner.classList.add('hidden');
+            }
+
+            // Animation endet wenn Läufer weit genug gelaufen ist
+            if (currentDistance >= MAX_DISTANCE) {
+                isRunning = false;
+                runner.classList.remove('running');
+                btnStop.disabled = true;
+                
+                if (!isStopped) {
+                    stopwatchStatus.textContent = 'Läufer weg – drücke NEU';
+                    stopwatchStatus.className = 'status stopped';
+                }
+            }
+
+            if (isRunning) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+
+        // === EVENT HANDLERS ===
+        btnStart.addEventListener('click', () => {
+            if (isRunning) return;
+            if (measurementCount >= 3) {
+                alert('Du hast bereits 3 Messungen! Leere die Tabelle für neue Messungen.');
+                return;
+            }
+
+            isRunning = true;
+            isStopped = false;
+            stoppedTime = null;
+            currentDistance = 0;
+            currentTime = 0;
+
+            runner.classList.add('running');
+            runner.classList.remove('hidden');
+            runner.style.left = RUNNER_START + '%';
+            
+            stopwatchEl.textContent = '0,00 s';
+            stopwatchEl.classList.remove('stopped');
+            stopwatchEl.classList.add('running');
+            stopwatchStatus.textContent = 'läuft...';
+            stopwatchStatus.className = 'status running';
+            distanceStatus.textContent = '';
+
+            btnStart.disabled = true;
+            btnStop.disabled = false;
+
+            startTime = performance.now();
+            animationId = requestAnimationFrame(animate);
+        });
+
+        btnStop.addEventListener('click', () => {
+            if (!isRunning || isStopped) return;
+
+            isStopped = true;
+            stoppedTime = currentTime;
+
+            stopwatchEl.classList.remove('running');
+            stopwatchEl.classList.add('stopped');
+            stopwatchStatus.textContent = 'GESTOPPT!';
+            stopwatchStatus.className = 'status stopped';
+
+            btnStop.disabled = true;
+
+            // Zeit automatisch in Tabelle eintragen
+            saveTime(stoppedTime);
+        });
+
+        btnReset.addEventListener('click', () => {
+            isRunning = false;
+            isStopped = false;
+            currentTime = 0;
+            currentDistance = 0;
+            stoppedTime = null;
+
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            runner.classList.remove('running', 'hidden');
+            runner.style.left = RUNNER_START + '%';
+
+            stopwatchEl.textContent = '0,00 s';
+            stopwatchEl.classList.remove('stopped', 'running');
+            stopwatchStatus.textContent = 'bereit';
+            stopwatchStatus.className = 'status ready';
+            distanceEl.innerHTML = '0,00 <span class="distance-unit">m</span>';
+            distanceStatus.textContent = '';
+
+            btnStart.disabled = (measurementCount >= 3);
+            btnStop.disabled = true;
+        });
+
+        btnClear.addEventListener('click', () => {
+            if (confirm('Alle Zeitmessungen löschen?')) {
+                times = [null, null, null];
+                measurementCount = 0;
+                updateTable();
+                
+                // Reset auch den Läufer
+                btnReset.click();
+                btnStart.disabled = false;
+
+                // Highlight entfernen
+                const rows = document.querySelectorAll('.measurement-table tbody tr');
+                rows.forEach(row => row.classList.remove('new-row'));
+            }
+        });
+
+        // === INIT ===
+        runner.style.left = RUNNER_START + '%';
+    </script>
+</body>
+</html>
