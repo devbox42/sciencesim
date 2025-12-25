@@ -105,6 +105,33 @@ git checkout .         # Alle Änderungen verwerfen
 
 **Gilt für:** Simulationen, Schaltbilder, Atom-Darstellungen, alle Visualisierungen mit Ladungen.
 
+### Schaltzeichen (DIN-Norm) – IMMER deutsche Symbole!
+
+**KRITISCH:** In allen Schaltplänen, Simulationen und Arbeitsblättern **ausschließlich deutsche DIN-Schaltzeichen** verwenden – KEINE IEC/amerikanischen Symbole!
+
+| Bauteil | DIN-Symbol | Beschreibung |
+|---------|------------|--------------|
+| **Spannungsquelle (DC)** | Zwei parallele Linien | Lange Linie = + (rot), kurze dicke Linie = − (blau) |
+| **Widerstand** | Rechteck | Leeres Rechteck mit R-Beschriftung |
+| **Amperemeter** | Kreis mit A | Messgerät für Stromstärke |
+| **Voltmeter** | Kreis mit V | Messgerät für Spannung (parallel geschaltet) |
+| **Lampe** | Kreis mit X | Glühlampe |
+| **Schalter** | Unterbrochene Linie | Offener/geschlossener Schalter |
+| **Leitung** | Durchgezogene Linie | Verbindung, Kreuzung ohne Punkt = keine Verbindung |
+
+**SVG-Beispiel Spannungsquelle:**
+```svg
+<!-- Lange Linie = + (oben, rot) -->
+<line x1="35" y1="80" x2="65" y2="80" stroke="#c62828" stroke-width="2"/>
+<!-- Kurze dicke Linie = − (unten, blau) -->
+<line x1="40" y1="100" x2="60" y2="100" stroke="#1565c0" stroke-width="4"/>
+```
+
+**VERBOTEN:**
+- ❌ IEC-Kreis für Spannungsquellen
+- ❌ Amerikanische Zickzack-Widerstände
+- ❌ Symbole ohne + / − Beschriftung bei Quellen
+
 ### Layout
 
 - Container: `max-width: 900px`, zentriert
