@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Strahlenschutz - Klasse 10</title>
+    <style>
+        :root {
+            --bg: #f5f5f5; --white: #ffffff; --border: #dddddd;
+            --text-primary: #222222; --text-secondary: #555555; --text-muted: #888888;
+            --physik: #2c5aa0; --success: #2a7a4b; --warning: #b35c00; --error: #c62828;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text-primary); font-size: 0.9em; line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        header { background: var(--white); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+        header h1 { font-size: 1.4em; font-weight: 600; color: var(--physik); }
+        .meta { font-size: 0.85em; color: var(--text-secondary); margin-top: 5px; }
+        .progress-bar { background: var(--border); height: 8px; margin-top: 15px; }
+        .progress-fill { background: var(--physik); height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: var(--text-muted); margin-top: 5px; }
+        .step { background: var(--white); border: 1px solid var(--border); margin-bottom: 15px; display: none; }
+        .step.active { display: block; }
+        .step-header { background: var(--bg); padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .step-title { font-weight: 600; color: var(--physik); }
+        .step-badge { font-size: 0.75em; padding: 3px 8px; background: var(--physik); color: white; }
+        .step-badge.exercise { background: var(--warning); }
+        .step-badge.quiz { background: var(--success); }
+        .step-content { padding: 20px; }
+        .hook { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid var(--physik); padding: 20px; margin-bottom: 20px; font-size: 1.1em; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 15px; margin: 15px 0; }
+        .info-box h4 { color: var(--physik); margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: center; }
+        th { background: var(--bg); font-weight: 600; }
+        .exercise { background: #fff8e1; border: 1px solid #ffcc02; padding: 20px; margin: 20px 0; }
+        .exercise h4 { color: var(--warning); margin-bottom: 15px; }
+        .options { display: flex; flex-direction: column; gap: 8px; }
+        .option { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); cursor: pointer; background: var(--white); }
+        .option:hover { background: var(--bg); }
+        .option.selected { background: #e3f2fd; border-color: var(--physik); }
+        .option.correct { background: #e8f5e9; border-color: var(--success); }
+        .option.incorrect { background: #ffebee; border-color: var(--error); }
+        .btn { background: var(--physik); color: white; border: none; padding: 12px 25px; cursor: pointer; font-size: 1em; }
+        .btn:hover { opacity: 0.9; }
+        .btn-check { background: var(--warning); }
+        .btn-next { background: var(--success); }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .feedback { padding: 15px; margin-top: 15px; display: none; }
+        .feedback.correct { background: #e8f5e9; border-left: 4px solid var(--success); display: block; }
+        .feedback.incorrect { background: #ffebee; border-left: 4px solid var(--error); display: block; }
+        .hint { background: #e3f2fd; border: 1px dashed var(--physik); padding: 15px; margin-top: 15px; display: none; }
+        .hint.show { display: block; }
+        .hint-btn { background: none; border: 1px solid var(--physik); color: var(--physik); padding: 8px 15px; cursor: pointer; font-size: 0.85em; margin-top: 10px; }
+        .fill-blank { border: none; border-bottom: 2px solid var(--physik); padding: 5px 10px; width: 100px; font-size: 1em; background: transparent; text-align: center; }
+        .fill-blank.correct { border-color: var(--success); background: #e8f5e9; }
+        .fill-blank.incorrect { border-color: var(--error); background: #ffebee; }
+        .enrichment { background: #e8f5e9; border: 2px dashed var(--success); padding: 20px; margin-top: 20px; display: none; }
+        .enrichment.show { display: block; }
+        .enrichment h4 { color: var(--success); }
+        .metacognition { background: #f3e5f5; border: 1px solid #ce93d8; padding: 15px; margin-top: 20px; }
+        .metacognition h5 { color: #7b1fa2; margin-bottom: 10px; }
+        .ampel { display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap; }
+        .ampel label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em; }
+        .ampel input { display: none; }
+        .ampel .dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+        .ampel .green { background: #4caf50; }
+        .ampel .yellow { background: #ff9800; }
+        .ampel .red { background: #f44336; }
+        .ampel input:checked + .dot { box-shadow: 0 0 0 3px var(--text-primary); }
+        .three-a { display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+        .three-a > div { flex: 1; min-width: 150px; padding: 20px; background: var(--success); color: white; text-align: center; }
+        .three-a h4 { font-size: 1.2em; margin-bottom: 5px; }
+        .banana-scale { background: #fff8e1; border: 1px solid #ffcc02; padding: 15px; margin: 15px 0; }
+        .test-notice { background: #e8f5e9; border: 2px solid var(--success); padding: 20px; margin: 20px 0; }
+        .test-notice h4 { color: var(--success); margin-bottom: 10px; }
+        .hefter-hinweis { background: #fff3e0; border: 2px solid var(--warning); padding: 12px 15px; margin: 20px 0; font-size: 0.9em; }
+        .hefter-hinweis::before { content: "Arbeitsblatt"; display: inline-block; background: var(--warning); color: white; font-size: 0.75em; font-weight: 600; padding: 2px 8px; margin-bottom: 8px; }
+        .hefter-hinweis ul { margin: 8px 0 0 20px; }
+        .hefter-hinweis li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lernpfad: Strahlenschutz</h1>
+            <div class="meta">Stunde 8 | Kernphysik | Klasse 10</div>
+            <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+            <div class="progress-text">Fortschritt: <span id="progress-text">0%</span></div>
+        </header>
+
+        <!-- STEP 1: Einstieg -->
+        <div class="step active" data-step="1">
+            <div class="step-header">
+                <span class="step-title">Schritt 1: Einstieg</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="hook">
+                    <strong>"Ein CT liefert so viel Strahlung wie 3 Jahre normale Hintergrundstrahlung - in 30 Sekunden."</strong>
+                    Trotzdem kann ein CT dein Leben retten. Wie entscheidet man, wann es sich lohnt?
+                </div>
+
+                <div class="info-box">
+                    <h4>Lernziele dieser Stunde</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Die 3 A's des Strahlenschutzes anwenden</li>
+                        <li>Dosisbegriffe unterscheiden (Bq, Gy, Sv)</li>
+                        <li>Strahlenbelastung im Alltag einordnen</li>
+                    </ul>
+                </div>
+
+                <div class="exercise">
+                    <h4>POE: Vorhersage</h4>
+                    <p>Was denkst du: <strong>Was ist gefährlicher?</strong></p>
+                    <div class="options" id="q1-options">
+                        <div class="option" onclick="selectOption(this, 'q1', 'a')">100 Bananen essen (Kalium-40)</div>
+                        <div class="option" onclick="selectOption(this, 'q1', 'b')">1 Röntgenaufnahme des Arms</div>
+                        <div class="option" onclick="selectOption(this, 'q1', 'c')">Beide etwa gleich</div>
+                    </div>
+                    <button class="btn btn-check" onclick="checkAnswer('q1', 'c', 'Interessant! Beides liefert etwa die gleiche Dosis (~0,01 mSv). Wir werden das genauer anschauen.', 'Die Antwort überrascht vielleicht: Beide sind etwa gleich! (~0,01 mSv)')">Prüfen</button>
+                    <div class="feedback" id="feedback-q1"></div>
+                </div>
+
+                <div class="nav-buttons">
+                    <span></span>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: Die 3 A's -->
+        <div class="step" data-step="2">
+            <div class="step-header">
+                <span class="step-title">Schritt 2: Die 3 A's des Strahlenschutzes</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="three-a">
+                    <div>
+                        <h4>ABSTAND</h4>
+                        <p>Dosis ~ 1/r²</p>
+                        <p style="font-size: 0.85em; margin-top: 5px;">Doppelter Abstand = 1/4 Dosis</p>
+                    </div>
+                    <div>
+                        <h4>ABSCHIRMUNG</h4>
+                        <p>Blei, Beton, Alu</p>
+                        <p style="font-size: 0.85em; margin-top: 5px;">Je nach Strahlungsart</p>
+                    </div>
+                    <div>
+                        <h4>AUFENTHALTSZEIT</h4>
+                        <p>Dosis ~ t</p>
+                        <p style="font-size: 0.85em; margin-top: 5px;">Halbe Zeit = halbe Dosis</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Abstandsgesetz im Detail</h4>
+                    <p>Die Intensität sinkt mit dem Quadrat des Abstands:</p>
+                    <p style="text-align: center; font-size: 1.2em; margin: 15px 0;">I ~ 1/r²</p>
+                    <table>
+                        <tr><th>Abstand</th><th>1 m</th><th>2 m</th><th>3 m</th><th>4 m</th></tr>
+                        <tr><th>Dosis</th><td>100%</td><td>25%</td><td>11%</td><td>6,25%</td></tr>
+                    </table>
+                    <p style="margin-top: 10px;"><strong>Fazit:</strong> Abstand halten ist der einfachste Schutz!</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: 3 A's Übung -->
+        <div class="step" data-step="3">
+            <div class="step-header">
+                <span class="step-title">Schritt 3: 3 A's anwenden</span>
+                <span class="step-badge exercise">Übung</span>
+            </div>
+            <div class="step-content">
+                <div class="exercise">
+                    <h4>Aufgabe 1: Abstandsgesetz</h4>
+                    <p>Bei 1 m Abstand von einer Quelle beträgt die Dosis 100 mSv/h.</p>
+                    <p>Wie hoch ist die Dosis bei 2 m Abstand?</p>
+                    <p style="margin: 10px 0;">Dosis bei 2 m: <input type="number" class="fill-blank" id="abstand1" style="width: 80px;"> mSv/h</p>
+                    <button class="btn btn-check" onclick="checkAbstand1()">Prüfen</button>
+                    <div class="feedback" id="feedback-abstand1"></div>
+
+                    <button class="hint-btn" onclick="toggleHint('hint-abstand1')">Hilfe</button>
+                    <div class="hint" id="hint-abstand1">
+                        <strong>Hilfe:</strong> Doppelter Abstand → Dosis wird durch 4 geteilt (1/2² = 1/4)
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Aufgabe 2: Aufenthaltszeit</h4>
+                    <p>Ein Arbeiter darf maximal 20 mSv pro Jahr erhalten.</p>
+                    <p>Die Dosisleistung beträgt 5 mSv/h. Wie lange darf er maximal arbeiten?</p>
+                    <p style="margin: 10px 0;">Maximale Zeit: <input type="number" class="fill-blank" id="zeit1" style="width: 80px;"> Stunden</p>
+                    <button class="btn btn-check" onclick="checkZeit1()">Prüfen</button>
+                    <div class="feedback" id="feedback-zeit1"></div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Aufgabe 3: Welches A?</h4>
+                    <p>Ordne die Maßnahmen dem richtigen "A" zu:</p>
+
+                    <p style="margin: 10px 0;"><strong>1.</strong> Bleischürze beim Röntgen:</p>
+                    <select id="a1" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="abstand">Abstand</option>
+                        <option value="abschirmung">Abschirmung</option>
+                        <option value="aufenthalt">Aufenthaltszeit</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>2.</strong> Strahlentherapeut verlässt den Raum:</p>
+                    <select id="a2" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="abstand">Abstand</option>
+                        <option value="abschirmung">Abschirmung</option>
+                        <option value="aufenthalt">Aufenthaltszeit</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>3.</strong> Greifzange für radioaktive Quellen:</p>
+                    <select id="a3" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="abstand">Abstand</option>
+                        <option value="abschirmung">Abschirmung</option>
+                        <option value="aufenthalt">Aufenthaltszeit</option>
+                    </select>
+
+                    <button class="btn btn-check" onclick="check3A()">Prüfen</button>
+                    <div class="feedback" id="feedback-3a"></div>
+                </div>
+
+                <div class="metacognition">
+                    <h5>Selbstcheck</h5>
+                    <p>Kannst du die 3 A's erklären und anwenden?</p>
+                    <div class="ampel">
+                        <label><input type="radio" name="ampel3"><span class="dot green"></span> Ja</label>
+                        <label><input type="radio" name="ampel3"><span class="dot yellow"></span> Teilweise</label>
+                        <label><input type="radio" name="ampel3"><span class="dot red"></span> Nein</label>
+                    </div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Kasten 1:</strong> Erkläre die 3 A's des Strahlenschutzes in eigenen Worten</li>
+                        <li><strong>Abstandsgesetz:</strong> Notiere die Formel I ~ 1/r² und ein Rechenbeispiel</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Dosisbegriffe -->
+        <div class="step" data-step="4">
+            <div class="step-header">
+                <span class="step-title">Schritt 4: Dosisbegriffe</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="info-box">
+                    <h4>Drei wichtige Größen</h4>
+                    <table>
+                        <tr><th>Begriff</th><th>Symbol</th><th>Einheit</th><th>Bedeutung</th></tr>
+                        <tr>
+                            <td><strong>Aktivität</strong></td>
+                            <td>A</td>
+                            <td>Becquerel (Bq)</td>
+                            <td>Zerfälle pro Sekunde</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Energiedosis</strong></td>
+                            <td>D</td>
+                            <td>Gray (Gy)</td>
+                            <td>Absorbierte Energie pro Masse (J/kg)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Äquivalentdosis</strong></td>
+                            <td>H</td>
+                            <td>Sievert (Sv)</td>
+                            <td>Biologische Wirksamkeit</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="info-box">
+                    <h4>Zusammenhang</h4>
+                    <p style="text-align: center; font-size: 1.2em; margin: 15px 0;">H = D × Q</p>
+                    <p>Q = Qualitätsfaktor (Wichtungsfaktor):</p>
+                    <table>
+                        <tr><th>Strahlungsart</th><th>Q</th></tr>
+                        <tr><td>Gamma, Beta, Röntgen</td><td>1</td></tr>
+                        <tr><td>Neutronen</td><td>5-20</td></tr>
+                        <tr><td>Alpha</td><td>20</td></tr>
+                    </table>
+                    <p style="margin-top: 10px;"><strong>Bedeutung:</strong> Alpha-Strahlung ist biologisch 20× schädlicher als Gamma bei gleicher Energiedosis!</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 5: Dosisbegriffe Übung -->
+        <div class="step" data-step="5">
+            <div class="step-header">
+                <span class="step-title">Schritt 5: Dosisbegriffe anwenden</span>
+                <span class="step-badge exercise">Übung</span>
+            </div>
+            <div class="step-content">
+                <div class="exercise">
+                    <h4>Zuordnung</h4>
+                    <p>Ordne die Aussagen der richtigen Größe zu:</p>
+
+                    <p style="margin: 10px 0;"><strong>1.</strong> "Wie viele Atome zerfallen pro Sekunde?"</p>
+                    <select id="dosis1" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="a">Aktivität (Bq)</option>
+                        <option value="d">Energiedosis (Gy)</option>
+                        <option value="h">Äquivalentdosis (Sv)</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>2.</strong> "Wie viel Energie wird im Gewebe absorbiert?"</p>
+                    <select id="dosis2" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="a">Aktivität (Bq)</option>
+                        <option value="d">Energiedosis (Gy)</option>
+                        <option value="h">Äquivalentdosis (Sv)</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>3.</strong> "Wie groß ist das biologische Risiko?"</p>
+                    <select id="dosis3" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="a">Aktivität (Bq)</option>
+                        <option value="d">Energiedosis (Gy)</option>
+                        <option value="h">Äquivalentdosis (Sv)</option>
+                    </select>
+
+                    <button class="btn btn-check" onclick="checkDosis()">Prüfen</button>
+                    <div class="feedback" id="feedback-dosis"></div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Berechnung</h4>
+                    <p>Ein Gewebe erhält eine Energiedosis von 0,5 Gy durch Alpha-Strahlung (Q=20).</p>
+                    <p>Wie groß ist die Äquivalentdosis?</p>
+                    <p style="margin: 10px 0;">H = <input type="number" class="fill-blank" id="calc-h" style="width: 80px;"> Sv</p>
+                    <button class="btn btn-check" onclick="checkCalcH()">Prüfen</button>
+                    <div class="feedback" id="feedback-calc-h"></div>
+
+                    <button class="hint-btn" onclick="toggleHint('hint-calc-h')">Hilfe</button>
+                    <div class="hint" id="hint-calc-h">
+                        <strong>Hilfe:</strong> H = D × Q = 0,5 × 20 = ?
+                    </div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Kasten 2:</strong> Übertrage die Tabelle mit den Dosisbegriffen (Bq, Gy, Sv)</li>
+                        <li><strong>Formel:</strong> Notiere H = D × Q und die Qualitätsfaktoren</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 6: Strahlenbelastung im Alltag -->
+        <div class="step" data-step="6">
+            <div class="step-header">
+                <span class="step-title">Schritt 6: Strahlenbelastung im Alltag</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="info-box">
+                    <h4>Jeder ist ständig Strahlung ausgesetzt!</h4>
+                    <p>In Deutschland beträgt die durchschnittliche Strahlenbelastung etwa <strong>2,1 mSv/Jahr</strong> (natürlich) + medizinische Anwendungen.</p>
+                </div>
+
+                <table>
+                    <tr><th>Quelle/Situation</th><th>Dosis</th><th>Bananen-Äquivalent*</th></tr>
+                    <tr><td>1 Banane (K-40)</td><td>0,0001 mSv</td><td>1</td></tr>
+                    <tr><td>Röntgen Arm</td><td>0,01 mSv</td><td>100</td></tr>
+                    <tr><td>Flug Berlin-New York</td><td>0,05 mSv</td><td>500</td></tr>
+                    <tr><td>Röntgen Brustkorb</td><td>0,1 mSv</td><td>1.000</td></tr>
+                    <tr><td>Natürliche Belastung/Jahr</td><td>2,1 mSv</td><td>21.000</td></tr>
+                    <tr><td>CT Bauch</td><td>10 mSv</td><td>100.000</td></tr>
+                    <tr><td>Grenzwert Bevölkerung/Jahr</td><td>1 mSv</td><td>10.000</td></tr>
+                    <tr><td>Grenzwert beruflich/Jahr</td><td>20 mSv</td><td>200.000</td></tr>
+                </table>
+
+                <div class="banana-scale">
+                    <p style="font-size: 0.85em;">* Die "Bananen-Äquivalentdosis" (BED) ist eine humorvolle, aber nützliche Vergleichsgröße. 1 BED ≈ 0,1 µSv.</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 7: Alltag Übung -->
+        <div class="step" data-step="7">
+            <div class="step-header">
+                <span class="step-title">Schritt 7: Einordnung üben</span>
+                <span class="step-badge exercise">Übung</span>
+            </div>
+            <div class="step-content">
+                <div class="exercise">
+                    <h4>Sortierung nach Dosis</h4>
+                    <p>Ordne diese Situationen nach aufsteigender Dosis (1 = niedrigste):</p>
+
+                    <p style="margin: 10px 0;">CT Bauch: Rang <input type="number" class="fill-blank" id="rank1" style="width: 60px;"></p>
+                    <p style="margin: 10px 0;">1 Banane: Rang <input type="number" class="fill-blank" id="rank2" style="width: 60px;"></p>
+                    <p style="margin: 10px 0;">Flug nach NY: Rang <input type="number" class="fill-blank" id="rank3" style="width: 60px;"></p>
+                    <p style="margin: 10px 0;">Röntgen Arm: Rang <input type="number" class="fill-blank" id="rank4" style="width: 60px;"></p>
+
+                    <button class="btn btn-check" onclick="checkRanking()">Prüfen</button>
+                    <div class="feedback" id="feedback-ranking"></div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Abwägung: Nutzen vs. Risiko</h4>
+                    <p>Ein Patient hat Bauchschmerzen. Der Arzt vermutet Blinddarmentzündung und möchte ein CT machen.</p>
+                    <p><strong>Wie würdest du die Situation beurteilen?</strong></p>
+                    <div class="options" id="nutzen-options">
+                        <div class="option" onclick="selectOption(this, 'nutzen', 'a')">CT ablehnen - zu viel Strahlung</div>
+                        <div class="option" onclick="selectOption(this, 'nutzen', 'b')">CT durchführen - Nutzen überwiegt klar das Risiko</div>
+                        <div class="option" onclick="selectOption(this, 'nutzen', 'c')">Erst andere Untersuchungen (Ultraschall) versuchen</div>
+                    </div>
+                    <button class="btn btn-check" onclick="checkNutzen()">Diskutieren</button>
+                    <div class="feedback" id="feedback-nutzen"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Kasten 3:</strong> Notiere 5 Beispiele für Strahlenbelastung mit Dosiswerten</li>
+                        <li><strong>Seite 2:</strong> Bearbeite die Nutzen-Risiko-Abwägung zu medizinischen Anwendungen</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 8: Quiz -->
+        <div class="step" data-step="8">
+            <div class="step-header">
+                <span class="step-title">Schritt 8: Abschlussquiz</span>
+                <span class="step-badge quiz">Quiz</span>
+            </div>
+            <div class="step-content">
+                <p style="margin-bottom: 20px;"><strong>Teste dein Wissen!</strong></p>
+
+                <div class="exercise">
+                    <p><strong>Q1:</strong> Welches "A" nutzt das Abstandsquadratgesetz?</p>
+                    <div class="options" id="quiz1-options">
+                        <div class="option" onclick="selectOption(this, 'quiz1', 'a')">Abstand</div>
+                        <div class="option" onclick="selectOption(this, 'quiz1', 'b')">Abschirmung</div>
+                        <div class="option" onclick="selectOption(this, 'quiz1', 'c')">Aufenthaltszeit</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q2:</strong> Die Einheit Becquerel (Bq) misst:</p>
+                    <div class="options" id="quiz2-options">
+                        <div class="option" onclick="selectOption(this, 'quiz2', 'a')">Die biologische Wirkung</div>
+                        <div class="option" onclick="selectOption(this, 'quiz2', 'b')">Die Aktivität (Zerfälle/s)</div>
+                        <div class="option" onclick="selectOption(this, 'quiz2', 'c')">Die absorbierte Energie</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q3:</strong> Warum ist Alpha-Strahlung besonders gefährlich bei Inkorporation?</p>
+                    <div class="options" id="quiz3-options">
+                        <div class="option" onclick="selectOption(this, 'quiz3', 'a')">Weil sie sehr weit durchdringt</div>
+                        <div class="option" onclick="selectOption(this, 'quiz3', 'b')">Weil Q=20 (20× so wirksam wie Gamma)</div>
+                        <div class="option" onclick="selectOption(this, 'quiz3', 'c')">Weil sie keine Ladung hat</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q4:</strong> Bei 3-fachem Abstand sinkt die Dosis auf:</p>
+                    <input type="text" class="fill-blank" id="quiz4" style="width: 80px;"> %
+                    <span style="color: var(--text-muted); font-size: 0.85em;">(1/3² = ?)</span>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q5:</strong> Etwa wie viel beträgt die natürliche Strahlenbelastung in Deutschland pro Jahr?</p>
+                    <div class="options" id="quiz5-options">
+                        <div class="option" onclick="selectOption(this, 'quiz5', 'a')">0,2 mSv</div>
+                        <div class="option" onclick="selectOption(this, 'quiz5', 'b')">2 mSv</div>
+                        <div class="option" onclick="selectOption(this, 'quiz5', 'c')">20 mSv</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-check" onclick="checkQuiz()" style="width: 100%; margin-top: 20px;">Quiz auswerten</button>
+                <div class="feedback" id="feedback-quiz"></div>
+
+                <div class="enrichment" id="enrichment">
+                    <h4>Bonus: Strahlenrisiko und LNT-Modell</h4>
+                    <p>Das <strong>LNT-Modell</strong> (Linear No-Threshold) geht davon aus, dass jede noch so kleine Dosis ein Risiko birgt.</p>
+                    <p style="margin-top: 10px;">Das ist wissenschaftlich umstritten! Manche Forscher vermuten eine Schwellendosis, unter der kein Schaden auftritt.</p>
+                    <p style="margin-top: 10px;"><strong>Recherche:</strong> Was ist "Hormesis" und warum ist es kontrovers?</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 9: Testvorbereitung -->
+        <div class="step" data-step="9">
+            <div class="step-header">
+                <span class="step-title">Schritt 9: Vorbereitung auf die Stundenleistung</span>
+                <span class="step-badge quiz">Test</span>
+            </div>
+            <div class="step-content">
+                <div class="test-notice">
+                    <h4>Nach diesem Lernpfad: Stundenleistung!</h4>
+                    <p>Die Stundenleistung umfasst alle Themen der Kernphysik-Einheit:</p>
+                    <ul style="margin: 15px 0 15px 20px;">
+                        <li>Atommodelle (Dalton → Thomson → Rutherford → Bohr)</li>
+                        <li>Strahlungsarten (α, β, γ) und Zerfallsgleichungen</li>
+                        <li>Halbwertszeit-Berechnungen (Tabellen-Methode)</li>
+                        <li>Kernspaltung und Kernfusion</li>
+                        <li>Strahlenschutz (3 A's, Dosisbegriffe)</li>
+                    </ul>
+                </div>
+
+                <div class="exercise">
+                    <h4>Selbsteinschätzung: Wo stehst du?</h4>
+                    <p>Bewerte dein Wissen in jedem Bereich:</p>
+
+                    <table>
+                        <tr>
+                            <th>Thema</th>
+                            <th style="width: 60px; background: #c8e6c9;">Sicher</th>
+                            <th style="width: 60px; background: #fff9c4;">Okay</th>
+                            <th style="width: 60px; background: #ffcdd2;">Unklar</th>
+                        </tr>
+                        <tr>
+                            <td>Atommodelle</td>
+                            <td><input type="radio" name="self1"></td>
+                            <td><input type="radio" name="self1"></td>
+                            <td><input type="radio" name="self1"></td>
+                        </tr>
+                        <tr>
+                            <td>Strahlungsarten</td>
+                            <td><input type="radio" name="self2"></td>
+                            <td><input type="radio" name="self2"></td>
+                            <td><input type="radio" name="self2"></td>
+                        </tr>
+                        <tr>
+                            <td>Zerfallsgleichungen</td>
+                            <td><input type="radio" name="self3"></td>
+                            <td><input type="radio" name="self3"></td>
+                            <td><input type="radio" name="self3"></td>
+                        </tr>
+                        <tr>
+                            <td>Halbwertszeit</td>
+                            <td><input type="radio" name="self4"></td>
+                            <td><input type="radio" name="self4"></td>
+                            <td><input type="radio" name="self4"></td>
+                        </tr>
+                        <tr>
+                            <td>Kernreaktionen</td>
+                            <td><input type="radio" name="self5"></td>
+                            <td><input type="radio" name="self5"></td>
+                            <td><input type="radio" name="self5"></td>
+                        </tr>
+                        <tr>
+                            <td>Strahlenschutz</td>
+                            <td><input type="radio" name="self6"></td>
+                            <td><input type="radio" name="self6"></td>
+                            <td><input type="radio" name="self6"></td>
+                        </tr>
+                    </table>
+
+                    <p style="margin-top: 15px;"><strong>Tipp:</strong> Wiederhole die Lernpfade für Themen, die du als "unklar" markiert hast!</p>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <p style="margin-bottom: 15px;"><strong>Bereit für den Test?</strong></p>
+                    <a href="test-kernphysik-online.html" class="btn btn-next" style="text-decoration: none; display: inline-block;">Online-Test starten</a>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="finishLernpfad()">Lernpfad abschließen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abschluss -->
+        <div class="step" data-step="10">
+            <div class="step-header">
+                <span class="step-title">Geschafft!</span>
+                <span class="step-badge quiz">Fertig</span>
+            </div>
+            <div class="step-content" style="text-align: center; padding: 40px;">
+                <h2 style="color: var(--success); margin-bottom: 20px;">Lernpfad abgeschlossen!</h2>
+                <p>Du hast alle Lernpfade der Kernphysik-Einheit bearbeitet.</p>
+                <p style="margin-top: 20px;">Jetzt bist du bereit für die Stundenleistung!</p>
+                <p style="margin-top: 30px;"><a href="test-kernphysik-online.html" style="color: var(--physik); font-weight: 600;">→ Online-Test starten</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 10;
+        const answers = {};
+
+        function updateProgress() {
+            const percent = Math.round((currentStep - 1) / (totalSteps - 1) * 100);
+            document.getElementById('progress').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = percent + '%';
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelector(`[data-step="${step}"]`).classList.add('active');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            updateProgress();
+        }
+
+        function nextStep() { if (currentStep < totalSteps) { currentStep++; showStep(currentStep); } }
+        function prevStep() { if (currentStep > 1) { currentStep--; showStep(currentStep); } }
+
+        function selectOption(el, questionId, value) {
+            const container = el.parentElement;
+            container.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            answers[questionId] = value;
+        }
+
+        function checkAnswer(questionId, correct, correctMsg, incorrectMsg) {
+            const feedback = document.getElementById(`feedback-${questionId}`);
+            if (answers[questionId] === correct) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = correctMsg;
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = incorrectMsg;
+            }
+        }
+
+        function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+
+        function checkAbstand1() {
+            const val = parseInt(document.getElementById('abstand1').value);
+            const fb = document.getElementById('feedback-abstand1');
+            if (val === 25) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! 100 / 4 = 25 mSv/h (doppelter Abstand → 1/4 Dosis)';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = 'Nicht ganz. 100 / 2² = 100 / 4 = 25 mSv/h';
+            }
+        }
+
+        function checkZeit1() {
+            const val = parseInt(document.getElementById('zeit1').value);
+            const fb = document.getElementById('feedback-zeit1');
+            if (val === 4) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! 20 mSv / 5 mSv/h = 4 Stunden';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = 'Nicht ganz. 20 / 5 = 4 Stunden maximal.';
+            }
+        }
+
+        function check3A() {
+            const a1 = document.getElementById('a1').value;
+            const a2 = document.getElementById('a2').value;
+            const a3 = document.getElementById('a3').value;
+            const fb = document.getElementById('feedback-3a');
+
+            let score = 0;
+            if (a1 === 'abschirmung') score++;
+            if (a2 === 'abstand' || a2 === 'aufenthalt') score++; // beide akzeptabel
+            if (a3 === 'abstand') score++;
+
+            if (score === 3) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Alles richtig! Bleischürze = Abschirmung, Raum verlassen = Abstand/Zeit, Greifzange = Abstand.';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = score + '/3 richtig. Bleischürze = Abschirmung, Raum verlassen = Abstand, Greifzange = Abstand.';
+            }
+        }
+
+        function checkDosis() {
+            const d1 = document.getElementById('dosis1').value;
+            const d2 = document.getElementById('dosis2').value;
+            const d3 = document.getElementById('dosis3').value;
+            const fb = document.getElementById('feedback-dosis');
+
+            let score = 0;
+            if (d1 === 'a') score++;
+            if (d2 === 'd') score++;
+            if (d3 === 'h') score++;
+
+            if (score === 3) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! Aktivität (Bq) = Zerfälle/s, Energiedosis (Gy) = absorbierte Energie, Äquivalentdosis (Sv) = biologische Wirkung.';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = score + '/3 richtig. Schau dir die Tabelle nochmal an.';
+            }
+        }
+
+        function checkCalcH() {
+            const val = parseInt(document.getElementById('calc-h').value);
+            const fb = document.getElementById('feedback-calc-h');
+            if (val === 10) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! H = 0,5 Gy × 20 = 10 Sv - eine sehr hohe Dosis!';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = 'Nicht ganz. H = D × Q = 0,5 × 20 = 10 Sv';
+            }
+        }
+
+        function checkRanking() {
+            const r1 = parseInt(document.getElementById('rank1').value); // CT = 4
+            const r2 = parseInt(document.getElementById('rank2').value); // Banane = 1
+            const r3 = parseInt(document.getElementById('rank3').value); // Flug = 3
+            const r4 = parseInt(document.getElementById('rank4').value); // Röntgen = 2
+            const fb = document.getElementById('feedback-ranking');
+
+            if (r1 === 4 && r2 === 1 && r3 === 3 && r4 === 2) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! Banane (0,0001) < Röntgen Arm (0,01) < Flug (0,05) < CT (10 mSv)';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = 'Reihenfolge: 1. Banane, 2. Röntgen Arm, 3. Flug, 4. CT Bauch';
+            }
+        }
+
+        function checkNutzen() {
+            const fb = document.getElementById('feedback-nutzen');
+            // Alle Antworten haben ihre Berechtigung
+            if (answers['nutzen'] === 'a') {
+                fb.className = 'feedback';
+                fb.style.background = '#fff3e0';
+                fb.style.borderColor = 'var(--warning)';
+                fb.style.display = 'block';
+                fb.innerHTML = 'Interessante Meinung! Aber: Eine unerkannte Blinddarmentzündung kann tödlich sein. Der Nutzen überwiegt meist.';
+            } else if (answers['nutzen'] === 'b') {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig gedacht! Bei Verdacht auf Blinddarmentzündung ist schnelle Diagnose wichtig. 10 mSv sind akzeptabel, wenn es Leben rettet.';
+            } else if (answers['nutzen'] === 'c') {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Sehr guter Gedanke! Ultraschall ist strahlungsfrei und oft ausreichend. Ärzte wählen immer die strahlungsärmste Option zuerst.';
+            }
+        }
+
+        function checkQuiz() {
+            let score = 0;
+
+            if (answers['quiz1'] === 'a') score++;
+            if (answers['quiz2'] === 'b') score++;
+            if (answers['quiz3'] === 'b') score++;
+            const q4 = document.getElementById('quiz4').value;
+            if (q4 === '11' || q4 === '11,1' || q4 === '11.1') score++;
+            if (answers['quiz5'] === 'b') score++;
+
+            const fb = document.getElementById('feedback-quiz');
+            const percent = Math.round(score / 5 * 100);
+
+            if (percent >= 80) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = '<strong>' + score + '/5 richtig (' + percent + '%)</strong> - Sehr gut! Du bist bereit für den Test.';
+                document.getElementById('enrichment').classList.add('show');
+            } else if (percent >= 50) {
+                fb.className = 'feedback';
+                fb.style.background = '#fff3e0';
+                fb.style.borderColor = 'var(--warning)';
+                fb.style.display = 'block';
+                fb.innerHTML = '<strong>' + score + '/5 richtig (' + percent + '%)</strong> - Wiederhole noch einmal die schwierigen Teile.';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = '<strong>' + score + '/5 richtig (' + percent + '%)</strong> - Gehe die Schritte nochmal durch.';
+            }
+        }
+
+        function finishLernpfad() {
+            currentStep = 10;
+            showStep(currentStep);
+            localStorage.setItem('lernpfad-strahlenschutz-complete', 'true');
+        }
+
+        updateProgress();
+    </script>
+</body>
+</html>

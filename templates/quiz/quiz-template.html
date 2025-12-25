@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lernpfad Quiz</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SCIENCESIM DESIGN SYSTEM - Quiz Template
+   Clean, functional, NO AI-typical effects
+═══════════════════════════════════════════════════════════════ */
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+}
+
+:root {
+    /* Subject Colors - set via CONFIG.SUBJECT */
+    --accent: #2c5aa0;          /* Default: Physik blue */
+    --accent-light: #e8f0fa;
+    --accent-dark: #1e3d6b;
+    
+    /* Base Colors */
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --border-light: #eeeeee;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    
+    /* Feedback Colors */
+    --success: #2a7a4b;
+    --success-bg: #e8f5e9;
+    --warning: #b35c00;
+    --warning-bg: #fff3e0;
+    --error: #c62828;
+    --error-bg: #ffebee;
+}
+
+/* Subject Theme Classes */
+body.physik { --accent: #2c5aa0; --accent-light: #e8f0fa; --accent-dark: #1e3d6b; }
+body.chemie { --accent: #2a7a4b; --accent-light: #e8f5e9; --accent-dark: #1a4a2b; }
+body.informatik { --accent: #b35c00; --accent-light: #fff3e0; --accent-dark: #804200; }
+
+body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh; 
+    padding: 15px;
+    line-height: 1.5;
+}
+
+.container { 
+    max-width: 900px; 
+    margin: 0 auto; 
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════════════════════ */
+
+h1 { 
+    font-size: 1.4em; 
+    font-weight: 600; 
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+h2 {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-size: 1em;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.breadcrumb {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+}
+
+.breadcrumb a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BOXES & CONTAINERS - sciencesim style
+═══════════════════════════════════════════════════════════════ */
+
+.box { 
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+    /* NO border-radius, NO box-shadow */
+}
+
+.box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.info-box {
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    padding: 12px 15px;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.warning-box {
+    background: var(--warning-bg);
+    border-left: 3px solid var(--warning);
+    padding: 12px 15px;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.success-box {
+    background: var(--success-bg);
+    border-left: 3px solid var(--success);
+    padding: 12px 15px;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+.error-box {
+    background: var(--error-bg);
+    border-left: 3px solid var(--error);
+    padding: 12px 15px;
+    margin: 10px 0;
+    font-size: 0.9em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER & PROGRESS
+═══════════════════════════════════════════════════════════════ */
+
+.quiz-header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.quiz-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.quiz-meta {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.niveau-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    margin-left: 8px;
+}
+
+.niveau-badge.stern1 { border-color: var(--success); color: var(--success); }
+.niveau-badge.stern2 { border-color: var(--warning); color: var(--warning); }
+.niveau-badge.stern3 { border-color: var(--accent); color: var(--accent); }
+
+/* Timer */
+.timer-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--border-light);
+}
+
+.timer-display {
+    font-size: 1.3em;
+    font-weight: 700;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    color: var(--text-primary);
+}
+
+.timer-display.warning { color: var(--warning); }
+.timer-display.critical { color: var(--error); }
+
+.timer-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border-light);
+    margin: 0 15px;
+}
+
+.timer-bar-fill {
+    height: 100%;
+    background: var(--success);
+    transition: width 1s linear;
+}
+
+.timer-bar-fill.warning { background: var(--warning); }
+.timer-bar-fill.critical { background: var(--error); }
+
+/* Progress */
+.progress-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+}
+
+.progress-text {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.progress-text strong {
+    color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   QUESTION OVERVIEW DOTS
+═══════════════════════════════════════════════════════════════ */
+
+.question-overview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+}
+
+.q-dot {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: 600;
+    border: 2px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.q-dot:hover { 
+    background: var(--bg); 
+}
+
+.q-dot.answered { 
+    background: var(--success); 
+    color: var(--white); 
+    border-color: var(--success); 
+}
+
+.q-dot.partial { 
+    background: var(--warning); 
+    color: var(--white); 
+    border-color: var(--warning); 
+}
+
+.q-dot.current { 
+    border-color: var(--accent);
+    border-width: 3px;
+}
+
+.q-dot.bonus {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.q-dot.bonus.answered {
+    background: var(--accent);
+    color: var(--white);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SEAT SELECTION
+═══════════════════════════════════════════════════════════════ */
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    max-width: 320px;
+    margin: 15px auto;
+}
+
+.seat-btn {
+    padding: 10px 4px;
+    font-size: 0.8em;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.seat-btn:hover {
+    background: var(--accent-light);
+    border-color: var(--accent);
+}
+
+.seat-btn.selected {
+    background: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NIVEAU SELECTION
+═══════════════════════════════════════════════════════════════ */
+
+.niveau-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 500px;
+    margin: 15px auto;
+}
+
+.niveau-btn {
+    padding: 15px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.niveau-btn:hover {
+    background: var(--bg);
+}
+
+.niveau-btn.selected {
+    border-color: var(--accent);
+    border-width: 2px;
+}
+
+.niveau-btn .stars {
+    font-size: 1.2em;
+    margin-bottom: 5px;
+}
+
+.niveau-btn .label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.niveau-btn .desc {
+    font-size: 0.75em;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS - sciencesim style (plain, functional)
+═══════════════════════════════════════════════════════════════ */
+
+button {
+    padding: 10px 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+button:hover:not(:disabled) {
+    background: var(--bg);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+button.primary {
+    background: var(--accent);
+    color: var(--white);
+    border-color: var(--accent);
+}
+
+button.primary:hover:not(:disabled) {
+    background: var(--accent-dark);
+}
+
+button.small {
+    padding: 6px 12px;
+    font-size: 0.8em;
+}
+
+.button-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.button-row.spread {
+    justify-content: space-between;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   QUESTIONS
+═══════════════════════════════════════════════════════════════ */
+
+.question-box {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.question-number {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.question-points {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--accent);
+    padding: 2px 8px;
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+}
+
+.question-niveau {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-left: 8px;
+}
+
+.question-text {
+    font-size: 1em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.question-text .operator {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+/* MC Options */
+.mc-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mc-option {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.mc-option:hover {
+    background: var(--bg);
+}
+
+.mc-option.selected {
+    background: var(--accent-light);
+    border-color: var(--accent);
+}
+
+.mc-option .letter {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-right: 12px;
+    min-width: 20px;
+}
+
+.mc-option.selected .letter {
+    color: var(--accent);
+}
+
+/* Numeric Input */
+.numeric-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.numeric-input input[type="text"],
+.numeric-input input[type="number"] {
+    padding: 10px;
+    font-size: 1em;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    border: 1px solid var(--border);
+    background: var(--white);
+    width: 120px;
+    text-align: right;
+}
+
+.numeric-input input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.numeric-input select {
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+}
+
+.numeric-input select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* Dropdown / Matching */
+.matching-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 15px;
+    align-items: center;
+}
+
+.matching-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.matching-select {
+    padding: 8px;
+    font-size: 0.95em;
+    border: 1px solid var(--border);
+    background: var(--white);
+    width: 100%;
+    max-width: 250px;
+}
+
+/* Multi-step / Multi-calc */
+.multi-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.field-group {
+    border: 1px solid var(--border-light);
+    padding: 12px;
+}
+
+.field-label {
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+/* Diagram placeholder */
+.diagram-container {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin: 15px 0;
+    text-align: center;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.diagram-container svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════════ */
+
+.nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-top: 15px;
+}
+
+.nav-info {
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESULTS & FEEDBACK
+═══════════════════════════════════════════════════════════════ */
+
+.result-box {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.result-header {
+    text-align: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 15px;
+}
+
+.result-grade {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.result-points {
+    font-size: 1.2em;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.result-percent {
+    font-size: 0.9em;
+    color: var(--text-muted);
+}
+
+.result-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.result-item {
+    text-align: center;
+    padding: 10px;
+    background: var(--bg);
+}
+
+.result-item .label {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+}
+
+.result-item .value {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* QR Code */
+.qr-section {
+    text-align: center;
+    padding: 20px;
+    background: var(--bg);
+    margin: 15px 0;
+}
+
+.qr-section h3 {
+    margin-bottom: 15px;
+}
+
+#qrcode {
+    display: inline-block;
+    padding: 10px;
+    background: var(--white);
+    border: 1px solid var(--border);
+}
+
+.text-code {
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 0.7em;
+    color: var(--text-muted);
+    margin-top: 10px;
+    word-break: break-all;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Feedback Items */
+.feedback-list {
+    margin-top: 20px;
+}
+
+.feedback-item {
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    padding: 15px;
+}
+
+.feedback-item.correct {
+    border-left: 4px solid var(--success);
+}
+
+.feedback-item.partial {
+    border-left: 4px solid var(--warning);
+}
+
+.feedback-item.incorrect {
+    border-left: 4px solid var(--error);
+}
+
+.feedback-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.feedback-points {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.feedback-question {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    padding: 10px;
+    background: var(--bg);
+}
+
+.feedback-answer {
+    font-size: 0.9em;
+}
+
+.feedback-answer .correct {
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* Points Overview */
+.points-overview {
+    background: var(--bg);
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.points-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.9em;
+}
+
+.points-row:last-child {
+    border-bottom: none;
+}
+
+.points-row.total {
+    font-weight: 600;
+    color: var(--accent);
+    border-top: 2px solid var(--accent);
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UNLOCK TIMER
+═══════════════════════════════════════════════════════════════ */
+
+.unlock-section {
+    text-align: center;
+    padding: 20px;
+}
+
+.unlock-timer {
+    font-size: 2em;
+    font-weight: 700;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    color: var(--accent);
+    margin: 15px 0;
+}
+
+.unlock-code-input {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.unlock-code-input input {
+    padding: 10px;
+    font-size: 1em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    width: 150px;
+    text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREENS
+═══════════════════════════════════════════════════════════════ */
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TWO-COLUMN LAYOUT (optional)
+═══════════════════════════════════════════════════════════════ */
+
+.two-column {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+}
+
+.two-column .main-column {
+    min-width: 0;
+}
+
+.two-column .side-column {
+    min-width: 0;
+}
+
+@media (max-width: 700px) {
+    .two-column {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORMULA DISPLAY
+═══════════════════════════════════════════════════════════════ */
+
+.formula {
+    background: var(--bg);
+    padding: 12px;
+    text-align: center;
+    font-family: "Times New Roman", Georgia, serif;
+    font-size: 1.1em;
+    margin: 10px 0;
+    border-left: 3px solid var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TABLES
+═══════════════════════════════════════════════════════════════ */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+th, td {
+    padding: 8px 10px;
+    text-align: left;
+    border: 1px solid var(--border);
+}
+
+th {
+    background: var(--bg);
+    font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GRADING MATRIX
+═══════════════════════════════════════════════════════════════ */
+
+.grading-matrix {
+    font-size: 0.7em;
+    overflow-x: auto;
+    margin: 15px 0;
+}
+
+.grading-matrix table {
+    min-width: 100%;
+}
+
+.grading-matrix th,
+.grading-matrix td {
+    padding: 4px 6px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRINT STYLES
+═══════════════════════════════════════════════════════════════ */
+
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    .box, .question-box, .result-box {
+        border: 1px solid #ccc;
+        break-inside: avoid;
+    }
+    
+    button, .nav-row {
+        display: none;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════════ */
+
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+.text-small { font-size: 0.85em; }
+.mt-10 { margin-top: 10px; }
+.mt-15 { margin-top: 15px; }
+.mt-20 { margin-top: 20px; }
+.mb-10 { margin-bottom: 10px; }
+.mb-15 { margin-bottom: 15px; }
+.hidden { display: none !important; }
+
+    </style>
+</head>
+<body class="physik">
+
+<div class="container">
+    
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 1: SEAT SELECTION
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-seat" class="screen active">
+        <div class="box">
+            <h1 id="quizTitle">Stundenleistung</h1>
+            <p class="breadcrumb" id="quizSubject">Physik • Klasse 10</p>
+        </div>
+        
+        <div class="box">
+            <h2>Sitzplatz wählen</h2>
+            <p class="text-small text-muted text-center">Wähle deinen Sitzplatz (P01-P30)</p>
+            
+            <div class="seat-grid" id="seatGrid">
+                <!-- Generated by JS -->
+            </div>
+            
+            <div class="button-row">
+                <button class="primary" id="btnStartQuiz" disabled>Quiz starten</button>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>Hinweise:</strong><br>
+            • Wähle deinen Sitzplatz sorgfältig – er wird für die Auswertung verwendet.<br>
+            • Nach dem Start läuft die Zeit automatisch.<br>
+            • Du kannst zwischen Fragen navigieren.
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 1b: NIVEAU SELECTION (optional)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-niveau" class="screen">
+        <div class="box">
+            <h1 id="quizTitle2">Stundenleistung</h1>
+            <p class="breadcrumb">Sitzplatz: <strong id="selectedSeat">P01</strong></p>
+        </div>
+        
+        <div class="box">
+            <h2>Niveau wählen</h2>
+            <p class="text-small text-muted text-center mb-15">Wähle dein Anforderungsniveau</p>
+            
+            <div class="niveau-grid">
+                <div class="niveau-btn" data-niveau="1">
+                    <div class="stars">★</div>
+                    <div class="label">Basis</div>
+                    <div class="desc">Grundanforderungen</div>
+                </div>
+                <div class="niveau-btn" data-niveau="2">
+                    <div class="stars">★★</div>
+                    <div class="label">Erweiterung</div>
+                    <div class="desc">Mittleres Niveau</div>
+                </div>
+                <div class="niveau-btn" data-niveau="3">
+                    <div class="stars">★★★</div>
+                    <div class="label">Gymnasium</div>
+                    <div class="desc">Höchstes Niveau</div>
+                </div>
+            </div>
+            
+            <div class="button-row">
+                <button id="btnBackToSeat">← Zurück</button>
+                <button class="primary" id="btnConfirmNiveau" disabled>Weiter</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 2: QUIZ
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-quiz" class="screen">
+        <div class="quiz-header">
+            <div class="quiz-title">
+                <div>
+                    <h1 id="quizTitleMain">Stundenleistung</h1>
+                    <span class="quiz-meta">Sitzplatz: <strong id="displaySeat">P01</strong></span>
+                    <span class="niveau-badge stern1" id="displayNiveau">★</span>
+                </div>
+                <button class="small" id="btnReset" title="Neu starten">↻</button>
+            </div>
+            
+            <div class="timer-section">
+                <span class="text-small text-muted">Zeit:</span>
+                <div class="timer-bar">
+                    <div class="timer-bar-fill" id="timerBar" style="width: 100%;"></div>
+                </div>
+                <span class="timer-display" id="timerDisplay">45:00</span>
+            </div>
+            
+            <div class="progress-section">
+                <span class="progress-text">Fortschritt: <strong id="progressCount">0</strong> / <span id="totalQuestions">10</span></span>
+                <span class="progress-text">Punkte: <strong id="currentPoints">0</strong> / <span id="totalPoints">25</span></span>
+            </div>
+        </div>
+        
+        <div class="question-overview" id="questionDots">
+            <!-- Generated by JS -->
+        </div>
+        
+        <div id="questionContainer">
+            <!-- Current question rendered here -->
+        </div>
+        
+        <div class="nav-row">
+            <button id="btnPrev" disabled>← Zurück</button>
+            <span class="nav-info">Frage <span id="currentQ">1</span> von <span id="totalQ">10</span></span>
+            <button id="btnNext">Weiter →</button>
+        </div>
+        
+        <div class="button-row mt-15">
+            <button class="primary" id="btnSubmit">Quiz abgeben</button>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 3: RESULT (QR Code)
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-result" class="screen">
+        <div class="result-box">
+            <div class="result-header">
+                <h2>Quiz abgegeben</h2>
+                <p class="text-muted">Sitzplatz: <strong id="resultSeat">P01</strong> • <span id="resultTime">25:30</span></p>
+            </div>
+            
+            <div class="qr-section">
+                <h3>QR-Code für Auswertung</h3>
+                <div id="qrcode"></div>
+                <p class="text-code" id="textCode"></p>
+            </div>
+            
+            <div class="unlock-section">
+                <p class="text-muted">Musterlösung verfügbar in:</p>
+                <div class="unlock-timer" id="unlockTimer">5:00</div>
+                
+                <div class="unlock-code-input">
+                    <input type="text" id="unlockCodeInput" placeholder="CODE" maxlength="10">
+                    <button id="btnUnlock">Entsperren</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ═══════════════════════════════════════════════════════════
+         SCREEN 4: FEEDBACK
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="screen-feedback" class="screen">
+        <div class="result-box">
+            <div class="result-header">
+                <h2>Auswertung</h2>
+                <div class="result-grade" id="feedbackGrade">12 NP</div>
+                <div class="result-points" id="feedbackPoints">21 / 25 Punkte</div>
+                <div class="result-percent" id="feedbackPercent">84%</div>
+            </div>
+            
+            <div class="result-details">
+                <div class="result-item">
+                    <div class="label">Sitzplatz</div>
+                    <div class="value" id="feedbackSeat">P01</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">Niveau</div>
+                    <div class="value" id="feedbackNiveau">★★</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">Zeit</div>
+                    <div class="value" id="feedbackTime">25:30</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">Datum</div>
+                    <div class="value" id="feedbackDate">21.12.2024</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="box">
+            <h2>Punkteübersicht</h2>
+            <div class="points-overview" id="pointsOverview">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+        
+        <div class="box">
+            <h2>Detaillierte Auswertung</h2>
+            <div class="feedback-list" id="feedbackList">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+        
+        <div class="qr-section">
+            <p class="text-small text-muted">Abgabecode:</p>
+            <p class="text-code" id="feedbackCode"></p>
+        </div>
+    </div>
+    
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   CONFIGURATION
+   Customize for each quiz
+═══════════════════════════════════════════════════════════════ */
+
+const CONFIG = {
+    // Quiz Info
+    QUIZ_ID: "beispiel-quiz-kl10",
+    TITLE: "Stundenleistung: Bewegungslehre",
+    SUBJECT: "physik",      // physik | chemie | informatik
+    GRADE: "10",
+    TYPE: "SL",             // SL (Stundenleistung) | LK (Leistungskontrolle) | UE (Übung)
+    
+    // Timing
+    DURATION_MINUTES: 45,
+    UNLOCK_TIME_SECONDS: 300,  // 5 min until solutions visible
+    UNLOCK_CODE: "PHYSIK",     // Teacher override code
+    
+    // Grading (15-NP scale for Sek II, 14-NP for Sek I, 6-Note for MR)
+    GRADING_SCALE: "15-NP",    // "15-NP" | "14-NP" | "6-Note"
+    
+    // Features
+    SHOW_NIVEAU_SELECTION: true,   // Allow student to choose niveau
+    REQUIRE_ALL_QUESTIONS: false,  // Must answer all before submit
+    
+    // Points
+    TOTAL_POINTS: 25,
+    BONUS_POINTS: 0
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   QUESTIONS
+   Define all questions here
+═══════════════════════════════════════════════════════════════ */
+
+const QUESTIONS = [
+    // ─────────────────────────────────────────────────────────────
+    // MC EXAMPLE
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F1",
+        type: "mc",
+        niveau: 1,           // 1=★, 2=★★, 3=★★★
+        points: 2,
+        afb: 1,              // Anforderungsbereich 1-3
+        topic: "Grundbegriffe",
+        text: "<span class='operator'>Nenne</span> das Merkmal einer gleichförmigen Bewegung.",
+        options: [
+            "Die Geschwindigkeit ändert sich ständig.",
+            "Die Geschwindigkeit bleibt konstant.",
+            "Die Beschleunigung ist positiv.",
+            "Der Weg ist konstant."
+        ],
+        correct: 1,          // Index (0-based)
+        solution: "Bei einer gleichförmigen Bewegung bleibt die Geschwindigkeit konstant (v = const)."
+    },
+    
+    // ─────────────────────────────────────────────────────────────
+    // NUMERIC WITH UNIT EXAMPLE
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F2",
+        type: "numeric-unit",
+        niveau: 1,
+        points: 3,
+        afb: 2,
+        topic: "Einheitenumrechnung",
+        text: "<span class='operator'>Rechne um</span>: 72 km/h = ? m/s",
+        correct: 20,
+        tolerance: 0.5,
+        correctUnit: "m/s",
+        unitOptions: ["m/s", "km/h", "m/s²", "m", "s"],
+        scoring: { value: 2, unit: 1 },
+        solution: "72 km/h ÷ 3,6 = 20 m/s"
+    },
+    
+    // ─────────────────────────────────────────────────────────────
+    // CALCULATION EXAMPLE
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F3",
+        type: "calc",
+        niveau: 2,
+        points: 4,
+        afb: 2,
+        topic: "Geschwindigkeit berechnen",
+        text: "<span class='operator'>Berechne</span> die Geschwindigkeit eines Autos, das in 5 s eine Strecke von 100 m zurücklegt.",
+        accepted: [
+            { value: 20, unit: "m/s", tolerance: 0.5 },
+            { value: 72, unit: "km/h", tolerance: 1 }
+        ],
+        unitOptions: ["m/s", "km/h", "m/s²", "m", "s"],
+        solution: "v = s/t = 100 m / 5 s = 20 m/s = 72 km/h"
+    },
+    
+    // ─────────────────────────────────────────────────────────────
+    // MATCHING EXAMPLE
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F4",
+        type: "matching",
+        niveau: 1,
+        points: 4,
+        afb: 1,
+        topic: "Zuordnung",
+        text: "<span class='operator'>Ordne zu</span>: Welche Formel gehört zu welcher Größe?",
+        pairs: 4,
+        labels: ["Geschwindigkeit", "Beschleunigung", "Weg bei v=const", "Weg bei a=const"],
+        options: ["v = s/t", "a = Δv/Δt", "s = v·t", "s = ½·a·t²"],
+        correct: [0, 1, 2, 3],   // Index mapping
+        scoring: { perPair: 1 },
+        solution: "v=s/t, a=Δv/Δt, s=v·t, s=½·a·t²"
+    },
+    
+    // ─────────────────────────────────────────────────────────────
+    // MULTI-STEP EXAMPLE
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F5",
+        type: "multi-calc",
+        niveau: 3,
+        points: 6,
+        afb: 3,
+        topic: "Bremsvorgang analysieren",
+        text: "<span class='operator'>Analysiere</span> den Bremsvorgang: Ein Auto fährt mit 72 km/h und bremst mit a = −4 m/s².",
+        fields: [
+            {
+                id: "v0",
+                label: "a) Anfangsgeschwindigkeit in m/s",
+                type: "numeric-unit",
+                accepted: [{ value: 20, unit: "m/s", tolerance: 0.5 }],
+                unitOptions: ["m/s", "km/h"],
+                points: 1
+            },
+            {
+                id: "t",
+                label: "b) Bremszeit",
+                type: "numeric-unit",
+                accepted: [{ value: 5, unit: "s", tolerance: 0.5 }],
+                unitOptions: ["s", "min", "ms"],
+                points: 2
+            },
+            {
+                id: "s",
+                label: "c) Bremsweg",
+                type: "numeric-unit",
+                accepted: [{ value: 50, unit: "m", tolerance: 1 }],
+                unitOptions: ["m", "km", "cm"],
+                points: 3
+            }
+        ],
+        solution: "a) 72÷3,6=20 m/s; b) t=v/a=20/4=5s; c) s=½·a·t²=½·4·25=50m"
+    },
+    
+    // ─────────────────────────────────────────────────────────────
+    // DIAGRAM DROPDOWN EXAMPLE
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F6",
+        type: "diagram-dropdown",
+        niveau: 2,
+        points: 4,
+        afb: 2,
+        topic: "Diagramm interpretieren",
+        text: "<span class='operator'>Beschreibe</span> die Bewegungsphasen im s-t-Diagramm:",
+        diagram: "s-t-graph",  // References a diagram renderer
+        phases: 4,
+        labels: ["Phase I", "Phase II", "Phase III", "Phase IV"],
+        options: ["Ruhe", "gleichförmig", "beschleunigt", "verzögert", "rückwärts"],
+        correct: [1, 0, 2, 1],
+        scoring: { perPhase: 1 },
+        solution: "I: gleichförmig, II: Ruhe, III: beschleunigt, IV: gleichförmig"
+    },
+    
+    // ─────────────────────────────────────────────────────────────
+    // MC WITH IMAGE (placeholder)
+    // ─────────────────────────────────────────────────────────────
+    {
+        id: "F7",
+        type: "mc",
+        niveau: 2,
+        points: 2,
+        afb: 2,
+        topic: "Diagrammanalyse",
+        text: "<span class='operator'>Bestimme</span>, welches Diagramm eine gleichmäßig beschleunigte Bewegung zeigt.",
+        diagram: "four-graphs",
+        options: [
+            "Diagramm A",
+            "Diagramm B", 
+            "Diagramm C",
+            "Diagramm D"
+        ],
+        correct: 2,
+        solution: "Diagramm C zeigt eine Parabel (s ~ t²), typisch für gleichmäßig beschleunigte Bewegung."
+    }
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+
+const state = {
+    seat: null,
+    niveau: CONFIG.SHOW_NIVEAU_SELECTION ? null : 2,  // Default to ★★ if no selection
+    currentQuestion: 0,
+    answers: {},
+    startTime: null,
+    elapsed: 0,
+    submitted: false
+};
+
+let timerInterval = null;
+let unlockInterval = null;
+let submissionCode = null;
+let gradedAnswers = [];
+let totalEarned = 0;
+
+/* ═══════════════════════════════════════════════════════════════
+   INITIALIZATION
+═══════════════════════════════════════════════════════════════ */
+
+function init() {
+    // Set subject class on body
+    document.body.className = CONFIG.SUBJECT;
+    
+    // Set titles
+    document.getElementById('quizTitle').textContent = CONFIG.TITLE;
+    document.getElementById('quizTitle2').textContent = CONFIG.TITLE;
+    document.getElementById('quizTitleMain').textContent = CONFIG.TITLE;
+    document.getElementById('quizSubject').textContent = 
+        `${capitalize(CONFIG.SUBJECT)} • Klasse ${CONFIG.GRADE}`;
+    
+    // Generate seat grid
+    generateSeatGrid();
+    
+    // Generate question dots
+    generateQuestionDots();
+    
+    // Set totals
+    document.getElementById('totalQuestions').textContent = QUESTIONS.length;
+    document.getElementById('totalQ').textContent = QUESTIONS.length;
+    document.getElementById('totalPoints').textContent = CONFIG.TOTAL_POINTS;
+    
+    // Bind events
+    bindEvents();
+    
+    // Check for saved state
+    loadState();
+}
+
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function generateSeatGrid() {
+    const grid = document.getElementById('seatGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 30; i++) {
+        const btn = document.createElement('div');
+        btn.className = 'seat-btn';
+        btn.textContent = `P${String(i).padStart(2, '0')}`;
+        btn.dataset.seat = `P${String(i).padStart(2, '0')}`;
+        btn.addEventListener('click', () => selectSeat(btn.dataset.seat));
+        grid.appendChild(btn);
+    }
+}
+
+function generateQuestionDots() {
+    const container = document.getElementById('questionDots');
+    container.innerHTML = '';
+    QUESTIONS.forEach((q, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'q-dot';
+        if (i === 0) dot.classList.add('current');
+        dot.textContent = i + 1;
+        dot.dataset.index = i;
+        dot.addEventListener('click', () => goToQuestion(i));
+        container.appendChild(dot);
+    });
+}
+
+function bindEvents() {
+    // Seat selection
+    document.getElementById('btnStartQuiz').addEventListener('click', () => {
+        if (CONFIG.SHOW_NIVEAU_SELECTION) {
+            showScreen('screen-niveau');
+            document.getElementById('selectedSeat').textContent = state.seat;
+        } else {
+            startQuiz();
+        }
+    });
+    
+    // Niveau selection
+    document.querySelectorAll('.niveau-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectNiveau(parseInt(btn.dataset.niveau)));
+    });
+    document.getElementById('btnBackToSeat').addEventListener('click', () => showScreen('screen-seat'));
+    document.getElementById('btnConfirmNiveau').addEventListener('click', startQuiz);
+    
+    // Quiz navigation
+    document.getElementById('btnPrev').addEventListener('click', prevQuestion);
+    document.getElementById('btnNext').addEventListener('click', nextQuestion);
+    document.getElementById('btnSubmit').addEventListener('click', submitQuiz);
+    document.getElementById('btnReset').addEventListener('click', resetQuiz);
+    
+    // Unlock
+    document.getElementById('btnUnlock').addEventListener('click', attemptUnlock);
+    document.getElementById('unlockCodeInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') attemptUnlock();
+    });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCREEN MANAGEMENT
+═══════════════════════════════════════════════════════════════ */
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function selectSeat(seat) {
+    state.seat = seat;
+    document.querySelectorAll('.seat-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.seat === seat);
+    });
+    document.getElementById('btnStartQuiz').disabled = false;
+}
+
+function selectNiveau(niveau) {
+    state.niveau = niveau;
+    document.querySelectorAll('.niveau-btn').forEach(btn => {
+        btn.classList.toggle('selected', parseInt(btn.dataset.niveau) === niveau);
+    });
+    document.getElementById('btnConfirmNiveau').disabled = false;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   QUIZ LOGIC
+═══════════════════════════════════════════════════════════════ */
+
+function startQuiz() {
+    state.startTime = Date.now();
+    showScreen('screen-quiz');
+    
+    // Update display
+    document.getElementById('displaySeat').textContent = state.seat;
+    const niveauBadge = document.getElementById('displayNiveau');
+    niveauBadge.textContent = '★'.repeat(state.niveau);
+    niveauBadge.className = 'niveau-badge stern' + state.niveau;
+    
+    // Render first question
+    renderQuestion(0);
+    
+    // Start timer
+    startTimer();
+    
+    // Save state
+    saveState();
+}
+
+function startTimer() {
+    const totalSeconds = CONFIG.DURATION_MINUTES * 60;
+    let remaining = totalSeconds - state.elapsed;
+    
+    updateTimerDisplay(remaining, totalSeconds);
+    
+    timerInterval = setInterval(() => {
+        state.elapsed++;
+        remaining = totalSeconds - state.elapsed;
+        
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            submitQuiz();
+            return;
+        }
+        
+        updateTimerDisplay(remaining, totalSeconds);
+        saveState();
+    }, 1000);
+}
+
+function updateTimerDisplay(remaining, total) {
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    const display = document.getElementById('timerDisplay');
+    const bar = document.getElementById('timerBar');
+    
+    display.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+    bar.style.width = `${(remaining / total) * 100}%`;
+    
+    // Warning states
+    display.classList.remove('warning', 'critical');
+    bar.classList.remove('warning', 'critical');
+    
+    if (remaining < 300) {  // < 5 min
+        display.classList.add('critical');
+        bar.classList.add('critical');
+    } else if (remaining < 600) {  // < 10 min
+        display.classList.add('warning');
+        bar.classList.add('warning');
+    }
+}
+
+function renderQuestion(index) {
+    state.currentQuestion = index;
+    const q = QUESTIONS[index];
+    const container = document.getElementById('questionContainer');
+    
+    let html = `
+        <div class="question-box">
+            <div class="question-header">
+                <div>
+                    <span class="question-number">Frage ${index + 1} (${q.id})</span>
+                    <span class="question-niveau">${'★'.repeat(q.niveau)}</span>
+                </div>
+                <span class="question-points">${q.points} P</span>
+            </div>
+            <div class="question-text">${q.text}</div>
+    `;
+    
+    // Diagram if present
+    if (q.diagram) {
+        html += renderDiagram(q.diagram);
+    }
+    
+    // Answer input based on type
+    html += renderAnswerInput(q, index);
+    
+    html += `</div>`;
+    container.innerHTML = html;
+    
+    // Update navigation
+    document.getElementById('btnPrev').disabled = index === 0;
+    document.getElementById('btnNext').textContent = index === QUESTIONS.length - 1 ? 'Weiter →' : 'Weiter →';
+    document.getElementById('currentQ').textContent = index + 1;
+    
+    // Update dots
+    document.querySelectorAll('.q-dot').forEach((dot, i) => {
+        dot.classList.toggle('current', i === index);
+    });
+    
+    // Bind answer events
+    bindAnswerEvents(q, index);
+}
+
+function renderDiagram(type) {
+    // Placeholder - in real implementation, render actual SVG diagrams
+    return `
+        <div class="diagram-container">
+            <svg width="300" height="150" viewBox="0 0 300 150">
+                <rect x="0" y="0" width="300" height="150" fill="#f5f5f5" stroke="#ddd"/>
+                <text x="150" y="75" text-anchor="middle" fill="#888">[Diagramm: ${type}]</text>
+            </svg>
+        </div>
+    `;
+}
+
+function renderAnswerInput(q, index) {
+    const saved = state.answers[q.id];
+    
+    switch (q.type) {
+        case 'mc':
+            return renderMC(q, saved);
+        case 'numeric-unit':
+        case 'calc':
+            return renderNumericUnit(q, saved);
+        case 'matching':
+        case 'diagram-dropdown':
+            return renderMatching(q, saved);
+        case 'multi-calc':
+            return renderMultiCalc(q, saved);
+        default:
+            return `<p class="text-muted">Unbekannter Fragetyp: ${q.type}</p>`;
+    }
+}
+
+function renderMC(q, saved) {
+    const letters = ['A', 'B', 'C', 'D'];
+    let html = '<div class="mc-options">';
+    q.options.forEach((opt, i) => {
+        const selected = saved === i ? 'selected' : '';
+        html += `
+            <div class="mc-option ${selected}" data-index="${i}">
+                <span class="letter">${letters[i]})</span>
+                <span>${opt}</span>
+            </div>
+        `;
+    });
+    html += '</div>';
+    return html;
+}
+
+function renderNumericUnit(q, saved) {
+    const val = saved?.value || '';
+    const unit = saved?.unit || '';
+    const units = q.unitOptions || ['m/s', 'km/h', 'm', 's', 'm/s²'];
+    
+    let html = `
+        <div class="numeric-input">
+            <input type="text" id="numericValue" value="${val}" placeholder="Wert" inputmode="decimal">
+            <select id="numericUnit">
+                <option value="">Einheit</option>
+    `;
+    units.forEach(u => {
+        html += `<option value="${u}" ${unit === u ? 'selected' : ''}>${u}</option>`;
+    });
+    html += `
+            </select>
+        </div>
+    `;
+    return html;
+}
+
+function renderMatching(q, saved) {
+    const count = q.phases || q.pairs;
+    const labels = q.labels || Array.from({length: count}, (_, i) => `${i + 1}`);
+    const options = q.options;
+    
+    let html = '<div class="matching-grid">';
+    for (let i = 0; i < count; i++) {
+        const sel = saved?.[i];
+        html += `
+            <span class="matching-label">${labels[i]}:</span>
+            <select class="matching-select" data-index="${i}">
+                <option value="">– wählen –</option>
+        `;
+        options.forEach((opt, oi) => {
+            html += `<option value="${oi}" ${sel === oi ? 'selected' : ''}>${opt}</option>`;
+        });
+        html += `</select>`;
+    }
+    html += '</div>';
+    return html;
+}
+
+function renderMultiCalc(q, saved) {
+    let html = '<div class="multi-fields">';
+    q.fields.forEach(f => {
+        const fs = saved?.[f.id] || {};
+        html += `
+            <div class="field-group">
+                <div class="field-label">${f.label} (${f.points}P)</div>
+                <div class="numeric-input">
+                    <input type="text" data-field="${f.id}" class="multi-value" value="${fs.value || ''}" placeholder="Wert" inputmode="decimal">
+                    <select data-field="${f.id}" class="multi-unit">
+                        <option value="">Einheit</option>
+        `;
+        (f.unitOptions || []).forEach(u => {
+            html += `<option value="${u}" ${fs.unit === u ? 'selected' : ''}>${u}</option>`;
+        });
+        html += `
+                    </select>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    return html;
+}
+
+function bindAnswerEvents(q, index) {
+    switch (q.type) {
+        case 'mc':
+            document.querySelectorAll('.mc-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.mc-option').forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    state.answers[q.id] = parseInt(opt.dataset.index);
+                    updateProgress();
+                    saveState();
+                });
+            });
+            break;
+            
+        case 'numeric-unit':
+        case 'calc':
+            const valInput = document.getElementById('numericValue');
+            const unitSelect = document.getElementById('numericUnit');
+            const saveNumeric = () => {
+                state.answers[q.id] = {
+                    value: valInput.value.replace(',', '.'),
+                    unit: unitSelect.value
+                };
+                updateProgress();
+                saveState();
+            };
+            valInput.addEventListener('input', saveNumeric);
+            unitSelect.addEventListener('change', saveNumeric);
+            break;
+            
+        case 'matching':
+        case 'diagram-dropdown':
+            document.querySelectorAll('.matching-select').forEach(sel => {
+                sel.addEventListener('change', () => {
+                    if (!state.answers[q.id]) state.answers[q.id] = [];
+                    const idx = parseInt(sel.dataset.index);
+                    state.answers[q.id][idx] = sel.value === '' ? null : parseInt(sel.value);
+                    updateProgress();
+                    saveState();
+                });
+            });
+            break;
+            
+        case 'multi-calc':
+            document.querySelectorAll('.multi-value, .multi-unit').forEach(el => {
+                el.addEventListener('input', () => saveMultiCalc(q));
+                el.addEventListener('change', () => saveMultiCalc(q));
+            });
+            break;
+    }
+}
+
+function saveMultiCalc(q) {
+    if (!state.answers[q.id]) state.answers[q.id] = {};
+    document.querySelectorAll('.multi-value').forEach(v => {
+        const field = v.dataset.field;
+        if (!state.answers[q.id][field]) state.answers[q.id][field] = {};
+        state.answers[q.id][field].value = v.value.replace(',', '.');
+    });
+    document.querySelectorAll('.multi-unit').forEach(u => {
+        const field = u.dataset.field;
+        if (!state.answers[q.id][field]) state.answers[q.id][field] = {};
+        state.answers[q.id][field].unit = u.value;
+    });
+    updateProgress();
+    saveState();
+}
+
+function prevQuestion() {
+    if (state.currentQuestion > 0) {
+        renderQuestion(state.currentQuestion - 1);
+    }
+}
+
+function nextQuestion() {
+    if (state.currentQuestion < QUESTIONS.length - 1) {
+        renderQuestion(state.currentQuestion + 1);
+    }
+}
+
+function goToQuestion(index) {
+    renderQuestion(index);
+}
+
+function updateProgress() {
+    let answered = 0;
+    QUESTIONS.forEach(q => {
+        if (isAnswered(q)) answered++;
+    });
+    document.getElementById('progressCount').textContent = answered;
+    
+    // Update dots
+    document.querySelectorAll('.q-dot').forEach((dot, i) => {
+        const q = QUESTIONS[i];
+        dot.classList.remove('answered', 'partial');
+        if (isAnswered(q)) {
+            dot.classList.add('answered');
+        } else if (isPartiallyAnswered(q)) {
+            dot.classList.add('partial');
+        }
+    });
+}
+
+function isAnswered(q) {
+    const a = state.answers[q.id];
+    if (a === undefined || a === null) return false;
+    
+    switch (q.type) {
+        case 'mc':
+            return a !== undefined && a !== null;
+        case 'numeric-unit':
+        case 'calc':
+            return a.value && a.unit;
+        case 'matching':
+        case 'diagram-dropdown':
+            return Array.isArray(a) && a.every(v => v !== null && v !== undefined);
+        case 'multi-calc':
+            return q.fields.every(f => a[f.id]?.value && a[f.id]?.unit);
+        default:
+            return false;
+    }
+}
+
+function isPartiallyAnswered(q) {
+    const a = state.answers[q.id];
+    if (!a) return false;
+    
+    switch (q.type) {
+        case 'numeric-unit':
+        case 'calc':
+            return a.value || a.unit;
+        case 'matching':
+        case 'diagram-dropdown':
+            return Array.isArray(a) && a.some(v => v !== null && v !== undefined);
+        case 'multi-calc':
+            return q.fields.some(f => a[f.id]?.value || a[f.id]?.unit);
+        default:
+            return false;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUBMISSION & GRADING
+═══════════════════════════════════════════════════════════════ */
+
+function submitQuiz() {
+    if (!confirm('Quiz wirklich abgeben? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+        return;
+    }
+    
+    clearInterval(timerInterval);
+    state.submitted = true;
+    
+    // Grade all answers
+    gradeAnswers();
+    
+    // Generate submission code
+    generateSubmissionCode();
+    
+    // Show result screen
+    showScreen('screen-result');
+    renderResult();
+    
+    // Start unlock timer
+    startUnlockTimer();
+    
+    // Save final state
+    saveState();
+}
+
+function gradeAnswers() {
+    gradedAnswers = [];
+    totalEarned = 0;
+    
+    QUESTIONS.forEach(q => {
+        const answer = state.answers[q.id];
+        const result = gradeQuestion(q, answer);
+        gradedAnswers.push(result);
+        totalEarned += result.points;
+    });
+    
+    document.getElementById('currentPoints').textContent = totalEarned;
+}
+
+function gradeQuestion(q, answer) {
+    const result = {
+        qId: q.id,
+        type: q.type,
+        maxPoints: q.points,
+        points: 0,
+        correct: false,
+        userAnswer: answer
+    };
+    
+    if (!answer) return result;
+    
+    switch (q.type) {
+        case 'mc':
+            if (answer === q.correct) {
+                result.points = q.points;
+                result.correct = true;
+            }
+            break;
+            
+        case 'numeric-unit':
+        case 'calc':
+            const accepted = q.accepted || [{ value: q.correct, unit: q.correctUnit, tolerance: q.tolerance || 0.01 }];
+            const userVal = parseFloat(answer.value);
+            
+            for (const acc of accepted) {
+                if (answer.unit === acc.unit && !isNaN(userVal) && Math.abs(userVal - acc.value) <= acc.tolerance) {
+                    result.points = q.points;
+                    result.correct = true;
+                    break;
+                }
+            }
+            
+            // Partial credit for correct value wrong unit
+            if (!result.correct && q.scoring) {
+                for (const acc of accepted) {
+                    if (!isNaN(userVal) && Math.abs(userVal - acc.value) <= acc.tolerance) {
+                        result.points = q.scoring.value || Math.floor(q.points / 2);
+                        break;
+                    }
+                }
+            }
+            break;
+            
+        case 'matching':
+        case 'diagram-dropdown':
+            const perItem = q.scoring?.perPair || q.scoring?.perPhase || 1;
+            let correctCount = 0;
+            const count = q.phases || q.pairs;
+            
+            for (let i = 0; i < count; i++) {
+                if (answer[i] === q.correct[i]) correctCount++;
+            }
+            
+            result.points = correctCount * perItem;
+            result.correct = correctCount === count;
+            break;
+            
+        case 'multi-calc':
+            q.fields.forEach(f => {
+                const fa = answer[f.id];
+                if (!fa) return;
+                
+                const userVal = parseFloat(fa.value);
+                for (const acc of f.accepted) {
+                    if (fa.unit === acc.unit && !isNaN(userVal) && Math.abs(userVal - acc.value) <= acc.tolerance) {
+                        result.points += f.points;
+                        break;
+                    }
+                }
+            });
+            result.correct = result.points === q.points;
+            break;
+    }
+    
+    return result;
+}
+
+function generateSubmissionCode() {
+    const data = {
+        q: CONFIG.QUIZ_ID,
+        s: state.seat,
+        n: state.niveau,
+        t: state.elapsed,
+        p: totalEarned,
+        m: CONFIG.TOTAL_POINTS,
+        a: state.answers
+    };
+    
+    const json = JSON.stringify(data);
+    submissionCode = LZString.compressToEncodedURIComponent(json);
+}
+
+function renderResult() {
+    document.getElementById('resultSeat').textContent = state.seat;
+    
+    const mins = Math.floor(state.elapsed / 60);
+    const secs = state.elapsed % 60;
+    document.getElementById('resultTime').textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+    
+    // QR Code
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = '';
+    try {
+        new QRCode(qrContainer, {
+            text: submissionCode,
+            width: 250,
+            height: 250,
+            correctLevel: QRCode.CorrectLevel.L
+        });
+    } catch (e) {
+        qrContainer.innerHTML = '<p style="color:#c62828;">QR-Code Fehler</p>';
+    }
+    
+    document.getElementById('textCode').textContent = submissionCode;
+}
+
+function startUnlockTimer() {
+    let remaining = CONFIG.UNLOCK_TIME_SECONDS;
+    
+    const updateUnlock = () => {
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        document.getElementById('unlockTimer').textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+        
+        if (remaining <= 0) {
+            clearInterval(unlockInterval);
+            showFeedback();
+        }
+        remaining--;
+    };
+    
+    updateUnlock();
+    unlockInterval = setInterval(updateUnlock, 1000);
+}
+
+function attemptUnlock() {
+    const code = document.getElementById('unlockCodeInput').value.toUpperCase().trim();
+    if (code === CONFIG.UNLOCK_CODE) {
+        clearInterval(unlockInterval);
+        showFeedback();
+    } else {
+        alert('Falscher Code.');
+    }
+}
+
+function showFeedback() {
+    showScreen('screen-feedback');
+    renderFeedback();
+}
+
+function renderFeedback() {
+    const pct = (totalEarned / CONFIG.TOTAL_POINTS) * 100;
+    const grade = calculateGrade(pct);
+    
+    document.getElementById('feedbackGrade').textContent = grade;
+    document.getElementById('feedbackPoints').textContent = `${totalEarned} / ${CONFIG.TOTAL_POINTS} Punkte`;
+    document.getElementById('feedbackPercent').textContent = `${pct.toFixed(1)}%`;
+    document.getElementById('feedbackSeat').textContent = state.seat;
+    document.getElementById('feedbackNiveau').textContent = '★'.repeat(state.niveau);
+    
+    const mins = Math.floor(state.elapsed / 60);
+    const secs = state.elapsed % 60;
+    document.getElementById('feedbackTime').textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+    document.getElementById('feedbackDate').textContent = new Date().toLocaleDateString('de-DE');
+    document.getElementById('feedbackCode').textContent = submissionCode || 'Nicht verfügbar';
+    
+    renderPointsOverview();
+    renderFeedbackList();
+}
+
+function calculateGrade(pct) {
+    if (CONFIG.GRADING_SCALE === '15-NP') {
+        // Sek II scale
+        const thresholds = [98.67, 97.33, 96, 90.67, 85.33, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        const grades = ['15 NP', '14 NP', '13 NP', '12 NP', '11 NP', '10 NP', '9 NP', '8 NP', '7 NP', '6 NP', '5 NP', '4 NP', '3 NP', '2 NP', '1 NP'];
+        for (let i = 0; i < thresholds.length; i++) {
+            if (pct >= thresholds[i]) return grades[i];
+        }
+        return '0 NP';
+    } else if (CONFIG.GRADING_SCALE === '14-NP') {
+        // Sek I scale
+        const thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        const grades = ['14 NP', '13 NP', '12 NP', '11 NP', '10 NP', '9 NP', '8 NP', '7 NP', '6 NP', '5 NP', '4 NP', '3 NP', '2 NP', '1 NP'];
+        for (let i = 0; i < thresholds.length; i++) {
+            if (pct >= thresholds[i]) return grades[i];
+        }
+        return '0 NP';
+    } else {
+        // 6-Note scale for MR
+        const thresholds = [96, 80, 60, 40, 20];
+        const grades = ['1', '2', '3', '4', '5'];
+        for (let i = 0; i < thresholds.length; i++) {
+            if (pct >= thresholds[i]) return grades[i];
+        }
+        return '6';
+    }
+}
+
+function renderPointsOverview() {
+    const container = document.getElementById('pointsOverview');
+    let html = '';
+    
+    // Group by AFB
+    const afb1 = gradedAnswers.filter((_, i) => QUESTIONS[i].afb === 1);
+    const afb2 = gradedAnswers.filter((_, i) => QUESTIONS[i].afb === 2);
+    const afb3 = gradedAnswers.filter((_, i) => QUESTIONS[i].afb === 3);
+    
+    const sumPoints = arr => arr.reduce((s, g) => s + g.points, 0);
+    const sumMax = arr => arr.reduce((s, g) => s + g.maxPoints, 0);
+    
+    if (afb1.length) html += `<div class="points-row"><span>AFB I (Reproduktion)</span><span>${sumPoints(afb1)} / ${sumMax(afb1)} P</span></div>`;
+    if (afb2.length) html += `<div class="points-row"><span>AFB II (Anwendung)</span><span>${sumPoints(afb2)} / ${sumMax(afb2)} P</span></div>`;
+    if (afb3.length) html += `<div class="points-row"><span>AFB III (Transfer)</span><span>${sumPoints(afb3)} / ${sumMax(afb3)} P</span></div>`;
+    
+    html += `<div class="points-row total"><span>GESAMT</span><span>${totalEarned} / ${CONFIG.TOTAL_POINTS} P</span></div>`;
+    
+    container.innerHTML = html;
+}
+
+function renderFeedbackList() {
+    const container = document.getElementById('feedbackList');
+    let html = '';
+    
+    gradedAnswers.forEach((g, i) => {
+        const q = QUESTIONS[i];
+        const icon = g.correct ? '✅' : (g.points > 0 ? '⚠️' : '❌');
+        const cls = g.correct ? 'correct' : (g.points > 0 ? 'partial' : 'incorrect');
+        
+        html += `
+            <div class="feedback-item ${cls}">
+                <div class="feedback-header">
+                    <strong>${icon} Frage ${i + 1} (${g.qId})</strong>
+                    <span class="feedback-points">${g.points} / ${g.maxPoints} P</span>
+                </div>
+                <div class="feedback-question">${q.text}</div>
+                <div class="feedback-answer">
+                    ${renderFeedbackAnswer(g, q)}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function renderFeedbackAnswer(g, q) {
+    let html = '';
+    const letters = ['A', 'B', 'C', 'D'];
+    
+    switch (q.type) {
+        case 'mc':
+            html += `<p><strong>Deine Antwort:</strong> ${g.userAnswer !== undefined ? letters[g.userAnswer] : '–'}</p>`;
+            if (!g.correct) {
+                html += `<p class="correct"><strong>Richtig:</strong> ${letters[q.correct]}</p>`;
+            }
+            html += `<p class="text-muted text-small">${q.solution}</p>`;
+            break;
+            
+        case 'numeric-unit':
+        case 'calc':
+            const ua = g.userAnswer || {};
+            const accepted = q.accepted?.[0] || { value: q.correct, unit: q.correctUnit };
+            html += `<p><strong>Deine Antwort:</strong> ${ua.value || '–'} ${ua.unit || ''}</p>`;
+            if (!g.correct) {
+                html += `<p class="correct"><strong>Richtig:</strong> ${accepted.value} ${accepted.unit}</p>`;
+            }
+            html += `<p class="text-muted text-small">${q.solution}</p>`;
+            break;
+            
+        case 'matching':
+        case 'diagram-dropdown':
+            const count = q.phases || q.pairs;
+            const labels = q.labels || Array.from({length: count}, (_, i) => `${i + 1}`);
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin-top:8px;">';
+            for (let i = 0; i < count; i++) {
+                const us = g.userAnswer?.[i];
+                const cs = q.correct[i];
+                const ok = us === cs;
+                const ul = us !== null && us !== undefined ? q.options[us] : '–';
+                const cl = q.options[cs];
+                html += `<div style="padding:6px;background:${ok ? 'var(--success-bg)' : 'var(--error-bg)'};font-size:0.85em;">
+                    <strong>${labels[i]}:</strong> ${ul} ${ok ? '✓' : `✗ → ${cl}`}
+                </div>`;
+            }
+            html += '</div>';
+            break;
+            
+        case 'multi-calc':
+            html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:8px;">';
+            q.fields.forEach(f => {
+                const fa = g.userAnswer?.[f.id] || {};
+                const acc = f.accepted[0];
+                const userVal = parseFloat(fa.value);
+                const ok = fa.unit === acc.unit && !isNaN(userVal) && Math.abs(userVal - acc.value) <= acc.tolerance;
+                html += `<div style="padding:8px;background:${ok ? 'var(--success-bg)' : 'var(--error-bg)'};font-size:0.85em;">
+                    <strong>${f.label}</strong><br>
+                    Antwort: ${fa.value || '–'} ${fa.unit || ''} ${ok ? '✓' : '✗'}<br>
+                    ${!ok ? `<span class="correct">→ ${acc.value} ${acc.unit}</span>` : ''}
+                </div>`;
+            });
+            html += '</div>';
+            break;
+    }
+    
+    return html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE PERSISTENCE
+═══════════════════════════════════════════════════════════════ */
+
+function saveState() {
+    const data = {
+        seat: state.seat,
+        niveau: state.niveau,
+        currentQuestion: state.currentQuestion,
+        answers: state.answers,
+        startTime: state.startTime,
+        elapsed: state.elapsed,
+        submitted: state.submitted,
+        submissionCode: submissionCode,
+        gradedAnswers: gradedAnswers,
+        totalEarned: totalEarned
+    };
+    localStorage.setItem(`quiz_${CONFIG.QUIZ_ID}`, JSON.stringify(data));
+}
+
+function loadState() {
+    const saved = localStorage.getItem(`quiz_${CONFIG.QUIZ_ID}`);
+    if (!saved) return;
+    
+    try {
+        const data = JSON.parse(saved);
+        
+        if (data.submitted) {
+            // Restore submitted state
+            state.seat = data.seat;
+            state.niveau = data.niveau;
+            state.answers = data.answers;
+            state.elapsed = data.elapsed;
+            state.submitted = true;
+            submissionCode = data.submissionCode;
+            gradedAnswers = data.gradedAnswers || [];
+            totalEarned = data.totalEarned || 0;
+            
+            showScreen('screen-feedback');
+            renderFeedback();
+        } else if (data.startTime) {
+            // Restore in-progress quiz
+            state.seat = data.seat;
+            state.niveau = data.niveau;
+            state.answers = data.answers || {};
+            state.elapsed = data.elapsed || 0;
+            state.startTime = Date.now() - (state.elapsed * 1000);
+            
+            showScreen('screen-quiz');
+            document.getElementById('displaySeat').textContent = state.seat;
+            const niveauBadge = document.getElementById('displayNiveau');
+            niveauBadge.textContent = '★'.repeat(state.niveau);
+            niveauBadge.className = 'niveau-badge stern' + state.niveau;
+            
+            renderQuestion(data.currentQuestion || 0);
+            updateProgress();
+            startTimer();
+        }
+    } catch (e) {
+        console.error('Failed to load state:', e);
+    }
+}
+
+function resetQuiz() {
+    if (!confirm('Quiz wirklich neu starten? Alle Antworten werden gelöscht.')) return;
+    
+    localStorage.removeItem(`quiz_${CONFIG.QUIZ_ID}`);
+    location.reload();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('beforeunload', () => {
+    if (!state.submitted && state.startTime) saveState();
+});
+
+</script>
+</body>
+</html>

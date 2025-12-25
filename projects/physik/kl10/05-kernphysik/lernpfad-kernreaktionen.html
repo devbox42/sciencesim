@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Kernreaktionen - Klasse 10</title>
+    <style>
+        :root {
+            --bg: #f5f5f5; --white: #ffffff; --border: #dddddd;
+            --text-primary: #222222; --text-secondary: #555555; --text-muted: #888888;
+            --physik: #2c5aa0; --success: #2a7a4b; --warning: #b35c00; --error: #c62828;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text-primary); font-size: 0.9em; line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        header { background: var(--white); border: 1px solid var(--border); padding: 20px; margin-bottom: 20px; }
+        header h1 { font-size: 1.4em; font-weight: 600; color: var(--physik); }
+        .meta { font-size: 0.85em; color: var(--text-secondary); margin-top: 5px; }
+        .progress-bar { background: var(--border); height: 8px; margin-top: 15px; }
+        .progress-fill { background: var(--physik); height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: var(--text-muted); margin-top: 5px; }
+        .step { background: var(--white); border: 1px solid var(--border); margin-bottom: 15px; display: none; }
+        .step.active { display: block; }
+        .step-header { background: var(--bg); padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .step-title { font-weight: 600; color: var(--physik); }
+        .step-badge { font-size: 0.75em; padding: 3px 8px; background: var(--physik); color: white; }
+        .step-badge.exercise { background: var(--warning); }
+        .step-badge.quiz { background: var(--success); }
+        .step-content { padding: 20px; }
+        .hook { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid var(--physik); padding: 20px; margin-bottom: 20px; font-size: 1.1em; }
+        .info-box { background: var(--bg); border: 1px solid var(--border); padding: 15px; margin: 15px 0; }
+        .info-box h4 { color: var(--physik); margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        th { background: var(--bg); font-weight: 600; }
+        .exercise { background: #fff8e1; border: 1px solid #ffcc02; padding: 20px; margin: 20px 0; }
+        .exercise h4 { color: var(--warning); margin-bottom: 15px; }
+        .options { display: flex; flex-direction: column; gap: 8px; }
+        .option { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--border); cursor: pointer; background: var(--white); }
+        .option:hover { background: var(--bg); }
+        .option.selected { background: #e3f2fd; border-color: var(--physik); }
+        .option.correct { background: #e8f5e9; border-color: var(--success); }
+        .option.incorrect { background: #ffebee; border-color: var(--error); }
+        .btn { background: var(--physik); color: white; border: none; padding: 12px 25px; cursor: pointer; font-size: 1em; }
+        .btn:hover { opacity: 0.9; }
+        .btn-check { background: var(--warning); }
+        .btn-next { background: var(--success); }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .feedback { padding: 15px; margin-top: 15px; display: none; }
+        .feedback.correct { background: #e8f5e9; border-left: 4px solid var(--success); display: block; }
+        .feedback.incorrect { background: #ffebee; border-left: 4px solid var(--error); display: block; }
+        .hint { background: #e3f2fd; border: 1px dashed var(--physik); padding: 15px; margin-top: 15px; display: none; }
+        .hint.show { display: block; }
+        .hint-btn { background: none; border: 1px solid var(--physik); color: var(--physik); padding: 8px 15px; cursor: pointer; font-size: 0.85em; margin-top: 10px; }
+        .formula { background: #f3e5f5; padding: 20px; text-align: center; font-size: 1.5em; margin: 20px 0; border: 1px solid #ce93d8; }
+        .fill-blank { border: none; border-bottom: 2px solid var(--physik); padding: 5px 10px; width: 100px; font-size: 1em; background: transparent; text-align: center; }
+        .fill-blank.correct { border-color: var(--success); background: #e8f5e9; }
+        .fill-blank.incorrect { border-color: var(--error); background: #ffebee; }
+        .enrichment { background: #e8f5e9; border: 2px dashed var(--success); padding: 20px; margin-top: 20px; display: none; }
+        .enrichment.show { display: block; }
+        .enrichment h4 { color: var(--success); }
+        .metacognition { background: #f3e5f5; border: 1px solid #ce93d8; padding: 15px; margin-top: 20px; }
+        .metacognition h5 { color: #7b1fa2; margin-bottom: 10px; }
+        .ampel { display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap; }
+        .ampel label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9em; }
+        .ampel input { display: none; }
+        .ampel .dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
+        .ampel .green { background: #4caf50; }
+        .ampel .yellow { background: #ff9800; }
+        .ampel .red { background: #f44336; }
+        .ampel input:checked + .dot { box-shadow: 0 0 0 3px var(--text-primary); }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+        .comparison > div { padding: 15px; border: 1px solid var(--border); }
+        .comparison h5 { color: var(--physik); margin-bottom: 10px; }
+        .bne-box { background: #fff8e1; border: 1px solid #ffcc02; padding: 20px; margin: 20px 0; }
+        .bne-box h4 { color: var(--warning); margin-bottom: 15px; }
+        .hefter-hinweis { background: #fff3e0; border: 2px solid var(--warning); padding: 12px 15px; margin: 20px 0; font-size: 0.9em; }
+        .hefter-hinweis::before { content: "Arbeitsblatt"; display: inline-block; background: var(--warning); color: white; font-size: 0.75em; font-weight: 600; padding: 2px 8px; margin-bottom: 8px; }
+        .hefter-hinweis ul { margin: 8px 0 0 20px; }
+        .hefter-hinweis li { margin: 4px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lernpfad: Kernspaltung und Kernfusion</h1>
+            <div class="meta">Stunde 6-7 | Kernphysik | Klasse 10</div>
+            <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+            <div class="progress-text">Fortschritt: <span id="progress-text">0%</span></div>
+        </header>
+
+        <!-- STEP 1: Einstieg -->
+        <div class="step active" data-step="1">
+            <div class="step-header">
+                <span class="step-title">Schritt 1: Einstieg</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="hook">
+                    <strong>"In der Sonne verschmelzen jede Sekunde 620 Millionen Tonnen Wasserstoff zu Helium."</strong>
+                    Diese Fusion liefert die Energie für alles Leben auf der Erde - und wir versuchen, das auf der Erde nachzubauen.
+                </div>
+
+                <div class="info-box">
+                    <h4>Zwei Wege zur Kernenergie</h4>
+                    <table>
+                        <tr><th>Kernspaltung (Fission)</th><th>Kernfusion</th></tr>
+                        <tr><td>Schwere Kerne werden gespalten</td><td>Leichte Kerne verschmelzen</td></tr>
+                        <tr><td>z.B. Uran-235</td><td>z.B. Wasserstoff → Helium</td></tr>
+                        <tr><td>Kraftwerke seit 1950er</td><td>Sonne, Sterne; auf Erde: ITER (Forschung)</td></tr>
+                    </table>
+                </div>
+
+                <div class="exercise">
+                    <h4>POE: Vorhersage</h4>
+                    <p><strong>Woher kommt die Energie bei Kernreaktionen?</strong></p>
+                    <div class="options" id="q1-options">
+                        <div class="option" onclick="selectOption(this, 'q1', 'a')">Aus chemischen Bindungen</div>
+                        <div class="option" onclick="selectOption(this, 'q1', 'b')">Aus der Umwandlung von Masse in Energie</div>
+                        <div class="option" onclick="selectOption(this, 'q1', 'c')">Aus elektrischer Ladung</div>
+                    </div>
+                    <button class="btn btn-check" onclick="checkAnswer('q1', 'b', 'Richtig! Einsteins E=mc² erklärt: Masse wird in Energie umgewandelt.', 'Tipp: Denke an Einstein...')">Prüfen</button>
+                    <div class="feedback" id="feedback-q1"></div>
+                </div>
+
+                <div class="nav-buttons">
+                    <span></span>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 2: E=mc² -->
+        <div class="step" data-step="2">
+            <div class="step-header">
+                <span class="step-title">Schritt 2: Einsteins berühmte Formel</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="formula">E = m · c²</div>
+
+                <div class="info-box">
+                    <h4>Was bedeutet das?</h4>
+                    <ul style="margin-left: 20px;">
+                        <li><strong>E</strong> = Energie (in Joule)</li>
+                        <li><strong>m</strong> = Masse (in kg)</li>
+                        <li><strong>c</strong> = Lichtgeschwindigkeit ≈ 300.000.000 m/s</li>
+                    </ul>
+                    <p style="margin-top: 15px;"><strong>Wichtig:</strong> c² ist eine RIESIGE Zahl! Daher liefert schon eine winzige Masse enorme Energie.</p>
+                </div>
+
+                <div class="info-box">
+                    <h4>Beispielrechnung</h4>
+                    <p>1 Gramm Masse = 0,001 kg wird vollständig in Energie umgewandelt:</p>
+                    <p style="font-family: monospace; margin: 10px 0;">
+                        E = 0,001 kg × (3×10⁸ m/s)²<br>
+                        E = 0,001 × 9×10¹⁶ J<br>
+                        E = 9×10¹³ J = <strong>90 Billionen Joule</strong>
+                    </p>
+                    <p>Das entspricht etwa 25 Millionen kWh - genug Strom für eine Stadt für einen Tag!</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: Massendefekt -->
+        <div class="step" data-step="3">
+            <div class="step-header">
+                <span class="step-title">Schritt 3: Der Massendefekt</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="info-box">
+                    <h4>Ein Kern ist leichter als seine Bestandteile!</h4>
+                    <p>Wenn man Protonen und Neutronen einzeln wiegt und dann zu einem Kern zusammenfügt, ist der Kern <strong>leichter</strong> als die Summe der Einzelteile.</p>
+                    <p style="margin-top: 10px;"><strong>Wohin ist die Masse verschwunden?</strong></p>
+                    <p>→ Sie wurde in <strong>Bindungsenergie</strong> umgewandelt (E=mc²)!</p>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 20px; margin: 20px 0; border: 1px solid #ce93d8;">
+                    <p style="text-align: center;"><strong>Massendefekt Δm:</strong></p>
+                    <p style="text-align: center; font-size: 1.2em; margin: 10px 0;">Δm = (Z·m<sub>p</sub> + N·m<sub>n</sub>) - m<sub>Kern</sub></p>
+                    <p style="text-align: center;">Diese "fehlende" Masse steckt als Bindungsenergie im Kern.</p>
+                </div>
+
+                <div class="exercise">
+                    <h4>Übung</h4>
+                    <p>Warum ist der Massendefekt wichtig für Kernreaktionen?</p>
+                    <div class="options" id="q3-options">
+                        <div class="option" onclick="selectOption(this, 'q3', 'a')">Er zeigt, dass Kerne instabil sind</div>
+                        <div class="option" onclick="selectOption(this, 'q3', 'b')">Er erklärt, woher die Energie bei Kernreaktionen kommt</div>
+                        <div class="option" onclick="selectOption(this, 'q3', 'c')">Er bestimmt die Farbe der Strahlung</div>
+                    </div>
+                    <button class="btn btn-check" onclick="checkAnswer('q3', 'b', 'Richtig! Bei Kernreaktionen ändert sich der Massendefekt → Energie wird frei.', 'Denke an E=mc²: Wenn sich die Masse ändert...')">Prüfen</button>
+                    <div class="feedback" id="feedback-q3"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Kasten 1:</strong> Notiere die Formel E = mc² und erkläre die Bedeutung</li>
+                        <li><strong>Massendefekt:</strong> Erkläre in eigenen Worten, warum ein Kern leichter ist als seine Bestandteile</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 4: Kernspaltung -->
+        <div class="step" data-step="4">
+            <div class="step-header">
+                <span class="step-title">Schritt 4: Kernspaltung (Fission)</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="info-box">
+                    <h4>Prinzip der Kernspaltung</h4>
+                    <p>Ein schwerer Kern (z.B. Uran-235) wird durch ein <strong>Neutron</strong> gespalten:</p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li>Neutron trifft auf U-235</li>
+                        <li>Kern wird instabil und spaltet sich</li>
+                        <li>Es entstehen: 2-3 mittelschwere Kerne + 2-3 neue Neutronen + Energie</li>
+                    </ol>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 20px; text-align: center; font-size: 1.1em; margin: 20px 0; border: 1px solid #ce93d8;">
+                    <sup>235</sup><sub>92</sub>U + <sup>1</sup><sub>0</sub>n → <sup>141</sup><sub>56</sub>Ba + <sup>92</sup><sub>36</sub>Kr + 3 <sup>1</sup><sub>0</sub>n + Energie
+                </div>
+
+                <div class="info-box">
+                    <h4>Kettenreaktion</h4>
+                    <p>Die freigesetzten Neutronen können weitere U-235-Kerne spalten → <strong>Kettenreaktion</strong></p>
+                    <p style="margin-top: 10px;"><strong>Kontrolliert:</strong> Kernkraftwerk (Steuerstabne absorbieren überschüssige Neutronen)</p>
+                    <p><strong>Unkontrolliert:</strong> Atombombe</p>
+                </div>
+
+                <div class="metacognition">
+                    <h5>Selbstcheck</h5>
+                    <p>Kannst du erklären, warum eine Kettenreaktion entsteht?</p>
+                    <div class="ampel">
+                        <label><input type="radio" name="ampel4"><span class="dot green"></span> Ja</label>
+                        <label><input type="radio" name="ampel4"><span class="dot yellow"></span> Teilweise</label>
+                        <label><input type="radio" name="ampel4"><span class="dot red"></span> Nein</label>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 5: Kernspaltung Übung -->
+        <div class="step" data-step="5">
+            <div class="step-header">
+                <span class="step-title">Schritt 5: Kernspaltung - Übung</span>
+                <span class="step-badge exercise">Übung</span>
+            </div>
+            <div class="step-content">
+                <div class="exercise">
+                    <h4>Aufgabe 1: Bilanzierung</h4>
+                    <p>Bei der Spaltung gilt: Massenzahl und Ordnungszahl bleiben insgesamt erhalten!</p>
+                    <p style="margin: 15px 0;">U-235 + n → Ba-141 + Kr-? + 3n</p>
+                    <p>Wie groß ist die Massenzahl von Krypton?</p>
+                    <p>A(Kr) = <input type="number" class="fill-blank" id="fission1" style="width: 80px;"></p>
+                    <button class="btn btn-check" onclick="checkFission1()">Prüfen</button>
+                    <div class="feedback" id="feedback-fission1"></div>
+
+                    <button class="hint-btn" onclick="toggleHint('hint-fission1')">Gestufte Hilfe</button>
+                    <div class="hint" id="hint-fission1">
+                        <strong>Hilfe 1:</strong> Linke Seite: 235 + 1 = 236<br>
+                        <strong>Hilfe 2:</strong> Rechte Seite: 141 + ? + 3×1 = 236<br>
+                        <strong>Hilfe 3:</strong> ? = 236 - 141 - 3 = ?
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Aufgabe 2: Kettenreaktion</h4>
+                    <p>Bei jeder Spaltung entstehen durchschnittlich 2,5 Neutronen.</p>
+                    <p>Wie viele Spaltungen nach 3 Generationen (wenn jedes Neutron einen Kern spaltet)?</p>
+                    <p style="font-size: 0.85em; color: var(--text-muted);">Gen 0: 1 Spaltung → Gen 1: 2,5 → Gen 2: ? → Gen 3: ?</p>
+                    <p>Nach 3 Generationen: ca. <input type="number" class="fill-blank" id="fission2" style="width: 80px;"> Spaltungen</p>
+                    <button class="btn btn-check" onclick="checkFission2()">Prüfen</button>
+                    <div class="feedback" id="feedback-fission2"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Kasten 2:</strong> Zeichne ein Schema der Kernspaltung von U-235</li>
+                        <li><strong>Gleichung:</strong> Notiere die Spaltungsgleichung und erkläre die Kettenreaktion</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 6: Kernfusion -->
+        <div class="step" data-step="6">
+            <div class="step-header">
+                <span class="step-title">Schritt 6: Kernfusion</span>
+                <span class="step-badge">Inhalt</span>
+            </div>
+            <div class="step-content">
+                <div class="info-box">
+                    <h4>Prinzip der Kernfusion</h4>
+                    <p>Leichte Kerne (z.B. Wasserstoff-Isotope) verschmelzen zu schwereren Kernen:</p>
+                </div>
+
+                <div style="background: #f3e5f5; padding: 20px; text-align: center; font-size: 1.1em; margin: 20px 0; border: 1px solid #ce93d8;">
+                    <sup>2</sup><sub>1</sub>H (Deuterium) + <sup>3</sup><sub>1</sub>H (Tritium) → <sup>4</sup><sub>2</sub>He + <sup>1</sup><sub>0</sub>n + 17,6 MeV
+                </div>
+
+                <div class="info-box">
+                    <h4>Warum ist Fusion so schwierig?</h4>
+                    <ul style="margin-left: 20px;">
+                        <li>Kerne sind positiv geladen → sie stoßen sich ab!</li>
+                        <li>Man braucht <strong>extrem hohe Temperaturen</strong> (~100 Millionen °C)</li>
+                        <li>Bei diesen Temperaturen: Plasma - kein Behälter hält das aus!</li>
+                        <li>Lösung: <strong>Magnetischer Einschluss</strong> (Tokamak-Reaktoren wie ITER)</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h4>Die Sonne als Fusionsreaktor</h4>
+                    <p>In der Sonne fusioniert Wasserstoff zu Helium:</p>
+                    <p style="text-align: center; margin: 10px 0;">4 × <sup>1</sup><sub>1</sub>H → <sup>4</sup><sub>2</sub>He + 2 e⁺ + 2 ν + Energie</p>
+                    <p>Das passiert 600 Millionen Tonnen pro Sekunde!</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 7: Vergleich -->
+        <div class="step" data-step="7">
+            <div class="step-header">
+                <span class="step-title">Schritt 7: Vergleich Spaltung vs. Fusion</span>
+                <span class="step-badge exercise">Übung</span>
+            </div>
+            <div class="step-content">
+                <div class="comparison">
+                    <div>
+                        <h5>Kernspaltung</h5>
+                        <ul style="margin-left: 20px; font-size: 0.9em;">
+                            <li>Schwere Kerne → leichtere</li>
+                            <li>Brennstoff: Uran-235, Plutonium</li>
+                            <li>Abfall: Langlebig, hochradioaktiv</li>
+                            <li>Risiko: GAU möglich</li>
+                            <li>Stand: Technisch ausgereift</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5>Kernfusion</h5>
+                        <ul style="margin-left: 20px; font-size: 0.9em;">
+                            <li>Leichte Kerne → schwerere</li>
+                            <li>Brennstoff: Deuterium, Tritium</li>
+                            <li>Abfall: Kurzlebig, weniger</li>
+                            <li>Risiko: Kaum (Reaktion stoppt)</li>
+                            <li>Stand: Forschung (ITER)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Zuordnung</h4>
+                    <p>Ordne die Aussagen zu:</p>
+
+                    <p style="margin: 10px 0;"><strong>1.</strong> "Nutzt Uran als Brennstoff":</p>
+                    <select id="comp1" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="s">Spaltung</option>
+                        <option value="f">Fusion</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>2.</strong> "Funktioniert in der Sonne":</p>
+                    <select id="comp2" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="s">Spaltung</option>
+                        <option value="f">Fusion</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>3.</strong> "Erzeugt langlebigen radioaktiven Abfall":</p>
+                    <select id="comp3" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="s">Spaltung</option>
+                        <option value="f">Fusion</option>
+                    </select>
+
+                    <p style="margin: 10px 0;"><strong>4.</strong> "Benötigt Temperaturen wie in der Sonne":</p>
+                    <select id="comp4" style="width: 200px; padding: 8px;">
+                        <option value="">Bitte wählen...</option>
+                        <option value="s">Spaltung</option>
+                        <option value="f">Fusion</option>
+                    </select>
+
+                    <button class="btn btn-check" onclick="checkComparison()">Prüfen</button>
+                    <div class="feedback" id="feedback-comp"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Kasten 3:</strong> Erstelle eine Vergleichstabelle: Kernspaltung vs. Kernfusion</li>
+                        <li><strong>Fusionsgleichung:</strong> Notiere die D-T-Reaktion mit Energieangabe</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 8: BNE Diskussion -->
+        <div class="step" data-step="8">
+            <div class="step-header">
+                <span class="step-title">Schritt 8: BNE - Pro und Contra Kernenergie</span>
+                <span class="step-badge">Diskussion</span>
+            </div>
+            <div class="step-content">
+                <div class="bne-box">
+                    <h4>Kontroverse Frage</h4>
+                    <p><strong>Deutschland hat 2023 die letzten Kernkraftwerke abgeschaltet. Frankreich baut neue.</strong></p>
+                    <p>Wer hat recht? Gibt es überhaupt ein "richtig"?</p>
+                </div>
+
+                <div class="comparison">
+                    <div style="background: #e8f5e9;">
+                        <h5 style="color: var(--success);">Pro Kernenergie</h5>
+                        <ul style="margin-left: 20px; font-size: 0.9em;">
+                            <li>Kein CO₂ beim Betrieb</li>
+                            <li>Grundlastfähig (24/7)</li>
+                            <li>Hohe Energiedichte</li>
+                            <li>Unabhängigkeit von Gasimporten</li>
+                        </ul>
+                    </div>
+                    <div style="background: #ffebee;">
+                        <h5 style="color: var(--error);">Contra Kernenergie</h5>
+                        <ul style="margin-left: 20px; font-size: 0.9em;">
+                            <li>Endlager-Problem ungelöst</li>
+                            <li>GAU-Risiko (Fukushima, Tschernobyl)</li>
+                            <li>Hohe Baukosten und -zeit</li>
+                            <li>Uranabbau umweltschädlich</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <h4>Think-Pair-Share</h4>
+                    <p><strong>THINK:</strong> Welche Argumente findest du am wichtigsten? Notiere 2-3 Stichpunkte.</p>
+                    <p><strong>PAIR:</strong> Tausche dich mit einem Partner aus. Was seht ihr unterschiedlich?</p>
+                    <p><strong>SHARE:</strong> Diskutiert in der Klasse: Gibt es eine "richtige" Antwort?</p>
+                </div>
+
+                <div class="metacognition">
+                    <h5>Reflexion</h5>
+                    <p>Hat sich deine Meinung zur Kernenergie durch diesen Lernpfad geändert?</p>
+                    <div class="ampel">
+                        <label><input type="radio" name="ampel8"><span class="dot green"></span> Ja, positiver</label>
+                        <label><input type="radio" name="ampel8"><span class="dot yellow"></span> Nein, gleich</label>
+                        <label><input type="radio" name="ampel8"><span class="dot red"></span> Ja, negativer</label>
+                    </div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <ul>
+                        <li><strong>Seite 2:</strong> Bearbeite die Diskussionsaufgabe "Pro und Contra Kernenergie"</li>
+                        <li><strong>Reflexion:</strong> Notiere deine persönliche Stellungnahme mit Begründung</li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="nextStep()">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 9: Quiz -->
+        <div class="step" data-step="9">
+            <div class="step-header">
+                <span class="step-title">Schritt 9: Abschlussquiz</span>
+                <span class="step-badge quiz">Quiz</span>
+            </div>
+            <div class="step-content">
+                <p style="margin-bottom: 20px;"><strong>Teste dein Wissen!</strong></p>
+
+                <div class="exercise">
+                    <p><strong>Q1:</strong> Was besagt E=mc²?</p>
+                    <div class="options" id="quiz1-options">
+                        <div class="option" onclick="selectOption(this, 'quiz1', 'a')">Energie und Masse sind äquivalent</div>
+                        <div class="option" onclick="selectOption(this, 'quiz1', 'b')">Lichtgeschwindigkeit ist konstant</div>
+                        <div class="option" onclick="selectOption(this, 'quiz1', 'c')">Masse kann nicht zerstört werden</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q2:</strong> Was passiert bei der Kernspaltung?</p>
+                    <div class="options" id="quiz2-options">
+                        <div class="option" onclick="selectOption(this, 'quiz2', 'a')">Leichte Kerne verschmelzen</div>
+                        <div class="option" onclick="selectOption(this, 'quiz2', 'b')">Schwere Kerne zerfallen in leichtere</div>
+                        <div class="option" onclick="selectOption(this, 'quiz2', 'c')">Elektronen werden abgestrahlt</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q3:</strong> Welches Isotop wird typischerweise in Kernkraftwerken gespalten?</p>
+                    <div class="options" id="quiz3-options">
+                        <div class="option" onclick="selectOption(this, 'quiz3', 'a')">Deuterium</div>
+                        <div class="option" onclick="selectOption(this, 'quiz3', 'b')">Uran-235</div>
+                        <div class="option" onclick="selectOption(this, 'quiz3', 'c')">Helium-4</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q4:</strong> Warum ist Kernfusion auf der Erde so schwierig?</p>
+                    <div class="options" id="quiz4-options">
+                        <div class="option" onclick="selectOption(this, 'quiz4', 'a')">Es fehlt der Brennstoff</div>
+                        <div class="option" onclick="selectOption(this, 'quiz4', 'b')">Man braucht extrem hohe Temperaturen</div>
+                        <div class="option" onclick="selectOption(this, 'quiz4', 'c')">Die Reaktion ist nicht energetisch</div>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <p><strong>Q5:</strong> Was entsteht bei der Kettenreaktion?</p>
+                    <input type="text" class="fill-blank" id="quiz5" placeholder="..." style="width: 150px;">
+                    <span style="color: var(--text-muted); font-size: 0.85em;">(Teilchen, die weitere Spaltungen auslösen)</span>
+                </div>
+
+                <button class="btn btn-check" onclick="checkQuiz()" style="width: 100%; margin-top: 20px;">Quiz auswerten</button>
+                <div class="feedback" id="feedback-quiz"></div>
+
+                <div class="enrichment" id="enrichment">
+                    <h4>Bonus: ITER - Der Weg zur Fusionsenergie</h4>
+                    <p><strong>ITER</strong> (International Thermonuclear Experimental Reactor) ist ein Megaprojekt in Frankreich:</p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>35 Länder beteiligt</li>
+                        <li>Ziel: Erstes Plasma 2025, voller Betrieb ~2035</li>
+                        <li>Soll 10× mehr Energie erzeugen als hineingepumpt wird</li>
+                    </ul>
+                    <p style="margin-top: 10px;"><strong>Recherche:</strong> Was ist ein Tokamak und wie funktioniert der magnetische Einschluss?</p>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn" onclick="prevStep()">Zurück</button>
+                    <button class="btn btn-next" onclick="finishLernpfad()">Lernpfad abschließen</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abschluss -->
+        <div class="step" data-step="10">
+            <div class="step-header">
+                <span class="step-title">Geschafft!</span>
+                <span class="step-badge quiz">Fertig</span>
+            </div>
+            <div class="step-content" style="text-align: center; padding: 40px;">
+                <h2 style="color: var(--success); margin-bottom: 20px;">Lernpfad abgeschlossen!</h2>
+                <p>Du verstehst jetzt Kernspaltung und Kernfusion und kannst Pro/Contra-Argumente zur Kernenergie diskutieren.</p>
+                <p style="margin-top: 20px;"><a href="lernpfad-strahlenschutz.html" style="color: var(--physik);">→ Weiter zum Lernpfad Strahlenschutz</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 10;
+        const answers = {};
+
+        function updateProgress() {
+            const percent = Math.round((currentStep - 1) / (totalSteps - 1) * 100);
+            document.getElementById('progress').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = percent + '%';
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelector(`[data-step="${step}"]`).classList.add('active');
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            updateProgress();
+        }
+
+        function nextStep() { if (currentStep < totalSteps) { currentStep++; showStep(currentStep); } }
+        function prevStep() { if (currentStep > 1) { currentStep--; showStep(currentStep); } }
+
+        function selectOption(el, questionId, value) {
+            const container = el.parentElement;
+            container.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            answers[questionId] = value;
+        }
+
+        function checkAnswer(questionId, correct, correctMsg, incorrectMsg) {
+            const feedback = document.getElementById(`feedback-${questionId}`);
+            if (answers[questionId] === correct) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = correctMsg;
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = incorrectMsg;
+            }
+        }
+
+        function toggleHint(id) { document.getElementById(id).classList.toggle('show'); }
+
+        function checkFission1() {
+            const val = parseInt(document.getElementById('fission1').value);
+            const fb = document.getElementById('feedback-fission1');
+            if (val === 92) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! 235+1 = 141 + 92 + 3. Krypton-92.';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = 'Nicht ganz. 235+1=236. 236-141-3=92.';
+            }
+        }
+
+        function checkFission2() {
+            const val = parseInt(document.getElementById('fission2').value);
+            const fb = document.getElementById('feedback-fission2');
+            // 1 -> 2.5 -> 6.25 -> 15.625 ≈ 15-16
+            if (val >= 15 && val <= 16) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Richtig! 1 → 2,5 → 6,25 → 15,6. Das zeigt, wie schnell eine Kettenreaktion eskaliert!';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = 'Rechne: 2,5³ = 2,5 × 2,5 × 2,5 ≈ 15,6';
+            }
+        }
+
+        function checkComparison() {
+            const c1 = document.getElementById('comp1').value;
+            const c2 = document.getElementById('comp2').value;
+            const c3 = document.getElementById('comp3').value;
+            const c4 = document.getElementById('comp4').value;
+            const fb = document.getElementById('feedback-comp');
+
+            let score = 0;
+            if (c1 === 's') score++;
+            if (c2 === 'f') score++;
+            if (c3 === 's') score++;
+            if (c4 === 'f') score++;
+
+            if (score === 4) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = 'Alles richtig! Du verstehst den Unterschied zwischen Spaltung und Fusion.';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = score + '/4 richtig. Schau dir den Vergleich nochmal an.';
+            }
+        }
+
+        function checkQuiz() {
+            let score = 0;
+
+            if (answers['quiz1'] === 'a') score++;
+            if (answers['quiz2'] === 'b') score++;
+            if (answers['quiz3'] === 'b') score++;
+            if (answers['quiz4'] === 'b') score++;
+            const q5 = document.getElementById('quiz5').value.toLowerCase();
+            if (q5.includes('neutron')) score++;
+
+            const fb = document.getElementById('feedback-quiz');
+            const percent = Math.round(score / 5 * 100);
+
+            if (percent >= 80) {
+                fb.className = 'feedback correct';
+                fb.innerHTML = '<strong>' + score + '/5 richtig (' + percent + '%)</strong> - Sehr gut!';
+                document.getElementById('enrichment').classList.add('show');
+            } else if (percent >= 50) {
+                fb.className = 'feedback';
+                fb.style.background = '#fff3e0';
+                fb.style.borderColor = 'var(--warning)';
+                fb.style.display = 'block';
+                fb.innerHTML = '<strong>' + score + '/5 richtig (' + percent + '%)</strong> - Schau dir die Inhalte nochmal an.';
+            } else {
+                fb.className = 'feedback incorrect';
+                fb.innerHTML = '<strong>' + score + '/5 richtig (' + percent + '%)</strong> - Wiederhole die Schritte.';
+            }
+        }
+
+        function finishLernpfad() {
+            currentStep = 10;
+            showStep(currentStep);
+            localStorage.setItem('lernpfad-kernreaktionen-complete', 'true');
+        }
+
+        updateProgress();
+    </script>
+</body>
+</html>

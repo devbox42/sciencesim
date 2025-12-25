@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutherford-Streuversuch – Simulation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 20px;
+        }
+        .sim-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        canvas {
+            display: block;
+            background: #1a1a2e;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.85em;
+            color: #555;
+        }
+        button {
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1e4080;
+        }
+        button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+        input[type="range"] {
+            width: 120px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f0f0;
+            font-size: 0.85em;
+        }
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-value {
+            font-weight: 600;
+            font-size: 1.2em;
+            color: #2c5aa0;
+        }
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        .info-box h3 {
+            font-size: 1em;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+        }
+        .info-box ul {
+            margin-left: 1.5em;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+            font-size: 0.8em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rutherford-Streuversuch</h1>
+        <p class="subtitle">Simulation des historischen Experiments von 1911</p>
+
+        <div class="sim-container">
+            <canvas id="canvas" width="800" height="400"></canvas>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #ffd700;"></div>
+                    <span>α-Teilchen</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #c62828;"></div>
+                    <span>Goldkern (+)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background: #4a4a6a;"></div>
+                    <span>Goldfolie</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="btnStart">▶ Starten</button>
+                <button id="btnReset">↺ Reset</button>
+                <div class="control-group">
+                    <label>Geschwindigkeit:</label>
+                    <input type="range" id="speed" min="1" max="10" value="5">
+                </div>
+                <div class="control-group">
+                    <label>Kernladung:</label>
+                    <input type="range" id="charge" min="1" max="10" value="5">
+                    <span id="chargeValue">5</span>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span>Abgefeuert</span>
+                    <span class="stat-value" id="statFired">0</span>
+                </div>
+                <div class="stat">
+                    <span>Unabgelenkt (&lt;5°)</span>
+                    <span class="stat-value" id="statStraight">0</span>
+                </div>
+                <div class="stat">
+                    <span>Leicht abgelenkt</span>
+                    <span class="stat-value" id="statLight">0</span>
+                </div>
+                <div class="stat">
+                    <span>Stark abgelenkt (&gt;45°)</span>
+                    <span class="stat-value" id="statStrong">0</span>
+                </div>
+                <div class="stat">
+                    <span>Zurückgeworfen (&gt;90°)</span>
+                    <span class="stat-value" id="statBack">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>Beobachtung → Schlussfolgerung</h3>
+            <ul>
+                <li><strong>Die meisten Teilchen gehen unabgelenkt durch</strong> → Das Atom ist größtenteils leer</li>
+                <li><strong>Wenige werden stark abgelenkt</strong> → Positive Ladung in kleinem Kern konzentriert</li>
+                <li><strong>Sehr wenige werden zurückgeworfen</strong> → Kern ist extrem klein, aber schwer</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State
+        let particles = [];
+        let nuclei = [];
+        let running = false;
+        let fireInterval = null;
+        let stats = { fired: 0, straight: 0, light: 0, strong: 0, back: 0 };
+
+        // Settings
+        const foilX = 500;
+        const nucleusRadius = 8;
+        const particleRadius = 4;
+
+        // Initialize nuclei (gold atoms in foil)
+        function initNuclei() {
+            nuclei = [];
+            for (let y = 30; y < 370; y += 40) {
+                for (let x = foilX - 10; x <= foilX + 10; x += 20) {
+                    nuclei.push({ x: x + (Math.random() - 0.5) * 10, y: y + (Math.random() - 0.5) * 10 });
+                }
+            }
+        }
+
+        // Fire a new particle
+        function fireParticle() {
+            const y = 50 + Math.random() * 300;
+            particles.push({
+                x: 50,
+                y: y,
+                vx: 3 + document.getElementById('speed').value * 0.5,
+                vy: 0,
+                trail: [],
+                done: false,
+                initialY: y
+            });
+            stats.fired++;
+            updateStats();
+        }
+
+        // Physics update
+        function update() {
+            const charge = document.getElementById('charge').value;
+            const k = charge * 50; // Coulomb constant scaled
+
+            particles.forEach(p => {
+                if (p.done) return;
+
+                // Save trail
+                if (p.trail.length === 0 ||
+                    Math.hypot(p.x - p.trail[p.trail.length-1].x, p.y - p.trail[p.trail.length-1].y) > 5) {
+                    p.trail.push({ x: p.x, y: p.y });
+                    if (p.trail.length > 100) p.trail.shift();
+                }
+
+                // Coulomb force from each nucleus
+                let fx = 0, fy = 0;
+                nuclei.forEach(n => {
+                    const dx = p.x - n.x;
+                    const dy = p.y - n.y;
+                    const r2 = dx * dx + dy * dy;
+                    const r = Math.sqrt(r2);
+                    if (r > 10) { // Avoid singularity
+                        const f = k / r2;
+                        fx += f * dx / r;
+                        fy += f * dy / r;
+                    }
+                });
+
+                // Update velocity and position
+                p.vx += fx * 0.1;
+                p.vy += fy * 0.1;
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Check if particle left the canvas
+                if (p.x > 800 || p.x < 0 || p.y < 0 || p.y > 400) {
+                    p.done = true;
+                    classifyParticle(p);
+                }
+            });
+
+            // Remove old done particles
+            particles = particles.filter(p => !p.done || p.trail.length > 0);
+        }
+
+        // Classify particle deflection
+        function classifyParticle(p) {
+            const angle = Math.abs(Math.atan2(p.vy, p.vx)) * 180 / Math.PI;
+
+            if (p.x < foilX) {
+                // Went back
+                stats.back++;
+            } else if (angle < 5) {
+                stats.straight++;
+            } else if (angle < 45) {
+                stats.light++;
+            } else {
+                stats.strong++;
+            }
+            updateStats();
+        }
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('statFired').textContent = stats.fired;
+            document.getElementById('statStraight').textContent = stats.straight;
+            document.getElementById('statLight').textContent = stats.light;
+            document.getElementById('statStrong').textContent = stats.strong;
+            document.getElementById('statBack').textContent = stats.back;
+        }
+
+        // Draw everything
+        function draw() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, 800, 400);
+
+            // Draw foil
+            ctx.fillStyle = '#4a4a6a';
+            ctx.fillRect(foilX - 15, 0, 30, 400);
+
+            // Draw nuclei
+            ctx.fillStyle = '#c62828';
+            nuclei.forEach(n => {
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, nucleusRadius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw particles and trails
+            particles.forEach(p => {
+                // Trail
+                if (p.trail.length > 1) {
+                    ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(p.trail[0].x, p.trail[0].y);
+                    p.trail.forEach(t => ctx.lineTo(t.x, t.y));
+                    ctx.stroke();
+                }
+
+                // Particle
+                if (!p.done) {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, particleRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // Draw source
+            ctx.fillStyle = '#666';
+            ctx.fillRect(10, 150, 30, 100);
+            ctx.fillStyle = '#888';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('α-Quelle', 8, 270);
+
+            // Labels
+            ctx.fillStyle = '#888';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Goldfolie', foilX - 20, 390);
+        }
+
+        // Animation loop
+        function animate() {
+            if (running) {
+                update();
+            }
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        document.getElementById('btnStart').addEventListener('click', function() {
+            running = !running;
+            this.textContent = running ? '⏸ Pause' : '▶ Starten';
+
+            if (running && !fireInterval) {
+                fireInterval = setInterval(fireParticle, 500);
+            } else if (!running && fireInterval) {
+                clearInterval(fireInterval);
+                fireInterval = null;
+            }
+        });
+
+        document.getElementById('btnReset').addEventListener('click', function() {
+            running = false;
+            document.getElementById('btnStart').textContent = '▶ Starten';
+            if (fireInterval) {
+                clearInterval(fireInterval);
+                fireInterval = null;
+            }
+            particles = [];
+            stats = { fired: 0, straight: 0, light: 0, strong: 0, back: 0 };
+            updateStats();
+            initNuclei();
+        });
+
+        document.getElementById('charge').addEventListener('input', function() {
+            document.getElementById('chargeValue').textContent = this.value;
+        });
+
+        // Initialize
+        initNuclei();
+        animate();
+    </script>
+</body>
+</html>

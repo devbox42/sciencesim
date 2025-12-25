@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung Kernphysik - Klasse 10</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --physik: #2c5aa0;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --error: #c62828;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: var(--physik);
+            margin-bottom: 10px;
+        }
+
+        .meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .meta-item {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .timer {
+            background: var(--physik);
+            color: white;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            font-weight: 600;
+            font-family: monospace;
+            display: inline-block;
+        }
+
+        .timer.warning { background: var(--warning); }
+        .timer.critical { background: var(--error); }
+
+        .name-input {
+            margin-top: 15px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .name-input label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .name-input input {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            font-size: 1em;
+            width: 200px;
+        }
+
+        .aufgabe {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .aufgabe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .aufgabe-title {
+            font-weight: 600;
+            color: var(--physik);
+        }
+
+        .aufgabe-punkte {
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+
+        .teilaufgabe {
+            margin-bottom: 20px;
+        }
+
+        .teilaufgabe-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .teilaufgabe p {
+            margin-bottom: 10px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .option:hover { background: var(--bg); }
+        .option.selected { background: #e3f2fd; border-color: var(--physik); }
+
+        .option input { display: none; }
+
+        .radio-custom {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option.selected .radio-custom {
+            border-color: var(--physik);
+        }
+
+        .option.selected .radio-custom::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: var(--physik);
+            border-radius: 50%;
+        }
+
+        .sortable-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sortable-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: var(--white);
+        }
+
+        .sortable-item select {
+            padding: 5px;
+            border: 1px solid var(--border);
+            font-size: 0.9em;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            border: 1px solid var(--border);
+            padding: 10px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        input[type="number"] { width: 100px; }
+        textarea { width: 100%; min-height: 80px; resize: vertical; }
+
+        .table-input {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-input th, .table-input td {
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .table-input th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        .table-input input {
+            width: 100%;
+            border: none;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1em;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+        .result {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 30px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result h2 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            color: var(--physik);
+        }
+
+        .result-summary {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        .result-detail {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-left: 3px solid var(--border);
+        }
+
+        .result-detail.correct { border-color: var(--success); background: #e8f5e9; }
+        .result-detail.partial { border-color: var(--warning); background: #fff3e0; }
+        .result-detail.incorrect { border-color: var(--error); background: #ffebee; }
+        .result-detail.manual { border-color: var(--text-muted); background: var(--bg); }
+
+        .hidden { display: none; }
+
+        @media print {
+            .timer, .btn { display: none; }
+            .result { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Stundenleistung Physik: Kernphysik</h1>
+            <div class="meta">
+                <span class="meta-item">Klasse 10</span>
+                <span class="meta-item">29 BE (+ 5 Bonus)</span>
+                <span class="meta-item">25 Minuten</span>
+            </div>
+            <div class="timer" id="timer">25:00</div>
+            <div class="name-input">
+                <div>
+                    <label>Name:</label><br>
+                    <input type="text" id="student-name" placeholder="Vorname Nachname">
+                </div>
+                <div>
+                    <label>Klasse:</label><br>
+                    <input type="text" id="student-class" placeholder="10a">
+                </div>
+            </div>
+        </header>
+
+        <form id="test-form">
+            <!-- AUFGABE 1 -->
+            <div class="aufgabe">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Aufgabe 1: Atommodelle</span>
+                    <span class="aufgabe-punkte">4 BE</span>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Ordne die Atommodelle chronologisch (1 = ältestes):</div>
+                    <div class="sortable-container">
+                        <div class="sortable-item">
+                            <select name="q1a_bohr">
+                                <option value="">--</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <span>Bohr</span>
+                        </div>
+                        <div class="sortable-item">
+                            <select name="q1a_dalton">
+                                <option value="">--</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <span>Dalton</span>
+                        </div>
+                        <div class="sortable-item">
+                            <select name="q1a_rutherford">
+                                <option value="">--</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <span>Rutherford</span>
+                        </div>
+                        <div class="sortable-item">
+                            <select name="q1a_thomson">
+                                <option value="">--</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                            <span>Thomson</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Welches Experiment führte zum Kern-Hülle-Modell?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q1b" value="a"><div class="radio-custom"></div>Kathodenstrahlexperiment</label>
+                        <label class="option"><input type="radio" name="q1b" value="b"><div class="radio-custom"></div>Rutherford-Streuversuch</label>
+                        <label class="option"><input type="radio" name="q1b" value="c"><div class="radio-custom"></div>Spektralanalyse</label>
+                        <label class="option"><input type="radio" name="q1b" value="d"><div class="radio-custom"></div>Photoeffekt</label>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">c) Was ist die wichtigste Erkenntnis daraus?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q1c" value="a"><div class="radio-custom"></div>Elektronen bewegen sich auf festen Bahnen</label>
+                        <label class="option"><input type="radio" name="q1c" value="b"><div class="radio-custom"></div>Das Atom hat einen kleinen, positiven Kern</label>
+                        <label class="option"><input type="radio" name="q1c" value="c"><div class="radio-custom"></div>Atome sind unteilbar</label>
+                        <label class="option"><input type="radio" name="q1c" value="d"><div class="radio-custom"></div>Elektronen sind negativ geladen</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUFGABE 2 -->
+            <div class="aufgabe">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Aufgabe 2: Strahlungsarten</span>
+                    <span class="aufgabe-punkte">6 BE</span>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Fülle die Tabelle aus:</div>
+                    <table class="table-input">
+                        <tr>
+                            <th>Eigenschaft</th>
+                            <th>α</th>
+                            <th>β</th>
+                            <th>γ</th>
+                        </tr>
+                        <tr>
+                            <td>Ladung</td>
+                            <td><input type="text" name="q2a_alpha_ladung" placeholder="z.B. +2"></td>
+                            <td><input type="text" name="q2a_beta_ladung" placeholder="z.B. -1"></td>
+                            <td><input type="text" name="q2a_gamma_ladung" placeholder="z.B. 0"></td>
+                        </tr>
+                        <tr>
+                            <td>Abschirmung</td>
+                            <td><input type="text" name="q2a_alpha_abschirm" placeholder="Material"></td>
+                            <td><input type="text" name="q2a_beta_abschirm" placeholder="Material"></td>
+                            <td><input type="text" name="q2a_gamma_abschirm" placeholder="Material"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Ra-226 zerfällt unter α-Strahlung. Was entsteht?</div>
+                    <div class="input-row">
+                        <span>²²⁶₈₈Ra →</span>
+                        <input type="text" name="q2b_produkt" placeholder="z.B. ²²²₈₆Rn" style="width: 150px;">
+                        <span>+ ⁴₂He</span>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">c) Warum ist α-Strahlung bei innerer Bestrahlung besonders gefährlich?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q2c" value="a"><div class="radio-custom"></div>Sie bewegt sich mit Lichtgeschwindigkeit</label>
+                        <label class="option"><input type="radio" name="q2c" value="b"><div class="radio-custom"></div>Sie hat ein hohes Ionisierungsvermögen</label>
+                        <label class="option"><input type="radio" name="q2c" value="c"><div class="radio-custom"></div>Sie durchdringt den Körper vollständig</label>
+                        <label class="option"><input type="radio" name="q2c" value="d"><div class="radio-custom"></div>Sie ist radioaktiv</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUFGABE 3 -->
+            <div class="aufgabe">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Aufgabe 3: Halbwertszeit</span>
+                    <span class="aufgabe-punkte">6 BE</span>
+                </div>
+                <p style="margin-bottom: 15px;">Ein Präparat hat 800 radioaktive Kerne. Die Halbwertszeit beträgt 4 Stunden.</p>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Wie viele Kerne sind nach 12 Stunden noch vorhanden?</div>
+                    <div class="input-row">
+                        <input type="number" name="q3a" placeholder="Anzahl">
+                        <span>Kerne</span>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Nach wie vielen Stunden sind noch 50 Kerne vorhanden?</div>
+                    <div class="input-row">
+                        <input type="number" name="q3b" placeholder="Zeit">
+                        <span>Stunden</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUFGABE 4 -->
+            <div class="aufgabe">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Aufgabe 4: Kernreaktionen</span>
+                    <span class="aufgabe-punkte">5 BE</span>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Was ist eine Kettenreaktion? (Freitext)</div>
+                    <textarea name="q4a" placeholder="Erkläre in 1-2 Sätzen..."></textarea>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Ordne zu: Kernspaltung oder Kernfusion?</div>
+                    <div class="sortable-container">
+                        <div class="sortable-item">
+                            <select name="q4b_sonne">
+                                <option value="">--</option>
+                                <option value="spaltung">Spaltung</option>
+                                <option value="fusion">Fusion</option>
+                            </select>
+                            <span>Findet in der Sonne statt</span>
+                        </div>
+                        <div class="sortable-item">
+                            <select name="q4b_uran">
+                                <option value="">--</option>
+                                <option value="spaltung">Spaltung</option>
+                                <option value="fusion">Fusion</option>
+                            </select>
+                            <span>Verwendet Uran als Brennstoff</span>
+                        </div>
+                        <div class="sortable-item">
+                            <select name="q4b_muell">
+                                <option value="">--</option>
+                                <option value="spaltung">Spaltung</option>
+                                <option value="fusion">Fusion</option>
+                            </select>
+                            <span>Erzeugt langlebigen Atommüll</span>
+                        </div>
+                        <div class="sortable-item">
+                            <select name="q4b_temp">
+                                <option value="">--</option>
+                                <option value="spaltung">Spaltung</option>
+                                <option value="fusion">Fusion</option>
+                            </select>
+                            <span>Benötigt extrem hohe Temperaturen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">c) Wo findet Kernfusion natürlich statt?</div>
+                    <div class="options">
+                        <label class="option"><input type="radio" name="q4c" value="a"><div class="radio-custom"></div>Im Erdkern</label>
+                        <label class="option"><input type="radio" name="q4c" value="b"><div class="radio-custom"></div>In Kernkraftwerken</label>
+                        <label class="option"><input type="radio" name="q4c" value="c"><div class="radio-custom"></div>In der Sonne / in Sternen</label>
+                        <label class="option"><input type="radio" name="q4c" value="d"><div class="radio-custom"></div>In Vulkanen</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUFGABE 5 -->
+            <div class="aufgabe">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Aufgabe 5: Strahlenschutz</span>
+                    <span class="aufgabe-punkte">4 BE</span>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Welche sind die "3 A's" des Strahlenschutzes?</div>
+                    <div class="options">
+                        <label class="option"><input type="checkbox" name="q5a" value="abstand"><div class="radio-custom"></div>Abstand</label>
+                        <label class="option"><input type="checkbox" name="q5a" value="abschirmung"><div class="radio-custom"></div>Abschirmung</label>
+                        <label class="option"><input type="checkbox" name="q5a" value="aufenthaltszeit"><div class="radio-custom"></div>Aufenthaltszeit</label>
+                        <label class="option"><input type="checkbox" name="q5a" value="aktivitaet"><div class="radio-custom"></div>Aktivität</label>
+                        <label class="option"><input type="checkbox" name="q5a" value="absorption"><div class="radio-custom"></div>Absorption</label>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Wie schützt sich ein Arzt bei γ-Strahlern? (Freitext)</div>
+                    <textarea name="q5b" placeholder="Nenne konkrete Maßnahmen..."></textarea>
+                </div>
+            </div>
+
+            <!-- AUFGABE 6 -->
+            <div class="aufgabe">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Aufgabe 6: Bewertung</span>
+                    <span class="aufgabe-punkte">4 BE</span>
+                </div>
+                <p style="margin-bottom: 15px;">Ein Patient soll wegen Rückenschmerzen geröntgt werden. Der Arzt schlägt ein CT vor (genauer, aber höhere Dosis).</p>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Nenne je einen Vorteil:</div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <label>Röntgen:</label>
+                            <input type="text" name="q6a_roentgen" style="width: 100%;" placeholder="Vorteil">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <label>CT:</label>
+                            <input type="text" name="q6a_ct" style="width: 100%;" placeholder="Vorteil">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Sollte der Patient das CT machen? Begründe mit Nutzen/Risiko:</div>
+                    <textarea name="q6b" placeholder="Deine begründete Stellungnahme..."></textarea>
+                </div>
+            </div>
+
+            <!-- ZUSATZAUFGABE -->
+            <div class="aufgabe" style="border: 2px dashed var(--physik);">
+                <div class="aufgabe-header">
+                    <span class="aufgabe-title">Zusatzaufgabe (Bonus)</span>
+                    <span class="aufgabe-punkte">5 BE (zählt nicht negativ)</span>
+                </div>
+                <p style="margin-bottom: 15px;">Pro Sekunde werden 3·10¹⁹ U-235-Kerne gespalten. Pro Spaltung: 200 MeV. (1 MeV = 1,6·10⁻¹³ J)</p>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">a) Thermische Leistung in MW:</div>
+                    <div class="input-row">
+                        <input type="number" name="qbonus_a" placeholder="Leistung">
+                        <span>MW</span>
+                    </div>
+                </div>
+
+                <div class="teilaufgabe">
+                    <div class="teilaufgabe-label">b) Warum ist die elektrische Leistung geringer?</div>
+                    <textarea name="qbonus_b" placeholder="Kurze Erklärung..."></textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">Test abgeben</button>
+        </form>
+
+        <div class="result" id="result">
+            <h2>Auswertung</h2>
+            <div class="result-summary" id="result-summary"></div>
+            <div id="result-details"></div>
+            <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.85em;">
+                Hinweis: Freitext-Aufgaben werden von der Lehrkraft manuell bewertet.
+            </p>
+            <button class="btn" onclick="window.print()">Ergebnis drucken</button>
+        </div>
+    </div>
+
+    <script>
+        // Timer
+        let timeLeft = 25 * 60;
+        const timerEl = document.getElementById('timer');
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            const min = Math.floor(timeLeft / 60);
+            const sec = timeLeft % 60;
+            timerEl.textContent = `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+
+            if (timeLeft <= 300) timerEl.classList.add('warning');
+            if (timeLeft <= 60) timerEl.classList.add('critical');
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                document.getElementById('test-form').dispatchEvent(new Event('submit'));
+            }
+        }, 1000);
+
+        // Option selection styling
+        document.querySelectorAll('.option').forEach(opt => {
+            opt.addEventListener('click', function() {
+                const input = this.querySelector('input');
+                if (input.type === 'radio') {
+                    this.parentElement.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                } else {
+                    this.classList.toggle('selected');
+                }
+            });
+        });
+
+        // Grading
+        const answers = {
+            q1a_dalton: '1', q1a_thomson: '2', q1a_rutherford: '3', q1a_bohr: '4',
+            q1b: 'b', q1c: 'b',
+            q2a_alpha_ladung: ['+2', '2+', '2'],
+            q2a_beta_ladung: ['-1', '-', '1-'],
+            q2a_gamma_ladung: ['0', 'keine', 'null'],
+            q2a_alpha_abschirm: ['papier', 'haut'],
+            q2a_beta_abschirm: ['alu', 'aluminium'],
+            q2a_gamma_abschirm: ['blei', 'beton'],
+            q2b_produkt: ['222', 'rn', 'radon', '222rn', 'rn-222', '222_86rn'],
+            q2c: 'b',
+            q3a: 100, q3b: 16,
+            q4b_sonne: 'fusion', q4b_uran: 'spaltung', q4b_muell: 'spaltung', q4b_temp: 'fusion',
+            q4c: 'c',
+            q5a: ['abstand', 'abschirmung', 'aufenthaltszeit'],
+            qbonus_a: [960, 950, 970]
+        };
+
+        const points = {
+            q1a: 2, q1b: 1, q1c: 1,
+            q2a: 3, q2b: 2, q2c: 1,
+            q3a: 3, q3b: 3,
+            q4a: 2, q4b: 2, q4c: 1,
+            q5a: 1.5, q5b: 2.5,
+            q6a: 2, q6b: 2,
+            qbonus: 5
+        };
+
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            clearInterval(timerInterval);
+
+            const formData = new FormData(this);
+            let totalPoints = 0;
+            let maxPoints = 29;
+            let details = [];
+
+            // Q1a: Chronologie
+            let q1a_points = 0;
+            if (formData.get('q1a_dalton') === '1') q1a_points += 0.5;
+            if (formData.get('q1a_thomson') === '2') q1a_points += 0.5;
+            if (formData.get('q1a_rutherford') === '3') q1a_points += 0.5;
+            if (formData.get('q1a_bohr') === '4') q1a_points += 0.5;
+            totalPoints += q1a_points;
+            details.push({q: '1a', p: q1a_points, max: 2, status: q1a_points === 2 ? 'correct' : q1a_points > 0 ? 'partial' : 'incorrect'});
+
+            // Q1b, Q1c: MC
+            if (formData.get('q1b') === 'b') { totalPoints += 1; details.push({q: '1b', p: 1, max: 1, status: 'correct'}); }
+            else details.push({q: '1b', p: 0, max: 1, status: 'incorrect'});
+
+            if (formData.get('q1c') === 'b') { totalPoints += 1; details.push({q: '1c', p: 1, max: 1, status: 'correct'}); }
+            else details.push({q: '1c', p: 0, max: 1, status: 'incorrect'});
+
+            // Q2a: Tabelle (vereinfacht)
+            let q2a_points = 0;
+            const q2a_alpha_l = (formData.get('q2a_alpha_ladung') || '').toLowerCase();
+            const q2a_beta_l = (formData.get('q2a_beta_ladung') || '').toLowerCase();
+            const q2a_gamma_l = (formData.get('q2a_gamma_ladung') || '').toLowerCase();
+            const q2a_alpha_a = (formData.get('q2a_alpha_abschirm') || '').toLowerCase();
+            const q2a_beta_a = (formData.get('q2a_beta_abschirm') || '').toLowerCase();
+            const q2a_gamma_a = (formData.get('q2a_gamma_abschirm') || '').toLowerCase();
+
+            if (q2a_alpha_l.includes('2') || q2a_alpha_l.includes('+')) q2a_points += 0.5;
+            if (q2a_beta_l.includes('-') || q2a_beta_l.includes('1')) q2a_points += 0.5;
+            if (q2a_gamma_l.includes('0') || q2a_gamma_l.includes('kein')) q2a_points += 0.5;
+            if (q2a_alpha_a.includes('papier') || q2a_alpha_a.includes('haut')) q2a_points += 0.5;
+            if (q2a_beta_a.includes('alu')) q2a_points += 0.5;
+            if (q2a_gamma_a.includes('blei') || q2a_gamma_a.includes('beton')) q2a_points += 0.5;
+            totalPoints += q2a_points;
+            details.push({q: '2a', p: q2a_points, max: 3, status: q2a_points === 3 ? 'correct' : q2a_points > 0 ? 'partial' : 'incorrect'});
+
+            // Q2b: Zerfallsprodukt
+            const q2b = (formData.get('q2b_produkt') || '').toLowerCase();
+            let q2b_points = 0;
+            if (q2b.includes('222') || q2b.includes('rn') || q2b.includes('radon')) q2b_points = 2;
+            totalPoints += q2b_points;
+            details.push({q: '2b', p: q2b_points, max: 2, status: q2b_points === 2 ? 'correct' : 'incorrect'});
+
+            // Q2c
+            if (formData.get('q2c') === 'b') { totalPoints += 1; details.push({q: '2c', p: 1, max: 1, status: 'correct'}); }
+            else details.push({q: '2c', p: 0, max: 1, status: 'incorrect'});
+
+            // Q3a, Q3b: Numerisch
+            const q3a = parseInt(formData.get('q3a'));
+            if (q3a === 100) { totalPoints += 3; details.push({q: '3a', p: 3, max: 3, status: 'correct'}); }
+            else if (q3a >= 95 && q3a <= 105) { totalPoints += 2; details.push({q: '3a', p: 2, max: 3, status: 'partial'}); }
+            else details.push({q: '3a', p: 0, max: 3, status: 'incorrect'});
+
+            const q3b = parseInt(formData.get('q3b'));
+            if (q3b === 16) { totalPoints += 3; details.push({q: '3b', p: 3, max: 3, status: 'correct'}); }
+            else details.push({q: '3b', p: 0, max: 3, status: 'incorrect'});
+
+            // Q4a: Freitext - manuell
+            details.push({q: '4a', p: '?', max: 2, status: 'manual', text: formData.get('q4a')});
+
+            // Q4b: Zuordnung
+            let q4b_points = 0;
+            if (formData.get('q4b_sonne') === 'fusion') q4b_points += 0.5;
+            if (formData.get('q4b_uran') === 'spaltung') q4b_points += 0.5;
+            if (formData.get('q4b_muell') === 'spaltung') q4b_points += 0.5;
+            if (formData.get('q4b_temp') === 'fusion') q4b_points += 0.5;
+            totalPoints += q4b_points;
+            details.push({q: '4b', p: q4b_points, max: 2, status: q4b_points === 2 ? 'correct' : q4b_points > 0 ? 'partial' : 'incorrect'});
+
+            // Q4c
+            if (formData.get('q4c') === 'c') { totalPoints += 1; details.push({q: '4c', p: 1, max: 1, status: 'correct'}); }
+            else details.push({q: '4c', p: 0, max: 1, status: 'incorrect'});
+
+            // Q5a: Checkbox
+            const q5a_selected = formData.getAll('q5a');
+            let q5a_points = 0;
+            const correct5a = ['abstand', 'abschirmung', 'aufenthaltszeit'];
+            correct5a.forEach(c => { if (q5a_selected.includes(c)) q5a_points += 0.5; });
+            if (q5a_selected.includes('aktivitaet') || q5a_selected.includes('absorption')) q5a_points = Math.max(0, q5a_points - 0.5);
+            totalPoints += q5a_points;
+            details.push({q: '5a', p: q5a_points, max: 1.5, status: q5a_points === 1.5 ? 'correct' : q5a_points > 0 ? 'partial' : 'incorrect'});
+
+            // Q5b: Freitext - manuell
+            details.push({q: '5b', p: '?', max: 2.5, status: 'manual', text: formData.get('q5b')});
+
+            // Q6a, Q6b: Freitext - manuell
+            details.push({q: '6a', p: '?', max: 2, status: 'manual', text: `Röntgen: ${formData.get('q6a_roentgen')}, CT: ${formData.get('q6a_ct')}`});
+            details.push({q: '6b', p: '?', max: 2, status: 'manual', text: formData.get('q6b')});
+
+            // Bonus
+            const bonus_a = parseInt(formData.get('qbonus_a'));
+            let bonus_points = 0;
+            if (bonus_a >= 950 && bonus_a <= 970) bonus_points += 3;
+            details.push({q: 'Bonus a', p: bonus_points, max: 3, status: bonus_points === 3 ? 'correct' : 'incorrect'});
+            details.push({q: 'Bonus b', p: '?', max: 2, status: 'manual', text: formData.get('qbonus_b')});
+
+            // Display results
+            const autoPoints = totalPoints;
+            const manualMax = 2 + 2.5 + 2 + 2; // Q4a, Q5b, Q6a, Q6b
+
+            document.getElementById('result-summary').innerHTML = `
+                <strong>${document.getElementById('student-name').value || 'Schüler'}</strong> (${document.getElementById('student-class').value || 'Klasse'})<br>
+                Automatisch: <strong>${autoPoints.toFixed(1)} BE</strong> / ${maxPoints - manualMax} BE<br>
+                Manuell zu bewerten: ${manualMax} BE<br>
+                ${bonus_points > 0 ? `Bonus: +${bonus_points} BE` : ''}
+            `;
+
+            let detailsHtml = '';
+            details.forEach(d => {
+                detailsHtml += `<div class="result-detail ${d.status}">
+                    <strong>Aufgabe ${d.q}:</strong> ${d.p}/${d.max} BE
+                    ${d.text ? `<br><em>"${d.text.substring(0, 100)}${d.text.length > 100 ? '...' : ''}"</em>` : ''}
+                </div>`;
+            });
+            document.getElementById('result-details').innerHTML = detailsHtml;
+
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').textContent = 'Abgegeben';
+
+            window.scrollTo({top: document.getElementById('result').offsetTop, behavior: 'smooth'});
+        });
+    </script>
+</body>
+</html>
