@@ -264,14 +264,38 @@ Bei Lernpfaden mit begleitendem Arbeitsblatt: Nach jedem Content-Schritt einen *
 
 ## Materialstruktur pro Unterrichtseinheit
 
+### Langentwurf-Workflow (empfohlen)
+
+**Vor der Materialerstellung:** Langentwurf erstellen (Score >= 9.0), dann Materialien.
+
+```
+1. Langentwurf (LE-XX) → Score >= 9.0?
+         │
+    ┌────┴────┐
+    Nein      Ja
+    │         │
+ Iteration   2. Materialien erstellen (LP, AB, LH, ML)
+```
+
+**Template:** `templates/lesson-plan/langentwurf-template.tex`
+
+**Konfiguration:**
+- **Tier:** 1 (vollständig), 2 (standard), 3 (minimal)
+- **Profil:** A-E (Lerngruppen-Typ)
+- **Fach:** Bestimmt Testdifferenzierung
+
+Siehe `templates/lesson-plan/README.md` für Details.
+
 ### Pflicht-Dokumente pro Stunde
 
 | Nr | Typ | Dateiname-Muster | Beschreibung |
 |----|-----|------------------|--------------|
+| 0 | Langentwurf | `LE-XX-kurzname.tex` | Unterrichtsentwurf (Tier 1/2/3) |
 | 1 | Lernpfad | `LP-XX-kurzname.html` | Interaktiver Lernpfad |
 | 2 | Arbeitsblatt | `AB-XX-kurzname.tex` | Wissensbasis + Aufgaben (Hefter) |
 | 3 | Lehrerhinweise | `LH-XX-kurzname.tex` | Kurz-Lessonplan + Lösungen |
-| 4 | Simulation | `SIM-XX-kurzname.html` | Interaktive Simulation (wo sinnvoll) |
+| 4 | Musterlösung | `ML-XX-kurzname.tex` | AB mit Lösungen (rot) |
+| 5 | Simulation | `SIM-XX-kurzname.html` | Interaktive Simulation (wo sinnvoll) |
 
 **XX** = zweistellige Stundennummer (01, 02, 03...)
 
@@ -581,6 +605,9 @@ greenhouse-lernpfade/
 │       └── sciencesim-css.md
 │
 ├── templates/                ← Vorlagen
+│   ├── lesson-plan/
+│   │   ├── langentwurf-template.tex  ← Langentwurf (Tier 1/2/3)
+│   │   └── README.md
 │   ├── quiz/
 │   │   ├── quiz-template.html
 │   │   └── decoder.html
@@ -665,7 +692,7 @@ DRAFT erstellen
       ↓
 DIDAKTIK-SCORE ausgeben (10 Dimensionen)
       ↓
-  Score ≥ 8.0? ───Ja───→ ✅ FREIGABE
+  Score ≥ 9.0? ───Ja───→ ✅ FREIGABE
       │
      Nein
       ↓
@@ -709,7 +736,7 @@ DIDAKTIK-SCORE: [Produktname]
 ═══════════════════════════════════════════════════
 GESAMT: [X.X]/10  →  [✅ Freigabe / ⚠️ Iteration nötig]
 
-[Falls < 8.0:]
+[Falls < 9.0:]
 TOP-3 VERBESSERUNGEN:
 1. [Schwächste Dimension]: [Konkrete Maßnahme]
 2. [Zweitschlechteste]:    [Konkrete Maßnahme]
@@ -733,9 +760,9 @@ TOP-3 VERBESSERUNGEN:
 | Score | Status | Aktion |
 |-------|--------|--------|
 | < 6.0 | ❌ | Grundlegende Überarbeitung |
-| 6.0-7.9 | ⚠️ | Iteration: Top-3 Schwächen fixen |
-| **≥ 8.0** | ✅ | **Freigabe** |
-| ≥ 9.0 | ⭐ | Premium-Qualität |
+| 6.0-7.9 | ⚠️ | Überarbeitung erforderlich |
+| 8.0-8.9 | ⚠️ | Iteration empfohlen |
+| **≥ 9.0** | ✅ | **FREIGABE (Premium-Qualität)** |
 
 ### Schnell-Check (5 Killer-Fragen)
 

@@ -1,121 +1,156 @@
-# Langentwurf-Template
+# Langentwurf-Template v2.0
 
 Standardisiertes Template für Unterrichtsentwürfe nach den Vorgaben der Fächerübergreifenden Handreichung M-V.
 
+## Konfigurationsdimensionen
+
+Das Template hat **drei Konfigurationsachsen**:
+
+| Achse | Optionen | Beschreibung |
+|-------|----------|--------------|
+| **Tier** | 1, 2, 3 | Detailtiefe des Entwurfs |
+| **Profil** | A, B, C, D, E | Lerngruppen-Typ |
+| **Fach** | physik, chemie, informatik, spanisch | Bestimmt Testdifferenzierung |
+
 ## Tier-System
 
-Das Template verwendet ein 3-Tier-System zur Skalierung des Planungsaufwands:
+| Tier | Name | Seiten | Anwendung |
+|------|------|--------|-----------|
+| **1** | Vollständig | ~12 | Prüfungsstunden, Unterrichtsbesuche, komplexe Themen |
+| **2** | Standard | ~8 | Normale Unterrichtsstunden, neue Themen |
+| **3** | Minimal | ~3 | Übungsstunden, Wiederholung, Routine |
 
-| Tier | Name | Aufwand | Anwendung |
-|------|------|---------|-----------|
-| **1** | Vollständig | Hoch | Prüfungsstunden, komplexe Themen, Unterrichtsbesuche |
-| **2** | Standard | Mittel | Normale Unterrichtsstunden, neue Themen |
-| **3** | Minimal | Niedrig | Übungsstunden, Wiederholung, Routine |
+### Tier 1: Vollständig
 
-### Tier 1: Vollständig (11 Abschnitte)
-
-Alle Komponenten der M-V Handreichung:
-
-1. Deckblatt
-2. Inhaltsverzeichnis
-3. Bedingungsanalyse (6 Unterabschnitte)
-4. Sachanalyse (vollständig mit Kontrastierung)
-5. Didaktische Überlegungen
-6. Stundenziele (Grob- und Feinziele)
-7. Methodische Überlegungen (8 Unterabschnitte)
-8. Ausführlicher Verlaufsplan
-9. Reflexion (nach Durchführung)
-10. Anlagen
-11. Lösungen
-12. Publikationsverzeichnis
-13. Didaktik-Score (mit Begründungen)
-
-**Verwenden bei:**
-- Lehrproben / Unterrichtsbesuche
-- Staatsexamensprüfungen
-- Komplexe grammatische Strukturen (gustar, subjuntivo, etc.)
-- Einführung neuer Konzepte
-- Showcase-Stunden
-
-### Tier 2: Standard (8 Abschnitte)
-
-Ohne Reflexion, verkürzte Analysen:
-
-1. Deckblatt
-2. Inhaltsverzeichnis
-3. Bedingungsanalyse (verkürzt)
-4. Sachanalyse (Kernkonzepte)
-5. Didaktische Überlegungen
-6. Stundenziele
-7. Methodische Überlegungen
-8. Ausführlicher Verlaufsplan
+1. Deckblatt + Inhaltsverzeichnis
+2. Bedingungsanalyse (6 Unterabschnitte)
+3. Sachanalyse (vollständig mit Kontrastierung)
+4. Didaktische Analyse
+5. Stundenziele (Grob- und Feinziele)
+6. Methodische Analyse (8 Unterabschnitte)
+7. Verlaufsplanung
+8. Reflexion (nach Durchführung)
 9. Anlagen
 10. Lösungen
-11. Publikationsverzeichnis
-12. Didaktik-Score (ohne Begründungen)
+11. Literatur
+12. Didaktik-Score (mit Begründungen)
 
-**Verwenden bei:**
-- Reguläre Unterrichtsstunden
-- Neue Themeneinführungen
-- Wichtige Übungsphasen
-- Vorbereitung auf Leistungskontrollen
+### Tier 2: Standard
 
-### Tier 3: Minimal (4 Abschnitte)
+- Ohne Reflexion
+- Verkürzte Sachanalyse
+- Score ohne Detailbegründungen
 
-Nur das Wesentliche:
+### Tier 3: Minimal
 
-1. Stundenziele (Grob- und Feinziele)
-2. Ausführlicher Verlaufsplan
-3. Anlagen
-4. Lösungen
-5. Didaktik-Score (nur Tabelle)
+- Nur Stundenziele
+- Verlaufsplanung
+- Lösungen
+- Score (nur Tabelle)
 
-**Verwenden bei:**
-- Übungsstunden
-- Wiederholung bekannter Inhalte
-- Routine-Lektionen
-- Vertretungsstunden mit bekanntem Material
+## Lerngruppen-Profile
+
+Fiktive Referenzklassen für konsistente Materialentwicklung:
+
+| Profil | Bezeichnung | Klassenstufe | Zusammensetzung |
+|--------|-------------|--------------|-----------------|
+| **A** | Gesamtschule heterogen | 7-9 | BR 20%, MR 50%, GY 30% + Inklusion |
+| **B** | E-Kurs Gesamtschule | 9-10 | MR 30%, GY 70% |
+| **C** | G-Kurs Gesamtschule | 9-10 | BR 40%, MR 60% + Inklusion |
+| **D** | Gymnasium Sek I | 7-10 | 100% GY |
+| **E** | Gymnasium Sek II | 11-12 | 100% Abiturniveau |
+
+### Profil A: Gesamtschule heterogen
+
+```
+Klassenstufe:        7-9
+Zusammensetzung:     BR (20%), MR (50%), GY (30%)
+Inklusion:           2-3 SuS mit LRS, 1 SuS mit Förderbedarf
+Testdifferenzierung: 3 Niveaus (*/**/​***)
+Besonderheiten:      Hohe Heterogenität, intensive Differenzierung nötig
+```
+
+### Profil B: E-Kurs Gesamtschule
+
+```
+Klassenstufe:        9-10
+Zusammensetzung:     MR (30%), GY (70%)
+Inklusion:           Ggf. 1 SuS mit LRS (Nachteilsausgleich)
+Testdifferenzierung: 1-2 Niveaus (Standard + Zusatz)
+Besonderheiten:      Leistungsorientiert, GY-Vorbereitung
+```
+
+### Profil C: G-Kurs Gesamtschule
+
+```
+Klassenstufe:        9-10
+Zusammensetzung:     BR (40%), MR (60%)
+Inklusion:           2-4 SuS mit LRS, teils Förderbedarf
+Testdifferenzierung: 2 Niveaus (Basis + Standard)
+Besonderheiten:      Praxisorientiert, MR-Vorbereitung
+```
+
+### Profil D: Gymnasium Sek I
+
+```
+Klassenstufe:        7-10
+Zusammensetzung:     100% GY-Niveau
+Inklusion:           Ggf. einzelne SuS mit LRS (Nachteilsausgleich)
+Testdifferenzierung: 1 Niveau (mit BE-Differenzierung)
+Besonderheiten:      Homogen, Abitur-Vorbereitung
+```
+
+### Profil E: Gymnasium Sek II / Oberstufe
+
+```
+Klassenstufe:        11-12
+Zusammensetzung:     100% Abiturniveau
+Kursart:             Grundkurs / Leistungskurs
+Testdifferenzierung: 1 Niveau (15-NP-Skala)
+Besonderheiten:      Wissenschaftspropädeutisch, EPA-konform
+```
+
+## Testdifferenzierung nach Fach
+
+| Fach | Differenzierte Tests | Begründung |
+|------|---------------------|------------|
+| **Physik** | Ja (3 Niveaus) | Unterschiedliche Abschlüsse in einer Klasse |
+| **Chemie** | Ja (3 Niveaus) | Unterschiedliche Abschlüsse in einer Klasse |
+| **Informatik** | Nein (1 Niveau) | Wahlfach, homogenere Gruppe |
+| **Spanisch** | Nein (1 Niveau) | Wahlfach, homogenere Gruppe |
 
 ## Verwendung
 
 ### 1. Template kopieren
 
 ```bash
-cp templates/lesson-plan/langentwurf-template.tex projects/FACH/PROJEKT/LE-XX-thema.tex
+cp templates/lesson-plan/langentwurf-template.tex \
+   projects/FACH/PROJEKT/LE-XX-thema.tex
 ```
 
-### 2. Tier festlegen
-
-In der Datei die Zeile anpassen:
+### 2. Konfiguration anpassen
 
 ```latex
-\newcommand{\plantier}{1}  % 1, 2 oder 3
+% --- TIER (1, 2 oder 3) ---
+\newcommand{\plantier}{1}
+
+% --- LERNGRUPPEN-PROFIL (A, B, C, D oder E) ---
+\newcommand{\lerngruppenprofil}{A}
+
+% --- FACH (physik, chemie, informatik, spanisch) ---
+\newcommand{\fachid}{physik}
 ```
 
 ### 3. Variablen ausfüllen
 
 ```latex
-% --- Metadaten ---
-\newcommand{\fach}{Spanisch}
-\newcommand{\jahrgangsstufe}{11}
-\newcommand{\stundenthema}{Das Verb gustar}
-% ... etc.
+\newcommand{\fach}{Physik}
+\newcommand{\jahrgangsstufe}{8}
+\newcommand{\stundenthema}{Ohmsches Gesetz}
+\newcommand{\fachfarbe}{2c5aa0}  % Physik-Blau
 ```
 
-### 4. Fachfarbe setzen
-
-```latex
-\newcommand{\fachfarbe}{c41e3a}  % Hex ohne #
-```
-
-| Fach | Farbe |
-|------|-------|
-| Physik | `2c5aa0` |
-| Chemie | `2a7a4b` |
-| Informatik | `b35c00` |
-| Spanisch | `c41e3a` |
-
-### 5. Kompilieren
+### 4. Kompilieren
 
 ```bash
 pdflatex LE-XX-thema.tex
@@ -124,7 +159,7 @@ pdflatex LE-XX-thema.tex  # 2x für Inhaltsverzeichnis
 
 ## Didaktik-Score
 
-Der integrierte Score basiert auf 10 Dimensionen:
+**Ziel-Score: >= 9.0 (Premium-Qualität)**
 
 | # | Dimension | Gewichtung |
 |---|-----------|------------|
@@ -139,77 +174,107 @@ Der integrierte Score basiert auf 10 Dimensionen:
 | 9 | Inklusion (UDL) | 10% |
 | 10 | Praktikabilität | 5% |
 
-### Score-Schwellwerte
+### Score-Schwellen
 
 | Score | Status | Aktion |
 |-------|--------|--------|
-| >= 9.0 | Premium | Freigabe, Mustermaterial |
-| >= 8.0 | Gut | Freigabe |
-| 6.0-7.9 | Okay | Iteration empfohlen |
-| < 6.0 | Mangelhaft | Grundlegende Überarbeitung |
+| >= 9.0 | FREIGABE | Premium-Qualität, einsatzbereit |
+| 8.0-8.9 | Iteration | Empfohlene Überarbeitung |
+| 6.0-7.9 | Überarbeitung | Erforderliche Verbesserungen |
+| < 6.0 | Neukonzeption | Grundlegende Überarbeitung |
 
-## Entscheidungsbaum: Welchen Tier wählen?
+## Abschnitts-Terminologie
+
+Korrekte didaktische Fachbegriffe:
+
+| Abschnitt | Bezeichnung |
+|-----------|-------------|
+| 1 | Bedingungsanalyse |
+| 2 | Sachanalyse |
+| 3 | Didaktische Analyse |
+| 4 | Stundenziele |
+| 5 | Methodische Analyse |
+| 6 | Verlaufsplanung |
+| 7 | Reflexion |
+| 8 | Anlagen |
+| 9 | Lösungen |
+| 10 | Literatur |
+| 11 | Didaktik-Score |
+
+## Entscheidungsmatrix
 
 ```
-Ist es eine Prüfungsstunde / Unterrichtsbesuch?
-├── Ja → Tier 1
-└── Nein
-    └── Ist das Thema neu oder komplex?
-        ├── Ja → Tier 1 oder 2
-        └── Nein
-            └── Ist es eine Übungs-/Wiederholungsstunde?
-                ├── Ja → Tier 3
-                └── Nein → Tier 2
+                          ┌─────────────────────────────────────┐
+                          │      Welches Profil wählen?         │
+                          └─────────────────────────────────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    │                     │                     │
+              Gesamtschule           Gymnasium            Gymnasium
+                 Kl. 7-9             Sek I                Sek II
+                    │                     │                     │
+         ┌──────────┴──────────┐          │                     │
+         │                     │          │                     │
+      heterogen            Kl. 9-10       │                     │
+      (Profil A)               │          │                     │
+                        ┌──────┴──────┐   │                     │
+                        │             │   │                     │
+                     E-Kurs        G-Kurs │                     │
+                   (Profil B)   (Profil C)│                     │
+                                          │                     │
+                                     (Profil D)            (Profil E)
 ```
 
-## Workflow-Empfehlung
+## Workflow: Langentwurf -> Materialien
 
-### Vor der Materialerstellung
-
-1. **Tier wählen** basierend auf Entscheidungsbaum
-2. **Langentwurf erstellen** (oder zumindest Stundenziele + Verlaufsplan)
-3. **Score prüfen** - Ziel: >= 8.0
-4. **Dann erst:** LP, AB, LH erstellen
-
-### Nach der Materialerstellung
-
-1. **Score aktualisieren** mit finalen Werten
-2. **Reflexion ausfüllen** (nach Durchführung, nur Tier 1)
-3. **Template für ähnliche Stunden** wiederverwenden
+```
+1. Profil + Tier wählen
+         │
+         ▼
+2. Langentwurf erstellen
+   (LE-XX-thema.tex)
+         │
+         ▼
+3. Score prüfen (>= 9.0?)
+         │
+    ┌────┴────┐
+    │ Nein    │ Ja
+    ▼         ▼
+ Iteration  4. Materialien erstellen:
+    │          - LP-XX (Lernpfad)
+    │          - AB-XX (Arbeitsblatt)
+    │          - LH-XX (Lehrerhinweise)
+    │          - ML-XX (Musterlösung)
+    │
+    └──────────────────────────────────────►
+                                     Fertig
+```
 
 ## Dateibenennung
 
 ```
 LE-XX-kurzname.tex     # Langentwurf
-LE-XX-kurzname.pdf     # Kompiliertes PDF
+LE-XX-kurzname.pdf
 
-# Begleitende Materialien:
 LP-XX-kurzname.html    # Lernpfad
 AB-XX-kurzname.tex     # Arbeitsblatt
 LH-XX-kurzname.tex     # Lehrerhinweise
 ML-XX-kurzname.tex     # Musterlösung
 ```
 
-XX = zweistellige Stundennummer (01, 02, 03...)
-
-## Beispiel: Gustar-Stunde
-
-```
-projects/spanisch/oberstufe-gustos/
-├── LE-01-gustar-langentwurf.tex  # Tier 1, vollständig
-├── LE-01-gustar-langentwurf.pdf
-├── LH-01-gustar.tex              # Lehrerhinweise
-├── LH-01-gustar.pdf
-├── arbeitsblatt-gustos.tex       # AB
-├── arbeitsblatt-gustos.pdf
-├── lernpfad.html                 # Interaktiver LP
-└── SCORE-MATRIX-9-10.md          # Detaillierte Score-Analyse
-```
-
 ## Tipps
 
-1. **Tier 1 für das erste Mal** - Einmal richtig planen spart später Zeit
-2. **Kopieren und anpassen** - Ähnliche Themen können Struktur übernehmen
-3. **Score ernst nehmen** - Unter 8.0 bedeutet echte Schwächen
-4. **Reflexion nutzen** - Nur so verbessert sich die Planung langfristig
-5. **Variablen konsequent** - Alle Metadaten zentral änderbar
+1. **Tier 1 beim ersten Mal** - Einmal richtig planen spart später Zeit
+2. **Profil konsequent nutzen** - Ermöglicht Wiederverwendung
+3. **Score >= 9.0 anstreben** - Unter 9.0 bedeutet echte Lücken
+4. **Reflexion nutzen** (Tier 1) - Verbessert zukünftige Planung
+5. **Fachfarbe korrekt setzen** - Visuelle Konsistenz
+
+## Fachfarben
+
+| Fach | Hex-Code |
+|------|----------|
+| Physik | `2c5aa0` |
+| Chemie | `2a7a4b` |
+| Informatik | `b35c00` |
+| Spanisch | `c41e3a` |
