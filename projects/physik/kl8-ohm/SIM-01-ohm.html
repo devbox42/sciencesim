@@ -247,11 +247,11 @@
 
         <div class="sim-layout">
             <div class="circuit-area">
-                <div class="circuit-title">Schaltplan (DIN-Norm)</div>
-                <canvas id="circuit-canvas" width="500" height="320"></canvas>
+                <div class="circuit-title">Schaltplan</div>
+                <canvas id="circuit-canvas" width="480" height="340"></canvas>
                 <div class="info-box">
                     <strong>Bedienung:</strong> Verändere die Spannung U mit dem Schieberegler.
-                    Die blauen Punkte zeigen die Elektronenbewegung (physikalische Stromrichtung: von − nach +).
+                    Die blauen Punkte zeigen die Elektronenbewegung (von − nach +).
                 </div>
             </div>
 
@@ -343,34 +343,73 @@
         const graphCtx = graphCanvas.getContext('2d');
 
         // ═══════════════════════════════════════════════════════════════
-        // SCHALTPLAN-GEOMETRIE (alle Koordinaten)
+        // SCHALTPLAN-LAYOUT
+        // Rechteckiger Stromkreis mit Bauteilen IN den Leitungen
         // ═══════════════════════════════════════════════════════════════
 
-        // Rechteckiger Stromkreis
-        const circuit = {
-            left: 60,
-            right: 440,
-            top: 50,
-            bottom: 270
+        const L = {
+            // Äußere Abmessungen
+            marginX: 50,
+            marginY: 40,
+            width: 380,
+            height: 260,
+
+            // Leitungshöhen
+            wireY: {
+                top: 60,      // Obere horizontale Leitung
+                bottom: 280   // Untere horizontale Leitung
+            },
+            wireX: {
+                left: 60,     // Linke vertikale Leitung
+                right: 420    // Rechte vertikale Leitung
+            },
+
+            // Spannungsquelle (links, vertikal)
+            source: {
+                x: 60,
+                yCenter: 170,
+                gap: 20       // Abstand zwischen + und -
+            },
+
+            // Widerstand (oben, horizontal)
+            resistor: {
+                xCenter: 200,
+                y: 60,
+                width: 70,
+                height: 28
+            },
+
+            // Amperemeter (oben, horizontal)
+            ammeter: {
+                xCenter: 340,
+                y: 60,
+                radius: 22
+            }
         };
 
-        // Bauteile-Positionen
-        const source = { x: circuit.left, yPlus: 130, yMinus: 170 };
-        const resistor = { x: 180, y: circuit.top, w: 80, h: 35 };
-        const ammeter = { x: 380, y: circuit.top, r: 25 };
+        // Berechnete Positionen
+        const sourceYPlus = L.source.yCenter - L.source.gap;
+        const sourceYMinus = L.source.yCenter + L.source.gap;
+        const resLeft = L.resistor.xCenter - L.resistor.width / 2;
+        const resRight = L.resistor.xCenter + L.resistor.width / 2;
+        const ampLeft = L.ammeter.xCenter - L.ammeter.radius;
+        const ampRight = L.ammeter.xCenter + L.ammeter.radius;
 
-        // Leitungspfad für Elektronen (gegen Uhrzeigersinn = physik. Stromrichtung)
+        // ═══════════════════════════════════════════════════════════════
+        // ELEKTRONENPFAD (gegen Uhrzeigersinn)
+        // ═══════════════════════════════════════════════════════════════
+
         const wirePath = [
-            { x: circuit.left, y: source.yMinus },      // Start bei −
-            { x: circuit.left, y: circuit.bottom },     // links unten
-            { x: circuit.right, y: circuit.bottom },    // rechts unten
-            { x: circuit.right, y: circuit.top },       // rechts oben
-            { x: ammeter.x + ammeter.r, y: circuit.top }, // vor Amperemeter
-            { x: ammeter.x - ammeter.r, y: circuit.top }, // nach Amperemeter
-            { x: resistor.x + resistor.w, y: circuit.top }, // vor Widerstand
-            { x: resistor.x, y: circuit.top },          // nach Widerstand
-            { x: circuit.left, y: circuit.top },        // links oben
-            { x: circuit.left, y: source.yPlus },       // zurück zu +
+            { x: L.wireX.left, y: sourceYMinus },      // Bei − Pol
+            { x: L.wireX.left, y: L.wireY.bottom },    // Links unten
+            { x: L.wireX.right, y: L.wireY.bottom },   // Rechts unten
+            { x: L.wireX.right, y: L.wireY.top },      // Rechts oben
+            { x: ampRight, y: L.wireY.top },           // Vor Amperemeter
+            { x: ampLeft, y: L.wireY.top },            // Nach Amperemeter
+            { x: resRight, y: L.wireY.top },           // Vor Widerstand
+            { x: resLeft, y: L.wireY.top },            // Nach Widerstand
+            { x: L.wireX.left, y: L.wireY.top },       // Links oben
+            { x: L.wireX.left, y: sourceYPlus },       // Bei + Pol
         ];
 
         // ═══════════════════════════════════════════════════════════════
@@ -379,130 +418,144 @@
 
         function drawCircuit() {
             ctx.clearRect(0, 0, circuitCanvas.width, circuitCanvas.height);
+            ctx.lineCap = 'square';
+            ctx.lineJoin = 'miter';
 
-            // ─── LEITUNGEN (bündig) ───
+            // ─── LEITUNGEN ───
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 2;
-            ctx.beginPath();
 
             // Linke Seite: von + nach oben
-            ctx.moveTo(circuit.left, source.yPlus);
-            ctx.lineTo(circuit.left, circuit.top);
-
-            // Oben: zum Widerstand
-            ctx.lineTo(resistor.x, circuit.top);
-
-            // Nach Widerstand zum Amperemeter
-            ctx.moveTo(resistor.x + resistor.w, circuit.top);
-            ctx.lineTo(ammeter.x - ammeter.r, circuit.top);
-
-            // Nach Amperemeter nach rechts
-            ctx.moveTo(ammeter.x + ammeter.r, circuit.top);
-            ctx.lineTo(circuit.right, circuit.top);
-
-            // Rechts runter
-            ctx.lineTo(circuit.right, circuit.bottom);
-
-            // Unten nach links
-            ctx.lineTo(circuit.left, circuit.bottom);
-
-            // Links hoch zu −
-            ctx.lineTo(circuit.left, source.yMinus);
-
+            ctx.beginPath();
+            ctx.moveTo(L.wireX.left, sourceYPlus);
+            ctx.lineTo(L.wireX.left, L.wireY.top);
             ctx.stroke();
 
-            // ─── SPANNUNGSQUELLE (DIN) ───
-            // Lange Linie = + (oben, rot)
+            // Oben: von links zum Widerstand
+            ctx.beginPath();
+            ctx.moveTo(L.wireX.left, L.wireY.top);
+            ctx.lineTo(resLeft, L.wireY.top);
+            ctx.stroke();
+
+            // Oben: vom Widerstand zum Amperemeter
+            ctx.beginPath();
+            ctx.moveTo(resRight, L.wireY.top);
+            ctx.lineTo(ampLeft, L.wireY.top);
+            ctx.stroke();
+
+            // Oben: vom Amperemeter nach rechts
+            ctx.beginPath();
+            ctx.moveTo(ampRight, L.wireY.top);
+            ctx.lineTo(L.wireX.right, L.wireY.top);
+            ctx.stroke();
+
+            // Rechte Seite: runter
+            ctx.beginPath();
+            ctx.moveTo(L.wireX.right, L.wireY.top);
+            ctx.lineTo(L.wireX.right, L.wireY.bottom);
+            ctx.stroke();
+
+            // Unten: nach links
+            ctx.beginPath();
+            ctx.moveTo(L.wireX.right, L.wireY.bottom);
+            ctx.lineTo(L.wireX.left, L.wireY.bottom);
+            ctx.stroke();
+
+            // Linke Seite: von unten zu −
+            ctx.beginPath();
+            ctx.moveTo(L.wireX.left, L.wireY.bottom);
+            ctx.lineTo(L.wireX.left, sourceYMinus);
+            ctx.stroke();
+
+            // ─── SPANNUNGSQUELLE (DIN: Zwei parallele Linien) ───
+            // Lange Linie = + (oben)
             ctx.strokeStyle = '#c62828';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(source.x - 20, source.yPlus);
-            ctx.lineTo(source.x + 20, source.yPlus);
+            ctx.moveTo(L.source.x - 18, sourceYPlus);
+            ctx.lineTo(L.source.x + 18, sourceYPlus);
             ctx.stroke();
 
-            // Kurze dicke Linie = − (unten, blau)
+            // Kurze dicke Linie = − (unten)
             ctx.strokeStyle = '#1565c0';
             ctx.lineWidth = 5;
             ctx.beginPath();
-            ctx.moveTo(source.x - 12, source.yMinus);
-            ctx.lineTo(source.x + 12, source.yMinus);
+            ctx.moveTo(L.source.x - 10, sourceYMinus);
+            ctx.lineTo(L.source.x + 10, sourceYMinus);
             ctx.stroke();
 
-            // Verbindungslinien zur Quelle
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(source.x, source.yPlus);
-            ctx.lineTo(source.x, source.yPlus - 10);
-            ctx.moveTo(source.x, source.yMinus);
-            ctx.lineTo(source.x, source.yMinus + 10);
-            ctx.stroke();
-
-            // + und − Symbole
-            ctx.font = 'bold 14px sans-serif';
+            // + und − Beschriftung
+            ctx.font = 'bold 13px sans-serif';
             ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
             ctx.fillStyle = '#c62828';
-            ctx.fillText('+', source.x + 25, source.yPlus + 5);
+            ctx.fillText('+', L.source.x + 24, sourceYPlus);
             ctx.fillStyle = '#1565c0';
-            ctx.fillText('−', source.x + 25, source.yMinus + 5);
+            ctx.fillText('−', L.source.x + 24, sourceYMinus);
 
-            // U-Label
+            // U-Label und Wert
             ctx.fillStyle = '#333';
-            ctx.font = 'italic 16px serif';
+            ctx.font = 'italic 15px serif';
             ctx.textAlign = 'right';
-            ctx.fillText('U', source.x - 28, (source.yPlus + source.yMinus) / 2 + 5);
+            ctx.fillText('U', L.source.x - 24, L.source.yCenter);
 
-            // Spannungswert
-            ctx.font = '13px monospace';
+            ctx.font = '12px monospace';
             ctx.fillStyle = '#2c5aa0';
             ctx.textAlign = 'center';
-            ctx.fillText(voltage.toFixed(1) + ' V', source.x, source.yMinus + 35);
+            ctx.fillText(voltage.toFixed(1) + ' V', L.source.x, sourceYMinus + 28);
 
             // ─── WIDERSTAND (DIN: Rechteck) ───
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 2;
-            ctx.strokeRect(resistor.x, resistor.y - resistor.h/2 + 17, resistor.w, resistor.h);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(resLeft, L.wireY.top - L.resistor.height/2, L.resistor.width, L.resistor.height);
+            ctx.strokeRect(resLeft, L.wireY.top - L.resistor.height/2, L.resistor.width, L.resistor.height);
 
             ctx.fillStyle = '#333';
-            ctx.font = '14px sans-serif';
+            ctx.font = '13px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('R', resistor.x + resistor.w/2, resistor.y + 20);
+            ctx.textBaseline = 'middle';
+            ctx.fillText('R', L.resistor.xCenter, L.wireY.top);
 
-            ctx.font = '12px monospace';
+            ctx.font = '11px monospace';
             ctx.fillStyle = '#2c5aa0';
-            ctx.fillText(resistance + ' Ω', resistor.x + resistor.w/2, resistor.y + 55);
+            ctx.textBaseline = 'top';
+            ctx.fillText(resistance + ' Ω', L.resistor.xCenter, L.wireY.top + L.resistor.height/2 + 6);
 
             // ─── AMPEREMETER (DIN: Kreis mit A) ───
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 2;
+            ctx.fillStyle = 'white';
             ctx.beginPath();
-            ctx.arc(ammeter.x, ammeter.y, ammeter.r, 0, Math.PI * 2);
+            ctx.arc(L.ammeter.xCenter, L.wireY.top, L.ammeter.radius, 0, Math.PI * 2);
+            ctx.fill();
             ctx.stroke();
 
             ctx.fillStyle = '#333';
-            ctx.font = '16px sans-serif';
-            ctx.fillText('A', ammeter.x, ammeter.y + 6);
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('A', L.ammeter.xCenter, L.wireY.top);
 
-            ctx.font = '12px monospace';
+            ctx.font = '11px monospace';
             ctx.fillStyle = '#c62828';
-            ctx.fillText(current.toFixed(2) + ' A', ammeter.x, ammeter.y + 50);
+            ctx.textBaseline = 'top';
+            ctx.fillText(current.toFixed(2) + ' A', L.ammeter.xCenter, L.wireY.top + L.ammeter.radius + 6);
 
-            // ─── STROMRICHTUNGSPFEIL (technisch, rot) ───
+            // ─── STROMRICHTUNGSPFEIL (technisch) ───
+            const arrowX = 130;
             ctx.fillStyle = '#c62828';
             ctx.beginPath();
-            ctx.moveTo(130, circuit.top - 8);
-            ctx.lineTo(145, circuit.top);
-            ctx.lineTo(130, circuit.top + 8);
+            ctx.moveTo(arrowX, L.wireY.top - 7);
+            ctx.lineTo(arrowX + 12, L.wireY.top);
+            ctx.lineTo(arrowX, L.wireY.top + 7);
             ctx.closePath();
             ctx.fill();
 
-            ctx.font = 'italic 12px serif';
-            ctx.fillStyle = '#c62828';
+            ctx.font = 'italic 11px serif';
             ctx.textAlign = 'center';
-            ctx.fillText('I', 137, circuit.top - 15);
-            ctx.font = '9px sans-serif';
-            ctx.fillStyle = '#888';
-            ctx.fillText('(techn.)', 137, circuit.top + 22);
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('I', arrowX + 6, L.wireY.top - 10);
 
             // ─── ELEKTRONEN ───
             if (showElectrons && voltage > 0) {
@@ -516,7 +569,7 @@
 
         function initElectrons() {
             electrons = [];
-            const count = 16;
+            const count = 14;
             for (let i = 0; i < count; i++) {
                 electrons.push({ progress: i / count });
             }
@@ -525,9 +578,9 @@
         function getPathLength() {
             let len = 0;
             for (let i = 0; i < wirePath.length; i++) {
-                const next = wirePath[(i + 1) % wirePath.length];
                 const curr = wirePath[i];
-                len += Math.sqrt((next.x - curr.x) ** 2 + (next.y - curr.y) ** 2);
+                const next = wirePath[(i + 1) % wirePath.length];
+                len += Math.hypot(next.x - curr.x, next.y - curr.y);
             }
             return len;
         }
@@ -540,7 +593,7 @@
             for (let i = 0; i < wirePath.length; i++) {
                 const curr = wirePath[i];
                 const next = wirePath[(i + 1) % wirePath.length];
-                const segLen = Math.sqrt((next.x - curr.x) ** 2 + (next.y - curr.y) ** 2);
+                const segLen = Math.hypot(next.x - curr.x, next.y - curr.y);
 
                 if (accumulated + segLen >= targetDist) {
                     const t = (targetDist - accumulated) / segLen;
@@ -555,7 +608,7 @@
         }
 
         function updateElectrons() {
-            const speed = 0.003 * (current / 0.3); // Geschwindigkeit ~ Strom
+            const speed = 0.004 * (current / 0.3);
             for (let e of electrons) {
                 e.progress += speed;
                 if (e.progress >= 1) e.progress -= 1;
@@ -566,20 +619,17 @@
             for (let e of electrons) {
                 const pos = getPositionOnPath(e.progress);
 
-                // Elektron (blauer Kreis)
                 ctx.beginPath();
-                ctx.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
+                ctx.arc(pos.x, pos.y, 5, 0, Math.PI * 2);
                 ctx.fillStyle = '#1565c0';
                 ctx.fill();
 
-                // Minus-Zeichen
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 10px sans-serif';
+                ctx.font = 'bold 9px sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText('−', pos.x, pos.y);
             }
-            ctx.textBaseline = 'alphabetic';
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -591,11 +641,10 @@
             const h = graphCanvas.height;
             graphCtx.clearRect(0, 0, w, h);
 
-            const margin = { top: 10, right: 10, bottom: 30, left: 40 };
+            const margin = { top: 10, right: 10, bottom: 28, left: 38 };
             const gW = w - margin.left - margin.right;
             const gH = h - margin.top - margin.bottom;
 
-            // Hintergrund
             graphCtx.fillStyle = 'white';
             graphCtx.fillRect(0, 0, w, h);
 
@@ -611,7 +660,7 @@
             }
 
             const maxI = 12 / resistance;
-            for (let i = 0; i <= maxI; i += 0.1) {
+            for (let i = 0; i <= maxI + 0.01; i += 0.1) {
                 const y = margin.top + gH - (i / maxI) * gH;
                 graphCtx.beginPath();
                 graphCtx.moveTo(margin.left, y);
@@ -628,30 +677,34 @@
             graphCtx.lineTo(margin.left + gW, margin.top + gH);
             graphCtx.stroke();
 
-            // Achsenbeschriftung
+            // Beschriftung
             graphCtx.fillStyle = '#333';
             graphCtx.font = '10px sans-serif';
             graphCtx.textAlign = 'center';
-            graphCtx.fillText('U in V', margin.left + gW / 2, h - 5);
+            graphCtx.textBaseline = 'top';
+            graphCtx.fillText('U in V', margin.left + gW / 2, h - 12);
 
             graphCtx.save();
-            graphCtx.translate(10, margin.top + gH / 2);
+            graphCtx.translate(12, margin.top + gH / 2);
             graphCtx.rotate(-Math.PI / 2);
+            graphCtx.textBaseline = 'middle';
             graphCtx.fillText('I in A', 0, 0);
             graphCtx.restore();
 
             // Ticks
             graphCtx.font = '9px sans-serif';
+            graphCtx.textBaseline = 'top';
             for (let u = 0; u <= 12; u += 4) {
                 const x = margin.left + (u / 12) * gW;
-                graphCtx.fillText(u.toString(), x, margin.top + gH + 12);
+                graphCtx.fillText(u.toString(), x, margin.top + gH + 4);
             }
 
             graphCtx.textAlign = 'right';
+            graphCtx.textBaseline = 'middle';
             const iStep = maxI > 0.4 ? 0.2 : 0.1;
             for (let i = 0; i <= maxI + 0.01; i += iStep) {
                 const y = margin.top + gH - (i / maxI) * gH;
-                graphCtx.fillText(i.toFixed(1), margin.left - 5, y + 3);
+                graphCtx.fillText(i.toFixed(1), margin.left - 4, y);
             }
 
             // Kennlinie

@@ -132,6 +132,27 @@ git checkout .         # Alle Änderungen verwerfen
 - ❌ Amerikanische Zickzack-Widerstände
 - ❌ Symbole ohne + / − Beschriftung bei Quellen
 
+### Schaltplan-Score (10/10)
+
+Nach jedem erstellten Schaltplan diese Checkliste prüfen:
+
+| # | Kriterium | Prüfpunkt |
+|---|-----------|-----------|
+| 1 | **Spannungsquelle** | Zwei parallele Linien (lang = +, kurz/dick = −) |
+| 2 | **Pole farbig** | + in rot (#c62828), − in blau (#1565c0) |
+| 3 | **Widerstand** | Rechteck (nicht Zickzack), mit R beschriftet |
+| 4 | **Messgeräte** | Kreis mit A/V, weiß gefüllt |
+| 5 | **Leitungen bündig** | Alle Verbindungen schließen exakt an, keine Lücken |
+| 6 | **Bauteile zentriert** | R, A, V exakt auf der Leitung, nicht daneben |
+| 7 | **Rechte Winkel** | Nur 90°-Ecken, keine Diagonalen |
+| 8 | **Stromrichtung** | Pfeil mit I beschriftet (rot = technisch) |
+| 9 | **Werte lesbar** | U, R mit Einheiten (V, Ω, A) beschriftet |
+| 10 | **Sauber** | Keine Überlappungen, weißer Fill bei Bauteilen |
+
+**Bewertung:** 10/10 = Freigabe | < 10 = Nachbessern
+
+**PFLICHT:** Bei technischen Zeichnungen (Schaltpläne, Diagramme) MUSS 10/10 erreicht werden. Keine Freigabe unter 10/10!
+
 ### Layout
 
 - Container: `max-width: 900px`, zentriert
@@ -286,6 +307,50 @@ Bei Lernpfaden mit begleitendem Arbeitsblatt: Nach jedem Content-Schritt einen *
 - Label "Arbeitsblatt" als Badge oben
 - Konkrete Anweisungen (welcher Abschnitt, was eintragen)
 - Nach Content-Schritten, nicht nach Übungen
+
+### Persistenz (localStorage)
+
+**Pflicht:** Alle Eingaben in Lernpfaden und Tests müssen mit `localStorage` gespeichert werden.
+
+```javascript
+// Speichern bei Eingabe
+document.querySelectorAll('input, select').forEach(el => {
+    const key = 'lp-' + LERNPFAD_ID + '-' + el.id;
+
+    // Beim Laden wiederherstellen
+    if (localStorage.getItem(key)) {
+        el.value = localStorage.getItem(key);
+    }
+
+    // Bei Änderung speichern
+    el.addEventListener('change', () => {
+        localStorage.setItem(key, el.value);
+    });
+});
+```
+
+**Regeln:**
+- Eindeutiger Präfix pro Lernpfad/Test (z.B. `lp-ohm-01-`)
+- Alle `input`, `select`, `textarea` Elemente einbinden
+- Fortschritt (aktuelle Sektion) ebenfalls speichern
+- Reset-Button nur mit Bestätigung
+
+### Keine Sequenz-Kommunikation für Schüler
+
+**WICHTIG:** Schülermaterialien (LP, AB) kommunizieren KEINE Stundensequenz.
+
+| Erlaubt | Verboten |
+|---------|----------|
+| "Das Ohmsche Gesetz" | "Stunde 1 von 4" |
+| "Elektrischer Widerstand" | "In der nächsten Stunde..." |
+| Thema ohne Nummer | "Ausblick: Folgestunden" |
+
+**Nur für Lehrer (LH):**
+- Stundennummern
+- Sequenz-Übersicht
+- Ausblick auf Folgestunden
+
+**Grund:** Flexibilität für Lehrkräfte bei Reihenfolge und Zeiteinteilung.
 
 ---
 
@@ -702,9 +767,10 @@ $\rho = \dfrac{m}{V} = \dfrac{\text{\luecke{1.2cm}}}{\text{\luecke{1.2cm}}} = $ 
 $\rho = \dfrac{m}{V} = $ \luecke{2cm}
 ```
 
-**Regel:** Einsetzstriche (`\luecke{}`) erzeugen horizontale Linien. In Brüchen kollidieren diese mit dem Bruchstrich → unlesbar. Daher:
+**Regel:** Einsetzstriche (`\luecke{}`) erzeugen horizontale Linien. Diese kollidieren mit anderen horizontalen Linien → unlesbar. Daher:
 - Formeln mit Brüchen: **Werte vorgeben** oder **Ergebnis als Lücke**
 - Einsetzstriche nur in einzeiligen Gleichungen
+- **Keine Einsetzstriche in Tabellenzellen** → leere Zellen mit `\\[0.8em]` für Höhe
 
 ---
 

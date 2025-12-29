@@ -47,6 +47,7 @@
             background: var(--white);
             border: 1px solid var(--border);
             padding: 30px;
+            position: relative;
         }
 
         /* Header */
@@ -381,12 +382,151 @@
             margin-top: 0;
         }
 
+        /* Embedded Simulation */
+        .sim-embed {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .sim-embed-layout {
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            gap: 15px;
+        }
+
+        @media (max-width: 700px) {
+            .sim-embed-layout { grid-template-columns: 1fr; }
+        }
+
+        .sim-canvas-wrap {
+            text-align: center;
+        }
+
+        #sim-circuit {
+            background: white;
+            border: 1px solid var(--border);
+            max-width: 100%;
+        }
+
+        .sim-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sim-control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .sim-control-group .val {
+            font-weight: 600;
+            color: var(--physik);
+            font-family: monospace;
+        }
+
+        .sim-control-group input[type="range"] {
+            width: 100%;
+            margin: 0;
+        }
+
+        .sim-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            font-size: 0.8em;
+        }
+
+        .sim-val-box {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+        }
+
+        .sim-val-box .num {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--physik);
+            font-family: monospace;
+        }
+
+        .sim-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8em;
+        }
+
+        /* Step indicators (Navigationsleiste) */
+        .step-indicators {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65em;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.8;
+        }
+
+        .step-dot:hover {
+            border-color: var(--physik);
+            color: var(--physik);
+            opacity: 1;
+        }
+
+        .step-dot.current {
+            border-color: var(--physik);
+            border-width: 2px;
+            color: white;
+            background: var(--physik);
+            opacity: 1;
+        }
+
+        .step-dot.visited {
+            background: #e8f5e9;
+            border-color: var(--success);
+            color: var(--success);
+            opacity: 0.9;
+        }
+
+        .step-dot.visited.current {
+            background: var(--physik);
+            border-color: var(--physik);
+            color: white;
+            opacity: 1;
+        }
+
         /* Responsive */
         @media (max-width: 600px) {
             body { padding: 10px; }
             .container { padding: 15px; }
             .nav-buttons { flex-direction: column; gap: 10px; }
             .btn { width: 100%; }
+            .step-indicators {
+                position: static;
+                justify-content: center;
+                margin: 10px 0;
+            }
+            .step-dot { width: 20px; height: 20px; font-size: 0.6em; }
         }
     </style>
 </head>
@@ -395,7 +535,7 @@
         <!-- Header -->
         <div class="header">
             <h1>Das Ohmsche Gesetz</h1>
-            <div class="meta">Physik Klasse 8 | Stunde 1 von 4 | Reihe "Elektrischer Widerstand"</div>
+            <div class="meta">Physik Klasse 8 | Elektrischer Widerstand</div>
         </div>
 
         <!-- Progress -->
@@ -403,6 +543,9 @@
         <div class="progress-bar">
             <div class="progress-fill" id="progress-fill"></div>
         </div>
+
+        <!-- Step Navigation -->
+        <div class="step-indicators" id="stepIndicators"></div>
 
         <!-- ═══════════════════════════════════════════════════════════════
              SECTION 1: Einstieg
@@ -468,39 +611,47 @@
 
             <p>Wir untersuchen den Zusammenhang zwischen Spannung und Stromstärke mit einem einfachen Stromkreis:</p>
 
-            <!-- Schaltplan (DIN-Norm) -->
-            <svg class="circuit-svg" viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
-                <!-- Leitungen -->
-                <path d="M 50 40 L 130 40" stroke="#333" stroke-width="2" fill="none"/>
-                <path d="M 170 40 L 220 40" stroke="#333" stroke-width="2" fill="none"/>
-                <path d="M 250 58 L 250 40 L 220 40" stroke="#333" stroke-width="2" fill="none"/>
-                <path d="M 250 108 L 250 140 L 50 140" stroke="#333" stroke-width="2" fill="none"/>
-                <path d="M 50 40 L 50 75" stroke="#333" stroke-width="2" fill="none"/>
-                <path d="M 50 105 L 50 140" stroke="#333" stroke-width="2" fill="none"/>
-
-                <!-- Widerstand (DIN: Rechteck) -->
-                <rect x="130" y="25" width="40" height="30" fill="none" stroke="#333" stroke-width="2"/>
-                <text x="150" y="45" text-anchor="middle" font-size="11" fill="#333">R</text>
-
-                <!-- Spannungsquelle (DIN: Zwei parallele Linien) -->
-                <!-- Lange Linie = + (oben) -->
-                <line x1="35" y1="80" x2="65" y2="80" stroke="#c62828" stroke-width="2"/>
-                <!-- Kurze dicke Linie = − (unten) -->
-                <line x1="40" y1="100" x2="60" y2="100" stroke="#1565c0" stroke-width="4"/>
-                <!-- + und − Beschriftung -->
-                <text x="72" y="83" font-size="10" fill="#c62828" font-weight="bold">+</text>
-                <text x="72" y="103" font-size="10" fill="#1565c0" font-weight="bold">−</text>
-                <!-- U-Label -->
-                <text x="25" y="93" text-anchor="middle" font-size="12" fill="#333" font-style="italic">U</text>
-
-                <!-- Amperemeter (DIN: Kreis mit A) -->
-                <circle cx="250" cy="83" r="18" fill="none" stroke="#333" stroke-width="2"/>
-                <text x="250" y="88" text-anchor="middle" font-size="12" fill="#333">A</text>
-
-                <!-- Beschriftungen -->
-                <text x="150" y="12" text-anchor="middle" font-size="11" fill="#2c5aa0">R = 20 Ω</text>
-                <text x="250" y="130" text-anchor="middle" font-size="10" fill="#888">(Stromstärke I)</text>
-            </svg>
+            <!-- Interaktive Simulation -->
+            <div class="sim-embed">
+                <div class="sim-embed-layout">
+                    <div class="sim-canvas-wrap">
+                        <canvas id="sim-circuit" width="400" height="280"></canvas>
+                    </div>
+                    <div class="sim-controls">
+                        <div class="sim-control-group">
+                            <label>
+                                <span>Spannung U</span>
+                                <span class="val"><span id="sim-u-val">6.0</span> V</span>
+                            </label>
+                            <input type="range" id="sim-u-slider" min="0" max="12" step="0.5" value="6">
+                        </div>
+                        <div class="sim-control-group">
+                            <label>
+                                <span>Widerstand R</span>
+                                <span class="val"><span id="sim-r-val">20</span> Ω</span>
+                            </label>
+                            <input type="range" id="sim-r-slider" min="5" max="50" step="5" value="20">
+                        </div>
+                        <div class="sim-values">
+                            <div class="sim-val-box">
+                                <div>U</div>
+                                <div class="num" id="sim-display-u">6.0 V</div>
+                            </div>
+                            <div class="sim-val-box">
+                                <div>I</div>
+                                <div class="num" id="sim-display-i">0.30 A</div>
+                            </div>
+                        </div>
+                        <div class="sim-checkbox">
+                            <input type="checkbox" id="sim-electrons" checked>
+                            <label for="sim-electrons">Elektronen zeigen</label>
+                        </div>
+                    </div>
+                </div>
+                <p style="font-size: 0.8em; color: var(--text-muted); margin: 10px 0 0 0;">
+                    Verändere die Spannung und beobachte, wie sich die Stromstärke ändert.
+                </p>
+            </div>
 
             <div class="info-box">
                 <strong>Aufbau:</strong>
@@ -539,6 +690,7 @@
             <div class="hefter-hinweis">
                 <ul>
                     <li><strong>Messwerte-Tabelle:</strong> Übertrage deine Messwerte ins Arbeitsblatt</li>
+                    <li><strong>Diagramm:</strong> Zeichne die Messpunkte ins Koordinatensystem und verbinde sie mit einer Geraden</li>
                 </ul>
             </div>
 
@@ -856,15 +1008,6 @@
                 Der Widerstand bleibt <strong>konstant</strong>.
             </div>
 
-            <div class="info-box">
-                <strong>Ausblick auf die nächsten Stunden:</strong>
-                <ul>
-                    <li><strong>Stunde 2:</strong> Widerstand messen – Kennlinien aufnehmen</li>
-                    <li><strong>Stunde 3:</strong> Widerstände schalten – Reihen- und Parallelschaltung</li>
-                    <li><strong>Stunde 4:</strong> Anwendungen – Spannungsteiler, Vorwiderstand LED</li>
-                </ul>
-            </div>
-
             <div class="hefter-hinweis">
                 <ul>
                     <li><strong>Merksatz:</strong> Übertrage den vollständigen Merksatz ins Arbeitsblatt</li>
@@ -929,13 +1072,41 @@
         let currentSection = 1;
         let completedExercises = 0;
         let totalExercises = 8;
+        let visitedSections = new Set([1]);
+
+        // Step Indicators generieren
+        function generateStepIndicators() {
+            const container = document.getElementById('stepIndicators');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= totalSections; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'step-dot';
+                dot.textContent = i;
+                dot.dataset.section = i;
+                if (i === 1) dot.classList.add('current');
+                dot.addEventListener('click', () => nextSection(i));
+                container.appendChild(dot);
+            }
+        }
+
+        // Step Indicators aktualisieren
+        function updateStepIndicators() {
+            document.querySelectorAll('.step-dot').forEach(dot => {
+                const section = parseInt(dot.dataset.section);
+                dot.classList.toggle('current', section === currentSection);
+                dot.classList.toggle('visited', visitedSections.has(section) && section !== currentSection);
+            });
+        }
 
         // Navigation
         function nextSection(num) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById('section-' + num).classList.add('active');
             currentSection = num;
+            visitedSections.add(num);
             updateProgress();
+            updateStepIndicators();
             window.scrollTo(0, 0);
         }
 
@@ -1154,7 +1325,7 @@
             const score = (c1 ? 1 : 0) + (c2 ? 1 : 0) + (c3 ? 1 : 0);
 
             if (score === 3) {
-                showFeedback('feedback-final', true, 'Perfekt! Du bist bereit für die nächste Stunde.');
+                showFeedback('feedback-final', true, 'Perfekt! Du hast das Ohmsche Gesetz verstanden.');
             } else {
                 showFeedback('feedback-final', false, score + ' von 3 richtig. Schau nochmal in die Zusammenfassung.');
             }
@@ -1172,8 +1343,300 @@
                 'Vergiss nicht, dein Arbeitsblatt abzugeben!';
         }
 
+        // ═══════════════════════════════════════════════════════════════
+        // PERSISTENZ (localStorage)
+        // ═══════════════════════════════════════════════════════════════
+
+        const STORAGE_PREFIX = 'lp-ohm-01-';
+
+        function saveToStorage(id, value) {
+            try {
+                localStorage.setItem(STORAGE_PREFIX + id, value);
+            } catch (e) {
+                console.warn('localStorage nicht verfügbar');
+            }
+        }
+
+        function loadFromStorage(id) {
+            try {
+                return localStorage.getItem(STORAGE_PREFIX + id);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function initPersistence() {
+            // Alle Inputs und Selects mit Persistenz versehen
+            document.querySelectorAll('input, select').forEach(el => {
+                if (!el.id) return;
+
+                // Gespeicherten Wert laden
+                const saved = loadFromStorage(el.id);
+                if (saved !== null) {
+                    el.value = saved;
+                }
+
+                // Bei Änderung speichern
+                el.addEventListener('change', () => {
+                    saveToStorage(el.id, el.value);
+                });
+                el.addEventListener('input', () => {
+                    saveToStorage(el.id, el.value);
+                });
+            });
+
+            // Besuchte Sektionen laden
+            const savedVisited = loadFromStorage('visitedSections');
+            if (savedVisited) {
+                try {
+                    const parsed = JSON.parse(savedVisited);
+                    visitedSections = new Set(parsed);
+                } catch (e) {}
+            }
+
+            // Aktuelle Sektion laden
+            const savedSection = loadFromStorage('currentSection');
+            if (savedSection) {
+                const sectionNum = parseInt(savedSection);
+                if (sectionNum >= 1 && sectionNum <= totalSections) {
+                    nextSection(sectionNum);
+                }
+            }
+
+            updateStepIndicators();
+        }
+
+        // Sektion speichern bei Navigation
+        const originalNextSection = nextSection;
+        nextSection = function(num) {
+            originalNextSection(num);
+            saveToStorage('currentSection', num);
+            saveToStorage('visitedSections', JSON.stringify([...visitedSections]));
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // EINGEBETTETE SIMULATION
+        // ═══════════════════════════════════════════════════════════════
+
+        const simCanvas = document.getElementById('sim-circuit');
+        const simCtx = simCanvas.getContext('2d');
+        let simU = 6.0, simR = 20, simI = 0.3;
+        let simShowElectrons = true;
+        let simElectrons = [];
+
+        // Layout
+        const SL = {
+            wireY: { top: 50, bottom: 230 },
+            wireX: { left: 50, right: 350 },
+            source: { x: 50, yCenter: 140, gap: 18 },
+            resistor: { xCenter: 170, y: 50, width: 60, height: 24 },
+            ammeter: { xCenter: 280, y: 50, radius: 18 }
+        };
+
+        const sSourceYPlus = SL.source.yCenter - SL.source.gap;
+        const sSourceYMinus = SL.source.yCenter + SL.source.gap;
+        const sResLeft = SL.resistor.xCenter - SL.resistor.width / 2;
+        const sResRight = SL.resistor.xCenter + SL.resistor.width / 2;
+        const sAmpLeft = SL.ammeter.xCenter - SL.ammeter.radius;
+        const sAmpRight = SL.ammeter.xCenter + SL.ammeter.radius;
+
+        const simWirePath = [
+            { x: SL.wireX.left, y: sSourceYMinus },
+            { x: SL.wireX.left, y: SL.wireY.bottom },
+            { x: SL.wireX.right, y: SL.wireY.bottom },
+            { x: SL.wireX.right, y: SL.wireY.top },
+            { x: sAmpRight, y: SL.wireY.top },
+            { x: sAmpLeft, y: SL.wireY.top },
+            { x: sResRight, y: SL.wireY.top },
+            { x: sResLeft, y: SL.wireY.top },
+            { x: SL.wireX.left, y: SL.wireY.top },
+            { x: SL.wireX.left, y: sSourceYPlus }
+        ];
+
+        function initSimElectrons() {
+            simElectrons = [];
+            for (let i = 0; i < 12; i++) simElectrons.push({ progress: i / 12 });
+        }
+
+        function getSimPathLength() {
+            let len = 0;
+            for (let i = 0; i < simWirePath.length; i++) {
+                const curr = simWirePath[i];
+                const next = simWirePath[(i + 1) % simWirePath.length];
+                len += Math.hypot(next.x - curr.x, next.y - curr.y);
+            }
+            return len;
+        }
+
+        function getSimPosOnPath(progress) {
+            const totalLen = getSimPathLength();
+            let targetDist = progress * totalLen, accumulated = 0;
+            for (let i = 0; i < simWirePath.length; i++) {
+                const curr = simWirePath[i];
+                const next = simWirePath[(i + 1) % simWirePath.length];
+                const segLen = Math.hypot(next.x - curr.x, next.y - curr.y);
+                if (accumulated + segLen >= targetDist) {
+                    const t = (targetDist - accumulated) / segLen;
+                    return { x: curr.x + (next.x - curr.x) * t, y: curr.y + (next.y - curr.y) * t };
+                }
+                accumulated += segLen;
+            }
+            return simWirePath[0];
+        }
+
+        function drawSimCircuit() {
+            simCtx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+            simCtx.lineCap = 'square';
+            simCtx.lineJoin = 'miter';
+
+            // Leitungen
+            simCtx.strokeStyle = '#333';
+            simCtx.lineWidth = 2;
+            simCtx.beginPath();
+            simCtx.moveTo(SL.wireX.left, sSourceYPlus);
+            simCtx.lineTo(SL.wireX.left, SL.wireY.top);
+            simCtx.lineTo(sResLeft, SL.wireY.top);
+            simCtx.stroke();
+            simCtx.beginPath();
+            simCtx.moveTo(sResRight, SL.wireY.top);
+            simCtx.lineTo(sAmpLeft, SL.wireY.top);
+            simCtx.stroke();
+            simCtx.beginPath();
+            simCtx.moveTo(sAmpRight, SL.wireY.top);
+            simCtx.lineTo(SL.wireX.right, SL.wireY.top);
+            simCtx.lineTo(SL.wireX.right, SL.wireY.bottom);
+            simCtx.lineTo(SL.wireX.left, SL.wireY.bottom);
+            simCtx.lineTo(SL.wireX.left, sSourceYMinus);
+            simCtx.stroke();
+
+            // Spannungsquelle
+            simCtx.strokeStyle = '#c62828';
+            simCtx.lineWidth = 2;
+            simCtx.beginPath();
+            simCtx.moveTo(SL.source.x - 15, sSourceYPlus);
+            simCtx.lineTo(SL.source.x + 15, sSourceYPlus);
+            simCtx.stroke();
+            simCtx.strokeStyle = '#1565c0';
+            simCtx.lineWidth = 4;
+            simCtx.beginPath();
+            simCtx.moveTo(SL.source.x - 9, sSourceYMinus);
+            simCtx.lineTo(SL.source.x + 9, sSourceYMinus);
+            simCtx.stroke();
+
+            simCtx.font = 'bold 11px sans-serif';
+            simCtx.textAlign = 'left';
+            simCtx.textBaseline = 'middle';
+            simCtx.fillStyle = '#c62828';
+            simCtx.fillText('+', SL.source.x + 20, sSourceYPlus);
+            simCtx.fillStyle = '#1565c0';
+            simCtx.fillText('−', SL.source.x + 20, sSourceYMinus);
+
+            simCtx.fillStyle = '#2c5aa0';
+            simCtx.font = '11px monospace';
+            simCtx.textAlign = 'center';
+            simCtx.fillText(simU.toFixed(1) + ' V', SL.source.x, sSourceYMinus + 22);
+
+            // Widerstand
+            simCtx.strokeStyle = '#333';
+            simCtx.lineWidth = 2;
+            simCtx.fillStyle = 'white';
+            simCtx.fillRect(sResLeft, SL.wireY.top - SL.resistor.height/2, SL.resistor.width, SL.resistor.height);
+            simCtx.strokeRect(sResLeft, SL.wireY.top - SL.resistor.height/2, SL.resistor.width, SL.resistor.height);
+            simCtx.fillStyle = '#333';
+            simCtx.font = '12px sans-serif';
+            simCtx.textAlign = 'center';
+            simCtx.textBaseline = 'middle';
+            simCtx.fillText('R', SL.resistor.xCenter, SL.wireY.top);
+            simCtx.font = '10px monospace';
+            simCtx.fillStyle = '#2c5aa0';
+            simCtx.fillText(simR + ' Ω', SL.resistor.xCenter, SL.wireY.top + SL.resistor.height/2 + 10);
+
+            // Amperemeter
+            simCtx.strokeStyle = '#333';
+            simCtx.lineWidth = 2;
+            simCtx.fillStyle = 'white';
+            simCtx.beginPath();
+            simCtx.arc(SL.ammeter.xCenter, SL.wireY.top, SL.ammeter.radius, 0, Math.PI * 2);
+            simCtx.fill();
+            simCtx.stroke();
+            simCtx.fillStyle = '#333';
+            simCtx.font = '12px sans-serif';
+            simCtx.textBaseline = 'middle';
+            simCtx.fillText('A', SL.ammeter.xCenter, SL.wireY.top);
+            simCtx.font = '10px monospace';
+            simCtx.fillStyle = '#c62828';
+            simCtx.fillText(simI.toFixed(2) + ' A', SL.ammeter.xCenter, SL.wireY.top + SL.ammeter.radius + 10);
+
+            // Stromrichtungspfeil
+            simCtx.fillStyle = '#c62828';
+            simCtx.beginPath();
+            simCtx.moveTo(110, SL.wireY.top - 6);
+            simCtx.lineTo(120, SL.wireY.top);
+            simCtx.lineTo(110, SL.wireY.top + 6);
+            simCtx.closePath();
+            simCtx.fill();
+
+            // Elektronen
+            if (simShowElectrons && simU > 0) {
+                for (let e of simElectrons) {
+                    const pos = getSimPosOnPath(e.progress);
+                    simCtx.beginPath();
+                    simCtx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
+                    simCtx.fillStyle = '#1565c0';
+                    simCtx.fill();
+                    simCtx.fillStyle = 'white';
+                    simCtx.font = 'bold 7px sans-serif';
+                    simCtx.textAlign = 'center';
+                    simCtx.textBaseline = 'middle';
+                    simCtx.fillText('−', pos.x, pos.y);
+                }
+            }
+        }
+
+        function updateSimElectrons() {
+            const speed = 0.003 * (simI / 0.3);
+            for (let e of simElectrons) {
+                e.progress += speed;
+                if (e.progress >= 1) e.progress -= 1;
+            }
+        }
+
+        function updateSimValues() {
+            simI = simR > 0 ? simU / simR : 0;
+            document.getElementById('sim-u-val').textContent = simU.toFixed(1);
+            document.getElementById('sim-r-val').textContent = simR;
+            document.getElementById('sim-display-u').textContent = simU.toFixed(1) + ' V';
+            document.getElementById('sim-display-i').textContent = simI.toFixed(2) + ' A';
+        }
+
+        function animateSim() {
+            updateSimElectrons();
+            drawSimCircuit();
+            requestAnimationFrame(animateSim);
+        }
+
+        document.getElementById('sim-u-slider').addEventListener('input', e => {
+            simU = parseFloat(e.target.value);
+            updateSimValues();
+        });
+
+        document.getElementById('sim-r-slider').addEventListener('input', e => {
+            simR = parseInt(e.target.value);
+            updateSimValues();
+        });
+
+        document.getElementById('sim-electrons').addEventListener('change', e => {
+            simShowElectrons = e.target.checked;
+        });
+
+        initSimElectrons();
+        updateSimValues();
+        animateSim();
+
         // Initialize
+        generateStepIndicators();
         updateProgress();
+        initPersistence();
     </script>
 </body>
 </html>
