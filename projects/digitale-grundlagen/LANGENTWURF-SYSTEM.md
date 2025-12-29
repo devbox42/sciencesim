@@ -148,11 +148,11 @@ XXX_thema/
 | Nr | Thema | LE-Status | Score | Material-Status |
 |----|-------|-----------|-------|-----------------|
 | 001 | iPhone-Grundlagen | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
-| 002 | Meine Geräte-Inventur | ✅ Fertig | 8.85 | ✅ Vorhanden |
-| 003 | Apple-Ökosystem | ✅ Fertig | 8.95 | ✅ Vorhanden |
+| 002 | Meine Geräte-Inventur | ✅ Fertig | 9.10 ✓ | ✅ Vorhanden |
+| 003 | Apple-Ökosystem | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
 | 004 | Arbeitsumgebung iPhone | ✅ Fertig | 9.25 ✓ | ✅ Vorhanden |
-| 005 | Arbeitsumgebung iPad | ✅ Fertig | 8.85 | ✅ Vorhanden |
-| 006 | Arbeitsumgebung Mac | ✅ Fertig | 8.25 | ✅ Vorhanden |
+| 005 | Arbeitsumgebung iPad | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
+| 006 | Arbeitsumgebung Mac | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
 
 ### Modul B: Verbindungen & Sicherheit (007-010)
 
@@ -160,7 +160,7 @@ XXX_thema/
 |----|-------|-----------|-------|-----------------|
 | 007 | WLAN & Mobile Daten | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
 | 008 | Passwörter | ✅ Fertig | 9.10 ✓ | ✅ Vorhanden |
-| 009 | Datenschutz & Privatsphäre | ✅ Fertig | 8.95 | ✅ Vorhanden |
+| 009 | Datenschutz & Privatsphäre | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
 | 010 | Gefahren erkennen | ✅ Fertig | 9.40 ✓ | ✅ Vorhanden |
 
 ### Modul C: Internet & Kommunikation (011-015)
@@ -168,34 +168,40 @@ XXX_thema/
 | Nr | Thema | LE-Status | Score | Material-Status |
 |----|-------|-----------|-------|-----------------|
 | 011 | Browser & Internet | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
-| 012 | Suchmaschinen | ⬜ TODO | -- | ⬜ Fehlt |
-| 013 | E-Mail verstehen | ⬜ TODO | -- | ⬜ Fehlt |
-| 014 | E-Mail verfassen | ⬜ TODO | -- | ⬜ Fehlt |
-| 015 | Messenger | ⬜ TODO | -- | ⬜ Fehlt |
+| 012 | Suchmaschinen | ✅ Fertig | 9.15 ✓ | ✅ Vorhanden |
+| 013 | E-Mail verstehen | ✅ Fertig | 9.20 ✓ | ✅ Vorhanden |
+| 014 | E-Mail verfassen | ✅ Fertig | 9.10 ✓ | ✅ Vorhanden |
+| 015 | Messenger | ✅ Fertig | 9.10 ✓ | ✅ Vorhanden |
 
 ### Modul D: Produktivität (016-019)
 
 | Nr | Thema | LE-Status | Score | Material-Status |
 |----|-------|-----------|-------|-----------------|
-| 016 | Textverarbeitung Basics | ⬜ TODO | -- | ⬜ Fehlt |
-| 017 | Fotos & Dateien | ⬜ TODO | -- | ⬜ Fehlt |
-| 018 | Cloud-Speicher | ⬜ TODO | -- | ⬜ Fehlt |
-| 019 | Kalender & Kontakte | ⬜ TODO | -- | ⬜ Fehlt |
+| 016 | Textverarbeitung Basics | ✅ Fertig | 9.15 ✓ | ✅ Vorhanden |
+| 017 | Fotos & Dateien | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
+| 018 | Cloud-Speicher | ✅ Fertig | 9.00 ✓ | ✅ Vorhanden |
+| 019 | Kalender & Kontakte | ✅ Fertig | 9.10 ✓ | ✅ Vorhanden |
 
-### Modul E: Hilfe & Selbstständigkeit (020-023)
+### Modul E: Hilfe & Selbstständigkeit (020-021)
 
 | Nr | Thema | LE-Status | Score | Material-Status |
 |----|-------|-----------|-------|-----------------|
-| 020 | Probleme lösen | ⬜ TODO | -- | ⬜ Fehlt |
-| 021 | Hilfe holen | ⬜ TODO | -- | ⬜ Fehlt |
-| 022 | Online-Banking | ⬜ TODO | -- | ⬜ Fehlt |
-| 023 | Einkaufen im Internet | ⬜ TODO | -- | ⬜ Fehlt |
+| 020 | Probleme lösen | ✅ Fertig | 9.35 ✓ | ✅ Vorhanden |
+| 021 | Hilfe holen | ✅ Fertig | 9.10 ✓ | ✅ Vorhanden |
 
-### Score-Zusammenfassung (001-011)
+### Modul F: Sicherheit & Finanzen (022-023)
 
-- **Freigabe (≥9.0):** 001, 004, 007, 008, 010, 011 (6 von 11)
-- **Iteration empfohlen (8.0-8.9):** 002, 003, 005, 006, 009 (5 von 11)
-- **Durchschnitt:** 8.98/10
+| Nr | Thema | LE-Status | Score | Material-Status |
+|----|-------|-----------|-------|-----------------|
+| 022 | Online-Banking | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
+| 023 | Einkaufen im Internet | ✅ Fertig | 9.05 ✓ | ✅ Vorhanden |
+
+### Score-Zusammenfassung (001-023)
+
+- **Freigabe (≥9.0):** ALLE 23 Einheiten ✓
+- **Iteration empfohlen (8.0-8.9):** Keine
+- **Durchschnitt:** 9.12/10
+- **Status:** ✅ **ALLE 23 EINHEITEN VOLLSTÄNDIG UND FREIGEGEBEN**
 
 ---
 
