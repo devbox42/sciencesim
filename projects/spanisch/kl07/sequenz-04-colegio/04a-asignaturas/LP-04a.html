@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-04a: Las asignaturas (Schulfächer)</title>
+    <style>
+        /* =====================================================
+           SPANISCH LERNPFAD: Las asignaturas
+           Fachfarbe: #c41e3a (Karminrot)
+           ES5-kompatibel
+        ===================================================== */
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #222;
+            background: #f5f5f5;
+            padding-bottom: 40px;
+        }
+
+        /* Navigation */
+        .nav-bar {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-title {
+            font-size: 1em;
+            font-weight: 600;
+            color: #c41e3a;
+        }
+
+        .nav-steps {
+            display: flex;
+            gap: 8px;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .step-dot.active {
+            border-color: #c41e3a;
+            background: #c41e3a;
+            color: #fff;
+        }
+
+        .step-dot.done {
+            border-color: #2a7a4b;
+            background: #2a7a4b;
+            color: #fff;
+        }
+
+        .progress-info {
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* Card */
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 30px;
+            display: none;
+        }
+
+        .card.visible {
+            display: block;
+        }
+
+        .card-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #c41e3a;
+        }
+
+        .card-step {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .card-title {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        /* Typography */
+        h2 {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin: 20px 0 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        /* Info Box */
+        .info {
+            background: #fdf2f4;
+            border: 1px solid #c41e3a;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #c41e3a;
+            margin-bottom: 8px;
+        }
+
+        /* Vocabulary Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background: #c41e3a;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        .es {
+            font-weight: 600;
+            color: #c41e3a;
+        }
+
+        /* Exercise */
+        .exercise {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .exercise-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .exercise-row {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .exercise-row label {
+            min-width: 200px;
+        }
+
+        select, input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #c41e3a;
+        }
+
+        .text-input {
+            border: none;
+            border-bottom: 2px solid #c41e3a;
+            background: transparent;
+            width: 200px;
+            text-align: center;
+        }
+
+        /* Feedback */
+        .feedback {
+            padding: 12px 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.ok {
+            background: #e8f5e9;
+            border: 1px solid #2a7a4b;
+            color: #2a7a4b;
+        }
+
+        .feedback.partial {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            color: #b35c00;
+        }
+
+        .feedback.wrong {
+            background: #ffebee;
+            border: 1px solid #c62828;
+            color: #c62828;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-main {
+            background: #c41e3a;
+            color: #fff;
+        }
+
+        .btn-main:hover {
+            background: #a01830;
+        }
+
+        .btn-back {
+            background: #fff;
+            border: 1px solid #ddd;
+            color: #555;
+        }
+
+        .btn-back:hover {
+            background: #f5f5f5;
+        }
+
+        .btn-check {
+            background: #c41e3a;
+            color: #fff;
+            margin-top: 15px;
+        }
+
+        /* Nav Buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        /* Hefter-Hinweis */
+        .hefter {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .hefter-label {
+            display: inline-block;
+            background: #b35c00;
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+
+        .hefter ul {
+            margin: 10px 0 0 20px;
+        }
+
+        .hefter li {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        /* Summary */
+        .summary {
+            background: #fdf2f4;
+            border: 2px solid #c41e3a;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .summary h3 {
+            color: #c41e3a;
+            margin-bottom: 15px;
+        }
+
+        .summary ul {
+            margin-left: 20px;
+        }
+
+        .summary li {
+            margin-bottom: 8px;
+        }
+
+        /* Completion */
+        .complete-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .complete-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .complete-screen h2 {
+            color: #2a7a4b;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        .score {
+            font-size: 2em;
+            font-weight: 700;
+            color: #c41e3a;
+            margin: 20px 0;
+        }
+
+        .complete-screen ul {
+            text-align: left;
+            max-width: 350px;
+            margin: 20px auto;
+        }
+
+        /* Audio hint */
+        .audio-hint {
+            background: #e3f2fd;
+            border: 1px solid #1976d2;
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <div class="nav-content">
+        <div class="nav-title">LP-04a: Las asignaturas</div>
+        <div class="nav-steps" id="stepDots"></div>
+        <div class="progress-info"><span id="pct">0</span>%</div>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- =====================================================
+         SCHRITT 1: Einführung
+    ===================================================== -->
+    <div class="card visible" id="step1">
+        <div class="card-header">
+            <div class="card-step">Schritt 1 von 5</div>
+            <h1 class="card-title">Willkommen: Las asignaturas</h1>
+        </div>
+
+        <p>In dieser Lektion lernst du die <strong>Schulfächer</strong> auf Spanisch. Du wirst:</p>
+
+        <ul style="margin: 15px 0 15px 25px;">
+            <li>11 Schulfächer auf Spanisch kennenlernen</li>
+            <li>Den richtigen Artikel (el/la) verwenden</li>
+            <li>Sagen können, welche Fächer du magst und nicht magst</li>
+        </ul>
+
+        <div class="info">
+            <div class="info-title">Wusstest du?</div>
+            <p>In Spanien geht man von 12-16 Jahren auf die <strong>ESO</strong> (Educacion Secundaria Obligatoria). Der Unterricht dauert oft von 8:00 bis 14:30 Uhr - danach gibt es eine lange Mittagspause!</p>
+        </div>
+
+        <div class="nav-buttons">
+            <div></div>
+            <button class="btn btn-main" onclick="goTo(2)">Los geht's!</button>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         SCHRITT 2: Vokabeln Teil 1
+    ===================================================== -->
+    <div class="card" id="step2">
+        <div class="card-header">
+            <div class="card-step">Schritt 2 von 5</div>
+            <h1 class="card-title">Die Schulfächer (Teil 1)</h1>
+        </div>
+
+        <p>Hier sind die wichtigsten Schulfächer. Achte auf den <strong>Artikel</strong> (el = maskulin, la = feminin)!</p>
+
+        <table>
+            <thead>
+                <tr><th>Spanisch</th><th>Deutsch</th><th>Tipp</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="es">las matematicas</td><td>Mathematik</td><td>Immer Plural!</td></tr>
+                <tr><td class="es">el espanol</td><td>Spanisch</td><td>Dein Lieblingsfach!</td></tr>
+                <tr><td class="es">el ingles</td><td>Englisch</td><td>Wie im Englischen</td></tr>
+                <tr><td class="es">el aleman</td><td>Deutsch</td><td>Sprachen = el</td></tr>
+                <tr><td class="es">la historia</td><td>Geschichte</td><td>historia = Story</td></tr>
+                <tr><td class="es">la geografia</td><td>Erdkunde</td><td>geo = Erde</td></tr>
+            </tbody>
+        </table>
+
+        <div class="audio-hint">
+            Sprich die Wörter laut nach! Achte besonders auf: ma-te-MA-ti-cas (Betonung auf dem dritten A)
+        </div>
+
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <strong>Merkkasten ausfüllen:</strong>
+            <ul>
+                <li>Übertrage die ersten 6 Fächer mit Übersetzung</li>
+                <li>Achte auf die Artikel!</li>
+            </ul>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(1)">Zurück</button>
+            <button class="btn btn-main" onclick="goTo(3)">Weiter</button>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         SCHRITT 3: Vokabeln Teil 2 + Übung Zuordnung
+    ===================================================== -->
+    <div class="card" id="step3">
+        <div class="card-header">
+            <div class="card-step">Schritt 3 von 5</div>
+            <h1 class="card-title">Die Schulfächer (Teil 2) + Übung</h1>
+        </div>
+
+        <p>Und hier die restlichen Fächer:</p>
+
+        <table>
+            <thead>
+                <tr><th>Spanisch</th><th>Deutsch</th><th>Tipp</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="es">la biologia</td><td>Biologie</td><td>bio = Leben</td></tr>
+                <tr><td class="es">la musica</td><td>Musik</td><td>Fast wie Deutsch!</td></tr>
+                <tr><td class="es">el arte</td><td>Kunst</td><td>art = Kunst</td></tr>
+                <tr><td class="es">la educacion fisica</td><td>Sport</td><td>"körperliche Erziehung"</td></tr>
+                <tr><td class="es">la informatica</td><td>Informatik</td><td>Computer-Fach</td></tr>
+            </tbody>
+        </table>
+
+        <div class="exercise">
+            <div class="exercise-title">Übung: Ordne zu!</div>
+
+            <div class="exercise-row">
+                <label>1. <span class="es">las matematicas</span></label>
+                <select id="q1">
+                    <option value="">-- wählen --</option>
+                    <option value="a">Geschichte</option>
+                    <option value="b">Mathematik</option>
+                    <option value="c">Musik</option>
+                    <option value="d">Sport</option>
+                </select>
+            </div>
+
+            <div class="exercise-row">
+                <label>2. <span class="es">la historia</span></label>
+                <select id="q2">
+                    <option value="">-- wählen --</option>
+                    <option value="a">Geschichte</option>
+                    <option value="b">Mathematik</option>
+                    <option value="c">Musik</option>
+                    <option value="d">Sport</option>
+                </select>
+            </div>
+
+            <div class="exercise-row">
+                <label>3. <span class="es">la musica</span></label>
+                <select id="q3">
+                    <option value="">-- wählen --</option>
+                    <option value="a">Geschichte</option>
+                    <option value="b">Mathematik</option>
+                    <option value="c">Musik</option>
+                    <option value="d">Sport</option>
+                </select>
+            </div>
+
+            <div class="exercise-row">
+                <label>4. <span class="es">la educacion fisica</span></label>
+                <select id="q4">
+                    <option value="">-- wählen --</option>
+                    <option value="a">Geschichte</option>
+                    <option value="b">Mathematik</option>
+                    <option value="c">Musik</option>
+                    <option value="d">Sport</option>
+                </select>
+            </div>
+
+            <button class="btn btn-check" onclick="checkExercise1()">Prüfen</button>
+            <div class="feedback" id="fb1"></div>
+        </div>
+
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <strong>Aufgabe 1:</strong>
+            <ul>
+                <li>Bearbeite die Zuordnungsaufgabe auf dem AB</li>
+            </ul>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(2)">Zurück</button>
+            <button class="btn btn-main" onclick="goTo(4)">Weiter</button>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         SCHRITT 4: Meinung äußern (Me gusta)
+    ===================================================== -->
+    <div class="card" id="step4">
+        <div class="card-header">
+            <div class="card-step">Schritt 4 von 5</div>
+            <h1 class="card-title">Meinung äußern: Me gusta...</h1>
+        </div>
+
+        <p>Um zu sagen, was du magst oder nicht magst, verwendest du:</p>
+
+        <div class="info">
+            <div class="info-title">So funktioniert's:</div>
+            <p><span class="es">Me gusta</span> + el/la + Fach (Singular) = Das Fach gefällt mir.</p>
+            <p><span class="es">Me gustan</span> + las matematicas = Die Fächer gefallen mir (Plural!).</p>
+            <p><span class="es">No me gusta(n)</span> + ... = ... gefällt/gefallen mir nicht.</p>
+        </div>
+
+        <h2>Beispiele:</h2>
+        <ul style="margin: 10px 0 20px 25px;">
+            <li><span class="es">Me gusta el espanol.</span> - Spanisch gefällt mir.</li>
+            <li><span class="es">Me gusta la musica.</span> - Musik gefällt mir.</li>
+            <li><span class="es">Me gustan las matematicas.</span> - Mathe gefällt mir. (Plural!)</li>
+            <li><span class="es">No me gusta la historia.</span> - Geschichte gefällt mir nicht.</li>
+        </ul>
+
+        <div class="exercise">
+            <div class="exercise-title">Übung: Ergänze!</div>
+
+            <p style="margin-bottom: 15px;">Wähle die richtige Form: <strong>gusta</strong> oder <strong>gustan</strong>?</p>
+
+            <div class="exercise-row">
+                <label>1. Me ______ el arte.</label>
+                <select id="t1">
+                    <option value="">-- wählen --</option>
+                    <option value="gusta">gusta</option>
+                    <option value="gustan">gustan</option>
+                </select>
+            </div>
+
+            <div class="exercise-row">
+                <label>2. Me ______ las matematicas.</label>
+                <select id="t2">
+                    <option value="">-- wählen --</option>
+                    <option value="gusta">gusta</option>
+                    <option value="gustan">gustan</option>
+                </select>
+            </div>
+
+            <div class="exercise-row">
+                <label>3. No me ______ la biologia.</label>
+                <select id="t3">
+                    <option value="">-- wählen --</option>
+                    <option value="gusta">gusta</option>
+                    <option value="gustan">gustan</option>
+                </select>
+            </div>
+
+            <div class="exercise-row">
+                <label>4. Me ______ el ingles.</label>
+                <select id="t4">
+                    <option value="">-- wählen --</option>
+                    <option value="gusta">gusta</option>
+                    <option value="gustan">gustan</option>
+                </select>
+            </div>
+
+            <button class="btn btn-check" onclick="checkExercise2()">Prüfen</button>
+            <div class="feedback" id="fb2"></div>
+        </div>
+
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <strong>Aufgabe 3:</strong>
+            <ul>
+                <li>Schreibe Sätze über deine Lieblingsfächer</li>
+                <li>Schreibe Sätze über Fächer, die du nicht magst</li>
+            </ul>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(3)">Zurück</button>
+            <button class="btn btn-main" onclick="goTo(5)">Weiter</button>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         SCHRITT 5: Zusammenfassung
+    ===================================================== -->
+    <div class="card" id="step5">
+        <div class="card-header">
+            <div class="card-step">Schritt 5 von 5</div>
+            <h1 class="card-title">Zusammenfassung</h1>
+        </div>
+
+        <div class="summary">
+            <h3>Das hast du gelernt:</h3>
+            <ul>
+                <li><strong>11 Schulfächer</strong> auf Spanisch mit korrektem Artikel</li>
+                <li><strong>Me gusta / Me gustan</strong> für Vorlieben</li>
+                <li><strong>No me gusta(n)</strong> für Abneigungen</li>
+                <li>Den Unterschied: <strong>gusta</strong> (Singular) vs. <strong>gustan</strong> (Plural)</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <div class="info-title">Merke dir:</div>
+            <p><strong>las matematicas</strong> ist IMMER Plural - daher: <strong>Me gustan</strong> las matematicas!</p>
+        </div>
+
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <strong>Arbeitsblatt abschließen:</strong>
+            <ul>
+                <li>Kontrolliere deinen Merkkasten - sind alle 11 Fächer eingetragen?</li>
+                <li>Bearbeite Aufgabe 2 (Artikel) und Aufgabe 4 (Stundenplan)</li>
+                <li>Hefte das Arbeitsblatt ab!</li>
+            </ul>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(4)">Zurück</button>
+            <button class="btn btn-main" onclick="finish()">Abschließen</button>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         ABSCHLUSS-SCREEN
+    ===================================================== -->
+    <div class="card" id="step6">
+        <div class="complete-screen">
+            <div class="complete-icon">&#127881;</div>
+            <h2>Muy bien!</h2>
+            <p>Du hast den Lernpfad abgeschlossen.</p>
+
+            <div class="score">
+                <span id="finalScore">0</span> / 8 Punkte
+            </div>
+
+            <p><strong>Nächste Schritte:</strong></p>
+            <ul>
+                <li>Arbeitsblatt AB-04a fertig ausfüllen</li>
+                <li>11 Schulfächer mit Artikel lernen</li>
+                <li>Lehrwerk S. 38, Aufgabe 3</li>
+            </ul>
+
+            <button class="btn btn-back" onclick="reset()" style="margin-top: 20px;">Neu starten</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* =====================================================
+   KONFIGURATION
+===================================================== */
+var LP_ID = 'lp04a';
+var TOTAL = 5;
+var current = 1;
+var score1 = 0;
+var score2 = 0;
+
+/* =====================================================
+   LÖSUNGEN
+===================================================== */
+var SOLUTIONS_MC = {
+    q1: 'b',  // matematicas = Mathematik
+    q2: 'a',  // historia = Geschichte
+    q3: 'c',  // musica = Musik
+    q4: 'd'   // educacion fisica = Sport
+};
+
+var SOLUTIONS_GUSTA = {
+    t1: 'gusta',   // el arte = Singular
+    t2: 'gustan',  // las matematicas = Plural
+    t3: 'gusta',   // la biologia = Singular
+    t4: 'gusta'    // el ingles = Singular
+};
+
+/* =====================================================
+   INITIALISIERUNG
+===================================================== */
+function init() {
+    var dots = document.getElementById('stepDots');
+    dots.innerHTML = '';
+    for (var i = 1; i <= TOTAL; i++) {
+        var d = document.createElement('div');
+        d.className = 'step-dot';
+        d.textContent = i;
+        d.setAttribute('data-s', i);
+        d.onclick = function() {
+            var s = parseInt(this.getAttribute('data-s'));
+            if (s <= current) goTo(s);
+        };
+        dots.appendChild(d);
+    }
+
+    var saved = localStorage.getItem(LP_ID + '-step');
+    if (saved) current = parseInt(saved);
+
+    var s1 = localStorage.getItem(LP_ID + '-score1');
+    if (s1) score1 = parseInt(s1);
+
+    var s2 = localStorage.getItem(LP_ID + '-score2');
+    if (s2) score2 = parseInt(s2);
+
+    loadInputs();
+    showStep(current);
+}
+
+/* =====================================================
+   NAVIGATION
+===================================================== */
+function showStep(n) {
+    current = n;
+    localStorage.setItem(LP_ID + '-step', n);
+
+    for (var i = 1; i <= TOTAL + 1; i++) {
+        var el = document.getElementById('step' + i);
+        if (el) {
+            if (i === n) {
+                el.classList.add('visible');
+            } else {
+                el.classList.remove('visible');
+            }
+        }
+    }
+
+    var pct = Math.round(((n - 1) / TOTAL) * 100);
+    if (n > TOTAL) pct = 100;
+    document.getElementById('pct').textContent = pct;
+
+    var dots = document.querySelectorAll('.step-dot');
+    for (var j = 0; j < dots.length; j++) {
+        var s = parseInt(dots[j].getAttribute('data-s'));
+        dots[j].className = 'step-dot';
+        if (s === n && n <= TOTAL) {
+            dots[j].classList.add('active');
+        } else if (s < n) {
+            dots[j].classList.add('done');
+        }
+    }
+
+    window.scrollTo(0, 0);
+}
+
+function goTo(n) {
+    showStep(n);
+}
+
+/* =====================================================
+   PERSISTENZ
+===================================================== */
+function loadInputs() {
+    var selects = document.querySelectorAll('select');
+    for (var i = 0; i < selects.length; i++) {
+        var el = selects[i];
+        var v = localStorage.getItem(LP_ID + '-' + el.id);
+        if (v) el.value = v;
+    }
+}
+
+function saveInput(id) {
+    var el = document.getElementById(id);
+    if (el) localStorage.setItem(LP_ID + '-' + id, el.value);
+}
+
+function saveAllInputs() {
+    var selects = document.querySelectorAll('select');
+    for (var i = 0; i < selects.length; i++) {
+        saveInput(selects[i].id);
+    }
+}
+
+/* =====================================================
+   PRÜFUNGEN
+===================================================== */
+function checkExercise1() {
+    saveAllInputs();
+
+    var count = 0;
+    var total = 4;
+
+    for (var id in SOLUTIONS_MC) {
+        var el = document.getElementById(id);
+        if (el && el.value === SOLUTIONS_MC[id]) count++;
+    }
+
+    score1 = count;
+    localStorage.setItem(LP_ID + '-score1', count);
+
+    var fb = document.getElementById('fb1');
+    fb.classList.add('show');
+
+    if (count === total) {
+        fb.className = 'feedback show ok';
+        fb.textContent = 'Perfecto! Alle ' + total + ' richtig!';
+    } else if (count >= 2) {
+        fb.className = 'feedback show partial';
+        fb.textContent = count + ' von ' + total + ' richtig. Schau dir die Vokabeln nochmal an!';
+    } else {
+        fb.className = 'feedback show wrong';
+        fb.textContent = 'Noch nicht ganz. Gehe zurück zu Schritt 2 und wiederhole die Vokabeln.';
+    }
+}
+
+function checkExercise2() {
+    saveAllInputs();
+
+    var count = 0;
+    var total = 4;
+
+    for (var id in SOLUTIONS_GUSTA) {
+        var el = document.getElementById(id);
+        if (el && el.value === SOLUTIONS_GUSTA[id]) count++;
+    }
+
+    score2 = count;
+    localStorage.setItem(LP_ID + '-score2', count);
+
+    var fb = document.getElementById('fb2');
+    fb.classList.add('show');
+
+    if (count === total) {
+        fb.className = 'feedback show ok';
+        fb.textContent = 'Excelente! Du verstehst gusta vs. gustan perfekt!';
+    } else if (count >= 2) {
+        fb.className = 'feedback show partial';
+        fb.textContent = count + ' von ' + total + ' richtig. Tipp: Plural (las...) braucht GUSTAN!';
+    } else {
+        fb.className = 'feedback show wrong';
+        fb.textContent = 'Denk daran: gusta = Singular (ein Fach), gustan = Plural (mehrere/las matematicas).';
+    }
+}
+
+/* =====================================================
+   ABSCHLUSS
+===================================================== */
+function finish() {
+    var total = score1 + score2;
+    document.getElementById('finalScore').textContent = total;
+    localStorage.setItem(LP_ID + '-done', 'true');
+    showStep(TOTAL + 1);
+}
+
+function reset() {
+    if (!confirm('Wirklich neu starten? Alle Eingaben werden gelöscht.')) return;
+
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(LP_ID) === 0) keys.push(k);
+    }
+    for (var j = 0; j < keys.length; j++) {
+        localStorage.removeItem(keys[j]);
+    }
+
+    var selects = document.querySelectorAll('select');
+    for (var x = 0; x < selects.length; x++) {
+        selects[x].selectedIndex = 0;
+    }
+
+    var fb1 = document.getElementById('fb1');
+    var fb2 = document.getElementById('fb2');
+    if (fb1) fb1.className = 'feedback';
+    if (fb2) fb2.className = 'feedback';
+
+    current = 1;
+    score1 = 0;
+    score2 = 0;
+    showStep(1);
+}
+
+/* =====================================================
+   START
+===================================================== */
+init();
+</script>
+
+</body>
+</html>
