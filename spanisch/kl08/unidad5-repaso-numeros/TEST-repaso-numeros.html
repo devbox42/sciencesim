@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test: Repaso Unidad 5 + Numeros 100-1000</title>
+    <title>Stundenleistung: Repaso Unidad 5 + Números</title>
     <style>
         /* ═══════════════════════════════════════════════════════════════
            TEST: Repaso Unidad 5 + Números 100-1000
@@ -67,21 +67,67 @@
             font-weight: 600;
             font-size: 1.1em;
             color: #c41e3a;
+            display: block;
+            margin-bottom: 10px;
         }
 
-        .seat-field input {
-            padding: 10px 15px;
-            border: 2px solid #c41e3a;
+        .seat-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .seat-tile {
+            aspect-ratio: 1;
+            border: 2px solid #ddd;
+            background: #fff;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .seat-tile:hover {
+            border-color: #c41e3a;
+            background: #fdf2f4;
+        }
+
+        .seat-tile.selected {
+            border-color: #c41e3a;
+            background: #c41e3a;
+            color: #fff;
+        }
+
+        .seat-tile.disabled {
+            background: #eee;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+
+        .selected-display {
             font-size: 1.2em;
-            width: 80px;
-            text-align: center;
-            margin-left: 10px;
+            margin-top: 10px;
+        }
+
+        .selected-display strong {
+            color: #c41e3a;
+            font-size: 1.3em;
         }
 
         .seat-field .hint {
             font-size: 0.85em;
             color: #888;
-            margin-left: 15px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 500px) {
+            .seat-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
         }
 
         .date-display {
@@ -315,6 +361,49 @@
             color: #c62828;
         }
 
+        /* Detaillierte Auswertung */
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.85em;
+        }
+
+        .detail-table th, .detail-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .detail-table th {
+            background: #c41e3a;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .detail-table tr.row-correct {
+            background: #e8f5e9;
+        }
+
+        .detail-table tr.row-wrong {
+            background: #ffebee;
+        }
+
+        .detail-table .aufgabe-header td {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #c41e3a;
+        }
+
+        .detail-table .student-answer {
+            font-weight: 600;
+        }
+
+        .detail-table .correct-answer {
+            color: #2a7a4b;
+        }
+
         .print-info {
             margin-top: 20px;
             padding: 15px;
@@ -433,7 +522,7 @@
 
 <div class="container" id="testContainer">
     <div class="header">
-        <h1>Test: Repaso Unidad 5 + Numeros grandes</h1>
+        <h1>Stundenleistung: Repaso Unidad 5 + Números</h1>
         <div class="header-info">
             <span>Spanisch Klasse 8</span>
             <span>Zeit: ca. 20 Minuten</span>
@@ -442,9 +531,12 @@
     </div>
 
     <div class="seat-field">
-        <label for="seatNumber">Platznummer:</label>
-        <input type="number" id="seatNumber" min="1" max="30" placeholder="P">
-        <span class="hint">(Trage deine Platznummer ein, z.B. 1, 2, 3...)</span>
+        <label>Wähle deine Platznummer:</label>
+        <div class="seat-grid" id="seatGrid"></div>
+        <input type="hidden" id="seatNumber" value="">
+        <div class="selected-display" id="selectedDisplay">
+            <span class="hint">Klicke auf deine Platznummer (steht auf deiner Platzkarte)</span>
+        </div>
         <span class="date-display">Datum: <span id="datumHeute"></span></span>
     </div>
 
@@ -729,8 +821,24 @@
         </div>
 
         <div class="result-detail">
-            <strong>Aufgaben-Uebersicht:</strong>
+            <strong>Aufgaben-Übersicht:</strong>
             <ul id="detailList"></ul>
+        </div>
+
+        <div class="result-detail" style="margin-top:25px;">
+            <strong>Detaillierte Auswertung:</strong>
+            <table class="detail-table" id="detailTable">
+                <thead>
+                    <tr>
+                        <th style="width:35%;">Frage</th>
+                        <th style="width:25%;">Deine Antwort</th>
+                        <th style="width:25%;">Richtige Antwort</th>
+                        <th style="width:15%;">Punkte</th>
+                    </tr>
+                </thead>
+                <tbody id="detailTableBody">
+                </tbody>
+            </table>
         </div>
 
         <div class="print-info">
@@ -748,8 +856,8 @@
 <!-- Locked Overlay -->
 <div class="locked-overlay" id="lockedOverlay">
     <div class="locked-box">
-        <h2>Test bereits abgeschlossen</h2>
-        <p>Du hast diesen Test bereits abgegeben.</p>
+        <h2>Stundenleistung bereits abgeschlossen</h2>
+        <p>Du hast diese Stundenleistung bereits abgegeben.</p>
 
         <div class="score-display" id="lockedScore"></div>
         <div class="np-display" id="lockedNP"></div>
@@ -904,6 +1012,78 @@ function containsKeywords(text, keywords) {
 /* ═══════════════════════════════════════════════════════════════
    INITIALISIERUNG
 ═══════════════════════════════════════════════════════════════ */
+function generateSeatGrid() {
+    var grid = document.getElementById('seatGrid');
+    grid.innerHTML = '';
+
+    for (var i = 1; i <= 30; i++) {
+        var tile = document.createElement('div');
+        tile.className = 'seat-tile';
+        tile.textContent = i;
+        tile.setAttribute('data-seat', i);
+        tile.onclick = (function(num) {
+            return function() { selectSeat(num); };
+        })(i);
+        grid.appendChild(tile);
+    }
+
+    // Restore saved selection and lock state
+    var saved = localStorage.getItem(TEST_ID + '-seat');
+    var seatLocked = localStorage.getItem(TEST_ID + '-seat-locked');
+    if (saved) {
+        selectSeat(parseInt(saved), true);
+    }
+    // If seat was locked, disable all other tiles
+    if (seatLocked === 'true' && saved) {
+        var tiles = document.querySelectorAll('.seat-tile');
+        for (var j = 0; j < tiles.length; j++) {
+            if (tiles[j].getAttribute('data-seat') !== saved) {
+                tiles[j].classList.add('disabled');
+            }
+        }
+    }
+}
+
+function selectSeat(num, silent) {
+    // Check if seat already locked (once chosen, cannot change)
+    var seatLocked = localStorage.getItem(TEST_ID + '-seat-locked');
+    if (seatLocked === 'true' && !silent) {
+        alert('Deine Platznummer ist bereits festgelegt und kann nicht mehr geändert werden.');
+        return;
+    }
+
+    // Check if test already submitted
+    var locked = localStorage.getItem(TEST_ID + '-locked');
+    if (locked === 'true' && !silent) {
+        return;
+    }
+
+    // Deselect all
+    var tiles = document.querySelectorAll('.seat-tile');
+    for (var i = 0; i < tiles.length; i++) {
+        tiles[i].classList.remove('selected');
+        tiles[i].classList.add('disabled');
+    }
+
+    // Select this one
+    var selected = document.querySelector('.seat-tile[data-seat="' + num + '"]');
+    if (selected) {
+        selected.classList.remove('disabled');
+        selected.classList.add('selected');
+    }
+
+    // Update hidden input
+    document.getElementById('seatNumber').value = num;
+
+    // Update display
+    document.getElementById('selectedDisplay').innerHTML =
+        'Deine Platznummer: <strong>P' + num + '</strong> (gesperrt)';
+
+    // Save and lock seat
+    localStorage.setItem(TEST_ID + '-seat', num);
+    localStorage.setItem(TEST_ID + '-seat-locked', 'true');
+}
+
 function init() {
     // Datum anzeigen
     var heute = new Date();
@@ -914,6 +1094,7 @@ function init() {
         (tag < 10 ? '0' : '') + tag + '.' +
         (monat < 10 ? '0' : '') + monat + '.' + jahr;
 
+    generateSeatGrid();
     checkLocked();
     checkAutoReset();
     loadInputs();
@@ -978,121 +1159,188 @@ document.addEventListener('input', function() { saveInputs(); });
 document.addEventListener('change', function() { saveInputs(); });
 
 /* ═══════════════════════════════════════════════════════════════
+   FRAGEN-DEFINITIONEN für detaillierte Auswertung
+═══════════════════════════════════════════════════════════════ */
+var FRAGEN = {
+    // Aufgabe 1: Kleidung
+    a1_1: { frage: 'T-Shirt = ?', loesung: 'B) la camiseta' },
+    a1_2: { frage: 'Hose = ?', loesung: 'C) los pantalones' },
+    a1_3: { frage: 'Schuhe = ?', loesung: 'B) los zapatos' },
+    a1_4: { frage: 'Kleid = ?', loesung: 'C) el vestido' },
+    a1_5: { frage: 'Pullover = ?', loesung: 'B) el jersey' },
+    // Aufgabe 2: Farben
+    a2_1: { frage: 'la camiseta ___ (weiß)', loesung: 'blanca' },
+    a2_2: { frage: 'el jersey ___ (schwarz)', loesung: 'negro' },
+    a2_3: { frage: 'los zapatos ___ (braun)', loesung: 'marrón / marrones' },
+    a2_4: { frage: 'la falda ___ (rot)', loesung: 'roja' },
+    // Aufgabe 3: Modalverben
+    a3_1: { frage: 'Yo ___ comprar (querer)', loesung: 'quiero' },
+    a3_2: { frage: 'Tú no ___ ir (poder)', loesung: 'puedes' },
+    a3_3: { frage: 'Nosotros ___ estudiar (tener que)', loesung: 'tenemos que' },
+    a3_4: { frage: 'Ellos ___ una chaqueta (querer)', loesung: 'quieren' },
+    a3_5: { frage: 'María ___ hablar (poder)', loesung: 'puede' },
+    // Aufgabe 4: Zahlen schreiben
+    a4_1: { frage: '100 = ?', loesung: 'cien' },
+    a4_2: { frage: '350 = ?', loesung: 'trescientos cincuenta' },
+    a4_3: { frage: '500 = ?', loesung: 'quinientos' },
+    a4_4: { frage: '725 = ?', loesung: 'setecientos veinticinco' },
+    a4_5: { frage: '999 = ?', loesung: 'novecientos noventa y nueve' },
+    a4_6: { frage: '1000 = ?', loesung: 'mil' },
+    // Aufgabe 5: Zahlen erkennen
+    a5_1: { frage: 'doscientos cuarenta = ?', loesung: '240' },
+    a5_2: { frage: 'quinientos ochenta y tres = ?', loesung: '583' },
+    a5_3: { frage: 'setecientos quince = ?', loesung: '715' },
+    a5_4: { frage: 'novecientos noventa y nueve = ?', loesung: '999' },
+    // Aufgabe 6: Dialog
+    a6_1: { frage: 'Ich möchte einen Pullover kaufen.', loesung: 'Quiero comprar un jersey.' },
+    a6_2: { frage: 'Ich möchte einen blauen.', loesung: 'Quiero uno azul.' },
+    a6_3: { frage: 'Wieviel kostet das?', loesung: '¿Cuánto cuesta?' },
+    a6_4: { frage: 'Gut, ich kaufe ihn!', loesung: 'Bien, lo compro.' }
+};
+
+var DROPDOWN_OPTIONS = {
+    a1_1: { a: 'A) el vestido', b: 'B) la camiseta', c: 'C) los pantalones' },
+    a1_2: { a: 'A) el vestido', b: 'B) la camiseta', c: 'C) los pantalones' },
+    a1_3: { a: 'A) las zapatillas', b: 'B) los zapatos', c: 'C) la gorra' },
+    a1_4: { a: 'A) la falda', b: 'B) el jersey', c: 'C) el vestido' },
+    a1_5: { a: 'A) la chaqueta', b: 'B) el jersey', c: 'C) la camisa' }
+};
+
+/* ═══════════════════════════════════════════════════════════════
    AUSWERTUNG
 ═══════════════════════════════════════════════════════════════ */
 function auswerten() {
     // Check if seat number is entered
     var seatNum = document.getElementById('seatNumber').value;
     if (!seatNum || seatNum < 1 || seatNum > 30) {
-        alert('Bitte trage zuerst deine Platznummer ein (1-30)!');
-        document.getElementById('seatNumber').focus();
+        alert('Bitte wähle zuerst deine Platznummer (1-30)!');
         return;
     }
 
     var punkte = 0;
     var details = [];
+    var einzelheiten = []; // Für detaillierte Tabelle
 
     // Aufgabe 1: Kleidung zuordnen (5 BE)
     var a1 = 0;
+    einzelheiten.push({ type: 'header', text: 'Aufgabe 1: Kleidung zuordnen' });
     for (var id1 in SOL_A1) {
         var el1 = document.getElementById(id1);
-        if (el1 && el1.value === SOL_A1[id1]) {
-            a1++;
-        }
+        var userVal = el1 ? el1.value : '';
+        var correct = userVal === SOL_A1[id1];
+        if (correct) a1++;
+        var userDisplay = userVal ? (DROPDOWN_OPTIONS[id1] ? DROPDOWN_OPTIONS[id1][userVal] : userVal) : '(leer)';
+        einzelheiten.push({
+            frage: FRAGEN[id1].frage,
+            antwort: userDisplay,
+            loesung: FRAGEN[id1].loesung,
+            korrekt: correct,
+            punkte: correct ? 1 : 0
+        });
     }
     punkte += a1;
-    details.push({
-        name: 'Aufgabe 1 (Kleidung)',
-        erreicht: a1,
-        max: 5,
-        ok: a1 >= 3
-    });
+    details.push({ name: 'Aufgabe 1 (Kleidung)', erreicht: a1, max: 5, ok: a1 >= 3 });
 
     // Aufgabe 2: Farben (4 BE)
     var a2 = 0;
+    einzelheiten.push({ type: 'header', text: 'Aufgabe 2: Farben' });
     for (var id2 in SOL_A2) {
         var el2 = document.getElementById(id2);
-        if (el2 && checkMatch(el2.value, SOL_A2[id2])) {
-            a2++;
-        }
+        var userVal2 = el2 ? el2.value : '';
+        var correct2 = checkMatch(userVal2, SOL_A2[id2]);
+        if (correct2) a2++;
+        einzelheiten.push({
+            frage: FRAGEN[id2].frage,
+            antwort: userVal2 || '(leer)',
+            loesung: FRAGEN[id2].loesung,
+            korrekt: correct2,
+            punkte: correct2 ? 1 : 0
+        });
     }
     punkte += a2;
-    details.push({
-        name: 'Aufgabe 2 (Farben)',
-        erreicht: a2,
-        max: 4,
-        ok: a2 >= 2
-    });
+    details.push({ name: 'Aufgabe 2 (Farben)', erreicht: a2, max: 4, ok: a2 >= 2 });
 
     // Aufgabe 3: Modalverben (5 BE)
     var a3 = 0;
+    einzelheiten.push({ type: 'header', text: 'Aufgabe 3: Modalverben' });
     for (var id3 in SOL_A3) {
         var el3 = document.getElementById(id3);
-        if (el3 && checkMatch(el3.value, SOL_A3[id3])) {
-            a3++;
-        }
+        var userVal3 = el3 ? el3.value : '';
+        var correct3 = checkMatch(userVal3, SOL_A3[id3]);
+        if (correct3) a3++;
+        einzelheiten.push({
+            frage: FRAGEN[id3].frage,
+            antwort: userVal3 || '(leer)',
+            loesung: FRAGEN[id3].loesung,
+            korrekt: correct3,
+            punkte: correct3 ? 1 : 0
+        });
     }
     punkte += a3;
-    details.push({
-        name: 'Aufgabe 3 (Modalverben)',
-        erreicht: a3,
-        max: 5,
-        ok: a3 >= 3
-    });
+    details.push({ name: 'Aufgabe 3 (Modalverben)', erreicht: a3, max: 5, ok: a3 >= 3 });
 
     // Aufgabe 4: Zahlen schreiben (6 BE)
     var a4 = 0;
+    einzelheiten.push({ type: 'header', text: 'Aufgabe 4: Zahlen schreiben' });
     for (var id4 in SOL_A4) {
         var el4 = document.getElementById(id4);
-        if (el4 && checkMatch(el4.value, SOL_A4[id4])) {
-            a4++;
-        }
+        var userVal4 = el4 ? el4.value : '';
+        var correct4 = checkMatch(userVal4, SOL_A4[id4]);
+        if (correct4) a4++;
+        einzelheiten.push({
+            frage: FRAGEN[id4].frage,
+            antwort: userVal4 || '(leer)',
+            loesung: FRAGEN[id4].loesung,
+            korrekt: correct4,
+            punkte: correct4 ? 1 : 0
+        });
     }
     punkte += a4;
-    details.push({
-        name: 'Aufgabe 4 (Zahlen schreiben)',
-        erreicht: a4,
-        max: 6,
-        ok: a4 >= 4
-    });
+    details.push({ name: 'Aufgabe 4 (Zahlen schreiben)', erreicht: a4, max: 6, ok: a4 >= 4 });
 
     // Aufgabe 5: Zahlen erkennen (4 BE)
     var a5 = 0;
+    einzelheiten.push({ type: 'header', text: 'Aufgabe 5: Zahlen erkennen' });
     for (var id5 in SOL_A5) {
         var el5 = document.getElementById(id5);
-        if (el5 && parseInt(el5.value) === SOL_A5[id5]) {
-            a5++;
-        }
+        var userVal5 = el5 ? el5.value : '';
+        var correct5 = parseInt(userVal5) === SOL_A5[id5];
+        if (correct5) a5++;
+        einzelheiten.push({
+            frage: FRAGEN[id5].frage,
+            antwort: userVal5 || '(leer)',
+            loesung: FRAGEN[id5].loesung,
+            korrekt: correct5,
+            punkte: correct5 ? 1 : 0
+        });
     }
     punkte += a5;
-    details.push({
-        name: 'Aufgabe 5 (Zahlen erkennen)',
-        erreicht: a5,
-        max: 4,
-        ok: a5 >= 2
-    });
+    details.push({ name: 'Aufgabe 5 (Zahlen erkennen)', erreicht: a5, max: 4, ok: a5 >= 2 });
 
     // Aufgabe 6: Dialog (4 BE)
     var a6 = 0;
+    einzelheiten.push({ type: 'header', text: 'Aufgabe 6: Einkaufsdialog' });
     for (var id6 in SOL_A6_KEYWORDS) {
         var el6 = document.getElementById(id6);
-        if (el6 && containsKeywords(el6.value, SOL_A6_KEYWORDS[id6])) {
-            a6++;
-        }
+        var userVal6 = el6 ? el6.value : '';
+        var correct6 = containsKeywords(userVal6, SOL_A6_KEYWORDS[id6]);
+        if (correct6) a6++;
+        einzelheiten.push({
+            frage: FRAGEN[id6].frage,
+            antwort: userVal6 || '(leer)',
+            loesung: FRAGEN[id6].loesung,
+            korrekt: correct6,
+            punkte: correct6 ? 1 : 0
+        });
     }
     punkte += a6;
-    details.push({
-        name: 'Aufgabe 6 (Dialog)',
-        erreicht: a6,
-        max: 4,
-        ok: a6 >= 2
-    });
+    details.push({ name: 'Aufgabe 6 (Dialog)', erreicht: a6, max: 4, ok: a6 >= 2 });
 
     // Ergebnis berechnen
     var prozent = (punkte / TOTAL_BE) * 100;
     var np = berechneNP(prozent);
 
-    // Anzeigen
+    // Übersicht anzeigen
     document.getElementById('erreichtePunkte').textContent = punkte;
     document.getElementById('notenpunkte').textContent = np;
 
@@ -1104,6 +1352,27 @@ function auswerten() {
         li.className = item.ok ? 'correct' : 'wrong';
         li.textContent = item.name + ': ' + item.erreicht + ' / ' + item.max + ' BE';
         detailList.appendChild(li);
+    }
+
+    // Detaillierte Tabelle anzeigen
+    var tbody = document.getElementById('detailTableBody');
+    tbody.innerHTML = '';
+    for (var e = 0; e < einzelheiten.length; e++) {
+        var row = document.createElement('tr');
+        var ein = einzelheiten[e];
+
+        if (ein.type === 'header') {
+            row.className = 'aufgabe-header';
+            row.innerHTML = '<td colspan="4">' + ein.text + '</td>';
+        } else {
+            row.className = ein.korrekt ? 'row-correct' : 'row-wrong';
+            row.innerHTML =
+                '<td>' + ein.frage + '</td>' +
+                '<td class="student-answer">' + ein.antwort + '</td>' +
+                '<td class="correct-answer">' + ein.loesung + '</td>' +
+                '<td style="text-align:center;">' + (ein.korrekt ? '1' : '0') + '</td>';
+        }
+        tbody.appendChild(row);
     }
 
     document.getElementById('resultBox').classList.add('show');
