@@ -121,19 +121,24 @@
             border: 1px solid #ccc;
             cursor: pointer;
         }
-        .name-field {
+        .platz-field {
             margin-bottom: 20px;
-            padding: 15px;
+            padding: 20px;
             background: #fff;
-            border: 1px solid #ddd;
+            border: 2px solid #c41e3a;
+            text-align: center;
         }
-        .name-field label { font-weight: 600; margin-right: 10px; }
-        .name-field input {
-            padding: 8px;
-            font-size: 1em;
-            border: 1px solid #ddd;
-            width: 250px;
+        .platz-field label { font-weight: 600; font-size: 1.2em; display: block; margin-bottom: 10px; }
+        .platz-field select {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            border: 2px solid #c41e3a;
+            font-weight: bold;
         }
+        .platz-field select:disabled { background: #f5f5f5; color: #888; }
+        .platz-locked { background: #2a7a4b !important; color: #fff !important; border-color: #2a7a4b !important; }
+        .test-content { display: none; }
+        .test-content.visible { display: block; }
     </style>
 </head>
 <body>
@@ -145,14 +150,25 @@
 
 <div class="container">
 
-    <div class="info-box">
-        <strong>Hinweis:</strong> Dieser Test kann nicht zurückgesetzt werden. 
-        Bearbeite alle Aufgaben sorgfältig. Nach dem Absenden siehst du dein Ergebnis.
+    <div class="platz-field" id="platzField">
+        <label>Wähle deine Platznummer:</label>
+        <select id="platzNummer" onchange="lockPlatz()">
+            <option value="">-- Platznummer wählen --</option>
+            <option>P1</option><option>P2</option><option>P3</option><option>P4</option>
+            <option>P5</option><option>P6</option><option>P7</option><option>P8</option>
+            <option>P9</option><option>P10</option><option>P11</option><option>P12</option>
+            <option>P13</option><option>P14</option><option>P15</option><option>P16</option>
+            <option>P17</option><option>P18</option><option>P19</option><option>P20</option>
+            <option>P21</option><option>P22</option><option>P23</option><option>P24</option>
+        </select>
+        <p style="margin-top: 10px; font-size: 0.9em; color: #888;">Die Platznummer kann nach Auswahl nicht mehr geändert werden!</p>
     </div>
 
-    <div class="name-field">
-        <label>Name:</label>
-        <input type="text" id="studentName" placeholder="Vor- und Nachname">
+    <div class="test-content" id="testContent">
+
+    <div class="info-box">
+        <strong>Hinweis:</strong> Dieser Test kann nicht zurückgesetzt werden.
+        Bearbeite alle Aufgaben sorgfältig. Nach dem Absenden siehst du dein Ergebnis.
     </div>
 
     <!-- AUFGABE 1: parecer einsetzen (6 BE) -->
@@ -269,6 +285,8 @@
         <button class="btn btn-submit" id="submitBtn" onclick="submitTest()">Test abschicken</button>
     </div>
 
+    </div><!-- Ende test-content -->
+
     <!-- ERGEBNIS -->
     <div class="result-box" id="resultBox">
         <h2>Ergebnis</h2>
@@ -301,6 +319,7 @@
 var TEST_ID = 'mt01-parecer-conocer';
 var TOTAL_POINTS = 25;
 var submitted = false;
+var platzLocked = false;
 
 // Antworten
 var answers = {
@@ -331,6 +350,9 @@ var answers = {
 function init() {
     checkAutoReset();
     loadData();
+    if (platzLocked) {
+        showTestContent();
+    }
     if (submitted) {
         showResults();
     }
@@ -346,17 +368,44 @@ function checkAutoReset() {
     }
 }
 
+function lockPlatz() {
+    var sel = document.getElementById('platzNummer');
+    var platz = sel.value;
+    if (!platz) return;
+
+    if (!confirm('Platznummer ' + platz + ' wählen? Diese kann danach NICHT mehr geändert werden!')) {
+        sel.value = '';
+        return;
+    }
+
+    platzLocked = true;
+    sel.disabled = true;
+    sel.className = 'platz-locked';
+    saveData();
+    showTestContent();
+}
+
+function showTestContent() {
+    document.getElementById('testContent').className = 'test-content visible';
+}
+
 function loadData() {
     var saved = localStorage.getItem(TEST_ID + '-data');
     if (saved) {
         var data = JSON.parse(saved);
         submitted = data.submitted || false;
-        
-        if (data.name) {
-            document.getElementById('studentName').value = data.name;
+        platzLocked = data.platzLocked || false;
+
+        if (data.platz) {
+            var sel = document.getElementById('platzNummer');
+            sel.value = data.platz;
+            if (platzLocked) {
+                sel.disabled = true;
+                sel.className = 'platz-locked';
+            }
         }
-        
-        var inputs = document.querySelectorAll('input[type="text"]');
+
+        var inputs = document.querySelectorAll('#testContent input[type="text"]');
         for (var i = 0; i < inputs.length; i++) {
             var id = inputs[i].id;
             if (data[id]) {
@@ -366,7 +415,7 @@ function loadData() {
                 inputs[i].disabled = true;
             }
         }
-        
+
         var radios = document.querySelectorAll('input[type="radio"]');
         for (var j = 0; j < radios.length; j++) {
             var name = radios[j].name;
@@ -377,7 +426,7 @@ function loadData() {
                 radios[j].disabled = true;
             }
         }
-        
+
         if (submitted) {
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').textContent = 'Bereits abgegeben';
@@ -388,19 +437,20 @@ function loadData() {
 function saveData() {
     var data = {
         submitted: submitted,
-        name: document.getElementById('studentName').value
+        platzLocked: platzLocked,
+        platz: document.getElementById('platzNummer').value
     };
-    
-    var inputs = document.querySelectorAll('input[type="text"]');
+
+    var inputs = document.querySelectorAll('#testContent input[type="text"]');
     for (var i = 0; i < inputs.length; i++) {
         data[inputs[i].id] = inputs[i].value;
     }
-    
+
     var radios = document.querySelectorAll('input[type="radio"]:checked');
     for (var j = 0; j < radios.length; j++) {
         data[radios[j].name] = radios[j].value;
     }
-    
+
     localStorage.setItem(TEST_ID + '-data', JSON.stringify(data));
 }
 
@@ -423,34 +473,28 @@ function checkAnswer(id, userAnswer) {
 }
 
 function submitTest() {
-    var name = document.getElementById('studentName').value.trim();
-    if (!name) {
-        alert('Bitte gib deinen Namen ein!');
-        return;
-    }
-    
     if (!confirm('Test wirklich abschicken? Du kannst danach nichts mehr ändern.')) {
         return;
     }
-    
+
     submitted = true;
     saveData();
-    
+
     // Disable all inputs
-    var inputs = document.querySelectorAll('input');
+    var inputs = document.querySelectorAll('#testContent input');
     for (var i = 0; i < inputs.length; i++) {
         inputs[i].disabled = true;
     }
     document.getElementById('submitBtn').disabled = true;
     document.getElementById('submitBtn').textContent = 'Abgegeben';
-    
+
     showResults();
 }
 
 function showResults() {
     var score = 0;
     var details = '<h3>Auswertung:</h3>';
-    
+
     // Aufgabe 1 (6 BE)
     var a1 = 0;
     var ids1 = ['q1a', 'q1b', 'q1c', 'q1d', 'q1e', 'q1f'];
@@ -465,7 +509,7 @@ function showResults() {
     }
     score += a1;
     details += '<p>Aufgabe 1: <span class="' + (a1 === 6 ? 'correct' : 'wrong') + '">' + a1 + '/6</span></p>';
-    
+
     // Aufgabe 2 (7 BE)
     var a2 = 0;
     var ids2 = ['q2a', 'q2b', 'q2c', 'q2d', 'q2e', 'q2f', 'q2g'];
@@ -480,7 +524,7 @@ function showResults() {
     }
     score += a2;
     details += '<p>Aufgabe 2: <span class="' + (a2 === 7 ? 'correct' : 'wrong') + '">' + a2 + '/7</span></p>';
-    
+
     // Aufgabe 3 (6 BE)
     var a3 = 0;
     var ids3 = ['q3a', 'q3b', 'q3c', 'q3d', 'q3e', 'q3f'];
@@ -495,7 +539,7 @@ function showResults() {
     }
     score += a3;
     details += '<p>Aufgabe 3: <span class="' + (a3 === 6 ? 'correct' : 'wrong') + '">' + a3 + '/6</span></p>';
-    
+
     // Aufgabe 4 (6 BE - 2 pro Frage)
     var a4 = 0;
     var mc = ['q4a', 'q4b', 'q4c'];
@@ -507,12 +551,12 @@ function showResults() {
     }
     score += a4;
     details += '<p>Aufgabe 4: <span class="' + (a4 === 6 ? 'correct' : 'wrong') + '">' + a4 + '/6</span></p>';
-    
+
     // Berechne Note (14-NP-Skala)
     var pct = (score / TOTAL_POINTS) * 100;
     var np = 0;
     var note = '6';
-    
+
     if (pct >= 100) { np = 14; note = '1+'; }
     else if (pct >= 96) { np = 13; note = '1'; }
     else if (pct >= 91) { np = 12; note = '1-'; }
@@ -528,14 +572,15 @@ function showResults() {
     else if (pct >= 27) { np = 2; note = '5+'; }
     else if (pct >= 20) { np = 1; note = '5'; }
     else { np = 0; note = '6'; }
-    
-    document.getElementById('resultName').textContent = document.getElementById('studentName').value;
+
+    var platz = document.getElementById('platzNummer').value;
+    document.getElementById('resultName').textContent = 'Platznummer: ' + platz;
     document.getElementById('resultScore').textContent = score;
     document.getElementById('resultGrade').textContent = note;
     document.getElementById('resultNP').textContent = np;
     document.getElementById('detailResults').innerHTML = details;
     document.getElementById('resultBox').style.display = 'block';
-    
+
     // Highlight current grade in table
     var cells = document.getElementById('gradeRow').cells;
     for (var c = 1; c < cells.length; c++) {
@@ -543,7 +588,7 @@ function showResults() {
             cells[c].className = 'current';
         }
     }
-    
+
     window.scrollTo(0, document.getElementById('resultBox').offsetTop - 20);
 }
 
@@ -573,7 +618,7 @@ function lehrerReset() {
 
 // Auto-save on input
 document.addEventListener('input', function(e) {
-    if (!submitted) {
+    if (!submitted && platzLocked) {
         saveData();
     }
 });
