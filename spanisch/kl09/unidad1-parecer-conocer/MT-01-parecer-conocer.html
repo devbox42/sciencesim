@@ -52,7 +52,7 @@
             color: #555;
         }
 
-        /* Platz-Auswahl */
+        /* Platz-Auswahl (Dropdown) */
         .seat-field {
             margin: 15px 0;
             padding: 20px;
@@ -60,7 +60,7 @@
             border: 2px solid #c41e3a;
         }
 
-        .seat-field label {
+        .seat-field > label {
             font-weight: 600;
             font-size: 1.1em;
             color: #c41e3a;
@@ -68,36 +68,56 @@
             margin-bottom: 10px;
         }
 
-        .seat-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 8px;
-            margin: 15px 0;
+        .seat-warning {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 10px 12px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #b35c00;
         }
 
-        .seat-tile {
-            aspect-ratio: 1;
-            border: 2px solid #ddd;
-            background: #fff;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
+        .seat-row {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .seat-tile:hover { border-color: #c41e3a; background: #fdf2f4; }
-        .seat-tile.selected { border-color: #c41e3a; background: #c41e3a; color: #fff; }
-        .seat-tile.disabled { background: #eee; color: #aaa; cursor: not-allowed; }
-
-        .selected-display { font-size: 1.1em; margin-top: 10px; }
-        .selected-display strong { color: #c41e3a; font-size: 1.2em; }
-        .seat-field .hint { font-size: 0.85em; color: #888; margin-top: 10px; }
-
-        @media (max-width: 500px) {
-            .seat-grid { grid-template-columns: repeat(6, 1fr); }
+        .seat-select {
+            padding: 10px 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: 2px solid #c41e3a;
+            background: #fff;
+            color: #222;
+            min-width: 120px;
         }
+
+        .seat-select:disabled {
+            background: #eee;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .btn-seat-ok {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            background: #c41e3a;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-seat-ok:hover { background: #a01830; }
+        .btn-seat-ok:disabled { background: #ccc; cursor: not-allowed; }
+
+        .seat-confirmed {
+            font-size: 1.1em;
+            color: #2a7a4b;
+            font-weight: 600;
+        }
+        .seat-confirmed strong { color: #c41e3a; font-size: 1.2em; }
 
         /* Hinweis-Box */
         .hinweis {
@@ -257,11 +277,17 @@
 
     <div class="seat-field" id="seatField">
         <label>Wähle deine Platznummer:</label>
-        <div class="seat-grid" id="seatGrid"></div>
-        <input type="hidden" id="seatNumber" value="">
-        <div class="selected-display" id="selectedDisplay">
-            <span class="hint">Klicke auf deine Platznummer (steht auf deiner Platzkarte)</span>
+        <div class="seat-warning" id="seatWarning">
+            ⚠️ <strong>Achtung:</strong> Die Platznummer kann nach Bestätigung <strong>nicht mehr geändert</strong> werden!
         </div>
+        <div class="seat-row" id="seatRow">
+            <select class="seat-select" id="seatSelect">
+                <option value="">-- Bitte wählen --</option>
+            </select>
+            <button class="btn-seat-ok" id="btnSeatOk" onclick="confirmSeat()">OK</button>
+        </div>
+        <div class="seat-confirmed" id="seatConfirmed" style="display:none;"></div>
+        <input type="hidden" id="seatNumber" value="">
     </div>
 
     <div class="hinweis">
@@ -582,74 +608,67 @@ function checkMatch(input, acceptedList) {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   PLATZ-GRID
+   PLATZ-DROPDOWN
 ═══════════════════════════════════════════════════════════════ */
-function generateSeatGrid() {
-    var grid = document.getElementById('seatGrid');
-    grid.innerHTML = '';
+function generateSeatDropdown() {
+    var select = document.getElementById('seatSelect');
 
+    // Optionen P1-P24 hinzufügen
     for (var i = 1; i <= 24; i++) {
-        var tile = document.createElement('div');
-        tile.className = 'seat-tile';
-        tile.textContent = 'P' + i;
-        tile.setAttribute('data-seat', i);
-        tile.onclick = (function(num) {
-            return function() { selectSeat(num); };
-        })(i);
-        grid.appendChild(tile);
+        var option = document.createElement('option');
+        option.value = i;
+        option.textContent = 'P' + i;
+        select.appendChild(option);
     }
 
-    // Restore saved selection
+    // Gespeicherte Auswahl wiederherstellen
     var saved = localStorage.getItem(TEST_ID + '-seat');
     var seatLocked = localStorage.getItem(TEST_ID + '-seat-locked');
-    if (saved) {
-        selectSeat(parseInt(saved), true);
-    }
-    if (seatLocked === 'true' && saved) {
-        var tiles = document.querySelectorAll('.seat-tile');
-        for (var j = 0; j < tiles.length; j++) {
-            if (tiles[j].getAttribute('data-seat') !== saved) {
-                tiles[j].classList.add('disabled');
-            }
-        }
+
+    if (saved && seatLocked === 'true') {
+        // Bereits bestätigt → UI sperren
+        showLockedSeat(saved);
+    } else if (saved) {
+        // Nur vorausgewählt, nicht bestätigt
+        select.value = saved;
     }
 }
 
-function selectSeat(num, silent) {
-    var seatLocked = localStorage.getItem(TEST_ID + '-seat-locked');
-    if (seatLocked === 'true' && !silent) {
-        alert('Deine Platznummer ist bereits festgelegt.');
+function confirmSeat() {
+    var select = document.getElementById('seatSelect');
+    var num = select.value;
+
+    if (!num) {
+        alert('Bitte wähle zuerst eine Platznummer!');
         return;
     }
 
-    var submitted = localStorage.getItem(TEST_ID + '-submitted');
-    if (submitted === 'true' && !silent) return;
+    // Bestätigung anfordern
+    var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nDiese Auswahl kann NICHT mehr geändert werden!');
+    if (!ok) return;
 
-    var tiles = document.querySelectorAll('.seat-tile');
-    for (var i = 0; i < tiles.length; i++) {
-        tiles[i].classList.remove('selected');
-        tiles[i].classList.add('disabled');
-    }
-
-    var selected = document.querySelector('.seat-tile[data-seat="' + num + '"]');
-    if (selected) {
-        selected.classList.remove('disabled');
-        selected.classList.add('selected');
-    }
-
-    document.getElementById('seatNumber').value = num;
-    document.getElementById('selectedDisplay').innerHTML =
-        'Deine Platznummer: <strong>P' + num + '</strong> (gesperrt)';
-
+    // Speichern und sperren
     localStorage.setItem(TEST_ID + '-seat', num);
     localStorage.setItem(TEST_ID + '-seat-locked', 'true');
+    document.getElementById('seatNumber').value = num;
+
+    showLockedSeat(num);
+}
+
+function showLockedSeat(num) {
+    document.getElementById('seatNumber').value = num;
+    document.getElementById('seatWarning').style.display = 'none';
+    document.getElementById('seatRow').style.display = 'none';
+    document.getElementById('seatConfirmed').style.display = 'block';
+    document.getElementById('seatConfirmed').innerHTML =
+        '✓ Deine Platznummer: <strong>P' + num + '</strong> (gesperrt)';
 }
 
 /* ═══════════════════════════════════════════════════════════════
    INITIALISIERUNG
 ═══════════════════════════════════════════════════════════════ */
 function init() {
-    generateSeatGrid();
+    generateSeatDropdown();
     // Kein Auto-Reset für Klasse 9+ (Permanenz permanent)
     loadInputs();
 
