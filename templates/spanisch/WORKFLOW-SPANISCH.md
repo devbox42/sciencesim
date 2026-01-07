@@ -70,7 +70,7 @@
 - [E]: ...
 
 ## Output
-AB ([X] BE), LB, LP, PPT
+AB ([X] BE), LB, LP, SLIDES
 ```
 
 ### Tier-System (nur bei expliziter Anfrage)
@@ -128,7 +128,7 @@ PHASE 2: PLANUNG
 PHASE 3: CONTENT-MATERIALIEN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     Stufe 3.1: AB (zuerst!)
-    Stufe 3.2: LB, LP, PPT (parallel)
+    Stufe 3.2: LB, LP, SLIDES (parallel)
     Stufe 3.3: ML, LH, MT (parallel)
         │
         ↓
@@ -275,8 +275,8 @@ Alle anderen Materialien führen durch das AB:
                     ┌─────────────────┼─────────────────┐
                     │                 │                 │
                ┌────┴────┐      ┌─────┴─────┐     ┌─────┴─────┐
-               │   LB    │      │    LP     │     │    PPT    │
-               │Lernblatt│      │ Lernpfad  │     │ PowerPoint│
+               │   LB    │      │    LP     │     │  SLIDES   │
+               │Lernblatt│      │ Lernpfad  │     │  Beamer   │
                └─────────┘      └───────────┘     └───────────┘
                     │                 │                 │
                     └─────────────────┴─────────────────┘
@@ -290,7 +290,7 @@ Alle anderen Materialien führen durch das AB:
 |----------|-------------------|-------|
 | **Analog** | **LB** führt durch AB | Kein Tablet, klassisch |
 | **Digital** | **LP** führt durch AB | Schüler arbeiten selbstständig |
-| **Frontal** | **PPT** führt durch AB | Lehrervortrag, gemeinsam |
+| **Frontal** | **SLIDES** führt durch AB | Lehrervortrag, gemeinsam |
 
 **In allen Szenarien:** AB ist das Ergebnis, das im Hefter landet.
 
@@ -314,7 +314,7 @@ Alle anderen Materialien führen durch das AB:
      │                 │                         │
      ↓                 ↓                         ↓
   ┌─────┐          ┌─────┐                   ┌─────┐
-  │ LB  │          │ LP  │                   │ PPT │
+  │ LB  │          │ LP  │                   │SLIDES│
   │→AB 1│          │→AB 1│                   │→AB 1│
   │→AB 2│          │→AB 2│                   │→AB 2│
   └─────┘          └─────┘                   └─────┘
@@ -358,7 +358,7 @@ STUFE 3.2: FÜHRUNGSINSTRUMENTE (parallel möglich)
     ├─ Schritt 7-8: Dialog          → Hefter: AB Aufgabe 3
     └─ Schritt 9-10: Produktion     → Hefter: AB Aufgabe 4
 
-    PPT (PowerPoint):
+    SLIDES (Beamer LaTeX):
     ├─ Folie 3-5: Vokabeln          → Jetzt: AB Aufgabe 1
     ├─ Folie 6-8: Grammatik         → Jetzt: AB Aufgabe 2
     ├─ Folie 9-10: Dialog           → Jetzt: AB Aufgabe 3
@@ -376,7 +376,7 @@ STUFE 3.3: ABGELEITETE MATERIALIEN (parallel möglich)
 ### Zusammenfassung: Linearer Flow
 
 ```
-LE → AB → (LB | LP | PPT) → (ML | LH | MT)
+LE → AB → (LB | LP | SLIDES) → (ML | LH | MT)
 ```
 
 **Keine zirkulären Abhängigkeiten!**
@@ -393,7 +393,7 @@ LE → AB → (LB | LP | PPT) → (ML | LH | MT)
 | 4 | **ML** | LaTeX→PDF | 2 | AB |
 | 5 | **LH** | LaTeX→PDF | **3** | LE, AB |
 | 6 | **LP** | HTML | — | LE, AB |
-| 7 | **PPT** | PPTX | 10-15 Folien | LE, AB |
+| 7 | **SLIDES** | LaTeX→PDF | 10-15 Folien | LE, AB |
 | 8 | **MT** | HTML+PDF | — | LE, AB |
 | 9 | **PLATZKARTEN** | LaTeX→PDF | 2 (24 Karten) | MT/TEST |
 | 10 | **QR-TEST** | HTML→PDF | 1 | MT/TEST |
@@ -850,7 +850,7 @@ LB-05a-mi-ropa.tex      # Lernblatt
 ML-05a-mi-ropa.tex      # Musterlösung
 LH-05a-mi-ropa.tex      # Lehrerhinweise
 LP-05a-mi-ropa.html     # Lernpfad
-PPT-05a-mi-ropa.pptx    # PowerPoint
+SLIDES-05a-mi-ropa.tex  # Beamer-Folien
 MT-05a-mi-ropa.html     # Minitest (digital)
 MT-05a-mi-ropa.tex      # Minitest (Papier)
 ```
@@ -1091,10 +1091,10 @@ NACHBEREITUNG:
 - [ ] localStorage implementiert?
 - [ ] spanish-input-tolerance.js eingebunden?
 
-**PPT (PowerPoint):**
+**SLIDES (Beamer LaTeX):**
 - [ ] 10-15 Folien?
 - [ ] AB-Referenzen "→ AB Aufgabe X"?
-- [ ] Keine Repair-Warnungen?
+- [ ] pdflatex kompiliert fehlerfrei?
 
 **ML, LH, MT:**
 - [ ] Konsistent mit AB?
@@ -1141,7 +1141,7 @@ NACHBEREITUNG:
 - [ ] Differenzierung [B]/[S]/[E] in LH = LE?
 
 **Konsistenz (Material ↔ Material):**
-- [ ] AB-Verweise in LB, LP, PPT korrekt? ("→ AB Aufgabe X")
+- [ ] AB-Verweise in LB, LP, SLIDES korrekt? ("→ AB Aufgabe X")
 - [ ] ML-Lösungen = Lösungen aus LE?
 - [ ] Fachfarbe `#c41e3a` durchgängig?
 

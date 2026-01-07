@@ -42,6 +42,47 @@ git checkout .         # Alle Änderungen verwerfen
 
 ---
 
+## Fachspezifische Workflows
+
+### Spanisch-Unterricht (PFLICHT)
+
+> **KRITISCH:** Bei JEDER Spanisch-Material-Anfrage diese Schritte befolgen!
+
+**1. Workflow lesen (IMMER zuerst):**
+```bash
+# Pflichtlektüre vor jeder Spanisch-Materialerstellung:
+templates/spanisch/WORKFLOW-SPANISCH.md
+```
+
+**2. Phasen strikt einhalten:**
+```
+Phase 0: Kontextaufnahme (User-Input → A/B/C/D kategorisieren)
+Phase 1: Anfrage + Modus (KOMPAKT oder Tier 1-3?)
+Phase 2: Planung (PLANUNG-xxx.md oder LE-xxx.tex erstellen)
+Phase 3: Materialien (AB → LB/LP/SLIDES → ML/LH)
+Phase 4: Kompilierung & Prüfung
+```
+
+**3. Keine Materialien ohne Planung:**
+- DEFAULT: KOMPAKT-Planungsnotiz (`PLANUNG-xxx.md`, ~250 Tokens)
+- Bei Anfrage: Langentwurf (`LE-xxx.tex`, Tier 1/2/3)
+- **VERBOTEN:** Materialien direkt erstellen ohne Phase 2!
+
+**4. Lehrwerk-Referenz nutzen:**
+| Klassenstufe | Lehrwerk | Referenz |
+|--------------|----------|----------|
+| 7-8 | Qué pasa 1 | `knowledge/Spanisch-Que-Pasa-1/` |
+| 9 | Qué pasa 2 | `knowledge/Spanish-Que-Pasa-2/` |
+| 10-12 | A_tope.com | `knowledge/Spanisch-A_tope_Spaetbeginner/` |
+
+**5. Qualitäts-Checkliste (vor Freigabe):**
+- [ ] Spanisch-Korrektheit (Akzente, Grammatik, Genus)
+- [ ] AB max. 2 Seiten, mind. 25 BE
+- [ ] ES5-JavaScript (kein let/const/Arrow)
+- [ ] Fachfarbe `#c41e3a` (Karminrot)
+
+---
+
 ## Sprachliche Konventionen
 
 ### Deutsche Umlaute und Sonderzeichen
@@ -89,9 +130,12 @@ git checkout .         # Alle Änderungen verwerfen
 /* Ladungen & Pole (Physik) */
 --positive: #c62828;    /* ROT: +, techn. Stromrichtung */
 --negative: #1565c0;    /* BLAU: -, Elektronen */
+
+/* Magnetfeld (Physik) */
+--magnetic: #2e7d32;    /* GRÜN: B-Feld, Feldlinien */
 ```
 
-### Farbkonventionen Ladungen & Pole (Physik)
+### Farbkonventionen Ladungen, Pole & Magnetfeld (Physik)
 
 | Element | Farbe | CSS-Variable |
 |---------|-------|--------------|
@@ -102,8 +146,11 @@ git checkout .         # Alle Änderungen verwerfen
 | Negative Ladung (-) | BLAU | `--negative` |
 | Negative Pole | BLAU | `--negative` |
 | Elektronen | BLAU | `--negative` |
+| **Magnetfeld (B)** | **GRÜN** | `--magnetic` |
+| **Feldlinien** | **GRÜN** | `--magnetic` |
+| **B-Feld-Pfeile** | **GRÜN** | `--magnetic` |
 
-**Gilt für:** Simulationen, Schaltbilder, Atom-Darstellungen, alle Visualisierungen mit Ladungen.
+**Gilt für:** Simulationen, Schaltbilder, Atom-Darstellungen, alle Visualisierungen mit Ladungen und Magnetfeldern.
 
 ### Schaltzeichen (DIN-Norm) – IMMER deutsche Symbole!
 
@@ -356,27 +403,26 @@ document.querySelectorAll('input, select').forEach(el => {
 
 ## Materialstruktur pro Unterrichtseinheit
 
-### Langentwurf-Workflow (empfohlen)
+### MINT-Unterricht (Physik, Chemie, Informatik)
 
-**Vor der Materialerstellung:** Langentwurf erstellen (Score >= 9.0), dann Materialien.
+> **Workflow-Referenz:** `templates/mint/WORKFLOW-MINT.md`
 
+**Phasen:**
 ```
-1. Langentwurf (LE-XX) → Score >= 9.0?
-         │
-    ┌────┴────┐
-    Nein      Ja
-    │         │
- Iteration   2. Materialien erstellen (LP, AB, LH, ML)
+Phase 0: Kontextaufnahme (User-Input → A/B/C/D kategorisieren)
+Phase 1: Anfrage + Modus (KOMPAKT oder Tier 1-3?)
+Phase 2: Planung (PLANUNG-xxx.md oder LE-xxx.tex erstellen)
+Phase 3: Materialien (AB → LS/LP/SIM → ML/LH/SL)
+Phase 4: Kompilierung & Prüfung
 ```
 
-**Template:** `templates/lesson-plan/langentwurf-template.tex`
+**Planungs-Modi:**
+| Modus | Format | Wann verwenden |
+|-------|--------|----------------|
+| **KOMPAKT** | `PLANUNG-xxx.md` | **DEFAULT** – Regulärer Unterricht |
+| Tier 1-3 | `LE-xxx.tex` | Nur bei expliziter Anfrage |
 
-**Konfiguration:**
-- **Tier:** 1 (vollständig), 2 (standard), 3 (minimal)
-- **Profil:** A-E (Lerngruppen-Typ)
-- **Fach:** Bestimmt Testdifferenzierung
-
-Siehe `templates/lesson-plan/README.md` für Details.
+**KOMPAKT ist Default.** Langentwurf (Tier 1-3) nur bei Unterrichtsbesuchen oder expliziter Anfrage.
 
 ### Pflicht-Dokumente pro Stunde
 
@@ -944,6 +990,127 @@ Passiv → Reaktiv (ankreuzen) → Konstruktiv (berechnen) → Interaktiv → Ge
 | Quiz | 20-30 Min |
 | Stundenleistung | 45 Min |
 | Klassenarbeit | 45-90 Min |
+
+---
+
+## Material-QA (nach Didaktik-Score)
+
+Nach der didaktischen Freigabe (Score ≥ 9.0) folgen drei weitere QA-Schritte:
+
+```
+Didaktik-Score ≥ 9.0
+        ↓
+┌───────────────────────────────────────────────────────────────┐
+│  1. TRACEABILITY    2. KONSISTENZ    3. LAYOUT-QA            │
+│  (LE → Material)    (Material ↔ Material)    (PDF visuell)   │
+└───────────────────────────────────────────────────────────────┘
+        ↓
+   ✅ FREIGABE
+```
+
+### 1. Traceability: LE → Materialien
+
+**Prinzip:** Jedes Feinziel im Langentwurf wird zu einer konkreten Aufgabe.
+
+| LE-Element | Wird zu | In Material |
+|------------|---------|-------------|
+| Feinziel FZ1 (AFB I) | Aufgabe 1 | AB, LP |
+| Feinziel FZ2 (AFB II) | Aufgabe 2 | AB, LP |
+| Feinziel FZ3 (AFB II) | Aufgabe 3 | AB, LP |
+| Feinziel FZ4 (AFB III) | Aufgabe 4 | AB, LP |
+| Verlaufsphase "Einstieg" | Schritt 1-2 | LP |
+| Verlaufsphase "Erarbeitung" | Schritt 3-6 | LP |
+| Verlaufsphase "Übung" | Übungen | LP |
+| Verlaufsphase "Sicherung" | Zusammenfassung | LP |
+| Differenzierung [B]/[S]/[E] | Hinweise | LH |
+| Erwartete Fehler | Feedback-Texte | LP, LH |
+| Lösungen | Rote Einträge | ML |
+
+**Prüfung:**
+```
+Für jedes FZ im LE:
+  → Gibt es eine Aufgabe im AB? (gleiche AFB-Stufe?)
+  → Gibt es einen LP-Schritt dazu?
+  → Ist die Differenzierung in LH dokumentiert?
+```
+
+### 2. Konsistenz-Check: Material ↔ Material
+
+**Prinzip:** Alle Materialien müssen dasselbe sagen.
+
+| Prüfpunkt | Vergleich | Fehler wenn |
+|-----------|-----------|-------------|
+| AB-Aufgabe hat FZ? | AB ↔ LE | Aufgabe ohne Lernziel |
+| LP-Schritte = LE-Phasen? | LP ↔ LE | LP deckt nicht alle Phasen ab |
+| LH-Diff = LE-Diff? | LH ↔ LE | Widersprüchliche Differenzierung |
+| ML-Lösungen = LE-Lösungen? | ML ↔ LE | Falsche Musterlösung |
+| Fachfarbe durchgängig? | Alle | Verschiedene Farben |
+| AB-Verweise korrekt? | LP/LB/SLIDES ↔ AB | "→ AB Aufgabe 3" zeigt auf falsche Aufgabe |
+
+**Prüfung:**
+```
+Für jede AB-Aufgabe X:
+  → LB sagt "→ AB Aufgabe X"?
+  → LP sagt "→ Hefter: AB Aufgabe X"?
+  → SLIDES sagt "→ Jetzt: AB Aufgabe X"?
+  → Alle drei meinen dieselbe Aktivität?
+```
+
+### 3. Layout-QA: PDF visuell prüfen
+
+**Prinzip:** Nach `pdflatex` jedes PDF öffnen und visuell prüfen.
+
+**Prüfmethode:**
+```bash
+# PDFs kompilieren
+pdflatex AB-01.tex && pdflatex AB-01.tex
+
+# PDFs öffnen und HINSCHAUEN
+open AB-01.pdf ML-01.pdf LH-01.pdf
+```
+
+**Prüfpunkte:**
+
+| Problem | Symptom | Lösung |
+|---------|---------|--------|
+| Aufgabe am Seitenende | Titel S.1, Inhalt S.2 | `\newpage` vor Aufgabe |
+| Box-Titel abgeschnitten | Text ragt über Rand | `yshift` anpassen |
+| Tabelle zerrissen | Zeilen auf 2 Seiten | `\needspace{10em}` vor Tabelle |
+| Zu wenig Antwortplatz | Zeilen zu eng | `\antwortzeilen{8}` statt 6 |
+| SW-Druck unleserlich | Grau druckt schlecht | Nur Linien, keine Flächen |
+
+**Korrektur-Workflow:**
+```
+1. PDF öffnen
+2. Seite für Seite durchgehen
+3. Problem identifizieren
+4. .tex anpassen:
+   - \newpage (harter Umbruch)
+   - \needspace{Xem} (weicher Umbruch)
+   - \vspace{Xpt} (Abstände)
+5. Neu kompilieren (2x pdflatex)
+6. Erneut prüfen
+7. Wiederholen bis sauber
+```
+
+### QA-Checkliste (nach Materialgenerierung)
+
+**Traceability:**
+- [ ] Jedes FZ hat eine AB-Aufgabe (gleiche AFB-Stufe)
+- [ ] LP-Schritte decken alle LE-Phasen ab
+- [ ] Differenzierung LE = LH
+
+**Konsistenz:**
+- [ ] AB-Verweise in LP/LB/SLIDES korrekt
+- [ ] ML-Lösungen = LE-Lösungen
+- [ ] Fachfarbe durchgängig
+
+**Layout:**
+- [ ] Keine Seitenumbrüche mitten in Aufgaben
+- [ ] Boxen-Titel vollständig sichtbar
+- [ ] Tabellen nicht über Seiten gebrochen
+- [ ] Genug Platz für Schüler-Antworten
+- [ ] SW-Version druckerfreundlich
 
 ---
 
