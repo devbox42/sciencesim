@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volumenbestimmung - Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1024px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #1e40af;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 16px 20px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border: none;
+            background: transparent;
+        }
+        
+        .tab:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .tab.active {
+            background: #2563eb;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Main Layout */
+        .simulation-area {
+            display: grid;
+            grid-template-columns: 160px 1fr 220px;
+            gap: 20px;
+            min-height: 450px;
+        }
+        
+        /* Körperauswahl */
+        .body-selection {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+        }
+        
+        .body-selection h3 {
+            font-size: 14px;
+            color: #475569;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .body-btn {
+            width: 100%;
+            padding: 12px 10px;
+            margin-bottom: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            text-align: left;
+        }
+        
+        .body-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .body-btn.immersed {
+            border-color: #16a34a;
+            background: #dcfce7;
+        }
+        
+        .body-btn .icon {
+            font-size: 18px;
+            margin-right: 5px;
+        }
+        
+        .body-btn .volume {
+            font-size: 11px;
+            color: #64748b;
+            display: block;
+            margin-top: 2px;
+        }
+        
+        .body-btn.immersed .volume {
+            color: #16a34a;
+        }
+        
+        .hint-text {
+            font-size: 11px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 10px;
+            padding: 8px;
+            background: #fef3c7;
+            border-radius: 6px;
+        }
+        
+        /* Messzylinder-Bereich */
+        .cylinder-area {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .cylinder-container {
+            position: relative;
+        }
+        
+        /* SVG Messzylinder */
+        .cylinder-svg {
+            display: block;
+        }
+        
+        /* Eingabe-Bereich */
+        .input-area {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+        }
+        
+        .input-area h3 {
+            font-size: 14px;
+            color: #475569;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin-bottom: 12px;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .input-group.result {
+            background: #fef3c7;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .input-group.result label {
+            font-weight: 600;
+            color: #92400e;
+        }
+        
+        .input-group.result input {
+            background: white;
+            border-color: #f59e0b;
+            font-weight: 600;
+        }
+        
+        .divider {
+            height: 2px;
+            background: #cbd5e1;
+            margin: 10px 0;
+        }
+        
+        /* Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        
+        .action-btn.secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .action-btn.secondary:hover {
+            background: #cbd5e1;
+        }
+        
+        .action-btn.success {
+            background: #16a34a;
+            color: white;
+        }
+        
+        .action-btn.success:hover {
+            background: #15803d;
+        }
+        
+        /* Feedback */
+        .feedback {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: 600;
+            display: none;
+        }
+        
+        .feedback.correct {
+            display: block;
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .feedback.incorrect {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Info-Box Ablesen */
+        .info-box {
+            background: #fefce8;
+            border: 1px solid #fde047;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        
+        .info-box h4 {
+            color: #854d0e;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .info-box p {
+            color: #713f12;
+            line-height: 1.4;
+        }
+        
+        /* Anleitung */
+        .instructions {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 15px;
+        }
+        
+        .instructions h4 {
+            font-size: 13px;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+        
+        .instructions ol {
+            font-size: 13px;
+            color: #334155;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 4px;
+        }
+        
+        /* Überlaufmethode */
+        .overflow-area {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 30px;
+        }
+        
+        .overflow-container {
+            text-align: center;
+        }
+        
+        /* Körper Animation */
+        @keyframes sink {
+            0% { transform: translateY(-50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        
+        .body-in-water {
+            animation: sink 0.5s ease-out;
+        }
+        
+        /* Responsive */
+        @media (max-width: 800px) {
+            .simulation-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .body-selection {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .body-selection h3 {
+                width: 100%;
+            }
+            
+            .body-btn {
+                flex: 1;
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('differenz')">Differenzmethode</button>
+            <button class="tab" onclick="switchTab('überlauf')">Überlaufmethode</button>
+        </div>
+        
+        <!-- Differenzmethode -->
+        <div id="differenz" class="tab-content active">
+            <div class="simulation-area">
+                <!-- Körperauswahl -->
+                <div class="body-selection">
+                    <h3>Körper anklicken:</h3>
+                    <button class="body-btn" id="btn-murmel" onclick="toggleBody('murmel')">
+                        <span class="icon">🔵</span> Murmel
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <button class="body-btn" id="btn-würfel" onclick="toggleBody('würfel')">
+                        <span class="icon">🟫</span> Würfel
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <button class="body-btn" id="btn-kugel" onclick="toggleBody('kugel')">
+                        <span class="icon">🟠</span> Kugel
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <button class="body-btn" id="btn-stein" onclick="toggleBody('stein')">
+                        <span class="icon">🪨</span> Stein
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <div class="hint-text">
+                        Klicken = eintauchen<br>
+                        Nochmal klicken = herausnehmen
+                    </div>
+                </div>
+                
+                <!-- Messzylinder -->
+                <div class="cylinder-area">
+                    <div class="cylinder-container">
+                        <svg id="cylinder-diff" class="cylinder-svg" width="200" height="400" viewBox="0 0 200 400">
+                            <defs>
+                                <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#d1d5db;stop-opacity:0.4" />
+                                    <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0.2" />
+                                    <stop offset="100%" style="stop-color:#d1d5db;stop-opacity:0.4" />
+                                </linearGradient>
+                                <linearGradient id="waterGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.85" />
+                                    <stop offset="50%" style="stop-color:#93c5fd;stop-opacity:0.75" />
+                                    <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0.85" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <!-- Zylinder Hintergrund -->
+                            <rect x="60" y="30" width="80" height="330" fill="url(#glassGradient)" stroke="#9ca3af" stroke-width="2" rx="2"/>
+                            
+                            <!-- Boden Ellipse -->
+                            <ellipse cx="100" cy="360" rx="40" ry="8" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+                            
+                            <!-- Skala -->
+                            <g id="scale-diff"></g>
+                            
+                            <!-- Wasser -->
+                            <g id="water-diff"></g>
+                            
+                            <!-- Körper im Wasser -->
+                            <g id="bodies-diff"></g>
+                            
+                            <!-- Ableselinie -->
+                            <line id="readLine-diff" x1="40" y1="0" x2="160" y2="0" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,4" visibility="hidden"/>
+                            
+                            <!-- Einheit -->
+                            <text x="100" y="20" text-anchor="middle" font-size="14" fill="#374151" font-weight="600">ml</text>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Eingaben -->
+                <div class="input-area">
+                    <h3>Messwerte eintragen:</h3>
+                    
+                    <div class="input-group">
+                        <label>V₁ (Startvolumen):</label>
+                        <input type="number" id="v1-input" placeholder="? ml" step="0.5" min="0" max="50">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>V₂ (nach Eintauchen):</label>
+                        <input type="number" id="v2-input" placeholder="? ml" step="0.5" min="0" max="60">
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="input-group result">
+                        <label>V<sub>Körper</sub> = V₂ − V₁ =</label>
+                        <input type="number" id="result-input" placeholder="? ml" step="0.5" min="0">
+                    </div>
+                    
+                    <button class="action-btn success" id="btn-check" onclick="checkResult()">
+                        ✓ Ergebnis prüfen
+                    </button>
+                    
+                    <button class="action-btn secondary" onclick="resetDifferenz()">
+                        🔄 Neu starten
+                    </button>
+                    
+                    <div id="feedback-diff" class="feedback"></div>
+                    
+                    <div class="info-box">
+                        <h4>💡 Richtiges Ablesen:</h4>
+                        <p>1. Unten am Meniskus ablesen<br>
+                        2. Waagerecht auf Augenhöhe schauen</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h4>Anleitung – Differenzmethode:</h4>
+                <ol>
+                    <li>Lies den Wasserstand V₁ ab (unten am Meniskus!)</li>
+                    <li>Klicke auf einen oder mehrere Körper zum Eintauchen</li>
+                    <li>Lies den neuen Wasserstand V₂ ab</li>
+                    <li>Berechne: V<sub>Körper</sub> = V₂ − V₁</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Überlaufmethode -->
+        <div id="überlauf" class="tab-content">
+            <div class="simulation-area">
+                <!-- Körperauswahl -->
+                <div class="body-selection">
+                    <h3>Körper anklicken:</h3>
+                    <button class="body-btn" id="btn-murmel-o" onclick="toggleBodyOverflow('murmel')">
+                        <span class="icon">🔵</span> Murmel
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <button class="body-btn" id="btn-würfel-o" onclick="toggleBodyOverflow('würfel')">
+                        <span class="icon">🟫</span> Würfel
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <button class="body-btn" id="btn-kugel-o" onclick="toggleBodyOverflow('kugel')">
+                        <span class="icon">🟠</span> Kugel
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <button class="body-btn" id="btn-stein-o" onclick="toggleBodyOverflow('stein')">
+                        <span class="icon">🪨</span> Stein
+                        <span class="volume">V = ? ml</span>
+                    </button>
+                    <div class="hint-text">
+                        Klicken = eintauchen<br>
+                        Nochmal klicken = herausnehmen
+                    </div>
+                </div>
+                
+                <!-- Überlaufgefäß und Auffangzylinder -->
+                <div class="cylinder-area">
+                    <div class="overflow-area">
+                        <!-- Überlaufgefäß -->
+                        <div class="overflow-container">
+                            <svg id="overflow-vessel" class="cylinder-svg" width="160" height="300" viewBox="0 0 160 300">
+                                <defs>
+                                    <linearGradient id="waterGradientOV" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.85" />
+                                        <stop offset="50%" style="stop-color:#93c5fd;stop-opacity:0.75" />
+                                        <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0.85" />
+                                    </linearGradient>
+                                </defs>
+                                
+                                <!-- Gefäß Hintergrund -->
+                                <path d="M30,50 L30,230 Q30,250 50,250 L110,250 Q130,250 130,230 L130,50" 
+                                      fill="url(#glassGradient)" stroke="#9ca3af" stroke-width="3"/>
+                                
+                                <!-- Überlaufschnabel -->
+                                <path d="M130,70 L155,70 L155,90 L150,90" 
+                                      fill="none" stroke="#9ca3af" stroke-width="3"/>
+                                
+                                <!-- Wasser im Gefäß (randvoll) -->
+                                <path d="M32,228 Q32,248 50,248 L110,248 Q128,248 128,228 L128,80 L32,80 Z" 
+                                      fill="url(#waterGradientOV)"/>
+                                
+                                <!-- Meniskus oben (Ränder hoch, Mitte tief) -->
+                                <path d="M32,74 Q32,80 40,78 L80,82 L120,78 Q128,80 128,74" 
+                                      fill="url(#waterGradientOV)"/>
+                                <path d="M32,74 Q80,82 128,74" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+                                
+                                <!-- Körper -->
+                                <g id="bodies-overflow"></g>
+                                
+                                <!-- Überlaufendes Wasser -->
+                                <g id="overflow-stream" visibility="hidden">
+                                    <path d="M150,90 Q158,120 158,160 Q160,200 165,240" 
+                                          fill="none" stroke="#60a5fa" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+                                </g>
+                                
+                                <text x="80" y="275" text-anchor="middle" font-size="12" fill="#64748b">Überlaufgefäß</text>
+                            </svg>
+                        </div>
+                        
+                        <!-- Auffang-Messzylinder -->
+                        <div class="overflow-container">
+                            <svg id="cylinder-overflow" class="cylinder-svg" width="140" height="300" viewBox="0 0 140 300">
+                                <defs>
+                                    <linearGradient id="waterGradientCatch" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.85" />
+                                        <stop offset="50%" style="stop-color:#93c5fd;stop-opacity:0.75" />
+                                        <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:0.85" />
+                                    </linearGradient>
+                                </defs>
+                                
+                                <!-- Messzylinder 25ml -->
+                                <rect x="40" y="40" width="60" height="210" fill="url(#glassGradient)" stroke="#9ca3af" stroke-width="2" rx="2"/>
+                                
+                                <!-- Boden -->
+                                <ellipse cx="70" cy="250" rx="30" ry="6" fill="#d1d5db" stroke="#9ca3af" stroke-width="2"/>
+                                
+                                <!-- Skala -->
+                                <g id="scale-overflow"></g>
+                                
+                                <!-- Aufgefangenes Wasser -->
+                                <g id="water-catch"></g>
+                                
+                                <!-- Ableselinie -->
+                                <line id="readLine-overflow" x1="25" y1="0" x2="115" y2="0" stroke="#ef4444" stroke-width="2" stroke-dasharray="6,4" visibility="hidden"/>
+                                
+                                <text x="70" y="28" text-anchor="middle" font-size="12" fill="#374151" font-weight="600">ml</text>
+                                <text x="70" y="275" text-anchor="middle" font-size="12" fill="#64748b">Auffanggefäß</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Eingaben -->
+                <div class="input-area">
+                    <h3>Messwert eintragen:</h3>
+                    
+                    <div class="input-group result">
+                        <label>V<sub>Körper</sub> = aufgefangenes Wasser =</label>
+                        <input type="number" id="result-overflow" placeholder="? ml" step="0.5" min="0">
+                    </div>
+                    
+                    <button class="action-btn success" id="btn-check-overflow" onclick="checkResultOverflow()">
+                        ✓ Ergebnis prüfen
+                    </button>
+                    
+                    <button class="action-btn secondary" onclick="resetOverflow()">
+                        🔄 Neu starten
+                    </button>
+                    
+                    <div id="feedback-overflow" class="feedback"></div>
+                    
+                    <div class="info-box">
+                        <h4>💡 Überlaufmethode:</h4>
+                        <p>Das Gefäß ist randvoll. Der eingetauchte Körper verdrängt genau sein Volumen – es läuft über!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <h4>Anleitung – Überlaufmethode:</h4>
+                <ol>
+                    <li>Das Überlaufgefäß ist randvoll mit Wasser</li>
+                    <li>Klicke auf Körper zum Eintauchen – Wasser läuft über</li>
+                    <li>Lies das aufgefangene Wasser ab = Volumen des Körpers</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ============================================
+        // KONFIGURATION
+        // ============================================
+        const CONFIG = {
+            // Differenzmethode - 50ml Zylinder
+            maxVolume: 50,
+            cylinderHeight: 330,
+            cylinderTop: 30,
+            cylinderX: 60,
+            cylinderWidth: 80,
+            cylinderBottom: 360,  // y-Position Boden
+            pxPerMl: 6.6,
+            
+            // Überlaufmethode - 25ml Auffangzylinder
+            overflowMaxVol: 25,
+            overflowHeight: 210,
+            overflowTop: 40,
+            overflowX: 40,
+            overflowWidth: 60,
+            overflowBottom: 250,
+            overflowPxPerMl: 8.4
+        };
+        
+        // Körper-Definitionen
+        const BODIES = {
+            murmel: { volume: 4, color: '#3b82f6', stroke: '#1e40af', height: 20 },
+            würfel: { volume: 8, color: '#78716c', stroke: '#44403c', height: 24 },
+            kugel: { volume: 12, color: '#f97316', stroke: '#c2410c', height: 32 },
+            stein: { volume: 18, color: '#a8a29e', stroke: '#57534e', height: 28 }
+        };
+        
+        // ============================================
+        // STATE
+        // ============================================
+        let state = {
+            startVolume: 0,
+            immersedBodies: new Set(),
+            immersedBodiesOverflow: new Set()
+        };
+        
+        // ============================================
+        // INITIALISIERUNG
+        // ============================================
+        function init() {
+            drawScale('scale-diff', CONFIG.maxVolume, CONFIG.pxPerMl, CONFIG.cylinderTop, CONFIG.cylinderX + CONFIG.cylinderWidth);
+            drawScaleOverflow();
+            resetDifferenz();
+            resetOverflow();
+        }
+        
+        // ============================================
+        // SKALA ZEICHNEN - Differenzmethode (50ml)
+        // ============================================
+        function drawScale(containerId, maxVol, pxPerMl, topY, startX) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            for (let ml = 0; ml <= maxVol; ml++) {
+                const y = topY + (maxVol - ml) * pxPerMl;
+                
+                let lineLength, strokeWidth;
+                
+                if (ml % 10 === 0) {
+                    lineLength = 15;
+                    strokeWidth = 2;
+                    
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', startX + 18);
+                    text.setAttribute('y', y + 4);
+                    text.setAttribute('font-size', '12');
+                    text.setAttribute('fill', '#374151');
+                    text.textContent = ml;
+                    container.appendChild(text);
+                } else if (ml % 5 === 0) {
+                    lineLength = 10;
+                    strokeWidth = 1.5;
+                } else {
+                    lineLength = 6;
+                    strokeWidth = 1;
+                }
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', startX);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', startX + lineLength);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#6b7280');
+                line.setAttribute('stroke-width', strokeWidth);
+                container.appendChild(line);
+            }
+        }
+        
+        // ============================================
+        // SKALA ZEICHNEN - Überlaufmethode (25ml)
+        // ============================================
+        function drawScaleOverflow() {
+            const container = document.getElementById('scale-overflow');
+            container.innerHTML = '';
+            
+            const maxVol = CONFIG.overflowMaxVol;
+            const pxPerMl = CONFIG.overflowPxPerMl;
+            const topY = CONFIG.overflowTop;
+            const startX = CONFIG.overflowX + CONFIG.overflowWidth;
+            
+            for (let ml = 0; ml <= maxVol; ml++) {
+                const y = topY + (maxVol - ml) * pxPerMl;
+                
+                let lineLength, strokeWidth;
+                
+                if (ml % 5 === 0) {
+                    lineLength = 12;
+                    strokeWidth = 2;
+                    
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', startX + 14);
+                    text.setAttribute('y', y + 4);
+                    text.setAttribute('font-size', '11');
+                    text.setAttribute('fill', '#374151');
+                    text.textContent = ml;
+                    container.appendChild(text);
+                } else {
+                    lineLength = 6;
+                    strokeWidth = 1;
+                }
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', startX);
+                line.setAttribute('y1', y);
+                line.setAttribute('x2', startX + lineLength);
+                line.setAttribute('y2', y);
+                line.setAttribute('stroke', '#6b7280');
+                line.setAttribute('stroke-width', strokeWidth);
+                container.appendChild(line);
+            }
+        }
+        
+        // ============================================
+        // WASSER MIT KORREKTEM MENISKUS ZEICHNEN
+        // ============================================
+        function drawWater(containerId, volume, config, gradientId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (volume <= 0) return;
+            
+            const { maxVol, pxPerMl, topY, x, width } = config;
+            
+            const bottomY = topY + maxVol * pxPerMl;
+            const waterHeight = volume * pxPerMl;
+            const waterBaseY = bottomY - waterHeight;
+            
+            const meniscusRise = 6;
+            const edgeY = waterBaseY - meniscusRise;
+            const centerY = waterBaseY;
+            
+            // Wasserkörper
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            const pathD = `
+                M ${x + 3} ${edgeY}
+                Q ${x + 3} ${centerY + 2} ${x + 12} ${centerY}
+                L ${x + width - 12} ${centerY}
+                Q ${x + width - 3} ${centerY + 2} ${x + width - 3} ${edgeY}
+                L ${x + width - 3} ${bottomY - 3}
+                L ${x + 3} ${bottomY - 3}
+                Z
+            `;
+            path.setAttribute('d', pathD);
+            path.setAttribute('fill', `url(#${gradientId})`);
+            container.appendChild(path);
+            
+            // Meniskus-Linie
+            const meniscusLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            meniscusLine.setAttribute('d', `
+                M ${x + 3} ${edgeY}
+                Q ${x + 3} ${centerY + 2} ${x + 12} ${centerY}
+                L ${x + width - 12} ${centerY}
+                Q ${x + width - 3} ${centerY + 2} ${x + width - 3} ${edgeY}
+            `);
+            meniscusLine.setAttribute('fill', 'none');
+            meniscusLine.setAttribute('stroke', '#3b82f6');
+            meniscusLine.setAttribute('stroke-width', '2.5');
+            container.appendChild(meniscusLine);
+        }
+        
+        // ============================================
+        // ABLESELINIE POSITIONIEREN
+        // ============================================
+        function updateReadLine(lineId, volume, config) {
+            const line = document.getElementById(lineId);
+            const { maxVol, pxPerMl, topY } = config;
+            
+            const bottomY = topY + maxVol * pxPerMl;
+            const waterBaseY = bottomY - volume * pxPerMl;
+            
+            line.setAttribute('y1', waterBaseY);
+            line.setAttribute('y2', waterBaseY);
+            line.setAttribute('visibility', 'visible');
+        }
+        
+        // ============================================
+        // KÖRPER AM BODEN DES ZYLINDERS ZEICHNEN
+        // ============================================
+        function drawBodies(containerId, bodies, bottomY, cx) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            // Körper von unten nach oben stapeln
+            let currentY = bottomY - 5;  // Etwas über dem Boden starten
+            
+            bodies.forEach(bodyType => {
+                const body = BODIES[bodyType];
+                
+                let shape;
+                
+                switch(bodyType) {
+                    case 'murmel':
+                        currentY -= 10;  // Radius
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        shape.setAttribute('cx', cx);
+                        shape.setAttribute('cy', currentY);
+                        shape.setAttribute('r', 10);
+                        currentY -= 12;  // Platz für nächsten Körper
+                        break;
+                        
+                    case 'würfel':
+                        currentY -= 24;  // Höhe
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        shape.setAttribute('x', cx - 12);
+                        shape.setAttribute('y', currentY);
+                        shape.setAttribute('width', 24);
+                        shape.setAttribute('height', 24);
+                        shape.setAttribute('rx', '2');
+                        currentY -= 5;
+                        break;
+                        
+                    case 'kugel':
+                        currentY -= 16;  // Radius
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        shape.setAttribute('cx', cx);
+                        shape.setAttribute('cy', currentY);
+                        shape.setAttribute('r', 16);
+                        currentY -= 18;
+                        break;
+                        
+                    case 'stein':
+                        currentY -= 14;  // Halbe Höhe
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        const y = currentY;
+                        shape.setAttribute('d', `
+                            M ${cx-15} ${y+4} 
+                            Q ${cx-17} ${y-8} ${cx-4} ${y-12}
+                            Q ${cx+8} ${y-14} ${cx+15} ${y-4}
+                            Q ${cx+17} ${y+8} ${cx+4} ${y+12}
+                            Q ${cx-8} ${y+14} ${cx-15} ${y+4} Z
+                        `);
+                        currentY -= 16;
+                        break;
+                }
+                
+                if (shape) {
+                    shape.setAttribute('fill', body.color);
+                    shape.setAttribute('stroke', body.stroke);
+                    shape.setAttribute('stroke-width', '2');
+                    shape.classList.add('body-in-water');
+                    container.appendChild(shape);
+                }
+            });
+        }
+        
+        // ============================================
+        // TAB-WECHSEL
+        // ============================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`.tab-content#${tabId}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        // ============================================
+        // DIFFERENZMETHODE
+        // ============================================
+        function toggleBody(bodyType) {
+            const btn = document.getElementById(`btn-${bodyType}`);
+            
+            if (state.immersedBodies.has(bodyType)) {
+                state.immersedBodies.delete(bodyType);
+                btn.classList.remove('immersed');
+            } else {
+                state.immersedBodies.add(bodyType);
+                btn.classList.add('immersed');
+            }
+            
+            updateDifferenzDisplay();
+        }
+        
+        function updateDifferenzDisplay() {
+            let totalBodyVolume = 0;
+            state.immersedBodies.forEach(bodyType => {
+                totalBodyVolume += BODIES[bodyType].volume;
+            });
+            
+            const currentVolume = state.startVolume + totalBodyVolume;
+            
+            const config = {
+                maxVol: CONFIG.maxVolume,
+                pxPerMl: CONFIG.pxPerMl,
+                topY: CONFIG.cylinderTop,
+                x: CONFIG.cylinderX,
+                width: CONFIG.cylinderWidth
+            };
+            
+            drawWater('water-diff', currentVolume, config, 'waterGradient');
+            updateReadLine('readLine-diff', currentVolume, config);
+            
+            // Körper am Boden des Zylinders zeichnen
+            drawBodies('bodies-diff', Array.from(state.immersedBodies), CONFIG.cylinderBottom - 8, 100);
+        }
+        
+        function checkResult() {
+            const v1 = parseFloat(document.getElementById('v1-input').value);
+            const v2 = parseFloat(document.getElementById('v2-input').value);
+            const result = parseFloat(document.getElementById('result-input').value);
+            
+            let actualVolume = 0;
+            state.immersedBodies.forEach(bodyType => {
+                actualVolume += BODIES[bodyType].volume;
+            });
+            
+            const actualV2 = state.startVolume + actualVolume;
+            
+            const feedback = document.getElementById('feedback-diff');
+            
+            const v1Correct = Math.abs(v1 - state.startVolume) <= 0.5;
+            const v2Correct = Math.abs(v2 - actualV2) <= 0.5;
+            const resultCorrect = Math.abs(result - actualVolume) <= 0.5;
+            
+            if (v1Correct && v2Correct && resultCorrect) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `✓ Richtig! V₁ = ${state.startVolume} ml, V₂ = ${actualV2} ml<br>V<sub>Körper</sub> = ${actualVolume} ml`;
+            } else {
+                let hint = '✗ Überprüfe: ';
+                if (!v1Correct) hint += `V₁ = ${state.startVolume} ml. `;
+                if (!v2Correct) hint += `V₂ = ${actualV2} ml. `;
+                if (!resultCorrect) hint += `V = ${actualV2} - ${state.startVolume} = ${actualVolume} ml.`;
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = hint;
+            }
+        }
+        
+        function resetDifferenz() {
+            const options = [20, 22, 24, 26, 28, 30, 32, 34];
+            state.startVolume = options[Math.floor(Math.random() * options.length)];
+            state.immersedBodies.clear();
+            
+            document.querySelectorAll('#differenz .body-btn').forEach(btn => {
+                btn.classList.remove('immersed');
+            });
+            
+            document.getElementById('v1-input').value = '';
+            document.getElementById('v2-input').value = '';
+            document.getElementById('result-input').value = '';
+            document.getElementById('feedback-diff').className = 'feedback';
+            document.getElementById('feedback-diff').innerHTML = '';
+            
+            const config = {
+                maxVol: CONFIG.maxVolume,
+                pxPerMl: CONFIG.pxPerMl,
+                topY: CONFIG.cylinderTop,
+                x: CONFIG.cylinderX,
+                width: CONFIG.cylinderWidth
+            };
+            
+            drawWater('water-diff', state.startVolume, config, 'waterGradient');
+            updateReadLine('readLine-diff', state.startVolume, config);
+            
+            document.getElementById('bodies-diff').innerHTML = '';
+        }
+        
+        // ============================================
+        // ÜBERLAUFMETHODE
+        // ============================================
+        function toggleBodyOverflow(bodyType) {
+            const btn = document.getElementById(`btn-${bodyType}-o`);
+            
+            if (state.immersedBodiesOverflow.has(bodyType)) {
+                state.immersedBodiesOverflow.delete(bodyType);
+                btn.classList.remove('immersed');
+            } else {
+                state.immersedBodiesOverflow.add(bodyType);
+                btn.classList.add('immersed');
+            }
+            
+            updateOverflowDisplay();
+        }
+        
+        function updateOverflowDisplay() {
+            let totalVolume = 0;
+            state.immersedBodiesOverflow.forEach(bodyType => {
+                totalVolume += BODIES[bodyType].volume;
+            });
+            
+            // Körper am Boden des Überlaufgefäßes zeichnen
+            drawBodiesOverflow(Array.from(state.immersedBodiesOverflow));
+            
+            const stream = document.getElementById('overflow-stream');
+            stream.setAttribute('visibility', totalVolume > 0 ? 'visible' : 'hidden');
+            
+            const config = {
+                maxVol: CONFIG.overflowMaxVol,
+                pxPerMl: CONFIG.overflowPxPerMl,
+                topY: CONFIG.overflowTop,
+                x: CONFIG.overflowX,
+                width: CONFIG.overflowWidth
+            };
+            
+            if (totalVolume > 0) {
+                drawWater('water-catch', totalVolume, config, 'waterGradientCatch');
+                updateReadLine('readLine-overflow', totalVolume, config);
+            } else {
+                document.getElementById('water-catch').innerHTML = '';
+                document.getElementById('readLine-overflow').setAttribute('visibility', 'hidden');
+            }
+        }
+        
+        function drawBodiesOverflow(bodies) {
+            const container = document.getElementById('bodies-overflow');
+            container.innerHTML = '';
+            
+            const cx = 80;
+            const bottomY = 245;  // Boden des Überlaufgefäßes
+            let currentY = bottomY;
+            
+            bodies.forEach(bodyType => {
+                const body = BODIES[bodyType];
+                
+                let shape;
+                
+                switch(bodyType) {
+                    case 'murmel':
+                        currentY -= 10;
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        shape.setAttribute('cx', cx);
+                        shape.setAttribute('cy', currentY);
+                        shape.setAttribute('r', 10);
+                        currentY -= 12;
+                        break;
+                    case 'würfel':
+                        currentY -= 24;
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        shape.setAttribute('x', cx - 12);
+                        shape.setAttribute('y', currentY);
+                        shape.setAttribute('width', 24);
+                        shape.setAttribute('height', 24);
+                        shape.setAttribute('rx', '2');
+                        currentY -= 5;
+                        break;
+                    case 'kugel':
+                        currentY -= 16;
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        shape.setAttribute('cx', cx);
+                        shape.setAttribute('cy', currentY);
+                        shape.setAttribute('r', 16);
+                        currentY -= 18;
+                        break;
+                    case 'stein':
+                        currentY -= 14;
+                        const y = currentY;
+                        shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        shape.setAttribute('d', `M ${cx-15} ${y+4} Q ${cx-17} ${y-8} ${cx-4} ${y-12} Q ${cx+8} ${y-14} ${cx+15} ${y-4} Q ${cx+17} ${y+8} ${cx+4} ${y+12} Q ${cx-8} ${y+14} ${cx-15} ${y+4} Z`);
+                        currentY -= 16;
+                        break;
+                }
+                
+                if (shape) {
+                    shape.setAttribute('fill', body.color);
+                    shape.setAttribute('stroke', body.stroke);
+                    shape.setAttribute('stroke-width', '2');
+                    shape.classList.add('body-in-water');
+                    container.appendChild(shape);
+                }
+            });
+        }
+        
+        function checkResultOverflow() {
+            const result = parseFloat(document.getElementById('result-overflow').value);
+            
+            let actualVolume = 0;
+            state.immersedBodiesOverflow.forEach(bodyType => {
+                actualVolume += BODIES[bodyType].volume;
+            });
+            
+            const feedback = document.getElementById('feedback-overflow');
+            
+            if (Math.abs(result - actualVolume) <= 0.5) {
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `✓ Richtig! Das Volumen beträgt <strong>${actualVolume} ml</strong>.`;
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = `✗ Nicht ganz richtig. Das korrekte Volumen ist ${actualVolume} ml.`;
+            }
+        }
+        
+        function resetOverflow() {
+            state.immersedBodiesOverflow.clear();
+            
+            document.querySelectorAll('#überlauf .body-btn').forEach(btn => {
+                btn.classList.remove('immersed');
+            });
+            
+            document.getElementById('bodies-overflow').innerHTML = '';
+            document.getElementById('water-catch').innerHTML = '';
+            document.getElementById('overflow-stream').setAttribute('visibility', 'hidden');
+            document.getElementById('readLine-overflow').setAttribute('visibility', 'hidden');
+            document.getElementById('result-overflow').value = '';
+            document.getElementById('feedback-overflow').className = 'feedback';
+            document.getElementById('feedback-overflow').innerHTML = '';
+        }
+        
+        // ============================================
+        // START
+        // ============================================
+        init();
+    </script>
+</body>
+</html>
