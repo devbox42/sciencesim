@@ -3,734 +3,627 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulation: Wassermodell – Widerstand verstehen</title>
+    <title>Wassermodell – Analogie zum Stromkreis</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         :root {
             --physik: #2c5aa0;
-            --water: #1976d2;
-            --water-light: #bbdefb;
-            --pipe: #5d4037;
-            --pipe-inner: #8d6e63;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --success: #2a7a4b;
+            --warning: #b35c00;
             --bg: #f5f5f5;
             --white: #ffffff;
             --border: #dddddd;
-            --text-primary: #222222;
-            --text-secondary: #555555;
-            --text-muted: #888888;
-            --success: #2a7a4b;
-            --warning: #b35c00;
-            --error: #c62828;
+            --text: #222222;
+            --text-muted: #666666;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: var(--bg);
-            color: var(--text-primary);
+            color: var(--text);
             font-size: 15px;
             line-height: 1.5;
         }
 
         .container {
-            max-width: 950px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
-        }
-
-        .fullscreen .container {
-            max-width: 100%;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--water);
+            padding: 15px;
         }
 
         h1 {
             font-size: 1.3em;
             font-weight: 600;
-            color: var(--water);
+            color: var(--physik);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--physik);
         }
 
-        .fullscreen-btn {
-            background: var(--water);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            font-size: 0.85em;
-            cursor: pointer;
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 20px;
-        }
-
-        .fullscreen .main-content {
+        .canvas-area {
             flex: 1;
-            grid-template-columns: 1fr 320px;
-        }
-
-        .simulation-area {
             background: var(--white);
             border: 1px solid var(--border);
             padding: 15px;
         }
 
-        .water-canvas {
-            width: 100%;
-            height: 320px;
+        canvas {
             display: block;
+            width: 100%;
+            background: #fafafa;
+            border: 1px solid var(--border);
         }
 
         .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .panel {
+            width: 260px;
             background: var(--white);
             border: 1px solid var(--border);
-            padding: 12px;
-        }
-
-        .panel h2 {
-            font-size: 0.9em;
-            font-weight: 600;
-            color: var(--water);
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid var(--border);
+            padding: 15px;
         }
 
         .control-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
         }
 
         .control-group label {
             display: block;
-            font-size: 0.85em;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .slider-container input[type="range"] {
-            flex: 1;
-            height: 8px;
-            -webkit-appearance: none;
-            background: linear-gradient(to right, var(--water-light), var(--water));
-            border-radius: 4px;
-        }
-
-        .slider-container input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--water);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .value-display {
-            font-family: monospace;
-            font-size: 1em;
             font-weight: 600;
-            min-width: 50px;
-            text-align: right;
-            color: var(--water);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: var(--text);
         }
 
-        .meter {
-            background: var(--bg);
-            padding: 12px;
-            text-align: center;
-            margin-top: 10px;
-            border-left: 3px solid var(--water);
-        }
-
-        .meter-label {
+        .control-group .hint {
             font-size: 0.8em;
             color: var(--text-muted);
-        }
-
-        .meter-value {
-            font-family: monospace;
-            font-size: 1.6em;
-            font-weight: 600;
-            color: var(--water);
-        }
-
-        .meter-unit {
-            font-size: 0.85em;
-            color: var(--text-secondary);
-        }
-
-        /* Quiz-Bereich */
-        .quiz-section {
-            background: #e3f2fd;
-            border: 1px solid var(--water);
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .quiz-section h3 {
-            font-size: 0.95em;
-            color: var(--water);
-            margin-bottom: 10px;
-        }
-
-        .quiz-question {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--water-light);
-        }
-
-        .quiz-question:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
-            border-bottom: none;
-        }
-
-        .quiz-question p {
-            font-size: 0.9em;
             margin-bottom: 8px;
         }
 
-        .quiz-question select {
+        input[type="range"] {
             width: 100%;
-            padding: 8px;
-            font-size: 0.9em;
+            margin: 8px 0;
+        }
+
+        .value-box {
+            background: var(--bg);
             border: 1px solid var(--border);
-            background: white;
-        }
-
-        .quiz-feedback {
-            margin-top: 8px;
             padding: 8px;
-            font-size: 0.85em;
-            display: none;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--physik);
         }
 
-        .quiz-feedback.correct {
-            background: #c8e6c9;
-            color: var(--success);
-            display: block;
-        }
-
-        .quiz-feedback.incorrect {
-            background: #ffcdd2;
-            color: var(--error);
-            display: block;
-        }
-
-        .quiz-feedback.hint {
-            background: #fff3e0;
-            color: var(--warning);
-            display: block;
-        }
-
-        /* Analogie-Box */
         .analogy-box {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border: 2px solid var(--water);
+            background: var(--bg);
+            border-top: 3px solid var(--physik);
             padding: 12px;
             margin-top: 15px;
         }
 
         .analogy-box h3 {
             font-size: 0.9em;
-            color: var(--water);
+            color: var(--physik);
             margin-bottom: 8px;
         }
 
-        .analogy-table {
-            width: 100%;
-            font-size: 0.85em;
-        }
-
-        .analogy-table td {
-            padding: 4px 8px;
-            vertical-align: middle;
-        }
-
-        .analogy-table .arrow {
-            text-align: center;
-            color: var(--text-muted);
-        }
-
-        .analogy-table .water-col {
-            color: var(--water);
-            font-weight: 600;
-        }
-
-        .analogy-table .electric-col {
-            color: var(--physik);
-            font-weight: 600;
-        }
-
-        .progress-indicator {
+        .analogy-row {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            font-size: 0.85em;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
         }
 
-        .progress-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--border);
+        .analogy-row:last-child {
+            border-bottom: none;
         }
 
-        .progress-dot.completed {
-            background: var(--success);
+        .analogy-water {
+            flex: 1;
+            color: var(--negative);
         }
 
-        .next-btn {
-            width: 100%;
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 12px;
-            font-size: 1em;
-            cursor: pointer;
+        .analogy-electric {
+            flex: 1;
+            color: var(--positive);
+            font-weight: 600;
+        }
+
+        .display-bar {
+            display: flex;
+            gap: 10px;
             margin-top: 15px;
+        }
+
+        .display-item {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .display-item .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .display-item .value {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .display-item.pump .value { color: var(--positive); }
+        .display-item.flow .value { color: var(--negative); }
+        .display-item.resist .value { color: var(--warning); }
+
+        .quiz-section {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .quiz-section h2 {
+            font-size: 1em;
+            color: var(--physik);
+            margin-bottom: 12px;
+        }
+
+        .question {
+            background: var(--bg);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--physik);
+        }
+
+        .question p {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .question .options {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .question button {
+            text-align: left;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .question button:hover:not(:disabled) {
+            background: #f0f4f8;
+        }
+
+        .question button.correct {
+            background: #e8f5e9;
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .question button.wrong {
+            background: #ffebee;
+            border-color: var(--positive);
+            color: var(--positive);
+        }
+
+        .question button:disabled {
+            cursor: default;
+        }
+
+        .feedback {
+            margin-top: 8px;
+            padding: 8px;
+            font-size: 0.85em;
             display: none;
         }
 
-        .next-btn:hover {
-            opacity: 0.9;
-        }
-
-        .next-btn.visible {
+        .feedback.show {
             display: block;
         }
 
-        @media (max-width: 750px) {
-            .main-content {
-                grid-template-columns: 1fr;
+        .feedback.correct {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+
+        .feedback.wrong {
+            background: #fff3e0;
+            color: var(--warning);
+        }
+
+        @media (max-width: 700px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Wassermodell: Widerstand verstehen</h1>
-            <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
-        </header>
+        <h1>Wassermodell – Analogie zum Stromkreis</h1>
 
-        <div class="main-content">
-            <div class="simulation-area">
-                <canvas class="water-canvas" id="water-canvas"></canvas>
+        <div class="main-layout">
+            <div class="canvas-area">
+                <canvas id="sim" width="520" height="320"></canvas>
 
-                <div class="quiz-section">
-                    <h3>Entdecke den Zusammenhang:</h3>
-
-                    <div class="quiz-question" id="q1">
-                        <p><strong>Frage 1:</strong> Erhöhe den Pumpendruck. Was passiert mit dem Wasserfluss?</p>
-                        <select id="q1-select" onchange="checkAnswer(1)">
-                            <option value="">Erst ausprobieren, dann wählen...</option>
-                            <option value="less">Der Wasserfluss wird weniger</option>
-                            <option value="same">Der Wasserfluss bleibt gleich</option>
-                            <option value="more">Der Wasserfluss wird mehr</option>
-                        </select>
-                        <div class="quiz-feedback" id="fb1"></div>
+                <div class="display-bar">
+                    <div class="display-item pump">
+                        <div class="label">Pumpleistung</div>
+                        <div class="value" id="disp-pump">50%</div>
                     </div>
-
-                    <div class="quiz-question" id="q2">
-                        <p><strong>Frage 2:</strong> Verkleinere den Rohrdurchmesser (Engstelle). Was passiert?</p>
-                        <select id="q2-select" onchange="checkAnswer(2)">
-                            <option value="">Erst ausprobieren, dann wählen...</option>
-                            <option value="more">Mehr Wasser fließt durch</option>
-                            <option value="same">Gleich viel Wasser fließt durch</option>
-                            <option value="less">Weniger Wasser fließt durch</option>
-                        </select>
-                        <div class="quiz-feedback" id="fb2"></div>
+                    <div class="display-item flow">
+                        <div class="label">Durchfluss</div>
+                        <div class="value" id="disp-flow">1.0 L/s</div>
                     </div>
-
-                    <div class="quiz-question" id="q3">
-                        <p><strong>Frage 3:</strong> Wie kannst du trotz Engstelle wieder mehr Wasserfluss bekommen?</p>
-                        <select id="q3-select" onchange="checkAnswer(3)">
-                            <option value="">Überlege und wähle...</option>
-                            <option value="nothing">Das geht nicht</option>
-                            <option value="wait">Einfach warten</option>
-                            <option value="pressure">Den Pumpendruck erhöhen</option>
-                        </select>
-                        <div class="quiz-feedback" id="fb3"></div>
+                    <div class="display-item resist">
+                        <div class="label">Verengung</div>
+                        <div class="value" id="disp-resist">50%</div>
                     </div>
                 </div>
             </div>
 
             <div class="sidebar">
-                <div class="panel">
-                    <h2>Steuerung</h2>
+                <div class="control-group">
+                    <label>Pumpleistung</label>
+                    <div class="hint">Wie stark drückt die Pumpe?</div>
+                    <input type="range" id="pump-slider" min="0" max="100" value="50">
+                    <div class="value-box" id="pump-value">50%</div>
+                </div>
 
-                    <div class="control-group">
-                        <label>Pumpendruck:</label>
-                        <div class="slider-container">
-                            <input type="range" id="pressure-slider" min="1" max="10" step="1" value="5">
-                            <span class="value-display" id="pressure-display">5</span>
-                        </div>
-                        <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 2px;">
-                            (wie stark die Pumpe drückt)
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label>Rohrdurchmesser (Engstelle):</label>
-                        <div class="slider-container">
-                            <input type="range" id="diameter-slider" min="1" max="10" step="1" value="10">
-                            <span class="value-display" id="diameter-display">100%</span>
-                        </div>
-                        <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 2px;">
-                            (10 = weit offen, 1 = fast zu)
-                        </div>
-                    </div>
-
-                    <div class="meter">
-                        <div class="meter-label">Wasserfluss</div>
-                        <div class="meter-value" id="flow-display">5,0</div>
-                        <div class="meter-unit">Liter/Sekunde</div>
-                    </div>
+                <div class="control-group">
+                    <label>Rohrverengung</label>
+                    <div class="hint">Wie eng ist die Engstelle?</div>
+                    <input type="range" id="resist-slider" min="10" max="90" value="50">
+                    <div class="value-box" id="resist-value">50%</div>
                 </div>
 
                 <div class="analogy-box">
-                    <h3>Die Analogie zum Stromkreis:</h3>
-                    <table class="analogy-table">
-                        <tr>
-                            <td class="water-col">Pumpendruck</td>
-                            <td class="arrow">→</td>
-                            <td class="electric-col">Spannung U</td>
-                        </tr>
-                        <tr>
-                            <td class="water-col">Wasserfluss</td>
-                            <td class="arrow">→</td>
-                            <td class="electric-col">Stromstärke I</td>
-                        </tr>
-                        <tr>
-                            <td class="water-col">Engstelle</td>
-                            <td class="arrow">→</td>
-                            <td class="electric-col">Widerstand R</td>
-                        </tr>
-                    </table>
-
-                    <div class="progress-indicator">
-                        <div class="progress-dot" id="dot1"></div>
-                        <div class="progress-dot" id="dot2"></div>
-                        <div class="progress-dot" id="dot3"></div>
-                        <span style="font-size: 0.75em; color: var(--text-muted); margin-left: 8px;">Fortschritt</span>
+                    <h3>Analogie</h3>
+                    <div class="analogy-row">
+                        <span class="analogy-water">Wasserdruck</span>
+                        <span class="analogy-electric">Spannung U</span>
+                    </div>
+                    <div class="analogy-row">
+                        <span class="analogy-water">Durchfluss</span>
+                        <span class="analogy-electric">Stromstärke I</span>
+                    </div>
+                    <div class="analogy-row">
+                        <span class="analogy-water">Engstelle</span>
+                        <span class="analogy-electric">Widerstand R</span>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <button class="next-btn" id="next-btn" onclick="goToElectricSim()">
-                    Weiter zur Strom-Simulation →
-                </button>
+        <div class="quiz-section">
+            <h2>Teste dein Verständnis</h2>
+
+            <div class="question" id="q1">
+                <p>1. Was passiert mit dem Durchfluss, wenn du die Pumpleistung erhöhst?</p>
+                <div class="options">
+                    <button onclick="checkQ(1,0)">Der Durchfluss bleibt gleich</button>
+                    <button onclick="checkQ(1,1)">Der Durchfluss wird größer</button>
+                    <button onclick="checkQ(1,2)">Der Durchfluss wird kleiner</button>
+                </div>
+                <div class="feedback" id="fb1"></div>
+            </div>
+
+            <div class="question" id="q2">
+                <p>2. Was passiert mit dem Durchfluss, wenn du das Rohr stärker verengst?</p>
+                <div class="options">
+                    <button onclick="checkQ(2,0)">Der Durchfluss wird größer</button>
+                    <button onclick="checkQ(2,1)">Der Durchfluss wird kleiner</button>
+                    <button onclick="checkQ(2,2)">Der Durchfluss bleibt gleich</button>
+                </div>
+                <div class="feedback" id="fb2"></div>
+            </div>
+
+            <div class="question" id="q3">
+                <p>3. Was entspricht der Stromstärke im Wassermodell?</p>
+                <div class="options">
+                    <button onclick="checkQ(3,0)">Die Pumpleistung</button>
+                    <button onclick="checkQ(3,1)">Die Rohrverengung</button>
+                    <button onclick="checkQ(3,2)">Der Wasserdurchfluss</button>
+                </div>
+                <div class="feedback" id="fb3"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Canvas Setup
-        var canvas = document.getElementById('water-canvas');
+        // ============================================
+        // WASSERMODELL-SIMULATION (ES5)
+        // ============================================
+
+        var canvas = document.getElementById('sim');
         var ctx = canvas.getContext('2d');
 
-        // Responsive Canvas
-        function resizeCanvas() {
-            var rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width - 30;
-            canvas.height = 320;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        var pumpSlider = document.getElementById('pump-slider');
+        var resistSlider = document.getElementById('resist-slider');
 
-        // Zustand
-        var pressure = 5;
-        var diameter = 10;
-        var waterParticles = [];
-        var completedQuestions = { 1: false, 2: false, 3: false };
+        // State
+        var pump = 50;
+        var resist = 50;
+        var particles = [];
+        var MAX_PARTICLES = 80;
 
-        // DOM-Elemente
-        var pressureSlider = document.getElementById('pressure-slider');
-        var diameterSlider = document.getElementById('diameter-slider');
-        var pressureDisplay = document.getElementById('pressure-display');
-        var diameterDisplay = document.getElementById('diameter-display');
-        var flowDisplay = document.getElementById('flow-display');
+        // Quiz
+        var answers = { 1: 1, 2: 1, 3: 2 };
+        var feedback = {
+            1: { ok: 'Richtig! Mehr Druck = mehr Durchfluss. Genauso: mehr Spannung = mehr Strom.', no: 'Probiere es aus: Erhöhe die Pumpleistung und beobachte!' },
+            2: { ok: 'Richtig! Engere Stelle = weniger Durchfluss. Genauso: mehr Widerstand = weniger Strom.', no: 'Probiere es aus: Verenge das Rohr und beobachte!' },
+            3: { ok: 'Richtig! Der Wasserdurchfluss entspricht der Stromstärke I.', no: 'Schau in die Analogie-Tabelle rechts!' }
+        };
 
-        // Event Listeners
-        pressureSlider.addEventListener('input', function() {
-            pressure = parseInt(this.value);
-            pressureDisplay.textContent = pressure;
-            updateFlow();
-        });
+        // ============================================
+        // PARTICLE CLASS
+        // ============================================
 
-        diameterSlider.addEventListener('input', function() {
-            diameter = parseInt(this.value);
-            diameterDisplay.textContent = (diameter * 10) + '%';
-            updateFlow();
-        });
-
-        // Wasserfluss berechnen (vereinfachtes Modell)
-        function calculateFlow() {
-            // Flow proportional zu Druck, umgekehrt proportional zum Widerstand
-            // Widerstand ~ 1/Durchmesser²
-            var resistance = 10 / diameter;
-            var flow = pressure / resistance;
-            return flow;
+        function Particle() {
+            this.reset();
         }
 
-        function updateFlow() {
-            var flow = calculateFlow();
-            flowDisplay.textContent = flow.toFixed(1);
-        }
+        Particle.prototype.reset = function() {
+            this.x = 70 + Math.random() * 20;
+            this.y = 160 + (Math.random() - 0.5) * 40;
+            this.speed = 0.8 + Math.random() * 0.4;
+            this.size = 3 + Math.random() * 2;
+        };
 
-        // Wasser-Partikel initialisieren
-        function initParticles() {
-            waterParticles = [];
-            for (var i = 0; i < 50; i++) {
-                waterParticles.push({
-                    x: Math.random() * canvas.width,
-                    y: 140 + (Math.random() - 0.5) * 40,
-                    speed: 1 + Math.random() * 2
-                });
+        Particle.prototype.update = function(flow) {
+            var speed = flow * 2.5 * this.speed;
+
+            // Engstelle: 220-300
+            if (this.x > 220 && this.x < 300) {
+                var narrowFactor = 1 + resist / 50;
+                speed = speed * narrowFactor;
+
+                var maxY = 20 * (1 - resist / 100);
+                if (this.y < 160 - maxY) this.y = 160 - maxY;
+                if (this.y > 160 + maxY) this.y = 160 + maxY;
             }
-        }
-        initParticles();
 
-        // Zeichnen
+            this.x += speed;
+            this.y += (Math.random() - 0.5) * 0.8;
+
+            if (this.x > 470) {
+                this.reset();
+            }
+        };
+
+        Particle.prototype.draw = function() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(21, 101, 192, 0.7)';
+            ctx.fill();
+        };
+
+        // ============================================
+        // FLOW CALCULATION
+        // ============================================
+
+        function calcFlow() {
+            var effectiveR = resist / 50;
+            var flow = (pump / 50) / effectiveR;
+            return Math.max(0.1, Math.min(2.5, flow));
+        }
+
+        // ============================================
+        // DRAWING
+        // ============================================
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            var w = canvas.width;
-            var h = canvas.height;
-            var pipeY = 120;
-            var pipeHeight = 80;
-            var centerY = pipeY + pipeHeight / 2;
+            drawPipes();
+            drawPump();
+            drawParticles();
+            drawLabels();
+        }
 
-            // Engstellen-Parameter
-            var constrictionX = w * 0.45;
-            var constrictionWidth = 60;
-            var openingHeight = pipeHeight * (diameter / 10);
-            var constrictionTop = centerY - openingHeight / 2;
-            var constrictionBottom = centerY + openingHeight / 2;
+        function drawPipes() {
+            var pipeH = 50;
+            var narrowH = pipeH * (1 - resist / 110);
+            var cy = 160;
 
-            // Hintergrund-Rohre (braun)
-            ctx.fillStyle = '#5d4037';
+            // Pipe gradient
+            var grad = ctx.createLinearGradient(0, cy - 25, 0, cy + 25);
+            grad.addColorStop(0, '#e3f2fd');
+            grad.addColorStop(0.5, '#bbdefb');
+            grad.addColorStop(1, '#e3f2fd');
 
-            // Linkes Rohr
-            ctx.fillRect(80, pipeY - 10, constrictionX - 80, pipeHeight + 20);
-
-            // Rechtes Rohr
-            ctx.fillRect(constrictionX + constrictionWidth, pipeY - 10, w - constrictionX - constrictionWidth - 80, pipeHeight + 20);
-
-            // Engstelle (Rohrinneres)
-            ctx.fillStyle = '#8d6e63';
-            ctx.fillRect(constrictionX, pipeY, constrictionWidth, pipeHeight);
-
-            // Engstelle - obere Blockade
-            ctx.fillStyle = '#5d4037';
-            ctx.fillRect(constrictionX, pipeY, constrictionWidth, constrictionTop - pipeY);
-
-            // Engstelle - untere Blockade
-            ctx.fillRect(constrictionX, constrictionBottom, constrictionWidth, pipeY + pipeHeight - constrictionBottom);
-
-            // Wasser im Rohr (Hintergrund)
-            ctx.fillStyle = '#bbdefb';
-            // Links
-            ctx.fillRect(90, pipeY, constrictionX - 90, pipeHeight);
-            // In Engstelle
-            ctx.fillRect(constrictionX, constrictionTop, constrictionWidth, openingHeight);
-            // Rechts
-            ctx.fillRect(constrictionX + constrictionWidth, pipeY, w - constrictionX - constrictionWidth - 90, pipeHeight);
-
-            // Pumpe (links)
-            ctx.fillStyle = '#1565c0';
-            ctx.fillRect(20, pipeY - 20, 70, pipeHeight + 40);
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('PUMPE', 55, centerY - 5);
-            ctx.font = '11px sans-serif';
-            ctx.fillText('Druck: ' + pressure, 55, centerY + 12);
-
-            // Pumpen-Animation (pulsieren)
-            var pulseSize = 3 + pressure * 0.5;
-            ctx.strokeStyle = '#0d47a1';
+            ctx.fillStyle = grad;
+            ctx.strokeStyle = '#1565c0';
             ctx.lineWidth = 2;
+
+            // Left pipe
+            ctx.fillRect(60, cy - pipeH/2, 160, pipeH);
+            ctx.strokeRect(60, cy - pipeH/2, 160, pipeH);
+
+            // Narrow section
             ctx.beginPath();
-            ctx.arc(55, centerY + 30, pulseSize + Math.sin(Date.now() / 200) * 2, 0, Math.PI * 2);
+            ctx.moveTo(220, cy - pipeH/2);
+            ctx.lineTo(235, cy - narrowH/2);
+            ctx.lineTo(285, cy - narrowH/2);
+            ctx.lineTo(300, cy - pipeH/2);
+            ctx.lineTo(300, cy + pipeH/2);
+            ctx.lineTo(285, cy + narrowH/2);
+            ctx.lineTo(235, cy + narrowH/2);
+            ctx.lineTo(220, cy + pipeH/2);
+            ctx.closePath();
+            ctx.fill();
             ctx.stroke();
 
-            // Wasser-Partikel animieren
-            var flow = calculateFlow();
-            var baseSpeed = flow * 0.8;
+            // Right pipe
+            ctx.fillRect(300, cy - pipeH/2, 160, pipeH);
+            ctx.strokeRect(300, cy - pipeH/2, 160, pipeH);
 
-            ctx.fillStyle = '#1976d2';
-            for (var i = 0; i < waterParticles.length; i++) {
-                var p = waterParticles[i];
+            // Return pipe (bottom)
+            ctx.fillStyle = '#e3f2fd';
+            ctx.fillRect(60, 240, 400, 25);
+            ctx.strokeRect(60, 240, 400, 25);
 
-                // Geschwindigkeit anpassen basierend auf Position
-                var speedMultiplier = 1;
-                if (p.x > constrictionX && p.x < constrictionX + constrictionWidth) {
-                    // In der Engstelle: schneller (Kontinuitätsgleichung)
-                    speedMultiplier = 10 / diameter;
-                    // Y-Position zur Mitte ziehen
-                    p.y += (centerY - p.y) * 0.1;
-                } else {
-                    // Normale Röhre
-                    var targetY = centerY + (Math.random() - 0.5) * 60;
-                    p.y += (targetY - p.y) * 0.02;
-                }
+            // Vertical connections
+            ctx.fillRect(60, cy + pipeH/2, 20, 240 - cy - pipeH/2);
+            ctx.strokeRect(60, cy + pipeH/2, 20, 240 - cy - pipeH/2);
+            ctx.fillRect(440, cy + pipeH/2, 20, 240 - cy - pipeH/2);
+            ctx.strokeRect(440, cy + pipeH/2, 20, 240 - cy - pipeH/2);
+        }
 
-                p.x += baseSpeed * speedMultiplier * p.speed;
+        function drawPump() {
+            var cx = 70;
+            var cy = 160;
 
-                // Zurücksetzen wenn rechts raus
-                if (p.x > w - 80) {
-                    p.x = 90;
-                    p.y = centerY + (Math.random() - 0.5) * 60;
-                }
+            // Pump body
+            ctx.beginPath();
+            ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+            ctx.fillStyle = '#c62828';
+            ctx.fill();
+            ctx.strokeStyle = '#8e0000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
 
-                // Nur zeichnen wenn im sichtbaren Bereich
-                var particleRadius = 4;
-                if (p.x > constrictionX && p.x < constrictionX + constrictionWidth) {
-                    // In Engstelle: nur wenn innerhalb der Öffnung
-                    if (p.y > constrictionTop + particleRadius && p.y < constrictionBottom - particleRadius) {
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, particleRadius, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                } else if (p.x > 90 && p.x < w - 90) {
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, particleRadius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+            // P label
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('P', cx, cy);
+
+            // Activity ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, 26, -Math.PI/2, -Math.PI/2 + Math.PI * 2 * pump / 100);
+            ctx.strokeStyle = '#ffeb3b';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function drawParticles() {
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].draw();
             }
+        }
 
-            // Beschriftungen
+        function drawLabels() {
             ctx.fillStyle = '#333';
-            ctx.font = '12px sans-serif';
+            ctx.font = '11px sans-serif';
             ctx.textAlign = 'center';
 
-            // Engstelle beschriften
-            ctx.fillText('Engstelle', constrictionX + constrictionWidth / 2, pipeY - 20);
-            ctx.fillText('(Widerstand)', constrictionX + constrictionWidth / 2, pipeY - 6);
+            ctx.fillText('Pumpe', 70, 200);
+            ctx.fillText('Engstelle', 260, 125);
 
-            // Durchmesser-Anzeige
-            ctx.fillStyle = '#c62828';
-            ctx.font = 'bold 11px sans-serif';
-            ctx.fillText((diameter * 10) + '%', constrictionX + constrictionWidth / 2, centerY + 4);
-
-            // Flussrichtungs-Pfeile
-            ctx.fillStyle = '#1565c0';
-            ctx.font = '16px sans-serif';
-            ctx.fillText('→', 150, centerY + 5);
-            ctx.fillText('→', w - 150, centerY + 5);
-
-            // Durchflussmesser (rechts)
-            ctx.fillStyle = '#0d47a1';
-            ctx.fillRect(w - 80, pipeY - 10, 60, pipeHeight + 20);
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#b35c00';
             ctx.font = 'bold 12px sans-serif';
-            ctx.fillText('FLUSS', w - 50, centerY - 8);
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillText(flow.toFixed(1), w - 50, centerY + 10);
-            ctx.font = '10px sans-serif';
-            ctx.fillText('L/s', w - 50, centerY + 24);
-
-            requestAnimationFrame(draw);
+            ctx.fillText(resist + '% verengt', 260, 210);
         }
 
-        // Quiz-Logik
-        function checkAnswer(questionNum) {
-            var select = document.getElementById('q' + questionNum + '-select');
-            var feedback = document.getElementById('fb' + questionNum);
-            var value = select.value;
+        // ============================================
+        // UPDATE LOOP
+        // ============================================
 
-            if (!value) return;
+        function update() {
+            var flow = calcFlow();
 
-            var correct = false;
-            var message = '';
-
-            switch (questionNum) {
-                case 1:
-                    if (value === 'more') {
-                        correct = true;
-                        message = 'Richtig! Mehr Druck → mehr Wasserfluss. Im Stromkreis: Mehr Spannung → mehr Strom.';
-                    } else {
-                        message = 'Probiere es aus: Schiebe den Pumpendruck nach rechts und beobachte den Fluss.';
-                    }
-                    break;
-                case 2:
-                    if (value === 'less') {
-                        correct = true;
-                        message = 'Genau! Die Engstelle behindert den Fluss – sie wirkt als WIDERSTAND. Im Stromkreis macht ein Widerstand dasselbe!';
-                    } else {
-                        message = 'Probiere es aus: Schiebe den Rohrdurchmesser nach links (Engstelle verkleinern) und beobachte.';
-                    }
-                    break;
-                case 3:
-                    if (value === 'pressure') {
-                        correct = true;
-                        message = 'Richtig! Mehr Druck gleicht den Widerstand aus. Im Stromkreis: Mehr Spannung → mehr Strom trotz Widerstand.';
-                    } else {
-                        message = 'Überlege: Was kannst du an der Pumpe ändern, um mehr Kraft zu haben?';
-                    }
-                    break;
+            // Spawn particles
+            var spawnRate = Math.ceil(flow * 1.5);
+            for (var i = 0; i < spawnRate && particles.length < MAX_PARTICLES; i++) {
+                if (Math.random() < 0.2) {
+                    particles.push(new Particle());
+                }
             }
 
-            feedback.textContent = message;
-            feedback.className = 'quiz-feedback ' + (correct ? 'correct' : 'hint');
-
-            if (correct) {
-                completedQuestions[questionNum] = true;
-                document.getElementById('dot' + questionNum).classList.add('completed');
-                checkAllCompleted();
+            // Update particles
+            for (var j = 0; j < particles.length; j++) {
+                particles[j].update(flow);
             }
+
+            draw();
+            updateDisplays();
+
+            requestAnimationFrame(update);
         }
 
-        function checkAllCompleted() {
-            if (completedQuestions[1] && completedQuestions[2] && completedQuestions[3]) {
-                document.getElementById('next-btn').classList.add('visible');
+        function updateDisplays() {
+            var flow = calcFlow();
+
+            document.getElementById('pump-value').textContent = pump + '%';
+            document.getElementById('resist-value').textContent = resist + '%';
+            document.getElementById('disp-pump').textContent = pump + '%';
+            document.getElementById('disp-flow').textContent = flow.toFixed(1) + ' L/s';
+            document.getElementById('disp-resist').textContent = resist + '%';
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        pumpSlider.addEventListener('input', function() {
+            pump = parseInt(this.value);
+        });
+
+        resistSlider.addEventListener('input', function() {
+            resist = parseInt(this.value);
+        });
+
+        // ============================================
+        // QUIZ
+        // ============================================
+
+        function checkQ(qNum, ansIdx) {
+            var qDiv = document.getElementById('q' + qNum);
+            var fbDiv = document.getElementById('fb' + qNum);
+            var btns = qDiv.querySelectorAll('button');
+
+            var correct = ansIdx === answers[qNum];
+
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].disabled = true;
+                if (i === answers[qNum]) {
+                    btns[i].className = 'correct';
+                } else if (i === ansIdx) {
+                    btns[i].className = 'wrong';
+                }
             }
+
+            fbDiv.textContent = correct ? feedback[qNum].ok : feedback[qNum].no;
+            fbDiv.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
         }
 
-        function goToElectricSim() {
-            // Weiterleitung zur elektrischen Simulation
-            window.location.href = 'SIM-02a-kennlinie.html';
+        // ============================================
+        // INIT
+        // ============================================
+
+        function init() {
+            for (var i = 0; i < 30; i++) {
+                var p = new Particle();
+                p.x = 70 + Math.random() * 380;
+                particles.push(p);
+            }
+            update();
         }
 
-        // Vollbild
-        function toggleFullscreen() {
-            document.body.classList.toggle('fullscreen');
-            var btn = document.querySelector('.fullscreen-btn');
-            btn.textContent = document.body.classList.contains('fullscreen') ? 'Beenden' : 'Vollbild';
-            setTimeout(resizeCanvas, 100);
-        }
-
-        // Start
-        updateFlow();
-        draw();
+        init();
     </script>
 </body>
 </html>
