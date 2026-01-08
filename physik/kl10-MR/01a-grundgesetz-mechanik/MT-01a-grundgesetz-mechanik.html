@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Grundgesetz der Mechanik</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 20px;
+            font-size: 0.9em;
+        }
+        .info-box strong { color: #2c5aa0; }
+
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .calc-input { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+        .calc-input input[type="number"], .calc-input input[type="text"] {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            width: 100px;
+            font-size: 1em;
+            text-align: center;
+        }
+        .calc-input select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+        }
+        .calc-input input.correct, .calc-input select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .calc-input input.incorrect, .calc-input select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            font-family: inherit;
+            border: 1px solid #ddd;
+            resize: vertical;
+        }
+        textarea.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        textarea.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.9em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 8px 10px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .seat-field { max-width: 400px; margin: 15px auto; padding: 15px; background: #fff; border: 1px solid #ddd; }
+        .seat-field label { font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px; }
+
+        /* ISO 80000: Formelzeichen kursiv+serif, Einheiten aufrecht+sans */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-style: normal; }
+
+        .hidden { display: none; }
+
+        .hinweis { background: #fff3e0; border-left: 3px solid #b35c00; padding: 10px 15px; margin: 10px 0; font-size: 0.9em; }
+
+        @media print {
+            button, .progress-container { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Grundgesetz der Mechanik</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 10 MR | 25 BE | 20 Min</div>
+        </div>
+    </header>
+
+    <div class="info-box">
+        <strong>Hilfsmittel erlaubt:</strong> Arbeitsblatt (AB-01a)
+    </div>
+
+    <div class="info-box" style="background: #f5f5f5; border-color: #666;">
+        <strong>Bewertung (MR Klasse 10):</strong>
+        <table style="width:100%; margin-top:8px; font-size:0.9em; border-collapse:collapse;">
+            <tr>
+                <td style="padding:4px;"><strong>Note 1:</strong> ≥24 BE (96%)</td>
+                <td style="padding:4px;"><strong>Note 2:</strong> ≥20 BE (80%)</td>
+                <td style="padding:4px;"><strong>Note 3:</strong> ≥15 BE (60%)</td>
+            </tr>
+            <tr>
+                <td style="padding:4px;"><strong>Note 4:</strong> ≥10 BE (40%)</td>
+                <td style="padding:4px;"><strong>Note 5:</strong> ≥5 BE (20%)</td>
+                <td style="padding:4px;"><strong>Note 6:</strong> &lt;5 BE</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="seat-field">
+        <label>Platznummer:</label>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px;">
+                <option value="">-- wählen --</option>
+            </select>
+            <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+        </div>
+        <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600; margin-top: 10px;"></div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 8 beantwortet</div>
+    </div>
+
+    <div class="container">
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 1: Formelwahl (2 BE) - AFB I
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 1: Richtige Formel wählen</div>
+                <div class="question-meta">
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Gegeben sind <span class="fz">F</span> = 80 <span class="einheit">N</span> und <span class="fz">a</span> = 4 <span class="einheit">m/s²</span>. Gesucht ist <span class="fz">m</span>.<br>
+                <strong>Welche Formel verwendest du?</strong>
+            </div>
+            <div class="options" id="q1-options">
+                <label class="option" data-value="a"><input type="radio" name="q1" value="a"><span class="fz">F</span> = <span class="fz">m</span> · <span class="fz">a</span></label>
+                <label class="option" data-value="b"><input type="radio" name="q1" value="b"><span class="fz">m</span> = <span class="fz">F</span> / <span class="fz">a</span></label>
+                <label class="option" data-value="c"><input type="radio" name="q1" value="c"><span class="fz">a</span> = <span class="fz">F</span> / <span class="fz">m</span></label>
+                <label class="option" data-value="d"><input type="radio" name="q1" value="d"><span class="fz">m</span> = <span class="fz">F</span> · <span class="fz">a</span></label>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Richtig! Wenn <span class="fz">m</span> gesucht ist: <span class="fz">m</span> = <span class="fz">F</span> / <span class="fz">a</span></div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Falsch. Du suchst <span class="fz">m</span>, also musst du nach <span class="fz">m</span> umstellen: <span class="fz">m</span> = <span class="fz">F</span> / <span class="fz">a</span></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 2: F berechnen - neuer Kontext (3 BE) - AFB II
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 2: Kraft berechnen</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Schlitten (<span class="fz">m</span> = 15 <span class="einheit">kg</span>) wird mit <span class="fz">a</span> = 4 <span class="einheit">m/s²</span> über den Schnee gezogen.<br>
+                <strong>Berechne</strong> die Zugkraft <span class="fz">F</span>.
+            </div>
+            <div class="calc-input">
+                <span><span class="fz">F</span> =</span>
+                <input type="number" id="q2-val" placeholder="Wert">
+                <select id="q2-unit">
+                    <option value="">Einheit</option>
+                    <option value="N">N</option>
+                    <option value="kg">kg</option>
+                    <option value="ms2">m/s²</option>
+                </select>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig! <span class="fz">F</span> = 15 · 4 = 60 <span class="einheit">N</span></div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Falsch. <span class="fz">F</span> = <span class="fz">m</span> · <span class="fz">a</span> = 15 · 4 = 60 <span class="einheit">N</span></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 3: m berechnen - neuer Kontext (3 BE) - AFB II
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 3: Masse berechnen</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Gabelstapler schiebt eine Kiste mit <span class="fz">F</span> = 120 <span class="einheit">N</span>. Die Kiste beschleunigt mit <span class="fz">a</span> = 6 <span class="einheit">m/s²</span>.<br>
+                <strong>Berechne</strong> die Masse <span class="fz">m</span> der Kiste.
+            </div>
+            <div class="calc-input">
+                <span><span class="fz">m</span> =</span>
+                <input type="number" id="q3-val" placeholder="Wert">
+                <select id="q3-unit">
+                    <option value="">Einheit</option>
+                    <option value="N">N</option>
+                    <option value="kg">kg</option>
+                    <option value="ms2">m/s²</option>
+                </select>
+            </div>
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! <span class="fz">m</span> = 120 / 6 = 20 <span class="einheit">kg</span></div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Falsch. <span class="fz">m</span> = <span class="fz">F</span> / <span class="fz">a</span> = 120 / 6 = 20 <span class="einheit">kg</span></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 4: a berechnen - neuer Kontext (3 BE) - AFB II
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q4" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 4: Beschleunigung berechnen</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Einkaufswagen (<span class="fz">m</span> = 25 <span class="einheit">kg</span>) wird mit <span class="fz">F</span> = 50 <span class="einheit">N</span> angeschoben.<br>
+                <strong>Berechne</strong> die Beschleunigung <span class="fz">a</span>.
+            </div>
+            <div class="calc-input">
+                <span><span class="fz">a</span> =</span>
+                <input type="number" id="q4-val" placeholder="Wert">
+                <select id="q4-unit">
+                    <option value="">Einheit</option>
+                    <option value="N">N</option>
+                    <option value="kg">kg</option>
+                    <option value="ms2">m/s²</option>
+                </select>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! <span class="fz">a</span> = 50 / 25 = 2 <span class="einheit">m/s²</span></div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">Falsch. <span class="fz">a</span> = <span class="fz">F</span> / <span class="fz">m</span> = 50 / 25 = 2 <span class="einheit">m/s²</span></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 5: F_res mit drei Kräften (3 BE) - AFB II
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q5" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 5: Resultierende Kraft</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Boot wird von drei Kräften beeinflusst:
+                <ul style="margin: 8px 0 8px 20px;">
+                    <li>Motor schiebt nach <strong>vorne</strong>: 400 <span class="einheit">N</span></li>
+                    <li>Wind drückt nach <strong>vorne</strong>: 100 <span class="einheit">N</span></li>
+                    <li>Strömung zieht nach <strong>hinten</strong>: 200 <span class="einheit">N</span></li>
+                </ul>
+                <strong>a)</strong> Wie groß ist <span class="fz">F</span><sub>res</sub>?<br>
+                <strong>b)</strong> In welche Richtung bewegt sich das Boot?
+            </div>
+            <div class="calc-input">
+                <span>a) <span class="fz">F</span><sub>res</sub> =</span>
+                <input type="number" id="q5-val" placeholder="Wert">
+                <span class="einheit">N</span>
+            </div>
+            <div class="calc-input">
+                <span>b) Richtung:</span>
+                <select id="q5-dir">
+                    <option value="">-- wählen --</option>
+                    <option value="vorne">vorne</option>
+                    <option value="hinten">hinten</option>
+                    <option value="keine">keine (Gleichgewicht)</option>
+                </select>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">Richtig! Vorne: 400 + 100 = 500 <span class="einheit">N</span>. Hinten: 200 <span class="einheit">N</span>. <span class="fz">F</span><sub>res</sub> = 500 − 200 = 300 <span class="einheit">N</span> nach vorne.</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Falsch. Vorne: 400 + 100 = 500 <span class="einheit">N</span>. Hinten: 200 <span class="einheit">N</span>. <span class="fz">F</span><sub>res</sub> = 500 − 200 = 300 <span class="einheit">N</span> nach vorne.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 6: Proportionalität verstehen (4 BE) - AFB III
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q6" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Frage 6: Zusammenhänge verstehen</div>
+                <div class="question-meta">
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Ausgangssituation:</strong> Ein Wagen (<span class="fz">m</span> = 20 <span class="einheit">kg</span>) wird mit <span class="fz">F</span> = 40 <span class="einheit">N</span> geschoben → <span class="fz">a</span> = 2 <span class="einheit">m/s²</span><br><br>
+                <strong>Was passiert mit der Beschleunigung <span class="fz">a</span>, wenn...</strong>
+            </div>
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> ...die Kraft <span class="fz">F</span> verdoppelt wird (auf 80 <span class="einheit">N</span>), aber die Masse gleich bleibt?</p>
+                <p style="margin: 5px 0;">
+                    <span class="fz">a</span> =
+                    <select id="q6-a">
+                        <option value="">--</option>
+                        <option value="1">1 m/s²</option>
+                        <option value="2">2 m/s²</option>
+                        <option value="4">4 m/s²</option>
+                        <option value="8">8 m/s²</option>
+                    </select>
+                </p>
+                <p style="margin-top: 15px;"><strong>b)</strong> ...die Masse <span class="fz">m</span> verdoppelt wird (auf 40 <span class="einheit">kg</span>), aber die Kraft gleich bleibt?</p>
+                <p style="margin: 5px 0;">
+                    <span class="fz">a</span> =
+                    <select id="q6-b">
+                        <option value="">--</option>
+                        <option value="1">1 m/s²</option>
+                        <option value="2">2 m/s²</option>
+                        <option value="4">4 m/s²</option>
+                        <option value="8">8 m/s²</option>
+                    </select>
+                </p>
+                <p style="margin-top: 15px;"><strong>c)</strong> ...Kraft UND Masse beide verdoppelt werden?</p>
+                <p style="margin: 5px 0;">
+                    <span class="fz">a</span> =
+                    <select id="q6-c">
+                        <option value="">--</option>
+                        <option value="1">1 m/s²</option>
+                        <option value="2">2 m/s²</option>
+                        <option value="4">4 m/s²</option>
+                        <option value="8">8 m/s²</option>
+                    </select>
+                </p>
+                <p style="margin-top: 15px;"><strong>d)</strong> ...die Kraft halbiert wird (auf 20 <span class="einheit">N</span>)?</p>
+                <p style="margin: 5px 0;">
+                    <span class="fz">a</span> =
+                    <select id="q6-d">
+                        <option value="">--</option>
+                        <option value="1">1 m/s²</option>
+                        <option value="2">2 m/s²</option>
+                        <option value="4">4 m/s²</option>
+                        <option value="8">8 m/s²</option>
+                    </select>
+                </p>
+            </div>
+            <div class="feedback-box correct" id="q6-fb-correct">Richtig! a) 4 m/s² (doppelte Kraft → doppelte a), b) 1 m/s² (doppelte Masse → halbe a), c) 2 m/s² (beides verdoppelt → gleiche a), d) 1 m/s² (halbe Kraft → halbe a)</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">Denke an: <span class="fz">a</span> = <span class="fz">F</span> / <span class="fz">m</span>. Mehr Kraft → mehr Beschleunigung. Mehr Masse → weniger Beschleunigung.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 7: Fehleranalyse (3 BE) - AFB III
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q7" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 7: Fehler finden</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Max rechnet:</strong><br>
+                <div style="background: #f5f5f5; padding: 10px; margin: 10px 0; font-family: monospace;">
+                    Gegeben: <span class="fz">F</span> = 200 <span class="einheit">N</span>, <span class="fz">a</span> = 5 <span class="einheit">m/s²</span><br>
+                    Gesucht: <span class="fz">m</span><br>
+                    Rechnung: <span class="fz">m</span> = <span class="fz">F</span> · <span class="fz">a</span> = 200 · 5 = 1000 <span class="einheit">kg</span>
+                </div>
+                <strong>a)</strong> Ist das Ergebnis richtig oder falsch?
+            </div>
+            <div class="calc-input">
+                <select id="q7-richtig">
+                    <option value="">-- wählen --</option>
+                    <option value="richtig">richtig</option>
+                    <option value="falsch">falsch</option>
+                </select>
+            </div>
+            <div class="question-text" style="margin-top: 15px;">
+                <strong>b)</strong> Wie lautet das richtige Ergebnis?
+            </div>
+            <div class="calc-input">
+                <span><span class="fz">m</span> =</span>
+                <input type="number" id="q7-val" placeholder="Wert">
+                <span class="einheit">kg</span>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">Richtig! Max hat multipliziert statt dividiert. Korrekt: <span class="fz">m</span> = <span class="fz">F</span> / <span class="fz">a</span> = 200 / 5 = 40 <span class="einheit">kg</span></div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">Max hat die falsche Operation verwendet. Er hat multipliziert, aber richtig wäre: <span class="fz">m</span> = <span class="fz">F</span> / <span class="fz">a</span> = 200 / 5 = 40 <span class="einheit">kg</span></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             FRAGE 8: Transfer - komplexe Situation (4 BE) - AFB III
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q8" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Frage 8: Rakete (Transfer)</div>
+                <div class="question-meta">
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Eine kleine Modellrakete (<span class="fz">m</span> = 2 <span class="einheit">kg</span>) startet senkrecht nach oben.
+                <ul style="margin: 8px 0 8px 20px;">
+                    <li>Schubkraft des Motors nach <strong>oben</strong>: 50 <span class="einheit">N</span></li>
+                    <li>Gewichtskraft zieht nach <strong>unten</strong>: 20 <span class="einheit">N</span></li>
+                </ul>
+            </div>
+            <div class="question-text" style="margin-top: 10px;">
+                <strong>a)</strong> Berechne die resultierende Kraft.
+            </div>
+            <div class="calc-input">
+                <span><span class="fz">F</span><sub>res</sub> =</span>
+                <input type="number" id="q8-fres" placeholder="Wert">
+                <span class="einheit">N</span>
+                <span style="margin-left: 10px;">Richtung:</span>
+                <select id="q8-dir">
+                    <option value="">--</option>
+                    <option value="oben">oben</option>
+                    <option value="unten">unten</option>
+                </select>
+            </div>
+            <div class="question-text" style="margin-top: 15px;">
+                <strong>b)</strong> Berechne die Beschleunigung der Rakete.
+            </div>
+            <div class="calc-input">
+                <span><span class="fz">a</span> =</span>
+                <input type="number" id="q8-a" placeholder="Wert">
+                <span class="einheit">m/s²</span>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">Richtig! <span class="fz">F</span><sub>res</sub> = 50 − 20 = 30 <span class="einheit">N</span> nach oben. <span class="fz">a</span> = 30 / 2 = 15 <span class="einheit">m/s²</span> (Die Rakete beschleunigt stark nach oben!)</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Rechnung: <span class="fz">F</span><sub>res</sub> = 50 − 20 = 30 <span class="einheit">N</span> (nach oben, weil Schub > Gewicht). Dann: <span class="fz">a</span> = 30 / 2 = 15 <span class="einheit">m/s²</span></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 25</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>Note</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>≥96</td><td>≥80</td><td>≥60</td><td>≥40</td><td>≥20</td><td>&lt;20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be1">≥24</td><td id="be2">≥20</td><td id="be3">≥15</td><td id="be4">≥10</td><td id="be5">≥5</td><td id="be6">&lt;5</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        <!-- Lehrer-Reset (dezent am Ende) -->
+        <div style="text-align: center; margin: 40px 0 20px 0;">
+            <button onclick="teacherReset()" style="background: none; border: none; color: #ccc; font-size: 0.75em; cursor: pointer;">⟳ Zurücksetzen</button>
+        </div>
+    </div>
+
+    <script>
+    var STORAGE_KEY = 'mt-physik-10mr-01a-grundgesetz-v4';
+    var MAX_POINTS = 25;
+    var NUM_QUESTIONS = 8;
+    var testSubmitted = false;
+
+    var answers = {
+        q1: 'b',
+        q2: { val: 60, unit: 'N' },
+        q3: { val: 20, unit: 'kg' },
+        q4: { val: 2, unit: 'ms2' },
+        q5: { val: 300, dir: 'vorne' },
+        q6: { a: '4', b: '1', c: '2', d: '1' },
+        q7: { richtig: 'falsch', val: 40 },
+        q8: { fres: 30, dir: 'oben', a: 15 }
+    };
+
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        if (saved) {
+            select.value = saved;
+            showLockedSeat(saved);
+        }
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        showLockedSeat(num);
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatSelect').style.display = 'none';
+        document.getElementById('btnSeatOk').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#2c5aa0;">P' + num + '</strong>';
+    }
+
+    function setupOptions() {
+        var optionContainers = document.querySelectorAll('.options');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+    }
+
+    function isQuestionAnswered(qId) {
+        switch(qId) {
+            case 'q1': return !!document.querySelector('input[name="q1"]:checked');
+            case 'q2': return document.getElementById('q2-val').value && document.getElementById('q2-unit').value;
+            case 'q3': return document.getElementById('q3-val').value && document.getElementById('q3-unit').value;
+            case 'q4': return document.getElementById('q4-val').value && document.getElementById('q4-unit').value;
+            case 'q5': return document.getElementById('q5-val').value && document.getElementById('q5-dir').value;
+            case 'q6': return document.getElementById('q6-a').value && document.getElementById('q6-b').value &&
+                              document.getElementById('q6-c').value && document.getElementById('q6-d').value;
+            case 'q7': return document.getElementById('q7-richtig').value && document.getElementById('q7-val').value;
+            case 'q8': return document.getElementById('q8-fres').value && document.getElementById('q8-dir').value &&
+                              document.getElementById('q8-a').value;
+            default: return false;
+        }
+    }
+
+    function countAnsweredQuestions() {
+        var answered = 0;
+        for (var i = 1; i <= NUM_QUESTIONS; i++) {
+            if (isQuestionAnswered('q' + i)) answered++;
+        }
+        return answered;
+    }
+
+    function updateProgress() {
+        var answered = countAnsweredQuestions();
+        var percent = (answered / NUM_QUESTIONS) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = answered + ' / ' + NUM_QUESTIONS + ' beantwortet';
+    }
+
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        return {
+            q1: getRadioValue('q1'),
+            q2val: document.getElementById('q2-val').value,
+            q2unit: document.getElementById('q2-unit').value,
+            q3val: document.getElementById('q3-val').value,
+            q3unit: document.getElementById('q3-unit').value,
+            q4val: document.getElementById('q4-val').value,
+            q4unit: document.getElementById('q4-unit').value,
+            q5val: document.getElementById('q5-val').value,
+            q5dir: document.getElementById('q5-dir').value,
+            q6a: document.getElementById('q6-a').value,
+            q6b: document.getElementById('q6-b').value,
+            q6c: document.getElementById('q6-c').value,
+            q6d: document.getElementById('q6-d').value,
+            q7richtig: document.getElementById('q7-richtig').value,
+            q7val: document.getElementById('q7-val').value,
+            q8fres: document.getElementById('q8-fres').value,
+            q8dir: document.getElementById('q8-dir').value,
+            q8a: document.getElementById('q8-a').value
+        };
+    }
+
+    function restoreAnswers(saved) {
+        if (saved.q1) {
+            var radio = document.querySelector('input[name="q1"][value="' + saved.q1 + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+        if (saved.q2val) document.getElementById('q2-val').value = saved.q2val;
+        if (saved.q2unit) document.getElementById('q2-unit').value = saved.q2unit;
+        if (saved.q3val) document.getElementById('q3-val').value = saved.q3val;
+        if (saved.q3unit) document.getElementById('q3-unit').value = saved.q3unit;
+        if (saved.q4val) document.getElementById('q4-val').value = saved.q4val;
+        if (saved.q4unit) document.getElementById('q4-unit').value = saved.q4unit;
+        if (saved.q5val) document.getElementById('q5-val').value = saved.q5val;
+        if (saved.q5dir) document.getElementById('q5-dir').value = saved.q5dir;
+        if (saved.q6a) document.getElementById('q6-a').value = saved.q6a;
+        if (saved.q6b) document.getElementById('q6-b').value = saved.q6b;
+        if (saved.q6c) document.getElementById('q6-c').value = saved.q6c;
+        if (saved.q6d) document.getElementById('q6-d').value = saved.q6d;
+        if (saved.q7richtig) document.getElementById('q7-richtig').value = saved.q7richtig;
+        if (saved.q7val) document.getElementById('q7-val').value = saved.q7val;
+        if (saved.q8fres) document.getElementById('q8-fres').value = saved.q8fres;
+        if (saved.q8dir) document.getElementById('q8-dir').value = saved.q8dir;
+        if (saved.q8a) document.getElementById('q8-a').value = saved.q8a;
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatNum = localStorage.getItem(STORAGE_KEY + '-seat');
+        if (!seatNum) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+
+        testSubmitted = true;
+        var userAnswers = collectAllAnswers();
+        var score = 0;
+
+        // Q1: MC Formelwahl (2 BE)
+        var q1Correct = userAnswers.q1 === answers.q1;
+        score += q1Correct ? 2 : 0;
+        markRadioQuestion('q1', answers.q1, userAnswers.q1);
+        showFeedback('q1', q1Correct);
+        showQuestionResult('q1', q1Correct ? 2 : 0, 2);
+
+        // Q2: F berechnen (3 BE - 2 Wert, 1 Einheit)
+        var q2Score = 0;
+        var q2ValEl = document.getElementById('q2-val');
+        var q2UnitEl = document.getElementById('q2-unit');
+        if (parseFloat(userAnswers.q2val) === answers.q2.val) {
+            q2Score += 2;
+            q2ValEl.classList.add('correct');
+        } else {
+            q2ValEl.classList.add('incorrect');
+        }
+        if (userAnswers.q2unit === answers.q2.unit) {
+            q2Score += 1;
+            q2UnitEl.classList.add('correct');
+        } else {
+            q2UnitEl.classList.add('incorrect');
+        }
+        score += q2Score;
+        showFeedback('q2', q2Score === 3);
+        showQuestionResult('q2', q2Score, 3);
+
+        // Q3: m berechnen (3 BE - 2 Wert, 1 Einheit)
+        var q3Score = 0;
+        var q3ValEl = document.getElementById('q3-val');
+        var q3UnitEl = document.getElementById('q3-unit');
+        if (parseFloat(userAnswers.q3val) === answers.q3.val) {
+            q3Score += 2;
+            q3ValEl.classList.add('correct');
+        } else {
+            q3ValEl.classList.add('incorrect');
+        }
+        if (userAnswers.q3unit === answers.q3.unit) {
+            q3Score += 1;
+            q3UnitEl.classList.add('correct');
+        } else {
+            q3UnitEl.classList.add('incorrect');
+        }
+        score += q3Score;
+        showFeedback('q3', q3Score === 3);
+        showQuestionResult('q3', q3Score, 3);
+
+        // Q4: a berechnen (3 BE - 2 Wert, 1 Einheit)
+        var q4Score = 0;
+        var q4ValEl = document.getElementById('q4-val');
+        var q4UnitEl = document.getElementById('q4-unit');
+        if (parseFloat(userAnswers.q4val) === answers.q4.val) {
+            q4Score += 2;
+            q4ValEl.classList.add('correct');
+        } else {
+            q4ValEl.classList.add('incorrect');
+        }
+        if (userAnswers.q4unit === answers.q4.unit) {
+            q4Score += 1;
+            q4UnitEl.classList.add('correct');
+        } else {
+            q4UnitEl.classList.add('incorrect');
+        }
+        score += q4Score;
+        showFeedback('q4', q4Score === 3);
+        showQuestionResult('q4', q4Score, 3);
+
+        // Q5: F_res mit 3 Kräften (3 BE - 2 Wert, 1 Richtung)
+        var q5Score = 0;
+        var q5ValEl = document.getElementById('q5-val');
+        var q5DirEl = document.getElementById('q5-dir');
+        if (parseFloat(userAnswers.q5val) === answers.q5.val) {
+            q5Score += 2;
+            q5ValEl.classList.add('correct');
+        } else {
+            q5ValEl.classList.add('incorrect');
+        }
+        if (userAnswers.q5dir === answers.q5.dir) {
+            q5Score += 1;
+            q5DirEl.classList.add('correct');
+        } else {
+            q5DirEl.classList.add('incorrect');
+        }
+        score += q5Score;
+        showFeedback('q5', q5Score === 3);
+        showQuestionResult('q5', q5Score, 3);
+
+        // Q6: Proportionalität (4 BE - 1 pro Teil)
+        var q6Score = 0;
+        var q6aEl = document.getElementById('q6-a');
+        var q6bEl = document.getElementById('q6-b');
+        var q6cEl = document.getElementById('q6-c');
+        var q6dEl = document.getElementById('q6-d');
+        if (userAnswers.q6a === answers.q6.a) { q6Score++; q6aEl.classList.add('correct'); } else { q6aEl.classList.add('incorrect'); }
+        if (userAnswers.q6b === answers.q6.b) { q6Score++; q6bEl.classList.add('correct'); } else { q6bEl.classList.add('incorrect'); }
+        if (userAnswers.q6c === answers.q6.c) { q6Score++; q6cEl.classList.add('correct'); } else { q6cEl.classList.add('incorrect'); }
+        if (userAnswers.q6d === answers.q6.d) { q6Score++; q6dEl.classList.add('correct'); } else { q6dEl.classList.add('incorrect'); }
+        score += q6Score;
+        showFeedback('q6', q6Score === 4);
+        showQuestionResult('q6', q6Score, 4);
+
+        // Q7: Fehleranalyse (3 BE - 1 für richtig/falsch, 2 für korrektes Ergebnis)
+        var q7Score = 0;
+        var q7RichtigEl = document.getElementById('q7-richtig');
+        var q7ValEl = document.getElementById('q7-val');
+        if (userAnswers.q7richtig === answers.q7.richtig) {
+            q7Score += 1;
+            q7RichtigEl.classList.add('correct');
+        } else {
+            q7RichtigEl.classList.add('incorrect');
+        }
+        if (parseFloat(userAnswers.q7val) === answers.q7.val) {
+            q7Score += 2;
+            q7ValEl.classList.add('correct');
+        } else {
+            q7ValEl.classList.add('incorrect');
+        }
+        score += q7Score;
+        showFeedback('q7', q7Score === 3);
+        showQuestionResult('q7', q7Score, 3);
+
+        // Q8: Rakete Transfer (4 BE - 1 F_res, 1 Richtung, 2 Beschleunigung)
+        var q8Score = 0;
+        var q8FresEl = document.getElementById('q8-fres');
+        var q8DirEl = document.getElementById('q8-dir');
+        var q8AEl = document.getElementById('q8-a');
+        if (parseFloat(userAnswers.q8fres) === answers.q8.fres) {
+            q8Score += 1;
+            q8FresEl.classList.add('correct');
+        } else {
+            q8FresEl.classList.add('incorrect');
+        }
+        if (userAnswers.q8dir === answers.q8.dir) {
+            q8Score += 1;
+            q8DirEl.classList.add('correct');
+        } else {
+            q8DirEl.classList.add('incorrect');
+        }
+        if (parseFloat(userAnswers.q8a) === answers.q8.a) {
+            q8Score += 2;
+            q8AEl.classList.add('correct');
+        } else {
+            q8AEl.classList.add('incorrect');
+        }
+        score += q8Score;
+        showFeedback('q8', q8Score === 4);
+        showQuestionResult('q8', q8Score, 4);
+
+        displayResults(score);
+    }
+
+    function markRadioQuestion(name, correct, selected) {
+        var options = document.querySelectorAll('#' + name + '-options .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (achieved === maxPts) result.classList.add('full');
+        else if (achieved > 0) result.classList.add('partial');
+        else result.classList.add('zero');
+        result.textContent = achieved + '/' + maxPts + ' BE';
+        meta.appendChild(result);
+    }
+
+    function displayResults(score) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatNum = localStorage.getItem(STORAGE_KEY + '-seat');
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: P' + seatNum;
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + MAX_POINTS;
+
+        var percent = (score / MAX_POINTS) * 100;
+        var note = 6;
+        if (percent >= 96) note = 1;
+        else if (percent >= 80) note = 2;
+        else if (percent >= 60) note = 3;
+        else if (percent >= 40) note = 4;
+        else if (percent >= 20) note = 5;
+        else note = 6;
+
+        document.getElementById('gradeDisplay').textContent = 'Note: ' + note;
+        var cellId = 'be' + note;
+        var cell = document.getElementById(cellId);
+        if (cell) cell.classList.add('current');
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+        disableAllInputs();
+    }
+
+    function disableAllInputs() {
+        var inputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+    }
+
+    // Lehrer-Reset (Kennwort: 2024)
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2024') {
+            if (confirm('Wirklich alle Daten für diesen Platz löschen?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_KEY + '-seat');
+                localStorage.removeItem(STORAGE_KEY + '-submitted');
+                localStorage.removeItem(STORAGE_KEY + '-score');
+                alert('Platz wurde zurückgesetzt. Seite wird neu geladen.');
+                location.reload();
+            }
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
+
+    window.onload = function() {
+        generateSeatDropdown();
+        setupOptions();
+        loadProgress();
+        updateProgress();
+
+        var allInputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+
+        // Bei Reload nach Abgabe: Ergebnisse erneut anzeigen
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            // NICHT testSubmitted=true setzen, sonst bricht submitTest() ab
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>
