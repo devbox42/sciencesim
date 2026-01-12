@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wurfbewegungen – Simulation</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --physik: #2c5aa0;
+            --physik-light: #e8f0fa;
+            --ball-fall: #1565c0;
+            --ball-wurf: #c62828;
+            --vector-vx: #c62828;
+            --vector-vy: #1565c0;
+            --vector-vres: #2a7a4b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 0.9em;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        h1 {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--physik);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 0;
+        }
+
+        .tab-btn {
+            padding: 10px 18px;
+            background: #e0e0e0;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .tab-btn:hover {
+            background: #eee;
+        }
+
+        .tab-btn.active {
+            background: var(--white);
+            color: var(--physik);
+            font-weight: 600;
+            border-bottom: 1px solid var(--white);
+            margin-bottom: -1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .sim-layout {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 15px;
+        }
+
+        .canvas-wrapper {
+            background: #fafafa;
+            border: 1px solid var(--border);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+        }
+
+        .controls {
+            font-size: 0.85em;
+        }
+
+        .control-section {
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .control-section h3 {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .control-row {
+            margin-bottom: 8px;
+        }
+
+        .control-row label {
+            display: block;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .control-row .value {
+            font-family: "SF Mono", Monaco, monospace;
+            color: var(--physik);
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 3px 0;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 7px 10px;
+            background: var(--physik);
+            color: white;
+            border: none;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75em;
+            cursor: pointer;
+            margin-bottom: 4px;
+        }
+
+        .results {
+            background: var(--physik-light);
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 0.8em;
+        }
+
+        .results h3 {
+            font-size: 0.7em;
+            color: var(--physik);
+            margin-bottom: 5px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+
+        .result-item .label {
+            color: var(--text-muted);
+            font-size: 0.9em;
+        }
+
+        .result-item .val {
+            font-family: "SF Mono", Monaco, monospace;
+            font-weight: 600;
+        }
+
+        .message {
+            margin-top: 8px;
+            padding: 8px;
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            font-size: 0.75em;
+            display: none;
+        }
+
+        .message.show { display: block; }
+
+        .info-box {
+            margin-top: 10px;
+            padding: 8px;
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            font-size: 0.75em;
+        }
+
+        @media (max-width: 750px) {
+            .sim-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Wurfbewegungen</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab(0)">Waagerechter Wurf</button>
+            <button class="tab-btn" onclick="showTab(1)">Schräger Wurf</button>
+            <button class="tab-btn" onclick="showTab(2)">Orbitalmechanik</button>
+        </div>
+
+        <!-- TAB 1: Waagerechter Wurf -->
+        <div class="tab-content active" id="tab0">
+            <div class="sim-layout">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas1" width="620" height="480"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-section">
+                        <h3>Parameter</h3>
+                        <div class="control-row">
+                            <label>Höhe h₀</label>
+                            <span class="value" id="h1Val">40 m</span>
+                            <input type="range" id="h1Slider" min="5" max="80" value="40" step="5">
+                        </div>
+                        <div class="control-row">
+                            <label>Geschwindigkeit v₀</label>
+                            <span class="value" id="v1Val">15 m/s</span>
+                            <input type="range" id="v1Slider" min="5" max="40" value="15" step="5">
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <div class="btn-row">
+                            <button class="btn" id="start1">▶ Start</button>
+                            <button class="btn btn-secondary" id="reset1">↺ Reset</button>
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <h3>Anzeige</h3>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="show1Comp"> Vergleichsball</label>
+                            <label><input type="checkbox" id="show1Vec"> Vektoren</label>
+                            <label><input type="checkbox" id="show1Strobe"> Stroboskop</label>
+                        </div>
+                    </div>
+                    <div class="results">
+                        <h3>Messwerte</h3>
+                        <div class="result-grid">
+                            <div class="result-item"><span class="label">t:</span> <span class="val" id="res1T">–</span></div>
+                            <div class="result-item"><span class="label">s_x:</span> <span class="val" id="res1X">–</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Schräger Wurf -->
+        <div class="tab-content" id="tab1">
+            <div class="sim-layout">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas2" width="620" height="480"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-section">
+                        <h3>Parameter</h3>
+                        <div class="control-row">
+                            <label>Abwurfwinkel α</label>
+                            <span class="value" id="a2Val">45°</span>
+                            <input type="range" id="a2Slider" min="0" max="90" value="45" step="5">
+                        </div>
+                        <div class="control-row">
+                            <label>Geschwindigkeit v₀</label>
+                            <span class="value" id="v2Val">25 m/s</span>
+                            <input type="range" id="v2Slider" min="5" max="40" value="25" step="5">
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <div class="btn-row">
+                            <button class="btn" id="start2">▶ Start</button>
+                            <button class="btn btn-secondary" id="reset2">↺ Reset</button>
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <h3>Anzeige</h3>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="show2Vec"> Vektoren</label>
+                            <label><input type="checkbox" id="show2Strobe"> Stroboskop</label>
+                        </div>
+                    </div>
+                    <div class="results">
+                        <h3>Messwerte</h3>
+                        <div class="result-grid">
+                            <div class="result-item"><span class="label">t:</span> <span class="val" id="res2T">–</span></div>
+                            <div class="result-item"><span class="label">s_x:</span> <span class="val" id="res2X">–</span></div>
+                            <div class="result-item"><span class="label">h_max:</span> <span class="val" id="res2H">–</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Orbitalmechanik -->
+        <div class="tab-content" id="tab2">
+            <div class="sim-layout">
+                <div class="canvas-wrapper">
+                    <canvas id="canvas3" width="620" height="480"></canvas>
+                </div>
+                <div class="controls">
+                    <div class="control-section">
+                        <h3>Abwurfgeschwindigkeit</h3>
+                        <div class="control-row">
+                            <span class="value" id="v3Val">5,00 km/s</span>
+                            <input type="range" id="v3Slider" min="1" max="12" value="5" step="0.01">
+                        </div>
+                        <div class="btn-row" style="margin-top:6px;">
+                            <button class="btn btn-secondary" id="setV1" style="font-size:0.7em;padding:4px 6px;">v₁ (Kreisbahn)</button>
+                            <button class="btn btn-secondary" id="setV2" style="font-size:0.7em;padding:4px 6px;">v₂ (Flucht)</button>
+                        </div>
+                        <div style="font-size:0.65em; color:var(--text-muted); margin-top:4px;" id="v3Info">
+                            h = 200 km
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <div class="btn-row">
+                            <button class="btn" id="start3">▶ Start</button>
+                            <button class="btn btn-secondary" id="reset3">↺ Reset</button>
+                        </div>
+                    </div>
+                    <div class="control-section">
+                        <h3>Anzeige</h3>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="show3Trace" checked> Bahnkurve</label>
+                        </div>
+                    </div>
+                    <div class="results">
+                        <h3>Status</h3>
+                        <div class="result-item"><span class="val" id="res3Status">Bereit</span></div>
+                    </div>
+                    <div class="message" id="msg3" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================
+        // TAB NAVIGATION
+        // =========================================
+        function showTab(n) {
+            var tabs = document.querySelectorAll('.tab-content');
+            var btns = document.querySelectorAll('.tab-btn');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+                btns[i].classList.remove('active');
+            }
+            tabs[n].classList.add('active');
+            btns[n].classList.add('active');
+        }
+
+        var g = 10; // m/s²
+
+        // =========================================
+        // TAB 1: WAAGERECHTER WURF
+        // =========================================
+        (function() {
+            var canvas = document.getElementById('canvas1');
+            var ctx = canvas.getContext('2d');
+
+            var h0 = 40, v0 = 15;
+            var isRunning = false, animId = null, t = 0;
+            var strobePos = [];
+            var strobeInt = 0.5;
+
+            var scale = 4.0;
+            var baseScale = 4.0;
+            var originX = 70, groundY = 400;
+
+            function updateScale(ballX) {
+                // Nur auszoomen wenn Ball rechten Rand erreicht
+                var ballScreenX = originX + ballX * scale;
+                var rightMargin = canvas.width - 60; // Platz für Vektoren
+
+                if (ballScreenX > rightMargin) {
+                    // Neuen Scale berechnen damit Ball passt
+                    var neededScale = (rightMargin - originX) / ballX;
+                    scale = Math.max(neededScale, 0.8);
+                }
+            }
+
+            function resetScale() {
+                scale = baseScale;
+            }
+
+            function toC(x, y) {
+                return { cx: originX + x * scale, cy: groundY - y * scale };
+            }
+
+            function drawBg() {
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Ground
+                ctx.fillStyle = '#e8e8e8';
+                ctx.fillRect(0, groundY, canvas.width, 20);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, groundY);
+                ctx.lineTo(canvas.width, groundY);
+                ctx.stroke();
+
+                // Platform
+                var platY = toC(0, h0).cy;
+                ctx.fillStyle = '#666';
+                ctx.fillRect(0, platY - 3, originX + 5, 6);
+
+                // Height label
+                ctx.fillStyle = '#666';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('h=' + h0 + 'm', 35, (platY + groundY) / 2);
+
+                // Scale
+                ctx.fillStyle = '#999';
+                ctx.font = '9px sans-serif';
+                for (var x = 0; x <= 120; x += 20) {
+                    var p = toC(x, 0);
+                    if (p.cx < canvas.width - 20) {
+                        ctx.fillText(x + 'm', p.cx, groundY + 14);
+                    }
+                }
+            }
+
+            function drawStrobe() {
+                if (!document.getElementById('show1Strobe').checked || strobePos.length === 0) return;
+
+                var startY = toC(0, h0).cy;
+                var last = strobePos[strobePos.length - 1];
+
+                // Horizontal trace (red)
+                ctx.strokeStyle = 'rgba(198,40,40,0.3)';
+                ctx.setLineDash([3,3]);
+                ctx.beginPath();
+                ctx.moveTo(originX, startY);
+                ctx.lineTo(toC(last.x, h0).cx + 10, startY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Vertical trace (blue)
+                ctx.strokeStyle = 'rgba(21,101,192,0.3)';
+                ctx.setLineDash([3,3]);
+                ctx.beginPath();
+                ctx.moveTo(originX, startY);
+                ctx.lineTo(originX, toC(0, h0 - last.y).cy + 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                for (var i = 0; i < strobePos.length; i++) {
+                    var pos = strobePos[i];
+                    var alpha = 0.3 + (i / strobePos.length) * 0.5;
+                    var hX = toC(pos.x, h0).cx;
+                    var vY = toC(0, h0 - pos.y).cy;
+                    var tPos = toC(pos.x, h0 - pos.y);
+
+                    // Connection lines
+                    ctx.strokeStyle = 'rgba(198,40,40,0.12)';
+                    ctx.setLineDash([2,2]);
+                    ctx.beginPath();
+                    ctx.moveTo(hX, startY);
+                    ctx.lineTo(tPos.cx, tPos.cy);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(21,101,192,0.12)';
+                    ctx.beginPath();
+                    ctx.moveTo(originX, vY);
+                    ctx.lineTo(tPos.cx, tPos.cy);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Trace dots
+                    ctx.fillStyle = 'rgba(198,40,40,' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(hX, startY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = 'rgba(21,101,192,' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(originX, vY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Ball on trajectory (schwarz - resultierende Bewegung)
+                    ctx.fillStyle = 'rgba(34,34,34,' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(tPos.cx, tPos.cy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function drawArrow(x1, y1, x2, y2, color) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                var angle = Math.atan2(y2 - y1, x2 - x1);
+                var sz = 5;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - sz * Math.cos(angle - 0.5), y2 - sz * Math.sin(angle - 0.5));
+                ctx.lineTo(x2 - sz * Math.cos(angle + 0.5), y2 - sz * Math.sin(angle + 0.5));
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function drawVectors(x, y, vy) {
+                if (!document.getElementById('show1Vec').checked) return;
+
+                // Use actual position (can be below ground for vectors)
+                var pos = toC(x, h0 - y);
+                var vScale = 2.5;
+
+                var vxEnd = pos.cx + v0 * vScale;
+                var vyEnd = pos.cy + vy * vScale;
+                var vres = Math.sqrt(v0 * v0 + vy * vy);
+                var ang = Math.atan2(vy, v0);
+                var vresEndX = pos.cx + vres * vScale * Math.cos(ang);
+                var vresEndY = pos.cy + vres * vScale * Math.sin(ang);
+
+                // Draw arrows (no clipping)
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, 0, canvas.width, canvas.height);
+                ctx.clip();
+
+                drawArrow(pos.cx, pos.cy, vxEnd, pos.cy, '#c62828');
+                drawArrow(pos.cx, pos.cy, pos.cx, vyEnd, '#1565c0');
+                ctx.lineWidth = 2;
+                drawArrow(pos.cx, pos.cy, vresEndX, vresEndY, '#2a7a4b');
+
+                // Labels mit Tiefstellung (Unicode) und Einheiten
+                ctx.font = '10px sans-serif';
+
+                // vₓ: rechts von roter Spitze
+                ctx.fillStyle = '#c62828';
+                ctx.textAlign = 'left';
+                ctx.fillText('vₓ = ' + v0 + ' m/s', vxEnd + 4, pos.cy - 3);
+
+                // vᵧ: links von blauer Spitze (weiter links gerückt)
+                ctx.fillStyle = '#1565c0';
+                ctx.textAlign = 'right';
+                ctx.fillText('vᵧ = ' + vy.toFixed(0) + ' m/s', pos.cx - 6, Math.min(vyEnd + 4, canvas.height - 5));
+
+                // v: bei grüner Spitze
+                ctx.fillStyle = '#2a7a4b';
+                ctx.textAlign = 'left';
+                ctx.fillText('v = ' + vres.toFixed(0) + ' m/s', vresEndX + 4, Math.min(vresEndY + 14, canvas.height - 5));
+
+                ctx.restore();
+            }
+
+            function drawBalls(time) {
+                var fallT = Math.sqrt(2 * h0 / g);
+                var ct = Math.min(time, fallT);
+                var y = 0.5 * g * ct * ct;
+                var x = v0 * ct;
+                var vy = g * ct;
+
+                // Dynamisch auszoomen wenn Ball rechten Rand erreicht
+                updateScale(x);
+
+                // Trajectory (schwarz/grau - neutral)
+                ctx.strokeStyle = 'rgba(50,50,50,0.4)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (var i = 0; i <= 50; i++) {
+                    var tt = (ct * i) / 50;
+                    var px = v0 * tt;
+                    var py = h0 - 0.5 * g * tt * tt;
+                    var p = toC(px, py);
+                    if (i === 0) ctx.moveTo(p.cx, p.cy);
+                    else ctx.lineTo(p.cx, p.cy);
+                }
+                ctx.stroke();
+
+                // Fall ball (blue) - Vergleichsball
+                if (document.getElementById('show1Comp').checked) {
+                    var fp = toC(0, h0 - y);
+                    ctx.fillStyle = '#1565c0';
+                    ctx.beginPath();
+                    ctx.arc(originX, fp.cy, 10, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Fall trace
+                    ctx.strokeStyle = 'rgba(21,101,192,0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(originX, toC(0, h0).cy);
+                    ctx.lineTo(originX, fp.cy);
+                    ctx.stroke();
+                }
+
+                // Wurf-Ball (schwarz - resultierende Bewegung)
+                var tp = toC(x, h0 - y);
+                ctx.fillStyle = '#222222';
+                ctx.beginPath();
+                ctx.arc(tp.cx, tp.cy, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                drawVectors(x, y, vy);
+            }
+
+            function draw() {
+                drawBg();
+                drawStrobe();
+                drawBalls(t);
+
+                document.getElementById('res1T').textContent = t.toFixed(2) + ' s';
+                document.getElementById('res1X').textContent = (v0 * t).toFixed(1) + ' m';
+            }
+
+            function animate() {
+                var fallT = Math.sqrt(2 * h0 / g);
+                if (t < fallT) {
+                    t += 0.025;
+
+                    if (document.getElementById('show1Strobe').checked) {
+                        var lastS = strobePos.length * strobeInt;
+                        if (t >= lastS + strobeInt) {
+                            var st = lastS + strobeInt;
+                            strobePos.push({ x: v0 * st, y: 0.5 * g * st * st });
+                        }
+                    }
+
+                    draw();
+                    animId = requestAnimationFrame(animate);
+                } else {
+                    t = fallT;
+                    draw();
+                    isRunning = false;
+                    document.getElementById('start1').textContent = '▶ Start';
+                }
+            }
+
+            document.getElementById('start1').onclick = function() {
+                if (isRunning) {
+                    isRunning = false;
+                    cancelAnimationFrame(animId);
+                    this.textContent = '▶ Start';
+                } else {
+                    if (t >= Math.sqrt(2 * h0 / g)) {
+                        t = 0; strobePos = [];
+                    }
+                    isRunning = true;
+                    this.textContent = '⏸ Pause';
+                    animate();
+                }
+            };
+
+            document.getElementById('reset1').onclick = function() {
+                isRunning = false;
+                cancelAnimationFrame(animId);
+                t = 0; strobePos = [];
+                resetScale();
+                document.getElementById('start1').textContent = '▶ Start';
+                draw();
+            };
+
+            document.getElementById('h1Slider').oninput = function() {
+                h0 = parseInt(this.value);
+                document.getElementById('h1Val').textContent = h0 + ' m';
+                document.getElementById('reset1').click();
+            };
+
+            document.getElementById('v1Slider').oninput = function() {
+                v0 = parseInt(this.value);
+                document.getElementById('v1Val').textContent = v0 + ' m/s';
+                document.getElementById('reset1').click();
+            };
+
+            document.getElementById('show1Comp').onchange = draw;
+            document.getElementById('show1Vec').onchange = draw;
+            document.getElementById('show1Strobe').onchange = function() {
+                if (!this.checked) strobePos = [];
+                draw();
+            };
+
+            draw();
+        })();
+
+        // =========================================
+        // TAB 2: SCHRÄGER WURF
+        // =========================================
+        (function() {
+            var canvas = document.getElementById('canvas2');
+            var ctx = canvas.getContext('2d');
+
+            var angle = 45, v0 = 25;
+            var h0 = 0; // Fixed: Standardfall vom Boden
+            var isRunning = false, animId = null, t = 0;
+            var strobePos = [];
+            var strobeInt = 0.3;
+
+            var scale = 3.5;
+            var baseScale = 3.5;
+            var originX = 60, groundY = 360;
+
+            function updateScale(ballX, ballY) {
+                // Nur auszoomen wenn Ball Rand erreicht
+                var ballScreenX = originX + ballX * scale;
+                var ballScreenY = groundY - ballY * scale;
+                var rightMargin = canvas.width - 60;
+                var topMargin = 50;
+                var bottomMargin = canvas.height - 20;
+
+                var needsZoom = false;
+                var neededScale = scale;
+
+                // Rechter Rand
+                if (ballScreenX > rightMargin && ballX > 0) {
+                    neededScale = Math.min(neededScale, (rightMargin - originX) / ballX);
+                    needsZoom = true;
+                }
+
+                // Oberer Rand (für hohe Würfe)
+                if (ballScreenY < topMargin && ballY > 0) {
+                    neededScale = Math.min(neededScale, (groundY - topMargin) / ballY);
+                    needsZoom = true;
+                }
+
+                // Unterer Rand (für Vektoren beim Aufprall)
+                if (ballScreenY > bottomMargin) {
+                    var belowGround = -ballY; // ballY ist negativ unter dem Boden
+                    if (belowGround > 0) {
+                        neededScale = Math.min(neededScale, (bottomMargin - groundY) / belowGround);
+                        needsZoom = true;
+                    }
+                }
+
+                if (needsZoom) {
+                    scale = Math.max(neededScale, 0.5);
+                }
+            }
+
+            function resetScale() {
+                scale = baseScale;
+            }
+
+            function toC(x, y) {
+                return { cx: originX + x * scale, cy: groundY - y * scale };
+            }
+
+            function drawBg() {
+                ctx.fillStyle = '#fafafa';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#e8e8e8';
+                ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, groundY);
+                ctx.lineTo(canvas.width, groundY);
+                ctx.stroke();
+
+                // Scale - dynamisch basierend auf aktuellem scale
+                ctx.fillStyle = '#999';
+                ctx.font = '9px sans-serif';
+                ctx.textAlign = 'center';
+                var step = scale > 3 ? 20 : (scale > 1.5 ? 50 : 100);
+                for (var x = 0; x <= 300; x += step) {
+                    var p = toC(x, 0);
+                    if (p.cx < canvas.width - 15 && p.cx > originX - 10) {
+                        ctx.fillText(x + 'm', p.cx, groundY + 14);
+                    }
+                }
+
+                // Angle indicator at origin
+                var startP = toC(0, 0);
+                var rad = angle * Math.PI / 180;
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(startP.cx, startP.cy);
+                ctx.lineTo(startP.cx + 40, startP.cy);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(startP.cx, startP.cy, 25, -rad, 0);
+                ctx.stroke();
+
+                ctx.fillStyle = '#666';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(angle + '°', startP.cx + 35, startP.cy - 10);
+            }
+
+            function drawArrow(x1, y1, x2, y2, color) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                var ang = Math.atan2(y2 - y1, x2 - x1);
+                var sz = 5;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - sz * Math.cos(ang - 0.5), y2 - sz * Math.sin(ang - 0.5));
+                ctx.lineTo(x2 - sz * Math.cos(ang + 0.5), y2 - sz * Math.sin(ang + 0.5));
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function drawStrobe() {
+                if (!document.getElementById('show2Strobe').checked || strobePos.length === 0) return;
+
+                var last = strobePos[strobePos.length - 1];
+
+                // Horizontale Spur auf Bodenhöhe (rot - x-Komponente)
+                ctx.strokeStyle = 'rgba(198,40,40,0.3)';
+                ctx.setLineDash([3,3]);
+                ctx.beginPath();
+                ctx.moveTo(originX, groundY);
+                ctx.lineTo(toC(last.x, 0).cx + 10, groundY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Vertikale Spur am linken Rand (blau - y-Komponente)
+                ctx.strokeStyle = 'rgba(21,101,192,0.3)';
+                ctx.setLineDash([3,3]);
+                ctx.beginPath();
+                var maxY = 0;
+                for (var j = 0; j < strobePos.length; j++) {
+                    if (strobePos[j].y > maxY) maxY = strobePos[j].y;
+                }
+                ctx.moveTo(originX, groundY);
+                ctx.lineTo(originX, toC(0, maxY).cy - 10);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                for (var i = 0; i < strobePos.length; i++) {
+                    var pos = strobePos[i];
+                    var alpha = 0.3 + (i / strobePos.length) * 0.5;
+                    var p = toC(pos.x, pos.y);
+                    var hX = toC(pos.x, 0).cx;  // x-Position auf Bodenhöhe
+                    var vY = toC(0, pos.y).cy;  // y-Position am linken Rand
+
+                    // Verbindungslinien
+                    ctx.strokeStyle = 'rgba(198,40,40,0.12)';
+                    ctx.setLineDash([2,2]);
+                    ctx.beginPath();
+                    ctx.moveTo(hX, groundY);
+                    ctx.lineTo(p.cx, p.cy);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = 'rgba(21,101,192,0.12)';
+                    ctx.beginPath();
+                    ctx.moveTo(originX, vY);
+                    ctx.lineTo(p.cx, p.cy);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // x-Komponenten-Punkte auf Bodenhöhe (rot)
+                    ctx.fillStyle = 'rgba(198,40,40,' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(hX, groundY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // y-Komponenten-Punkte am linken Rand (blau)
+                    ctx.fillStyle = 'rgba(21,101,192,' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(originX, vY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Ball auf Flugbahn (schwarz - resultierende Bewegung)
+                    ctx.fillStyle = 'rgba(34,34,34,' + alpha + ')';
+                    ctx.beginPath();
+                    ctx.arc(p.cx, p.cy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function drawVectors(x, y, vx, vy) {
+                if (!document.getElementById('show2Vec').checked) return;
+
+                var pos = toC(x, y);
+                var vScale = 2.2;
+
+                var vxEnd = pos.cx + vx * vScale;
+                var vyEnd = pos.cy - vy * vScale;
+                var vres = Math.sqrt(vx * vx + vy * vy);
+                var ang = Math.atan2(-vy, vx);
+                var vresEndX = pos.cx + vres * vScale * Math.cos(ang);
+                var vresEndY = pos.cy + vres * vScale * Math.sin(ang);
+
+                // Draw with full canvas clipping
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, 0, canvas.width, canvas.height);
+                ctx.clip();
+
+                drawArrow(pos.cx, pos.cy, vxEnd, pos.cy, '#c62828');
+                drawArrow(pos.cx, pos.cy, pos.cx, vyEnd, '#1565c0');
+                ctx.lineWidth = 2;
+                drawArrow(pos.cx, pos.cy, vresEndX, vresEndY, '#2a7a4b');
+
+                ctx.font = '10px sans-serif';
+
+                // vₓ: rechts von roter Spitze
+                ctx.fillStyle = '#c62828';
+                ctx.textAlign = 'left';
+                ctx.fillText('vₓ = ' + vx.toFixed(0) + ' m/s', vxEnd + 4, pos.cy - 4);
+
+                // vᵧ: links positioniert
+                ctx.fillStyle = '#1565c0';
+                ctx.textAlign = 'right';
+                var vyLabelY;
+                if (vy >= 0) {
+                    vyLabelY = vyEnd - 6;
+                } else {
+                    vyLabelY = Math.min(vyEnd + 14, canvas.height - 5);
+                }
+                ctx.fillText('vᵧ = ' + vy.toFixed(0) + ' m/s', pos.cx - 6, vyLabelY);
+
+                // v: bei grüner Spitze
+                ctx.fillStyle = '#2a7a4b';
+                ctx.textAlign = 'left';
+                var vresLabelY;
+                if (vy >= 0) {
+                    vresLabelY = vresEndY - 6;
+                } else {
+                    vresLabelY = Math.min(vresEndY + 18, canvas.height - 5);
+                }
+                ctx.fillText('v = ' + vres.toFixed(0) + ' m/s', vresEndX + 4, vresLabelY);
+
+                ctx.restore();
+            }
+
+            function getFlightTime() {
+                var rad = angle * Math.PI / 180;
+                var vy0 = v0 * Math.sin(rad);
+                // y = h0 + vy0*t - 0.5*g*t² = 0
+                // -0.5*g*t² + vy0*t + h0 = 0
+                // t = (vy0 + sqrt(vy0² + 2*g*h0)) / g
+                var disc = vy0 * vy0 + 2 * g * h0;
+                if (disc < 0) return 0;
+                return (vy0 + Math.sqrt(disc)) / g;
+            }
+
+            function drawBall(time) {
+                var rad = angle * Math.PI / 180;
+                var vx0 = v0 * Math.cos(rad);
+                var vy0 = v0 * Math.sin(rad);
+
+                var flightT = getFlightTime();
+                var ct = Math.min(time, flightT);
+
+                var x = vx0 * ct;
+                var y = h0 + vy0 * ct - 0.5 * g * ct * ct;
+                var vy = vy0 - g * ct;
+
+                // Trajectory (schwarz/grau - neutral)
+                ctx.strokeStyle = 'rgba(50,50,50,0.4)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                for (var i = 0; i <= 60; i++) {
+                    var tt = (ct * i) / 60;
+                    var px = vx0 * tt;
+                    var py = h0 + vy0 * tt - 0.5 * g * tt * tt;
+                    var p = toC(px, py);
+                    if (i === 0) ctx.moveTo(p.cx, p.cy);
+                    else ctx.lineTo(p.cx, p.cy);
+                }
+                ctx.stroke();
+
+                // Ball (schwarz - resultierende Bewegung)
+                var bp = toC(x, Math.max(0, y));
+                ctx.fillStyle = '#222222';
+                ctx.beginPath();
+                ctx.arc(bp.cx, bp.cy, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                drawVectors(x, Math.max(0, y), vx0, vy);
+
+                return { x: x, y: y, flightT: flightT };
+            }
+
+            function draw() {
+                drawBg();
+                drawStrobe();
+                var result = drawBall(t);
+
+                // Dynamisch auszoomen wenn Ball Rand erreicht
+                updateScale(result.x, result.y);
+
+                document.getElementById('res2T').textContent = t.toFixed(2) + ' s';
+                document.getElementById('res2X').textContent = result.x.toFixed(1) + ' m';
+
+                var rad = angle * Math.PI / 180;
+                var vy0 = v0 * Math.sin(rad);
+                var hMax = h0 + (vy0 * vy0) / (2 * g);
+                if (angle <= 0) hMax = h0;
+                document.getElementById('res2H').textContent = hMax.toFixed(1) + ' m';
+            }
+
+            function animate() {
+                var flightT = getFlightTime();
+                if (t < flightT) {
+                    t += 0.02;
+
+                    if (document.getElementById('show2Strobe').checked) {
+                        var lastS = strobePos.length * strobeInt;
+                        if (t >= lastS + strobeInt) {
+                            var st = lastS + strobeInt;
+                            var rad = angle * Math.PI / 180;
+                            var vx0 = v0 * Math.cos(rad);
+                            var vy0 = v0 * Math.sin(rad);
+                            strobePos.push({
+                                x: vx0 * st,
+                                y: h0 + vy0 * st - 0.5 * g * st * st
+                            });
+                        }
+                    }
+
+                    draw();
+                    animId = requestAnimationFrame(animate);
+                } else {
+                    t = flightT;
+                    draw();
+                    isRunning = false;
+                    document.getElementById('start2').textContent = '▶ Start';
+                }
+            }
+
+            document.getElementById('start2').onclick = function() {
+                if (isRunning) {
+                    isRunning = false;
+                    cancelAnimationFrame(animId);
+                    this.textContent = '▶ Start';
+                } else {
+                    if (t >= getFlightTime()) {
+                        t = 0; strobePos = [];
+                    }
+                    isRunning = true;
+                    this.textContent = '⏸ Pause';
+                    animate();
+                }
+            };
+
+            document.getElementById('reset2').onclick = function() {
+                isRunning = false;
+                cancelAnimationFrame(animId);
+                t = 0; strobePos = [];
+                resetScale();
+                document.getElementById('start2').textContent = '▶ Start';
+                draw();
+            };
+
+            document.getElementById('a2Slider').oninput = function() {
+                angle = parseInt(this.value);
+                document.getElementById('a2Val').textContent = angle + '°';
+                document.getElementById('reset2').click();
+            };
+
+            document.getElementById('v2Slider').oninput = function() {
+                v0 = parseInt(this.value);
+                document.getElementById('v2Val').textContent = v0 + ' m/s';
+                document.getElementById('reset2').click();
+            };
+
+            document.getElementById('show2Vec').onchange = draw;
+            document.getElementById('show2Strobe').onchange = function() {
+                if (!this.checked) strobePos = [];
+                draw();
+            };
+
+            draw();
+        })();
+
+        // =========================================
+        // TAB 3: ORBITALMECHANIK
+        // =========================================
+        (function() {
+            var canvas = document.getElementById('canvas3');
+            var ctx = canvas.getContext('2d');
+
+            var v0 = 5; // km/s
+            var isRunning = false, animId = null;
+            var trace = [];
+            var pos, vel;
+            var currentZoom = 1;
+            var orbitDetected = false;
+            var escapeDetected = false;
+            var simTime = 0;
+
+            // Physikalische Konstanten
+            var R = 6371; // Erdradius in km
+            var GM = 398600.4418; // Gravitationsparameter in km³/s²
+            var launchAlt = 200; // Starthöhe in km (ISS-Höhe)
+            var launchR = R + launchAlt;
+
+            // Kosmische Geschwindigkeiten bei Starthöhe
+            var v1 = Math.sqrt(GM / launchR); // Kreisbahngeschwindigkeit
+            var v2 = Math.sqrt(2 * GM / launchR); // Fluchtgeschwindigkeit
+
+            var centerX = 310, centerY = 240;
+            var baseEarthR = 100;
+            var visualScale = 1; // Keine Übertreibung - physikalisch korrekte Darstellung
+
+            function getPixelScale() {
+                return baseEarthR / R / currentZoom;
+            }
+
+            function reset() {
+                // Start OBEN auf der Erde, Geschwindigkeit nach LINKS (counterclockwise)
+                pos = { x: 0, y: launchR };
+                vel = { x: -v0, y: 0 };  // Negativ = nach links = counterclockwise
+                trace = [{ x: pos.x, y: pos.y }];
+                currentZoom = 1;
+                orbitDetected = false;
+                escapeDetected = false;
+                simTime = 0;
+                document.getElementById('msg3').style.display = 'none';
+            }
+
+            function drawArrow(x1, y1, x2, y2, color) {
+                var dx = x2 - x1, dy = y2 - y1;
+                var len = Math.sqrt(dx*dx + dy*dy);
+                if (len < 3) return;
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                var angle = Math.atan2(dy, dx);
+                var sz = 6;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - sz * Math.cos(angle - 0.4), y2 - sz * Math.sin(angle - 0.4));
+                ctx.lineTo(x2 - sz * Math.cos(angle + 0.4), y2 - sz * Math.sin(angle + 0.4));
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function toScreen(physX, physY) {
+                var pixelScale = getPixelScale();
+                var r = Math.sqrt(physX * physX + physY * physY);
+                var angle = Math.atan2(physY, physX);
+                // Übertriebene Darstellung der Höhe über Erdoberfläche
+                var visualR = R + (r - R) * visualScale;
+                return {
+                    x: centerX + visualR * pixelScale * Math.cos(angle),
+                    y: centerY - visualR * pixelScale * Math.sin(angle)
+                };
+            }
+
+            function drawScene() {
+                var pixelScale = getPixelScale();
+                var earthR = baseEarthR / currentZoom;
+
+                // Weltraum
+                ctx.fillStyle = '#0a0a1a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Sterne
+                ctx.fillStyle = '#555';
+                for (var i = 0; i < 80; i++) {
+                    var sx = (i * 137 + 23) % canvas.width;
+                    var sy = (i * 251 + 17) % canvas.height;
+                    var sz = (i % 3 === 0) ? 2 : 1;
+                    ctx.fillRect(sx, sy, sz, sz);
+                }
+
+                // Atmosphäre (übertrieben für Visualisierung)
+                var atmoR = earthR * 1.08;
+                var atmoGrad = ctx.createRadialGradient(centerX, centerY, earthR * 0.95, centerX, centerY, atmoR);
+                atmoGrad.addColorStop(0, 'rgba(100,180,255,0.25)');
+                atmoGrad.addColorStop(1, 'rgba(100,180,255,0)');
+                ctx.fillStyle = atmoGrad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, atmoR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Erde - Globus-Skizze
+                // Ozean (Grundfarbe)
+                ctx.fillStyle = '#2266aa';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, earthR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Clip für Landmassen
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, earthR, 0, Math.PI * 2);
+                ctx.clip();
+
+                // Landmassen (stilisiert)
+                ctx.fillStyle = '#3a9a5a';
+
+                // Europa/Afrika
+                ctx.beginPath();
+                ctx.ellipse(centerX + earthR * 0.15, centerY - earthR * 0.2, earthR * 0.2, earthR * 0.35, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Südamerika
+                ctx.beginPath();
+                ctx.ellipse(centerX - earthR * 0.35, centerY + earthR * 0.25, earthR * 0.15, earthR * 0.3, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Nordamerika
+                ctx.beginPath();
+                ctx.ellipse(centerX - earthR * 0.4, centerY - earthR * 0.25, earthR * 0.25, earthR * 0.2, 0.4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Asien
+                ctx.beginPath();
+                ctx.ellipse(centerX + earthR * 0.5, centerY - earthR * 0.1, earthR * 0.25, earthR * 0.25, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+
+                // Erdkontur
+                ctx.strokeStyle = '#1a4477';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, earthR, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Lichtreflexion (3D-Effekt)
+                var reflectGrad = ctx.createRadialGradient(centerX - earthR * 0.4, centerY - earthR * 0.4, 0, centerX, centerY, earthR);
+                reflectGrad.addColorStop(0, 'rgba(255,255,255,0.2)');
+                reflectGrad.addColorStop(0.5, 'rgba(255,255,255,0)');
+                ctx.fillStyle = reflectGrad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, earthR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Startkreis (Orbit-Höhe)
+                var orbitR = earthR + launchAlt * visualScale * pixelScale;
+                ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                ctx.setLineDash([4, 4]);
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, orbitR, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Startpunkt (oben - wie beim waagerechten Wurf)
+                ctx.fillStyle = '#ffeb3b';
+                ctx.beginPath();
+                ctx.arc(centerX, centerY - orbitR, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ff9800';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Anfangsgeschwindigkeits-Pfeil (nach LINKS = counterclockwise)
+                if (!isRunning && simTime === 0) {
+                    var arrowLen = 30;
+                    ctx.strokeStyle = '#ffeb3b';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - orbitR);
+                    ctx.lineTo(centerX - arrowLen, centerY - orbitR);
+                    ctx.stroke();
+                    // Pfeilspitze (nach links)
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - arrowLen, centerY - orbitR);
+                    ctx.lineTo(centerX - arrowLen + 6, centerY - orbitR - 4);
+                    ctx.lineTo(centerX - arrowLen + 6, centerY - orbitR + 4);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.fill();
+                }
+
+                // Info
+                ctx.fillStyle = '#aaa';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('h = ' + launchAlt + ' km', 10, 18);
+                ctx.fillText('v₁ = ' + v1.toFixed(2) + ' km/s', 10, 33);
+                ctx.fillText('v₂ = ' + v2.toFixed(2) + ' km/s', 10, 48);
+            }
+
+            function drawTrace() {
+                if (!document.getElementById('show3Trace').checked || trace.length < 2) return;
+
+                ctx.strokeStyle = 'rgba(255,150,100,0.7)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                var first = toScreen(trace[0].x, trace[0].y);
+                ctx.moveTo(first.x, first.y);
+                for (var i = 1; i < trace.length; i++) {
+                    var p = toScreen(trace[i].x, trace[i].y);
+                    ctx.lineTo(p.x, p.y);
+                }
+                ctx.stroke();
+            }
+
+            function drawSatellite() {
+                var sp = toScreen(pos.x, pos.y);
+
+                // Satellit
+                ctx.fillStyle = '#ff6644';
+                ctx.beginPath();
+                ctx.arc(sp.x, sp.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Geschwindigkeitsvektor
+                var vMag = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
+                var vScale = 8 / currentZoom;
+                drawArrow(sp.x, sp.y, sp.x + vel.x * vScale, sp.y - vel.y * vScale, '#44ff44');
+            }
+
+            function updateZoom() {
+                var r = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+                var visualR = R + (r - R) * visualScale;
+
+                var margin = 60;
+                var maxDist = Math.min(centerX, centerY, canvas.width - centerX, canvas.height - centerY) - margin;
+                var pixelScale = getPixelScale();
+                var currentVisualDist = visualR * pixelScale;
+
+                if (currentVisualDist > maxDist) {
+                    var neededZoom = currentVisualDist / maxDist * currentZoom;
+                    currentZoom += (neededZoom - currentZoom) * 0.08;
+                }
+            }
+
+            function updateStatus() {
+                var r = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+                var alt = r - R;
+                var vMag = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
+                var vCirc = Math.sqrt(GM / r);
+                var vEsc = Math.sqrt(2 * GM / r);
+
+                var status = '';
+                var msg3 = document.getElementById('msg3');
+
+                // Spezifische Energie (negativ = gebunden, positiv = Flucht)
+                var energy = 0.5 * vMag * vMag - GM / r;
+
+                if (r < R) {
+                    status = 'Eingeschlagen!';
+                    isRunning = false;
+                    document.getElementById('start3').textContent = '▶ Start';
+                } else if (energy > 0 && !escapeDetected) {
+                    escapeDetected = true;
+                    msg3.innerHTML = '<strong>Fluchtbahn!</strong><br>v ≥ v₂ – Körper verlässt Gravitationsfeld';
+                    msg3.style.display = 'block';
+                    msg3.style.background = '#fff3e0';
+                    msg3.style.borderColor = '#ff9800';
+                    status = 'Flucht (E > 0)';
+                } else if (!orbitDetected && Math.abs(vMag - v1) < 0.1 && simTime > 200) {
+                    orbitDetected = true;
+                    msg3.innerHTML = '<strong>Stabile Kreisbahn!</strong><br>v₁ = ' + v1.toFixed(2) + ' km/s<br><br><em>Der Körper fällt ständig zur Erde, aber die Erdoberfläche krümmt sich genauso schnell weg.</em>';
+                    msg3.style.display = 'block';
+                    msg3.style.background = '#e8f5e9';
+                    msg3.style.borderColor = '#4caf50';
+                    status = 'Kreisbahn (v₁)';
+                } else if (r < R) {
+                    status = 'Absturz';
+                } else {
+                    status = 'v=' + vMag.toFixed(2) + ' | v_circ=' + vCirc.toFixed(2) + ' km/s';
+                }
+
+                document.getElementById('res3Status').textContent = status;
+            }
+
+            function draw() {
+                drawScene();
+                drawTrace();
+                drawSatellite();
+                updateStatus();
+            }
+
+            function simulate() {
+                // Leapfrog/Störmer-Verlet Integration (symplektisch, erhält Energie)
+                var dt = 1.0; // Zeitschritt in Sekunden
+                var stepsPerFrame = 20;
+
+                for (var step = 0; step < stepsPerFrame; step++) {
+                    var r = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+
+                    if (r < R) {
+                        draw();
+                        isRunning = false;
+                        document.getElementById('start3').textContent = '▶ Start';
+                        return;
+                    }
+
+                    if (r > R * 30) {
+                        draw();
+                        isRunning = false;
+                        document.getElementById('start3').textContent = '▶ Start';
+                        document.getElementById('res3Status').textContent = 'Entkommen (r > 30 R)';
+                        return;
+                    }
+
+                    // Gravitation: a = -GM/r² in Richtung Zentrum
+                    var r3 = r * r * r;
+                    var ax = -GM * pos.x / r3;
+                    var ay = -GM * pos.y / r3;
+
+                    // Leapfrog: v(t+dt/2) = v(t) + a(t)*dt/2
+                    vel.x += ax * dt * 0.5;
+                    vel.y += ay * dt * 0.5;
+
+                    // x(t+dt) = x(t) + v(t+dt/2)*dt
+                    pos.x += vel.x * dt;
+                    pos.y += vel.y * dt;
+
+                    // Neue Beschleunigung
+                    r = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
+                    r3 = r * r * r;
+                    ax = -GM * pos.x / r3;
+                    ay = -GM * pos.y / r3;
+
+                    // v(t+dt) = v(t+dt/2) + a(t+dt)*dt/2
+                    vel.x += ax * dt * 0.5;
+                    vel.y += ay * dt * 0.5;
+
+                    simTime += dt;
+
+                    // Spur aufzeichnen
+                    if (trace.length === 0 ||
+                        (pos.x - trace[trace.length-1].x) * (pos.x - trace[trace.length-1].x) +
+                        (pos.y - trace[trace.length-1].y) * (pos.y - trace[trace.length-1].y) > 100) {
+                        trace.push({ x: pos.x, y: pos.y });
+                    }
+                }
+
+                updateZoom();
+                draw();
+                animId = requestAnimationFrame(simulate);
+            }
+
+            document.getElementById('start3').onclick = function() {
+                if (isRunning) {
+                    isRunning = false;
+                    cancelAnimationFrame(animId);
+                    this.textContent = '▶ Start';
+                } else {
+                    isRunning = true;
+                    this.textContent = '⏸ Pause';
+                    simulate();
+                }
+            };
+
+            document.getElementById('reset3').onclick = function() {
+                isRunning = false;
+                cancelAnimationFrame(animId);
+                v0 = parseFloat(document.getElementById('v3Slider').value);
+                reset();
+                document.getElementById('start3').textContent = '▶ Start';
+                draw();
+            };
+
+            document.getElementById('v3Slider').oninput = function() {
+                v0 = parseFloat(this.value);
+                document.getElementById('v3Val').textContent = v0.toFixed(2).replace('.', ',') + ' km/s';
+                document.getElementById('reset3').click();
+            };
+
+            // Preset-Buttons für exakte Geschwindigkeiten
+            document.getElementById('setV1').onclick = function() {
+                v0 = v1; // Exakte Kreisbahngeschwindigkeit
+                document.getElementById('v3Slider').value = v0;
+                document.getElementById('v3Val').textContent = v0.toFixed(2).replace('.', ',') + ' km/s';
+                document.getElementById('reset3').click();
+            };
+
+            document.getElementById('setV2').onclick = function() {
+                v0 = v2; // Exakte Fluchtgeschwindigkeit
+                document.getElementById('v3Slider').value = v0;
+                document.getElementById('v3Val').textContent = v0.toFixed(2).replace('.', ',') + ' km/s';
+                document.getElementById('reset3').click();
+            };
+
+            // Info-Text aktualisieren
+            document.getElementById('v3Info').innerHTML = 'h = ' + launchAlt + ' km<br>v₁ = ' + v1.toFixed(2) + ' km/s | v₂ = ' + v2.toFixed(2) + ' km/s';
+
+            document.getElementById('show3Trace').onchange = draw;
+
+            reset();
+            draw();
+        })();
+    </script>
+</body>
+</html>
