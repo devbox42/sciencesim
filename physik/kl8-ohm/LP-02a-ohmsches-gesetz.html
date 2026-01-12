@@ -126,8 +126,35 @@
         .fullscreen-btn:hover { background: #1e4080; }
         .fullscreen-btn svg { width: 14px; height: 14px; fill: currentColor; }
 
-        /* Vollbild-Modus für Simulation */
-        .simulation-frame.fullscreen {
+        /* Vollbild-Modus: Exit-Overlay */
+        .fullscreen-exit-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 10000;
+            padding: 12px;
+        }
+        .fullscreen-exit-overlay.visible {
+            display: block;
+        }
+        .fullscreen-exit-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .fullscreen-exit-btn:hover {
+            background: rgba(0,0,0,0.9);
+        }
+
+        /* Fallback: CSS-basiertes Vollbild (iOS, ältere Browser) */
+        .simulation-frame.fullscreen-fallback {
             position: fixed;
             top: 0;
             left: 0;
@@ -138,20 +165,11 @@
             border: none;
             background: white;
         }
-        .simulation-frame.fullscreen iframe {
-            height: calc(100vh - 50px);
+        .simulation-frame.fullscreen-fallback iframe {
+            height: 100vh;
         }
-        .simulation-frame.fullscreen .sim-controls {
-            background: var(--physik);
-            padding: 12px 20px;
-        }
-        .simulation-frame.fullscreen .sim-link a { color: white; }
-        .simulation-frame.fullscreen .fullscreen-btn {
-            background: white;
-            color: var(--physik);
-        }
-        .simulation-frame.fullscreen .fullscreen-btn:hover {
-            background: #eee;
+        .simulation-frame.fullscreen-fallback .sim-controls {
+            display: none;
         }
 
         .formelkasten {
@@ -796,6 +814,13 @@
         </div>
     </div>
 
+    <!-- Fullscreen Exit-Overlay (immer sichtbar im Vollbild) -->
+    <div class="fullscreen-exit-overlay" id="fullscreen-exit-overlay">
+        <button class="fullscreen-exit-btn" onclick="exitFullscreen()">
+            ✕ Beenden (ESC)
+        </button>
+    </div>
+
     <script>
         var LP_ID = 'lp-02a-ohm-v2';
         var TOTAL_SLIDES = 16;
@@ -976,33 +1001,73 @@
         }
 
         // ============================================
-        // SIMULATION VOLLBILD
+        // SIMULATION VOLLBILD (Fullscreen API + Fallback)
         // ============================================
+
+        var currentFullscreenFrame = null;
+        var exitOverlay = document.getElementById('fullscreen-exit-overlay');
 
         function toggleSimFullscreen(frameId) {
             var frame = document.getElementById(frameId);
-            var btn = frame.querySelector('.fullscreen-btn');
+            var iframe = frame.querySelector('iframe');
 
-            if (frame.classList.contains('fullscreen')) {
-                // Beenden
-                frame.classList.remove('fullscreen');
-                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg> Vollbild';
-                document.body.style.overflow = '';
+            // Prüfe ob Fullscreen API verfügbar
+            if (iframe.requestFullscreen || iframe.webkitRequestFullscreen) {
+                // Native Fullscreen API
+                if (iframe.requestFullscreen) {
+                    iframe.requestFullscreen();
+                } else if (iframe.webkitRequestFullscreen) {
+                    iframe.webkitRequestFullscreen(); // Safari
+                }
+                currentFullscreenFrame = frame;
+                exitOverlay.classList.add('visible');
             } else {
-                // Aktivieren
-                frame.classList.add('fullscreen');
-                btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg> Beenden';
+                // Fallback: CSS-basiert
+                frame.classList.add('fullscreen-fallback');
+                currentFullscreenFrame = frame;
+                exitOverlay.classList.add('visible');
                 document.body.style.overflow = 'hidden';
             }
         }
 
-        // ESC-Taste zum Beenden
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                var fullscreenFrame = document.querySelector('.simulation-frame.fullscreen');
-                if (fullscreenFrame) {
-                    toggleSimFullscreen(fullscreenFrame.id);
+        function exitFullscreen() {
+            // Native Fullscreen beenden
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
                 }
+            }
+
+            // Fallback beenden
+            if (currentFullscreenFrame) {
+                currentFullscreenFrame.classList.remove('fullscreen-fallback');
+                currentFullscreenFrame = null;
+            }
+
+            exitOverlay.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
+        // Fullscreenchange-Event (reagiert auf Browser-ESC)
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement) {
+                exitOverlay.classList.remove('visible');
+                currentFullscreenFrame = null;
+            }
+        });
+        document.addEventListener('webkitfullscreenchange', function() {
+            if (!document.webkitFullscreenElement) {
+                exitOverlay.classList.remove('visible');
+                currentFullscreenFrame = null;
+            }
+        });
+
+        // ESC-Taste für Fallback-Modus
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && currentFullscreenFrame) {
+                exitFullscreen();
             }
         });
 
