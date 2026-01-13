@@ -108,7 +108,12 @@ header .meta {
 
 .step-dot:hover { border-color: var(--accent); }
 .step-dot.completed { background: var(--success); border-color: var(--success); color: var(--white); }
-.step-dot.current { border-color: var(--accent); border-width: 3px; color: var(--accent); }
+.step-dot.current {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--white);
+    font-weight: 700;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    STEP CONTENT
@@ -442,6 +447,130 @@ li { margin: 5px 0; }
     color: var(--text-muted);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   VORFAKTOR-ANIMATION
+═══════════════════════════════════════════════════════════════ */
+
+.balance-anim {
+    background: var(--white);
+    border: 2px solid var(--accent);
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.balance-anim h4 {
+    color: var(--accent);
+    margin-bottom: 15px;
+}
+
+.equation-display {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 1.3em;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.eq-element {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.eq-formula {
+    font-weight: bold;
+    padding: 5px 10px;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.eq-formula.highlight-product { border-color: var(--accent); background: var(--accent-light); }
+.eq-formula.highlight-oxygen { border-color: var(--oxygen); background: #ffebee; }
+.eq-formula.highlight-metal { border-color: var(--metal); background: #e3f2fd; }
+
+.eq-coef {
+    font-weight: bold;
+    margin-right: 2px;
+}
+
+.eq-coef.new { color: var(--accent); }
+
+.eq-counts {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 0.7em;
+    font-family: monospace;
+}
+
+.eq-count {
+    padding: 2px 6px;
+    border-radius: 2px;
+}
+
+.eq-count.metal { background: #e3f2fd; color: var(--metal); }
+.eq-count.oxygen { background: #ffebee; color: var(--oxygen); }
+
+.eq-count.crossed {
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.eq-count.updated {
+    font-weight: bold;
+    animation: pulse-update 0.5s;
+}
+
+@keyframes pulse-update {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.eq-arrow, .eq-plus {
+    font-size: 1.2em;
+    color: var(--text-muted);
+    padding-top: 5px;
+}
+
+.balance-status {
+    text-align: center;
+    padding: 10px;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+.balance-status.checking { background: var(--warning-bg); color: var(--warning); }
+.balance-status.balanced { background: var(--success-bg); color: var(--success); }
+
+.balance-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.balance-step-info {
+    background: var(--bg);
+    padding: 10px 15px;
+    margin-top: 15px;
+    font-size: 0.95em;
+}
+
+.balance-step-info strong {
+    color: var(--accent);
+}
+
+.mg-input-step {
+    margin-top: 15px;
+    padding: 10px;
+    background: var(--bg);
+    border-left: 3px solid var(--accent);
+}
+
     </style>
 </head>
 <body>
@@ -534,11 +663,11 @@ li { margin: 5px 0; }
                 <p><strong>Hinweis:</strong> Eisen (Fe) und Kupfer (Cu) haben zwei mögliche Wertigkeiten. Welche gilt, steht meist in der Aufgabe.</p>
 
                 <div class="hefter-hinweis">
-                    <strong>AB Merksatz:</strong> Übertrage die Definition der Wertigkeit und die Tabelle.
+                    <strong>→ AB Merkkasten:</strong> Ergänze die Lücken zur Wertigkeit („Händezahl").
                 </div>
 
                 <div class="exercise">
-                    <div class="exercise-title">Übung: Wertigkeiten ablesen</div>
+                    <div class="exercise-title">Übung: Wertigkeiten ablesen → AB Aufgabe 1</div>
                     <p>Welche Wertigkeit hat...</p>
                     <p>Calcium (Ca):
                         <select id="ex2-1" onchange="saveAnswer('ex2-1')">
@@ -569,6 +698,10 @@ li { margin: 5px 0; }
                     </p>
                     <button class="btn" onclick="checkEx2()">Prüfen</button>
                     <div class="feedback" id="feedback2"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 1:</strong> Übertrage deine Antworten in die Tabelle.
                 </div>
 
                 <div class="nav-buttons">
@@ -614,6 +747,22 @@ li { margin: 5px 0; }
                     <p style="font-size: 0.7em; margin-top: 10px;">Wertigkeit III -> Index 3 bei O &nbsp;&nbsp;|&nbsp;&nbsp; Wertigkeit II -> Index 2 bei Al</p>
                 </div>
 
+                <div class="science-box" style="margin: 15px 0;">
+                    <strong>Warum funktioniert die Kreuzregel? – Elektronen-Bilanz</strong>
+                    <p style="margin-top: 8px;">Bei Metalloxiden gilt: <strong>abgegebene e<sup>−</sup> = aufgenommene e<sup>−</sup></strong></p>
+                    <p><strong>Beispiel Al<sub>2</sub>O<sub>3</sub>:</strong></p>
+                    <ul style="margin: 5px 0;">
+                        <li>Al gibt <strong>3 e<sup>−</sup></strong> ab (Wertigkeit III)</li>
+                        <li>O nimmt <strong>2 e<sup>−</sup></strong> auf (Wertigkeit II)</li>
+                    </ul>
+                    <p>Wie viele von jedem, damit es aufgeht?</p>
+                    <ul style="margin: 5px 0;">
+                        <li>2 Al geben 2 × 3 = <strong>6 e<sup>−</sup></strong> ab</li>
+                        <li>3 O nehmen 3 × 2 = <strong>6 e<sup>−</sup></strong> auf ✓</li>
+                    </ul>
+                    <p style="margin-top: 8px;"><em>→ Das ist genau das, was die Kreuzregel macht!</em></p>
+                </div>
+
                 <h4>Beispiele:</h4>
                 <table>
                     <tr><th>Metall</th><th>Wertigkeiten</th><th>Formel</th><th>Erklärung</th></tr>
@@ -638,7 +787,7 @@ li { margin: 5px 0; }
                 </table>
 
                 <div class="hefter-hinweis">
-                    <strong>AB Aufgabe 2:</strong> Wende die Kreuzregel an und schreibe die Oxidformeln.
+                    <strong>→ AB Aufgabe 2:</strong> Wende die Kreuzregel an – trage Wertigkeiten und Oxidformeln ein.
                 </div>
 
                 <div class="exercise">
@@ -729,7 +878,7 @@ li { margin: 5px 0; }
 
                     <div class="algorithm-step">
                         <div class="step-num">2</div>
-                        <div><strong>Formelgleichung:</strong> Li + O<sub>2</sub> -> Li<sub>2</sub>O <span style="color: var(--text-muted); font-size: 0.85em;">(Formel aus Alg. 1, Sauerstoff ist O<sub>2</sub>!)</span></div>
+                        <div><strong>Formelgleichung:</strong> Li + O<sub>2</sub> -> Li<sub>2</sub>O <span style="color: var(--text-muted); font-size: 0.85em;">(Li<sub>2</sub>O aus Algorithmus 1, Sauerstoff ist O<sub>2</sub>!)</span></div>
                     </div>
 
                     <div class="algorithm-step">
@@ -750,49 +899,35 @@ li { margin: 5px 0; }
                     </div>
                 </div>
 
-                <h4>Kontrolle mit Atom-Zähler:</h4>
-                <div class="atom-counter">
-                    <div class="atom-row">
-                        <span class="label">Links:</span>
-                        <div class="atom-dots">
-                            <span class="atom-dot metal"></span>
-                            <span class="atom-dot metal"></span>
-                            <span class="atom-dot metal"></span>
-                            <span class="atom-dot metal"></span>
-                        </div>
-                        <span>Li</span>
-                        <span class="atom-count match">= 4</span>
-                        <div class="atom-dots" style="margin-left: 20px;">
-                            <span class="atom-dot oxygen"></span>
-                            <span class="atom-dot oxygen"></span>
-                        </div>
-                        <span>O</span>
-                        <span class="atom-count match">= 2</span>
+                <!-- Interaktive Animation: Vorfaktoren ausgleichen -->
+                <div class="balance-anim" id="balance-anim-al">
+                    <h4>Animation: Vorfaktoren schrittweise ausgleichen (Aluminium)</h4>
+
+                    <div class="info-box" style="font-size: 0.9em; margin: 10px 0;">
+                        <strong>Tipp:</strong> Klicke dich Schritt für Schritt durch die Animation, um das Ausgleichen zu verstehen!
                     </div>
-                    <div class="atom-row">
-                        <span class="label">Rechts:</span>
-                        <div class="atom-dots">
-                            <span class="atom-dot metal"></span>
-                            <span class="atom-dot metal"></span>
-                            <span class="atom-dot metal"></span>
-                            <span class="atom-dot metal"></span>
-                        </div>
-                        <span>Li</span>
-                        <span class="atom-count match">= 4</span>
-                        <div class="atom-dots" style="margin-left: 20px;">
-                            <span class="atom-dot oxygen"></span>
-                            <span class="atom-dot oxygen"></span>
-                        </div>
-                        <span>O</span>
-                        <span class="atom-count match">= 2</span>
+
+                    <div class="equation-display" id="eq-display-al">
+                        <!-- Wird durch JavaScript gefüllt -->
                     </div>
-                    <div style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--success);">
-                        ✓ 4 = 4 und 2 = 2 -> Ausgeglichen!
+
+                    <div class="balance-step-info" id="balance-info-al">
+                        Klicke "Weiter" um zu starten.
+                    </div>
+
+                    <div class="balance-status checking" id="balance-status-al">
+                        Noch nicht ausgeglichen
+                    </div>
+
+                    <div class="balance-controls">
+                        <button class="btn btn-secondary" onclick="balanceReset()">Neustart</button>
+                        <button class="btn btn-secondary" id="balance-back-btn" onclick="balanceBack()" disabled>Zurück</button>
+                        <button class="btn" id="balance-next-btn" onclick="balanceNext()">Weiter</button>
                     </div>
                 </div>
 
                 <div class="hefter-hinweis">
-                    <strong>AB Algorithmus-Boxen:</strong> Fülle die Lücken in beiden Algorithmen aus.
+                    <strong>→ AB Algorithmus 1 + 2:</strong> Fülle die Lücken im Lithium-Beispiel aus (Atomzahlen + Vorfaktoren).
                 </div>
 
                 <div class="nav-buttons">
@@ -809,7 +944,7 @@ li { margin: 5px 0; }
                 <p>Jetzt bist du dran! Wende <strong>beide Algorithmen</strong> auf <strong>Magnesium</strong> an.</p>
 
                 <div class="exercise">
-                    <div class="exercise-title">Magnesium + Sauerstoff -> Magnesiumoxid</div>
+                    <div class="exercise-title">Magnesium + Sauerstoff → Magnesiumoxid (einfacher Fall)</div>
 
                     <p><strong>Algorithmus 1: Verhältnisformel</strong></p>
                     <p>Wertigkeiten: Mg =
@@ -830,42 +965,101 @@ li { margin: 5px 0; }
                     <p>Kreuzregel: Mg<sub><input type="text" class="inline-input" id="ex6-f1" style="width: 25px;" onchange="saveAnswer('ex6-f1')"></sub>O<sub><input type="text" class="inline-input" id="ex6-f2" style="width: 25px;" onchange="saveAnswer('ex6-f2')"></sub>
                     <span style="font-size: 0.85em; color: var(--text-muted);">(Index 1 = leer lassen)</span></p>
 
+                    <button class="btn" onclick="checkEx6Step1()">Schritt 1 prüfen</button>
+                    <div class="feedback" id="feedback6-step1"></div>
+
                     <hr style="margin: 15px 0;">
 
-                    <p><strong>Algorithmus 2: Reaktionsgleichung</strong></p>
-                    <p>Formelgleichung: Mg + O<sub>2</sub> -> <input type="text" class="inline-input wide" id="ex6-formula" onchange="saveAnswer('ex6-formula')"></p>
+                    <p><strong>Algorithmus 2: Reaktionsgleichung schrittweise</strong></p>
 
-                    <p>Atome zählen:</p>
-                    <table>
-                        <tr><th></th><th>Links</th><th>Rechts</th></tr>
-                        <tr>
-                            <td>Mg</td>
-                            <td><input type="text" class="inline-input" id="ex6-1" onchange="saveAnswer('ex6-1')"></td>
-                            <td><input type="text" class="inline-input" id="ex6-2" onchange="saveAnswer('ex6-2')"></td>
-                        </tr>
-                        <tr>
-                            <td>O</td>
-                            <td><input type="text" class="inline-input" id="ex6-3" onchange="saveAnswer('ex6-3')"></td>
-                            <td><input type="text" class="inline-input" id="ex6-4" onchange="saveAnswer('ex6-4')"></td>
-                        </tr>
-                    </table>
+                    <!-- Interaktive Gleichungsanzeige -->
+                    <div class="balance-anim" id="mg-exercise">
+                        <h4>Gleichung ausgleichen – du gibst die Werte ein!</h4>
 
-                    <p><strong>Ausgeglichene Gleichung:</strong></p>
-                    <div class="equation-builder">
-                        <input type="text" class="inline-input" id="ex6-5" onchange="saveAnswer('ex6-5')">
-                        <span class="metal">Mg</span> +
-                        <input type="text" class="inline-input" id="ex6-6" onchange="saveAnswer('ex6-6')">
-                        <span class="oxygen">O<sub>2</sub></span> ->
-                        <input type="text" class="inline-input" id="ex6-7" onchange="saveAnswer('ex6-7')">
-                        <span>MgO</span>
+                        <!-- Visuelle Gleichung -->
+                        <div class="equation-display" id="mg-eq-display">
+                            <div class="eq-element">
+                                <div class="eq-formula" id="mg-metal-box">
+                                    <span class="eq-coef" id="mg-coef-metal"></span><span style="color: var(--metal);">Mg</span>
+                                </div>
+                                <div class="eq-counts">
+                                    <span class="eq-count metal" id="mg-count-metal-l">?</span>
+                                </div>
+                            </div>
+                            <div class="eq-plus">+</div>
+                            <div class="eq-element">
+                                <div class="eq-formula" id="mg-o2-box">
+                                    <span class="eq-coef" id="mg-coef-o2"></span><span style="color: var(--oxygen);">O<sub>2</sub></span>
+                                </div>
+                                <div class="eq-counts">
+                                    <span class="eq-count oxygen" id="mg-count-o-l">?</span>
+                                </div>
+                            </div>
+                            <div class="eq-arrow">→</div>
+                            <div class="eq-element">
+                                <div class="eq-formula" id="mg-product-box">
+                                    <span class="eq-coef" id="mg-coef-product"></span><span style="color: var(--metal);">Mg</span><span style="color: var(--oxygen);">O</span>
+                                </div>
+                                <div class="eq-counts">
+                                    <span class="eq-count metal" id="mg-count-metal-r">?</span>
+                                    <span class="eq-count oxygen" id="mg-count-o-r">?</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="balance-status checking" id="mg-status">
+                            Starte mit dem Zählen der Atome
+                        </div>
+
+                        <!-- Schritt-für-Schritt Eingaben -->
+                        <div id="mg-step-0" class="mg-input-step">
+                            <div class="balance-step-info">
+                                <strong>Start:</strong> Zähle die Atome auf beiden Seiten.
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Mg links: <input type="text" class="inline-input" id="mg-in-metal-l" style="width: 40px;" onchange="saveAnswer('mg-in-metal-l')">
+                                O links: <input type="text" class="inline-input" id="mg-in-o-l" style="width: 40px;" onchange="saveAnswer('mg-in-o-l')">
+                                | Mg rechts: <input type="text" class="inline-input" id="mg-in-metal-r" style="width: 40px;" onchange="saveAnswer('mg-in-metal-r')">
+                                O rechts: <input type="text" class="inline-input" id="mg-in-o-r" style="width: 40px;" onchange="saveAnswer('mg-in-o-r')">
+                            </p>
+                            <button class="btn" onclick="checkMgStep0()">Atomzahlen prüfen</button>
+                            <div class="feedback" id="mg-feedback-0"></div>
+                        </div>
+
+                        <div id="mg-step-1" class="mg-input-step hidden">
+                            <div class="balance-step-info">
+                                <strong>a) Produkt anpassen:</strong> O rechts soll = O links (2) sein.
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Vorfaktor für MgO: <input type="text" class="inline-input" id="mg-in-coef-product" style="width: 40px;" onchange="saveAnswer('mg-in-coef-product')">
+                                <span style="font-size: 0.85em; color: var(--text-muted);">(Wie viele MgO für 2 O rechts?)</span>
+                            </p>
+                            <button class="btn" onclick="checkMgStep1()">Prüfen</button>
+                            <div class="feedback" id="mg-feedback-1"></div>
+                        </div>
+
+                        <div id="mg-step-2" class="mg-input-step hidden">
+                            <div class="balance-step-info">
+                                <strong>b) Metall anpassen:</strong> Mg links = Mg rechts (jetzt 2).
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Vorfaktor für Mg: <input type="text" class="inline-input" id="mg-in-coef-metal" style="width: 40px;" onchange="saveAnswer('mg-in-coef-metal')">
+                                <span style="font-size: 0.85em; color: var(--text-muted);">(Wie viele Mg links?)</span>
+                            </p>
+                            <button class="btn" onclick="checkMgStep2()">Prüfen</button>
+                            <div class="feedback" id="mg-feedback-2"></div>
+                        </div>
+
+                        <div id="mg-step-done" class="mg-input-step hidden">
+                            <div class="balance-step-info" style="background: var(--success-bg); border-left: 3px solid var(--success);">
+                                <strong style="color: var(--success);">Geschafft!</strong> Die Gleichung ist ausgeglichen: 2 Mg + 1 O₂ → 2 MgO
+                            </div>
+                        </div>
                     </div>
-
-                    <button class="btn" onclick="checkEx6()">Prüfen</button>
-                    <div class="feedback" id="feedback6"></div>
                 </div>
 
                 <div class="hefter-hinweis">
-                    <strong>AB Aufgabe 3a:</strong> Übertrage deine Lösung für Magnesium.
+                    <strong>→ AB Aufgabe 3a (Magnesium):</strong> Übertrage alle Schritte und das Ergebnis.
                 </div>
 
                 <div class="nav-buttons">
@@ -882,7 +1076,7 @@ li { margin: 5px 0; }
                 <p>Jetzt eine schwierigere: <strong>Eisen</strong> (Wertigkeit III).</p>
 
                 <div class="exercise">
-                    <div class="exercise-title">Eisen + Sauerstoff -> Eisenoxid</div>
+                    <div class="exercise-title">Eisen + Sauerstoff → Eisenoxid (komplexer Fall)</div>
 
                     <p><strong>Algorithmus 1: Verhältnisformel</strong></p>
                     <p>Wertigkeiten: Fe =
@@ -903,44 +1097,113 @@ li { margin: 5px 0; }
                     <p>Kreuzregel: Fe<sub><input type="text" class="inline-input" id="ex7-f1" style="width: 25px;" onchange="saveAnswer('ex7-f1')"></sub>O<sub><input type="text" class="inline-input" id="ex7-f2" style="width: 25px;" onchange="saveAnswer('ex7-f2')"></sub>
                     <span style="font-size: 0.85em; color: var(--text-muted);">(Wertigkeit kreuzen!)</span></p>
 
+                    <button class="btn" onclick="checkEx7Step1()">Schritt 1 prüfen</button>
+                    <div class="feedback" id="feedback7-step1"></div>
+
                     <hr style="margin: 15px 0;">
 
-                    <p><strong>Algorithmus 2: Reaktionsgleichung</strong></p>
-                    <p>Formelgleichung: Fe + O<sub>2</sub> -> <input type="text" class="inline-input wide" id="ex7-formula" onchange="saveAnswer('ex7-formula')"></p>
+                    <p><strong>Algorithmus 2: Reaktionsgleichung schrittweise</strong></p>
 
-                    <p>Atome zählen:</p>
-                    <table>
-                        <tr><th></th><th>Links</th><th>Rechts</th></tr>
-                        <tr>
-                            <td>Fe</td>
-                            <td><input type="text" class="inline-input" id="ex7-1" onchange="saveAnswer('ex7-1')"></td>
-                            <td><input type="text" class="inline-input" id="ex7-2" onchange="saveAnswer('ex7-2')"></td>
-                        </tr>
-                        <tr>
-                            <td>O</td>
-                            <td><input type="text" class="inline-input" id="ex7-3" onchange="saveAnswer('ex7-3')"></td>
-                            <td><input type="text" class="inline-input" id="ex7-4" onchange="saveAnswer('ex7-4')"></td>
-                        </tr>
-                    </table>
+                    <!-- Interaktive Gleichungsanzeige -->
+                    <div class="balance-anim" id="fe-exercise">
+                        <h4>Gleichung ausgleichen – du gibst die Werte ein!</h4>
 
-                    <p><strong>Tipp:</strong> Rechts sind 3 O-Atome. Links hast du O<sub>2</sub> (= 2 O). Finde das kleinste gemeinsame Vielfache von 2 und 3!</p>
+                        <!-- Visuelle Gleichung -->
+                        <div class="equation-display" id="fe-eq-display">
+                            <div class="eq-element">
+                                <div class="eq-formula" id="fe-metal-box">
+                                    <span class="eq-coef" id="fe-coef-metal"></span><span style="color: var(--metal);">Fe</span>
+                                </div>
+                                <div class="eq-counts">
+                                    <span class="eq-count metal" id="fe-count-metal-l">?</span>
+                                </div>
+                            </div>
+                            <div class="eq-plus">+</div>
+                            <div class="eq-element">
+                                <div class="eq-formula" id="fe-o2-box">
+                                    <span class="eq-coef" id="fe-coef-o2"></span><span style="color: var(--oxygen);">O<sub>2</sub></span>
+                                </div>
+                                <div class="eq-counts">
+                                    <span class="eq-count oxygen" id="fe-count-o-l">?</span>
+                                </div>
+                            </div>
+                            <div class="eq-arrow">→</div>
+                            <div class="eq-element">
+                                <div class="eq-formula" id="fe-product-box">
+                                    <span class="eq-coef" id="fe-coef-product"></span><span style="color: var(--metal);">Fe<sub>2</sub></span><span style="color: var(--oxygen);">O<sub>3</sub></span>
+                                </div>
+                                <div class="eq-counts">
+                                    <span class="eq-count metal" id="fe-count-metal-r">?</span>
+                                    <span class="eq-count oxygen" id="fe-count-o-r">?</span>
+                                </div>
+                            </div>
+                        </div>
 
-                    <p><strong>Ausgeglichene Gleichung:</strong></p>
-                    <div class="equation-builder">
-                        <input type="text" class="inline-input" id="ex7-5" onchange="saveAnswer('ex7-5')">
-                        <span class="metal">Fe</span> +
-                        <input type="text" class="inline-input" id="ex7-6" onchange="saveAnswer('ex7-6')">
-                        <span class="oxygen">O<sub>2</sub></span> ->
-                        <input type="text" class="inline-input" id="ex7-7" onchange="saveAnswer('ex7-7')">
-                        <span>Fe<sub>2</sub>O<sub>3</sub></span>
+                        <div class="balance-status checking" id="fe-status">
+                            Starte mit dem Zählen der Atome
+                        </div>
+
+                        <!-- Schritt-für-Schritt Eingaben -->
+                        <div id="fe-step-0" class="mg-input-step">
+                            <div class="balance-step-info">
+                                <strong>Start:</strong> Zähle die Atome auf beiden Seiten.
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Fe links: <input type="text" class="inline-input" id="fe-in-metal-l" style="width: 40px;" onchange="saveAnswer('fe-in-metal-l')">
+                                O links: <input type="text" class="inline-input" id="fe-in-o-l" style="width: 40px;" onchange="saveAnswer('fe-in-o-l')">
+                                | Fe rechts: <input type="text" class="inline-input" id="fe-in-metal-r" style="width: 40px;" onchange="saveAnswer('fe-in-metal-r')">
+                                O rechts: <input type="text" class="inline-input" id="fe-in-o-r" style="width: 40px;" onchange="saveAnswer('fe-in-o-r')">
+                            </p>
+                            <button class="btn" onclick="checkFeStep0()">Atomzahlen prüfen</button>
+                            <div class="feedback" id="fe-feedback-0"></div>
+                        </div>
+
+                        <div id="fe-step-1" class="mg-input-step hidden">
+                            <div class="balance-step-info">
+                                <strong>a) Produkt anpassen:</strong> O rechts soll gerade sein (kgV von 2 und 3 = 6).
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Vorfaktor für Fe<sub>2</sub>O<sub>3</sub>: <input type="text" class="inline-input" id="fe-in-coef-product" style="width: 40px;" onchange="saveAnswer('fe-in-coef-product')">
+                                <span style="font-size: 0.85em; color: var(--text-muted);">(Wie viele Fe₂O₃ für 6 O?)</span>
+                            </p>
+                            <button class="btn" onclick="checkFeStep1()">Prüfen</button>
+                            <div class="feedback" id="fe-feedback-1"></div>
+                        </div>
+
+                        <div id="fe-step-2" class="mg-input-step hidden">
+                            <div class="balance-step-info">
+                                <strong>b) O<sub>2</sub> anpassen:</strong> O links = O rechts (6).
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Vorfaktor für O<sub>2</sub>: <input type="text" class="inline-input" id="fe-in-coef-o2" style="width: 40px;" onchange="saveAnswer('fe-in-coef-o2')">
+                                <span style="font-size: 0.85em; color: var(--text-muted);">(Wie viele O₂ für 6 O links?)</span>
+                            </p>
+                            <button class="btn" onclick="checkFeStep2()">Prüfen</button>
+                            <div class="feedback" id="fe-feedback-2"></div>
+                        </div>
+
+                        <div id="fe-step-3" class="mg-input-step hidden">
+                            <div class="balance-step-info">
+                                <strong>c) Metall anpassen:</strong> Fe links = Fe rechts (jetzt 4).
+                            </div>
+                            <p style="margin: 10px 0;">
+                                Vorfaktor für Fe: <input type="text" class="inline-input" id="fe-in-coef-metal" style="width: 40px;" onchange="saveAnswer('fe-in-coef-metal')">
+                                <span style="font-size: 0.85em; color: var(--text-muted);">(Wie viele Fe links?)</span>
+                            </p>
+                            <button class="btn" onclick="checkFeStep3()">Prüfen</button>
+                            <div class="feedback" id="fe-feedback-3"></div>
+                        </div>
+
+                        <div id="fe-step-done" class="mg-input-step hidden">
+                            <div class="balance-step-info" style="background: var(--success-bg); border-left: 3px solid var(--success);">
+                                <strong style="color: var(--success);">Geschafft!</strong> Die Gleichung ist ausgeglichen: 4 Fe + 3 O₂ → 2 Fe₂O₃
+                            </div>
+                        </div>
                     </div>
-
-                    <button class="btn" onclick="checkEx7()">Prüfen</button>
-                    <div class="feedback" id="feedback7"></div>
                 </div>
 
                 <div class="hefter-hinweis">
-                    <strong>AB Aufgabe 3c:</strong> Übertrage deine Lösung für Eisen.
+                    <strong>→ AB Aufgabe 3b (Eisen):</strong> Übertrage alle Schritte und das Ergebnis.
                 </div>
 
                 <div class="nav-buttons">
@@ -989,15 +1252,15 @@ li { margin: 5px 0; }
 
                 <div class="info-box" style="background: var(--success-bg); border-color: var(--success);">
                     <strong>Geschafft!</strong><br>
-                    Du hast beide Algorithmen gelernt. Vervollständige jetzt dein Arbeitsblatt und bereite dich auf den Minitest vor.
+                    Du hast beide Algorithmen gelernt. Vervollständige jetzt dein Arbeitsblatt.
                 </div>
 
                 <div class="hefter-hinweis">
-                    <strong>AB vervollständigen:</strong>
+                    <strong>→ AB vervollständigen:</strong>
                     <ul style="margin: 5px 0 0 15px;">
-                        <li>Aufgabe 3b (Aluminium) + 3d (Kupfer)</li>
-                        <li>Aufgabe 4 (Fehler finden) – für Schnelle</li>
-                        <li>Aufgabe 5 (Natrium) – für Schnelle</li>
+                        <li><strong>Aufgabe 3c (Aluminium)</strong> – selbstständig lösen</li>
+                        <li><strong>Aufgabe 3d (Kupfer)</strong> – selbstständig lösen</li>
+                        <li>Aufgabe 4 + 5 – für Schnelle (★★★)</li>
                     </ul>
                 </div>
 
@@ -1153,97 +1416,329 @@ li { margin: 5px 0; }
         }
     }
 
-    function checkEx6() {
-        // Wertigkeiten
+    // ─── ÜBUNG 6: MAGNESIUM (schrittweise) ───────────────────────
+    function checkEx6Step1() {
         var w1 = document.getElementById('ex6-w1').value;
         var w2 = document.getElementById('ex6-w2').value;
-        // Formel-Indizes
         var f1 = document.getElementById('ex6-f1').value.trim();
         var f2 = document.getElementById('ex6-f2').value.trim();
-        // Formel im Schritt 4
-        var formula = document.getElementById('ex6-formula').value.trim().toLowerCase();
-        // Atom-Zählung
-        var v1 = document.getElementById('ex6-1').value.trim();
-        var v2 = document.getElementById('ex6-2').value.trim();
-        var v3 = document.getElementById('ex6-3').value.trim();
-        var v4 = document.getElementById('ex6-4').value.trim();
-        // Vorfaktoren
-        var v5 = document.getElementById('ex6-5').value.trim();
-        var v6 = document.getElementById('ex6-6').value.trim();
-        var v7 = document.getElementById('ex6-7').value.trim();
-        var fb = document.getElementById('feedback6');
+        var fb = document.getElementById('feedback6-step1');
 
         var wertOk = (w1 === '2' && w2 === '2');
         var formelOk = ((f1 === '' || f1 === '1') && (f2 === '' || f2 === '1'));
-        var formulaOk = (formula === 'mgo');
-        var countOk = (v1 === '1' && v2 === '1' && v3 === '2' && v4 === '1');
-        var eqOk = (v5 === '2' && v6 === '1' && v7 === '2');
 
         if (!wertOk) {
             fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 1, Schritt 2: Schau in die Tabelle – Mg hat Wertigkeit II, O hat Wertigkeit II.';
+            fb.textContent = 'Schau in die Tabelle: Mg(II), O(II).';
         } else if (!formelOk) {
             fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 1, Schritt 3: Mg(II) + O(II) -> gleiche Wertigkeit bedeutet 1:1. Index 1 wird nicht geschrieben.';
-        } else if (!formulaOk) {
-            fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 2, Schritt 2: Die Formel aus Alg. 1 ist MgO. Trage "MgO" ein.';
-        } else if (!countOk) {
-            fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 2, Schritt 3: Links: Mg=1, O₂=2 O-Atome. Rechts: MgO=1 Mg, 1 O.';
-        } else if (!eqOk) {
-            fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 2, Schritt 4: Du brauchst 2 O rechts (weil links O₂=2). Also 2 MgO. Und dafür brauchst du 2 Mg.';
+            fb.textContent = 'Bei gleicher Wertigkeit ist das Verhältnis 1:1. Index 1 wird nicht geschrieben (leer lassen).';
         } else {
             fb.className = 'feedback correct';
-            fb.textContent = '✓ Perfekt! Beide Algorithmen korrekt angewendet: 2 Mg + 1 O₂ -> 2 MgO';
+            fb.textContent = '✓ Richtig! Mg(II) + O(II) → MgO (1:1 bei gleicher Wertigkeit)';
         }
     }
 
-    function checkEx7() {
-        // Wertigkeiten
+    // ─── ÜBUNG 6: MAGNESIUM INTERAKTIV ───────────────────────
+    // Zustand der Mg-Übung: 0=Start, 1=Atomzahlen ok, 2=Produkt ok, 3=fertig
+    var mgExStep = 0;
+
+    function updateMgDisplay() {
+        // Aktualisiert die visuelle Gleichungsanzeige basierend auf mgExStep
+        var coefMetal = document.getElementById('mg-coef-metal');
+        var coefO2 = document.getElementById('mg-coef-o2');
+        var coefProduct = document.getElementById('mg-coef-product');
+        var countMetalL = document.getElementById('mg-count-metal-l');
+        var countOL = document.getElementById('mg-count-o-l');
+        var countMetalR = document.getElementById('mg-count-metal-r');
+        var countOR = document.getElementById('mg-count-o-r');
+        var status = document.getElementById('mg-status');
+        var metalBox = document.getElementById('mg-metal-box');
+        var o2Box = document.getElementById('mg-o2-box');
+        var productBox = document.getElementById('mg-product-box');
+
+        // Reset highlights
+        metalBox.classList.remove('highlight-metal', 'highlight-product', 'highlight-oxygen');
+        o2Box.classList.remove('highlight-metal', 'highlight-product', 'highlight-oxygen');
+        productBox.classList.remove('highlight-metal', 'highlight-product', 'highlight-oxygen');
+
+        if (mgExStep === 0) {
+            // Noch keine Eingaben
+            coefMetal.textContent = '';
+            coefO2.textContent = '';
+            coefProduct.textContent = '';
+            countMetalL.textContent = '?';
+            countOL.textContent = '?';
+            countMetalR.textContent = '?';
+            countOR.textContent = '?';
+            status.className = 'balance-status checking';
+            status.textContent = 'Zähle die Atome!';
+        } else if (mgExStep === 1) {
+            // Atomzahlen eingegeben
+            coefMetal.textContent = '';
+            coefO2.textContent = '';
+            coefProduct.textContent = '';
+            countMetalL.textContent = '1';
+            countOL.textContent = '2';
+            countMetalR.textContent = '1';
+            countOR.textContent = '1';
+            status.className = 'balance-status checking';
+            status.textContent = 'Mg: 1=1 ✓ | O: 2≠1 ✗ → Ausgleichen!';
+            productBox.classList.add('highlight-product');
+        } else if (mgExStep === 2) {
+            // Produkt-Vorfaktor eingegeben
+            coefMetal.textContent = '';
+            coefO2.textContent = '';
+            coefProduct.textContent = '2';
+            coefProduct.classList.add('new');
+            countMetalL.textContent = '1';
+            countOL.textContent = '2';
+            countMetalR.textContent = '2';
+            countOR.textContent = '2';
+            status.className = 'balance-status checking';
+            status.textContent = 'Mg: 1≠2 ✗ | O: 2=2 ✓ → Metall anpassen!';
+            metalBox.classList.add('highlight-metal');
+        } else if (mgExStep === 3) {
+            // Fertig!
+            coefMetal.textContent = '2';
+            coefMetal.classList.add('new');
+            coefO2.textContent = '';
+            coefProduct.textContent = '2';
+            countMetalL.textContent = '2';
+            countOL.textContent = '2';
+            countMetalR.textContent = '2';
+            countOR.textContent = '2';
+            status.className = 'balance-status balanced';
+            status.textContent = '✓ Ausgeglichen: Mg: 2=2 | O: 2=2';
+        }
+    }
+
+    function checkMgStep0() {
+        var ml = document.getElementById('mg-in-metal-l').value.trim();
+        var ol = document.getElementById('mg-in-o-l').value.trim();
+        var mr = document.getElementById('mg-in-metal-r').value.trim();
+        var or = document.getElementById('mg-in-o-r').value.trim();
+        var fb = document.getElementById('mg-feedback-0');
+
+        if (ml === '1' && ol === '2' && mr === '1' && or === '1') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Richtig! Mg: 1≠1, O: 2≠1 → Nicht ausgeglichen!';
+            mgExStep = 1;
+            updateMgDisplay();
+            // Nächsten Schritt einblenden
+            document.getElementById('mg-step-1').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'Tipp: Links Mg=1, O₂ hat 2 O. Rechts MgO hat 1 Mg und 1 O.';
+        }
+    }
+
+    function checkMgStep1() {
+        var v = document.getElementById('mg-in-coef-product').value.trim();
+        var fb = document.getElementById('mg-feedback-1');
+
+        if (v === '2') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Richtig! 2 × MgO = 2 Mg + 2 O. Jetzt stimmt O (2=2), aber Mg nicht mehr!';
+            mgExStep = 2;
+            updateMgDisplay();
+            // Nächsten Schritt einblenden
+            document.getElementById('mg-step-2').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'MgO hat 1 O. Wie viele MgO brauchst du für 2 O (wie O₂ links)?';
+        }
+    }
+
+    function checkMgStep2() {
+        var v = document.getElementById('mg-in-coef-metal').value.trim();
+        var fb = document.getElementById('mg-feedback-2');
+
+        if (v === '2') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Perfekt! 2 Mg + 1 O₂ → 2 MgO ist ausgeglichen!';
+            mgExStep = 3;
+            updateMgDisplay();
+            // Fertig-Meldung einblenden
+            document.getElementById('mg-step-done').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'Mit 2 MgO hast du rechts 2 Mg. Wie viele Mg brauchst du links?';
+        }
+    }
+
+    // ─── ÜBUNG 7: EISEN (schrittweise) ───────────────────────────
+    function checkEx7Step1() {
         var w1 = document.getElementById('ex7-w1').value;
         var w2 = document.getElementById('ex7-w2').value;
-        // Formel-Indizes
         var f1 = document.getElementById('ex7-f1').value.trim();
         var f2 = document.getElementById('ex7-f2').value.trim();
-        // Formel im Schritt 4
-        var formula = document.getElementById('ex7-formula').value.trim().toLowerCase().replace(/\s/g, '');
-        // Atom-Zählung
-        var v1 = document.getElementById('ex7-1').value.trim();
-        var v2 = document.getElementById('ex7-2').value.trim();
-        var v3 = document.getElementById('ex7-3').value.trim();
-        var v4 = document.getElementById('ex7-4').value.trim();
-        // Vorfaktoren
-        var v5 = document.getElementById('ex7-5').value.trim();
-        var v6 = document.getElementById('ex7-6').value.trim();
-        var v7 = document.getElementById('ex7-7').value.trim();
-        var fb = document.getElementById('feedback7');
+        var fb = document.getElementById('feedback7-step1');
 
         var wertOk = (w1 === '3' && w2 === '2');
         var formelOk = (f1 === '2' && f2 === '3');
-        var formulaOk = (formula === 'fe2o3');
-        var countOk = (v1 === '1' && v2 === '2' && v3 === '2' && v4 === '3');
-        var eqOk = (v5 === '4' && v6 === '3' && v7 === '2');
 
         if (!wertOk) {
             fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 1, Schritt 2: Fe hat hier Wertigkeit III (wie angegeben), O hat Wertigkeit II.';
+            fb.textContent = 'Eisen hat hier Wertigkeit III (angegeben), O hat Wertigkeit II (Tabelle).';
         } else if (!formelOk) {
             fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 1, Schritt 3: Fe(III) + O(II) -> Kreuzregel! Wertigkeit 3 wird Index von O, Wertigkeit 2 wird Index von Fe.';
-        } else if (!formulaOk) {
-            fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 2, Schritt 2: Die Formel aus Alg. 1 ist Fe₂O₃ (oder Fe2O3). Trage sie ein.';
-        } else if (!countOk) {
-            fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 2, Schritt 3: Links: Fe=1, O₂=2 O. Rechts: Fe₂O₃ = 2 Fe, 3 O.';
-        } else if (!eqOk) {
-            fb.className = 'feedback hint';
-            fb.textContent = 'Algorithmus 2, Schritt 4: kgV(2,3)=6. Du brauchst 6 O auf beiden Seiten. Links: 3×O₂=6 O. Rechts: 2×Fe₂O₃=6 O (und 4 Fe). Also 4 Fe links.';
+            fb.textContent = 'Kreuzregel: Fe(III) → Index 3 bei O, O(II) → Index 2 bei Fe. Also Fe₂O₃.';
         } else {
             fb.className = 'feedback correct';
-            fb.textContent = '✓ Ausgezeichnet! Beide Algorithmen korrekt: 4 Fe + 3 O₂ -> 2 Fe₂O₃';
+            fb.textContent = '✓ Richtig! Fe(III) + O(II) → Fe₂O₃ (Kreuzregel)';
+        }
+    }
+
+    // ─── ÜBUNG 7: EISEN INTERAKTIV ───────────────────────────
+    // Zustand der Fe-Übung: 0=Start, 1=Atomzahlen ok, 2=Produkt ok, 3=O₂ ok, 4=fertig
+    var feExStep = 0;
+
+    function updateFeDisplay() {
+        var coefMetal = document.getElementById('fe-coef-metal');
+        var coefO2 = document.getElementById('fe-coef-o2');
+        var coefProduct = document.getElementById('fe-coef-product');
+        var countMetalL = document.getElementById('fe-count-metal-l');
+        var countOL = document.getElementById('fe-count-o-l');
+        var countMetalR = document.getElementById('fe-count-metal-r');
+        var countOR = document.getElementById('fe-count-o-r');
+        var status = document.getElementById('fe-status');
+        var metalBox = document.getElementById('fe-metal-box');
+        var o2Box = document.getElementById('fe-o2-box');
+        var productBox = document.getElementById('fe-product-box');
+
+        // Reset highlights
+        metalBox.classList.remove('highlight-metal', 'highlight-product', 'highlight-oxygen');
+        o2Box.classList.remove('highlight-metal', 'highlight-product', 'highlight-oxygen');
+        productBox.classList.remove('highlight-metal', 'highlight-product', 'highlight-oxygen');
+
+        if (feExStep === 0) {
+            coefMetal.textContent = '';
+            coefO2.textContent = '';
+            coefProduct.textContent = '';
+            countMetalL.textContent = '?';
+            countOL.textContent = '?';
+            countMetalR.textContent = '?';
+            countOR.textContent = '?';
+            status.className = 'balance-status checking';
+            status.textContent = 'Zähle die Atome!';
+        } else if (feExStep === 1) {
+            // Atomzahlen eingegeben
+            coefMetal.textContent = '';
+            coefO2.textContent = '';
+            coefProduct.textContent = '';
+            countMetalL.textContent = '1';
+            countOL.textContent = '2';
+            countMetalR.textContent = '2';
+            countOR.textContent = '3';
+            status.className = 'balance-status checking';
+            status.textContent = 'Fe: 1≠2 ✗ | O: 2≠3 ✗ → Ausgleichen!';
+            productBox.classList.add('highlight-product');
+        } else if (feExStep === 2) {
+            // Produkt-Vorfaktor eingegeben (2 × Fe₂O₃)
+            coefMetal.textContent = '';
+            coefO2.textContent = '';
+            coefProduct.textContent = '2';
+            coefProduct.classList.add('new');
+            countMetalL.textContent = '1';
+            countOL.textContent = '2';
+            countMetalR.textContent = '4';
+            countOR.textContent = '6';
+            status.className = 'balance-status checking';
+            status.textContent = 'Fe: 1≠4 ✗ | O: 2≠6 ✗ → O₂ anpassen!';
+            o2Box.classList.add('highlight-oxygen');
+        } else if (feExStep === 3) {
+            // O₂-Vorfaktor eingegeben (3 × O₂)
+            coefMetal.textContent = '';
+            coefO2.textContent = '3';
+            coefO2.classList.add('new');
+            coefProduct.textContent = '2';
+            countMetalL.textContent = '1';
+            countOL.textContent = '6';
+            countMetalR.textContent = '4';
+            countOR.textContent = '6';
+            status.className = 'balance-status checking';
+            status.textContent = 'Fe: 1≠4 ✗ | O: 6=6 ✓ → Metall anpassen!';
+            metalBox.classList.add('highlight-metal');
+        } else if (feExStep === 4) {
+            // Fertig!
+            coefMetal.textContent = '4';
+            coefMetal.classList.add('new');
+            coefO2.textContent = '3';
+            coefProduct.textContent = '2';
+            countMetalL.textContent = '4';
+            countOL.textContent = '6';
+            countMetalR.textContent = '4';
+            countOR.textContent = '6';
+            status.className = 'balance-status balanced';
+            status.textContent = '✓ Ausgeglichen: Fe: 4=4 | O: 6=6';
+        }
+    }
+
+    function checkFeStep0() {
+        var ml = document.getElementById('fe-in-metal-l').value.trim();
+        var ol = document.getElementById('fe-in-o-l').value.trim();
+        var mr = document.getElementById('fe-in-metal-r').value.trim();
+        var or = document.getElementById('fe-in-o-r').value.trim();
+        var fb = document.getElementById('fe-feedback-0');
+
+        if (ml === '1' && ol === '2' && mr === '2' && or === '3') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Richtig! Fe: 1≠2, O: 2≠3 → Nicht ausgeglichen!';
+            feExStep = 1;
+            updateFeDisplay();
+            document.getElementById('fe-step-1').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'Tipp: Links Fe=1, O₂ hat 2 O. Rechts Fe₂O₃ hat 2 Fe und 3 O.';
+        }
+    }
+
+    function checkFeStep1() {
+        var v = document.getElementById('fe-in-coef-product').value.trim();
+        var fb = document.getElementById('fe-feedback-1');
+
+        if (v === '2') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Richtig! 2 × Fe₂O₃ = 4 Fe + 6 O. Jetzt O₂ anpassen!';
+            feExStep = 2;
+            updateFeDisplay();
+            document.getElementById('fe-step-2').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'Fe₂O₃ hat 3 O. kgV von 2 und 3 ist 6. Wie viele Fe₂O₃ für 6 O?';
+        }
+    }
+
+    function checkFeStep2() {
+        var v = document.getElementById('fe-in-coef-o2').value.trim();
+        var fb = document.getElementById('fe-feedback-2');
+
+        if (v === '3') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Richtig! 3 × O₂ = 6 O. O ist ausgeglichen (6=6)! Jetzt Fe anpassen!';
+            feExStep = 3;
+            updateFeDisplay();
+            document.getElementById('fe-step-3').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'O₂ hat 2 O. Du brauchst 6 O links. Also: 6 ÷ 2 = ?';
+        }
+    }
+
+    function checkFeStep3() {
+        var v = document.getElementById('fe-in-coef-metal').value.trim();
+        var fb = document.getElementById('fe-feedback-3');
+
+        if (v === '4') {
+            fb.className = 'feedback correct';
+            fb.textContent = '✓ Perfekt! 4 Fe + 3 O₂ → 2 Fe₂O₃ ist ausgeglichen!';
+            feExStep = 4;
+            updateFeDisplay();
+            document.getElementById('fe-step-done').classList.remove('hidden');
+        } else {
+            fb.className = 'feedback hint';
+            fb.textContent = 'Mit 2 × Fe₂O₃ hast du rechts 4 Fe (2×2). Wie viele Fe brauchst du links?';
         }
     }
 
@@ -1304,11 +1799,165 @@ li { margin: 5px 0; }
     document.addEventListener('change', saveProgress);
 
     // ───────────────────────────────────────────────────────────────
+    // VORFAKTOR-ANIMATION (Al + O₂ → Al₂O₃)
+    // ───────────────────────────────────────────────────────────────
+
+    var balanceStep = 0;
+
+    // Animations-Schritte: [coefAl, coefO2, coefAl2O3, highlightClass, infoText]
+    var balanceSteps = [
+        // Schritt 0: Start
+        {
+            coefs: [1, 1, 1],
+            counts: { alL: 1, oL: 2, alR: 2, oR: 3 },
+            highlight: null,
+            info: '<strong>Start:</strong> Al + O<sub>2</sub> → Al<sub>2</sub>O<sub>3</sub><br>Atombilanz: Al 1≠2, O 2≠3 → nicht ausgeglichen!'
+        },
+        // Schritt 1: Produkt verdoppeln (kgV von 2 und 3 ist 6, also 2×Al₂O₃)
+        {
+            coefs: [1, 1, 2],
+            counts: { alL: 1, oL: 2, alR: 4, oR: 6 },
+            crossed: { oR: 3 },
+            highlight: 'product',
+            info: '<strong style="color: var(--accent);">Produkt verdoppeln:</strong> 2 × Al<sub>2</sub>O<sub>3</sub> hat 6 O (kgV von 2 und 3)<br>Neu: Al 1≠4, O 2≠6'
+        },
+        // Schritt 2: O₂ anpassen (6÷2=3)
+        {
+            coefs: [1, 3, 2],
+            counts: { alL: 1, oL: 6, alR: 4, oR: 6 },
+            crossed: { oL: 2 },
+            highlight: 'oxygen',
+            info: '<strong style="color: var(--oxygen);">O<sub>2</sub> anpassen:</strong> 3 × O<sub>2</sub> = 6 O (wie rechts)<br>Neu: Al 1≠4, <span style="color: var(--success); font-weight: bold;">O 6=6 ✓</span>'
+        },
+        // Schritt 3: Al anpassen
+        {
+            coefs: [4, 3, 2],
+            counts: { alL: 4, oL: 6, alR: 4, oR: 6 },
+            crossed: { alL: 1 },
+            highlight: 'metal',
+            info: '<strong style="color: var(--metal);">Al anpassen:</strong> 4 Al (wie rechts)<br><span style="color: var(--success); font-weight: bold;">Al 4=4 ✓, O 6=6 ✓ → Ausgeglichen!</span>'
+        }
+    ];
+
+    function renderBalanceEquation() {
+        var s = balanceSteps[balanceStep];
+        var container = document.getElementById('eq-display-al');
+        var html = '';
+
+        // Al (Metall)
+        var alHL = balanceStep === 3 ? ' highlight-metal' : '';
+        var alCoef = s.coefs[0] > 1 ? '<span class="eq-coef new">' + s.coefs[0] + '</span>' : '';
+        html += '<div class="eq-element">';
+        html += '<div class="eq-formula' + alHL + '">' + alCoef + '<span style="color: var(--metal);">Al</span></div>';
+        html += '<div class="eq-counts">';
+        if (s.crossed && s.crossed.alL) {
+            html += '<span class="eq-count metal crossed">' + s.crossed.alL + '</span>';
+        }
+        html += '<span class="eq-count metal' + (s.crossed && s.crossed.alL ? ' updated' : '') + '">' + s.counts.alL + '</span>';
+        html += '</div></div>';
+
+        // +
+        html += '<div class="eq-plus">+</div>';
+
+        // O₂ (Sauerstoff)
+        var o2HL = balanceStep === 2 ? ' highlight-oxygen' : '';
+        var o2Coef = s.coefs[1] > 1 ? '<span class="eq-coef new">' + s.coefs[1] + '</span>' : '';
+        html += '<div class="eq-element">';
+        html += '<div class="eq-formula' + o2HL + '">' + o2Coef + '<span style="color: var(--oxygen);">O<sub>2</sub></span></div>';
+        html += '<div class="eq-counts">';
+        if (s.crossed && s.crossed.oL) {
+            html += '<span class="eq-count oxygen crossed">' + s.crossed.oL + '</span>';
+        }
+        html += '<span class="eq-count oxygen' + (s.crossed && s.crossed.oL ? ' updated' : '') + '">' + s.counts.oL + '</span>';
+        html += '</div></div>';
+
+        // →
+        html += '<div class="eq-arrow">→</div>';
+
+        // Al₂O₃ (Produkt)
+        var prodHL = balanceStep === 1 ? ' highlight-product' : '';
+        var prodCoef = s.coefs[2] > 1 ? '<span class="eq-coef new">' + s.coefs[2] + '</span>' : '';
+        html += '<div class="eq-element">';
+        html += '<div class="eq-formula' + prodHL + '">' + prodCoef + '<span style="color: var(--metal);">Al<sub>2</sub></span><span style="color: var(--oxygen);">O<sub>3</sub></span></div>';
+        html += '<div class="eq-counts">';
+        if (s.crossed && s.crossed.alR) {
+            html += '<span class="eq-count metal crossed">' + s.crossed.alR + '</span>';
+        }
+        html += '<span class="eq-count metal">' + s.counts.alR + '</span>';
+        if (s.crossed && s.crossed.oR) {
+            html += '<span class="eq-count oxygen crossed">' + s.crossed.oR + '</span>';
+        }
+        html += '<span class="eq-count oxygen' + (s.crossed && s.crossed.oR ? ' updated' : '') + '">' + s.counts.oR + '</span>';
+        html += '</div></div>';
+
+        container.innerHTML = html;
+
+        // Info-Text
+        document.getElementById('balance-info-al').innerHTML = s.info;
+
+        // Status
+        var status = document.getElementById('balance-status-al');
+        if (balanceStep === balanceSteps.length - 1) {
+            status.className = 'balance-status balanced';
+            status.textContent = '✓ Ausgeglichen: 4 Al + 3 O₂ → 2 Al₂O₃';
+        } else {
+            status.className = 'balance-status checking';
+            var alMatch = s.counts.alL === s.counts.alR;
+            var oMatch = s.counts.oL === s.counts.oR;
+            status.textContent = 'Al: ' + s.counts.alL + (alMatch ? '=' : '≠') + s.counts.alR +
+                               ' | O: ' + s.counts.oL + (oMatch ? '=' : '≠') + s.counts.oR;
+        }
+    }
+
+    function balanceNext() {
+        if (balanceStep < balanceSteps.length - 1) {
+            balanceStep++;
+            renderBalanceEquation();
+            updateBalanceButtons();
+        }
+    }
+
+    function balanceBack() {
+        if (balanceStep > 0) {
+            balanceStep--;
+            renderBalanceEquation();
+            updateBalanceButtons();
+        }
+    }
+
+    function balanceReset() {
+        balanceStep = 0;
+        renderBalanceEquation();
+        updateBalanceButtons();
+    }
+
+    function updateBalanceButtons() {
+        var backBtn = document.getElementById('balance-back-btn');
+        var nextBtn = document.getElementById('balance-next-btn');
+
+        // Zurück-Button: disabled wenn am Anfang
+        backBtn.disabled = (balanceStep === 0);
+
+        // Weiter-Button: disabled und Text ändern wenn am Ende
+        if (balanceStep === balanceSteps.length - 1) {
+            nextBtn.textContent = 'Fertig!';
+            nextBtn.disabled = true;
+        } else {
+            nextBtn.textContent = 'Weiter';
+            nextBtn.disabled = false;
+        }
+    }
+
+    // ───────────────────────────────────────────────────────────────
     // INIT
     // ───────────────────────────────────────────────────────────────
     loadProgress();
     generateStepIndicators();
     updateProgress();
+    renderBalanceEquation();
+    updateBalanceButtons();
+    updateMgDisplay();
+    updateFeDisplay();
 
     if (currentStep > 1) {
         for (var i = 1; i <= TOTAL_STEPS; i++) {
