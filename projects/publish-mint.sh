@@ -14,7 +14,12 @@
 #   ./publish-mint.sh -o           # Nach Kopieren Finder öffnen
 #
 # Das Script:
-#   1. Kopiert finale PDFs/HTMLs nach iCloud (AB, ML, LH, LB, LP, MT, QR, etc.)
+#   1. Kopiert nach iCloud:
+#      - Alle PDFs (AB, ML, LH, LB, LP, MT, QR, LE, etc.)
+#      - Alle HTMLs (LP, MT, SIM, STUNDENPLAN, etc.)
+#      - Alle TEX-Quelldateien (OHNE Residuals wie .aux, .log, .out, etc.)
+#      - Alle MD-Dateien (PLANUNG, README, etc.)
+#      - Subfolders: img/, images/, assets/, css/, js/
 #   2. Prüft ob LP-*.html, MT-*.html, SIM-*.html auf GitHub liegen
 #   3. Validiert ob QR-Code-URLs mit GitHub-Dateien übereinstimmen
 # ═══════════════════════════════════════════════════════════════
@@ -45,8 +50,14 @@ get_target_name() {
     esac
 }
 
-# Zu kopierende Dateitypen (nur finale Outputs)
-FILE_PATTERNS="AB-*.pdf ML-*.pdf LH-*.pdf LP-*.pdf LP-*.html LB-*.pdf LE-*.pdf MT-*.pdf MT-*.html SIM-*.html QR-*.pdf STUNDENPLAN*.html STUNDENPLAN*.md PLANUNG-*.md JAHRESPLANUNG*.md JAHRESPLANUNG*.html"
+# Zu kopierende Dateitypen (finale Outputs + Quellen)
+FILE_PATTERNS="*.pdf *.html *.tex *.md"
+
+# LaTeX-Residualdateien (werden NICHT kopiert)
+TEX_RESIDUALS=".aux .log .out .synctex.gz .fls .fdb_latexmk .toc .lof .lot .bbl .blg .nav .snm .vrb"
+
+# Subfolders die mitkopiert werden sollen
+SUBFOLDERS="img images assets css js"
 
 # Zähler
 copied=0
@@ -148,6 +159,17 @@ check_qr_urls() {
     done
 }
 
+# Prüft ob Datei eine LaTeX-Residualdatei ist
+is_tex_residual() {
+    local filename="$1"
+    for ext in $TEX_RESIDUALS; do
+        case "$filename" in
+            *"$ext") return 0 ;;
+        esac
+    done
+    return 1
+}
+
 # Kopiert Dateien für einen Ordner
 publish_folder() {
     local fach="$1"
@@ -185,11 +207,17 @@ publish_folder() {
     # Erstelle Zielverzeichnis
     mkdir -p "$full_target"
 
-    # Kopiere passende Dateien
+    # Kopiere passende Dateien (außer LaTeX-Residuals)
     for pattern in $FILE_PATTERNS; do
         for file in "$src_folder"/$pattern; do
             if [ -f "$file" ]; then
                 filename=$(basename "$file")
+
+                # Überspringe LaTeX-Residualdateien
+                if is_tex_residual "$filename"; then
+                    continue
+                fi
+
                 target_file="$full_target/$filename"
 
                 # Nur kopieren wenn neuer oder nicht vorhanden
@@ -202,6 +230,24 @@ publish_folder() {
                 fi
             fi
         done
+    done
+
+    # Kopiere Subfolders (img, images, assets, css, js)
+    for subfolder in $SUBFOLDERS; do
+        if [ -d "$src_folder/$subfolder" ]; then
+            local target_subfolder="$full_target/$subfolder"
+
+            # rsync für effizienten Ordner-Sync (nur neuere Dateien)
+            if command -v rsync &> /dev/null; then
+                rsync -a --update "$src_folder/$subfolder/" "$target_subfolder/" 2>/dev/null
+                echo -e "  ${GREEN}✓${NC} $fach/$rel_path/$subfolder/ (Ordner)"
+            else
+                # Fallback: cp -r
+                mkdir -p "$target_subfolder"
+                cp -r "$src_folder/$subfolder/"* "$target_subfolder/" 2>/dev/null
+                echo -e "  ${GREEN}✓${NC} $fach/$rel_path/$subfolder/ (Ordner)"
+            fi
+        fi
     done
 }
 
