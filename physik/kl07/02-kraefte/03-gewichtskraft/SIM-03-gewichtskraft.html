@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Gewichtskraft</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            font-size: 16px;
+            color: #222;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            color: #2c5aa0;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        .simulation-area {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .sim-canvas-container {
+            flex: 1;
+            min-width: 300px;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        .sim-controls {
+            width: 280px;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            background: linear-gradient(180deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c5aa0;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .control-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            text-align: center;
+            padding: 8px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+        }
+        .planet-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .planet-btn {
+            padding: 10px;
+            border: 2px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.15s;
+        }
+        .planet-btn:hover {
+            border-color: #2c5aa0;
+        }
+        .planet-btn.active {
+            background: #2c5aa0;
+            border-color: #2c5aa0;
+            color: #fff;
+        }
+        .planet-btn small {
+            display: block;
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+        .result-box {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .result-box h3 {
+            color: #2c5aa0;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        .formula-display {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+        .formula-display .result {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #2c5aa0;
+        }
+        .comparison-box {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .comparison-box strong {
+            color: #b35c00;
+        }
+        .info-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 10px;
+        }
+        /* ISO 80000: Formelzeichen kursiv+Serif, Einheiten aufrecht+Sans */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: sans-serif; font-style: normal; }
+        @media (max-width: 700px) {
+            .simulation-area {
+                flex-direction: column;
+            }
+            .sim-controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Simulation: Gewichtskraft <span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span></h1>
+        </header>
+
+        <div class="simulation-area">
+            <div class="sim-canvas-container">
+                <canvas id="simCanvas" width="350" height="450"></canvas>
+            </div>
+
+            <div class="sim-controls">
+                <div class="control-group">
+                    <label>Masse wählen:</label>
+                    <input type="range" id="massSlider" min="1" max="10" step="0.5" value="5">
+                    <div class="control-value" id="massDisplay">5,0 kg</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Himmelskörper:</label>
+                    <div class="planet-buttons">
+                        <button class="planet-btn active" data-planet="erde" data-g="10">
+                            Erde<small><span class="fz">g</span> = 10 <span class="einheit">N/kg</span></small>
+                        </button>
+                        <button class="planet-btn" data-planet="mond" data-g="1.6">
+                            Mond<small><span class="fz">g</span> = 1,6 <span class="einheit">N/kg</span></small>
+                        </button>
+                        <button class="planet-btn" data-planet="mars" data-g="4">
+                            Mars<small><span class="fz">g</span> = 4 <span class="einheit">N/kg</span></small>
+                        </button>
+                        <button class="planet-btn" data-planet="jupiter" data-g="25">
+                            Jupiter<small><span class="fz">g</span> = 25 <span class="einheit">N/kg</span></small>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="result-box">
+                    <h3>Berechnung:</h3>
+                    <div class="formula-display">
+                        <span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span>
+                    </div>
+                    <div class="formula-display">
+                        <span class="fz">F</span><sub>G</sub> = <span id="calcMass">5</span> <span class="einheit">kg</span> · <span id="calcG">10</span> <span class="einheit">N/kg</span>
+                    </div>
+                    <div class="formula-display">
+                        <span class="fz">F</span><sub>G</sub> = <span class="result" id="resultFG">50 <span class="einheit">N</span></span>
+                    </div>
+                </div>
+
+                <div class="comparison-box" id="comparisonBox" style="display: none;">
+                    <strong>Vergleich:</strong>
+                    <div id="comparisonText"></div>
+                </div>
+
+                <div class="info-text">
+                    Die Feder dehnt sich proportional zur Gewichtskraft. Beobachte, wie sich die Auslenkung ändert!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // SIMULATION: Federkraftmesser (ES5)
+        // ============================================================
+
+        var canvas = document.getElementById('simCanvas');
+        var ctx = canvas.getContext('2d');
+
+        // Zustand
+        var currentMass = 5;
+        var currentG = 10;
+        var currentPlanet = 'erde';
+        var animatedStretch = 0;
+        var targetStretch = 0;
+
+        // Konstanten
+        var SPRING_TOP = 50;
+        var SPRING_X = 175;
+        var MAX_STRETCH = 200;
+        var SCALE_FACTOR = MAX_STRETCH / 250; // 250N = maximale Dehnung
+
+        // Farben
+        var COLORS = {
+            spring: '#2c5aa0',
+            mass: '#b35c00',
+            arrow: '#c62828',
+            text: '#222',
+            scale: '#666'
+        };
+
+        // ============================================================
+        // ZEICHENFUNKTIONEN
+        // ============================================================
+
+        function drawSpring(x, y1, y2, coils) {
+            ctx.beginPath();
+            ctx.strokeStyle = COLORS.spring;
+            ctx.lineWidth = 3;
+
+            var height = y2 - y1;
+            var coilHeight = height / coils;
+            var amplitude = 12;
+
+            ctx.moveTo(x, y1);
+
+            for (var i = 0; i < coils; i++) {
+                var segY = y1 + i * coilHeight;
+                ctx.lineTo(x - amplitude, segY + coilHeight * 0.25);
+                ctx.lineTo(x + amplitude, segY + coilHeight * 0.75);
+            }
+            ctx.lineTo(x, y2);
+            ctx.stroke();
+        }
+
+        function drawMass(x, y, mass) {
+            var width = 60 + mass * 3;
+            var height = 40 + mass * 2;
+
+            // Schatten
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            ctx.fillRect(x - width/2 + 3, y + 3, width, height);
+
+            // Masse
+            ctx.fillStyle = COLORS.mass;
+            ctx.fillRect(x - width/2, y, width, height);
+
+            // Beschriftung
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(formatNumber(mass) + ' kg', x, y + height/2);
+        }
+
+        function drawForceArrow(x, y, force) {
+            var arrowLength = Math.min(force * 0.4, 120);
+            if (arrowLength < 10) return;
+
+            var y2 = y + arrowLength;
+
+            ctx.beginPath();
+            ctx.strokeStyle = COLORS.arrow;
+            ctx.lineWidth = 4;
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y2);
+            ctx.stroke();
+
+            // Pfeilspitze
+            ctx.beginPath();
+            ctx.fillStyle = COLORS.arrow;
+            ctx.moveTo(x, y2 + 10);
+            ctx.lineTo(x - 8, y2);
+            ctx.lineTo(x + 8, y2);
+            ctx.closePath();
+            ctx.fill();
+
+            // Beschriftung
+            ctx.fillStyle = COLORS.arrow;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('F_G = ' + formatNumber(force) + ' N', x + 15, y + arrowLength/2);
+        }
+
+        function drawScale() {
+            var x = 50;
+            var y1 = SPRING_TOP + 50;
+            var y2 = y1 + MAX_STRETCH;
+
+            // Skala-Linie
+            ctx.beginPath();
+            ctx.strokeStyle = COLORS.scale;
+            ctx.lineWidth = 1;
+            ctx.moveTo(x, y1);
+            ctx.lineTo(x, y2);
+            ctx.stroke();
+
+            // Markierungen
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillStyle = COLORS.scale;
+
+            var maxForce = 250;
+            for (var f = 0; f <= maxForce; f += 50) {
+                var yPos = y1 + (f / maxForce) * MAX_STRETCH;
+                ctx.beginPath();
+                ctx.moveTo(x - 5, yPos);
+                ctx.lineTo(x + 5, yPos);
+                ctx.stroke();
+                ctx.fillText(f + ' N', x - 8, yPos + 4);
+            }
+        }
+
+        function drawHook() {
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 4;
+
+            // Halterung oben
+            ctx.fillStyle = '#444';
+            ctx.fillRect(SPRING_X - 30, 20, 60, 10);
+
+            // Haken (Bogen)
+            ctx.beginPath();
+            ctx.arc(SPRING_X, 40, 10, Math.PI, 0);
+            ctx.stroke();
+
+            // Verbindungslinie zur Feder
+            ctx.beginPath();
+            ctx.moveTo(SPRING_X, 50);
+            ctx.lineTo(SPRING_X, 58);
+            ctx.stroke();
+        }
+
+        function drawPlanetLabel() {
+            var labels = {
+                erde: 'Erde',
+                mond: 'Mond',
+                mars: 'Mars',
+                jupiter: 'Jupiter'
+            };
+
+            ctx.fillStyle = '#2c5aa0';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(labels[currentPlanet], canvas.width - 20, 35);
+
+            ctx.fillStyle = '#666';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('g = ' + formatNumber(currentG) + ' N/kg', canvas.width - 20, 55);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Hintergrund-Gradient (je nach Planet)
+            var gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            if (currentPlanet === 'mond') {
+                gradient.addColorStop(0, '#424242');
+                gradient.addColorStop(1, '#757575');
+            } else if (currentPlanet === 'mars') {
+                gradient.addColorStop(0, '#d84315');
+                gradient.addColorStop(1, '#bf360c');
+            } else if (currentPlanet === 'jupiter') {
+                gradient.addColorStop(0, '#f57c00');
+                gradient.addColorStop(1, '#e65100');
+            } else {
+                gradient.addColorStop(0, '#e3f2fd');
+                gradient.addColorStop(1, '#bbdefb');
+            }
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Skala
+            drawScale();
+
+            // Halterung
+            drawHook();
+
+            // Feder (startet an der Verbindungslinie bei y=55)
+            var springStart = SPRING_TOP + 5;
+            var springBottom = springStart + 50 + animatedStretch;
+            drawSpring(SPRING_X, springStart, springBottom, 8);
+
+            // Masse
+            var massY = springBottom + 5;
+            var massHeight = 40 + currentMass * 2;
+            drawMass(SPRING_X, massY, currentMass);
+
+            // Kraftpfeil
+            var force = currentMass * currentG;
+            drawForceArrow(SPRING_X, massY + massHeight + 5, force);
+
+            // Planeten-Label
+            drawPlanetLabel();
+        }
+
+        // ============================================================
+        // ANIMATION
+        // ============================================================
+
+        function animate() {
+            var diff = targetStretch - animatedStretch;
+            if (Math.abs(diff) > 0.5) {
+                animatedStretch += diff * 0.1;
+            } else {
+                animatedStretch = targetStretch;
+            }
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        function updateSimulation() {
+            var force = currentMass * currentG;
+            targetStretch = force * SCALE_FACTOR;
+
+            // UI aktualisieren (mit ISO 80000 Einheiten-Markup)
+            document.getElementById('massDisplay').innerHTML = formatNumber(currentMass) + ' <span class="einheit">kg</span>';
+            document.getElementById('calcMass').textContent = formatNumber(currentMass);
+            document.getElementById('calcG').textContent = formatNumber(currentG);
+            document.getElementById('resultFG').innerHTML = formatNumber(force) + ' <span class="einheit">N</span>';
+
+            // Vergleich anzeigen wenn nicht Erde
+            var compBox = document.getElementById('comparisonBox');
+            if (currentPlanet !== 'erde') {
+                var erdeForce = currentMass * 10;
+                var ratio = (force / erdeForce * 100).toFixed(0);
+                var text = '';
+                if (currentPlanet === 'mond') {
+                    text = 'Auf dem Mond nur ' + ratio + '% der Gewichtskraft auf der Erde!';
+                } else if (currentPlanet === 'mars') {
+                    text = 'Auf dem Mars ' + ratio + '% der Gewichtskraft auf der Erde.';
+                } else if (currentPlanet === 'jupiter') {
+                    text = 'Auf dem Jupiter ' + ratio + '% – du wärst viel schwerer!';
+                }
+                document.getElementById('comparisonText').textContent = text;
+                compBox.style.display = 'block';
+            } else {
+                compBox.style.display = 'none';
+            }
+        }
+
+        function formatNumber(n) {
+            return String(n).replace('.', ',');
+        }
+
+        // ============================================================
+        // EVENT HANDLER
+        // ============================================================
+
+        document.getElementById('massSlider').addEventListener('input', function() {
+            currentMass = parseFloat(this.value);
+            updateSimulation();
+        });
+
+        var planetBtns = document.querySelectorAll('.planet-btn');
+        for (var i = 0; i < planetBtns.length; i++) {
+            planetBtns[i].addEventListener('click', function() {
+                for (var j = 0; j < planetBtns.length; j++) {
+                    planetBtns[j].classList.remove('active');
+                }
+                this.classList.add('active');
+                currentPlanet = this.getAttribute('data-planet');
+                currentG = parseFloat(this.getAttribute('data-g'));
+                updateSimulation();
+            });
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        updateSimulation();
+        animate();
+    </script>
+</body>
+</html>

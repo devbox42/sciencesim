@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Die Gewichtskraft</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            font-size: 16px;
+            color: #222;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            color: #2c5aa0;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        header .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            background: #2c5aa0;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .step-indicators {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .step-dot {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: 600;
+            border: 2px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #555;
+        }
+        .step-dot:hover { border-color: #2c5aa0; }
+        .step-dot.completed {
+            background: #2a7a4b;
+            border-color: #2a7a4b;
+            color: #fff;
+        }
+        .step-dot.current {
+            border-color: #2c5aa0;
+            border-width: 3px;
+            color: #2c5aa0;
+        }
+        .step {
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+        .step-header {
+            background: #2c5aa0;
+            color: #fff;
+            padding: 10px 15px;
+            font-weight: 600;
+        }
+        .step-content { padding: 20px; }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .info-box strong { color: #2c5aa0; }
+        .warning-box {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .warning-box strong { color: #b35c00; }
+        .hefter-hinweis {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 15px;
+            margin: 20px 0;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .exercise {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .exercise-title {
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px 5px 5px 0;
+        }
+        .btn:hover { background: #1e4a8a; }
+        .btn-success { background: #2a7a4b; }
+        .btn-success:hover { background: #1e5a35; }
+        .btn-secondary { background: #666; }
+        .btn-secondary:hover { background: #444; }
+        .nav-buttons {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .feedback {
+            padding: 10px 15px;
+            margin: 10px 0;
+            display: none;
+        }
+        .feedback.correct {
+            background: #e8f5e9;
+            border: 1px solid #2a7a4b;
+            color: #1b5e20;
+            display: block;
+        }
+        .feedback.incorrect {
+            background: #ffebee;
+            border: 1px solid #c62828;
+            color: #b71c1c;
+            display: block;
+        }
+        input[type="number"], input[type="text"] {
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            width: 80px;
+            margin: 0 5px;
+        }
+        select {
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            min-width: 150px;
+        }
+        .formula-box {
+            background: #f0f4f8;
+            border-left: 4px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        .formula-box .big {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+        .example-box {
+            background: #fff;
+            border: 1px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .example-box h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        ul, ol { margin-left: 20px; margin-top: 10px; }
+        li { margin: 5px 0; }
+        table {
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: center;
+        }
+        table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        .inline-input {
+            display: inline-block;
+            width: 70px;
+            text-align: center;
+        }
+        .calc-row {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+        }
+        /* ISO 80000: Formelzeichen kursiv+Serif, Einheiten aufrecht+Sans */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: sans-serif; font-style: normal; }
+
+        /* Simulation Embed mit Vollbild */
+        .sim-container {
+            position: relative;
+            background: #fff;
+            border: 2px solid #2c5aa0;
+            margin: 15px 0;
+        }
+        .sim-header {
+            background: #2c5aa0;
+            color: #fff;
+            padding: 8px 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sim-frame {
+            width: 100%;
+            height: 450px;
+            border: none;
+        }
+        .btn-fullscreen {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.5);
+            color: #fff;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .btn-fullscreen:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .sim-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            margin: 0;
+            border: none;
+        }
+        .sim-container.fullscreen .sim-frame {
+            height: calc(100vh - 40px);
+        }
+        .sim-container.fullscreen .sim-header {
+            padding: 8px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lernpfad: Die Gewichtskraft</h1>
+            <div class="meta">Physik Klasse 7 | <span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="step-indicators" id="stepIndicators"></div>
+        </header>
+
+        <!-- ========== SCHRITT 1: Einstieg mit Rätsel ========== -->
+        <div class="step active" id="step1">
+            <div class="step-header">Schritt 1: Das Mond-Rätsel</div>
+            <div class="step-content">
+                <div class="info-box" style="background: #fff3e0; border-color: #b35c00;">
+                    <strong style="color: #b35c00; font-size: 1.1em;">Rätsel:</strong><br>
+                    Ein Astronaut mit Anzug wiegt auf der Erde 1000 N. Auf dem Mond zeigt die Waage nur noch 160 N an.<br>
+                    <strong>Warum ist er plötzlich so leicht?</strong>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Was denkst du?</div>
+                    <div style="margin: 10px 0;">
+                        <label style="display: block; margin: 5px 0;">
+                            <input type="radio" name="q1" value="a"> Der Astronaut hat auf dem Mond weniger Masse
+                        </label>
+                        <label style="display: block; margin: 5px 0;">
+                            <input type="radio" name="q1" value="b"> Der Mond zieht schwächer an als die Erde
+                        </label>
+                        <label style="display: block; margin: 5px 0;">
+                            <input type="radio" name="q1" value="c"> Im Weltall gibt es keine Schwerkraft
+                        </label>
+                    </div>
+                    <button class="btn" onclick="checkStep1()">Prüfen</button>
+                    <div class="feedback" id="feedback1"></div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Die Antwort:</strong> Die Erde <strong>zieht</strong> alle Körper an – der Mond auch, aber <strong>schwächer</strong>! Diese Anziehungskraft nennen wir <strong>Gewichtskraft</strong>.
+                </div>
+
+                <p>Die Gewichtskraft...</p>
+                <ul>
+                    <li>wirkt immer <strong>nach unten</strong> (zum Mittelpunkt des Himmelskörpers)</li>
+                    <li>hängt von der <strong>Masse</strong> des Körpers ab</li>
+                    <li>ist auf verschiedenen Himmelskörpern <strong>unterschiedlich</strong></li>
+                </ul>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-success" onclick="nextStep(2)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 2: Die Formel ========== -->
+        <div class="step" id="step2">
+            <div class="step-header">Schritt 2: Die Formel für die Gewichtskraft</div>
+            <div class="step-content">
+                <p>Je mehr <strong>Masse</strong> ein Körper hat, desto stärker wird er angezogen.</p>
+
+                <div class="formula-box">
+                    <span class="big"><span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span></span>
+                    <div style="margin-top: 15px; font-size: 0.85em;">
+                        <table style="margin: 0 auto;">
+                            <tr>
+                                <td><span class="fz">F</span><sub>G</sub></td>
+                                <td>=</td>
+                                <td>Gewichtskraft in Newton (<span class="einheit">N</span>)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="fz">m</span></td>
+                                <td>=</td>
+                                <td>Masse in Kilogramm (<span class="einheit">kg</span>)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="fz">g</span></td>
+                                <td>=</td>
+                                <td>Ortsfaktor in <span class="einheit">N/kg</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Auf der Erde gilt:</strong><br>
+                    <span style="font-size: 1.3em; font-weight: 600;"><span class="fz">g</span> = 10 <span class="einheit">N/kg</span></span><br>
+                    <small>(Genauer wäre 9,81 <span class="einheit">N/kg</span> – aber wir rechnen kopfrechenbar!)</small>
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel:</h4>
+                    <p>Ein Buch hat die Masse <span class="fz">m</span> = 2 <span class="einheit">kg</span>. Wie groß ist seine Gewichtskraft?</p>
+                    <p style="margin-top: 10px;">
+                        <span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span> = 2 <span class="einheit">kg</span> · 10 <span class="einheit">N/kg</span> = <strong>20 <span class="einheit">N</span></strong>
+                    </p>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Merksatz-Kasten:</strong> Fülle die Lücken aus:
+                    <ul>
+                        <li>Die Gewichtskraft ist die Kraft, mit der die Erde einen Körper <strong>anzieht</strong></li>
+                        <li><span class="fz">F</span><sub>G</sub> in <strong><span class="einheit">N</span></strong>, <span class="fz">m</span> in <strong><span class="einheit">kg</span></strong>, <span class="fz">g</span> in <strong><span class="einheit">N/kg</span></strong></li>
+                    </ul>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(1)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(3)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 3: Einfache Berechnungen ========== -->
+        <div class="step" id="step3">
+            <div class="step-header">Schritt 3: Gewichtskraft berechnen</div>
+            <div class="step-content">
+                <p>Jetzt übst du das Rechnen mit der Formel. Denke daran: <strong><span class="fz">g</span> = 10 <span class="einheit">N/kg</span></strong></p>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 2: Berechne <span class="fz">F</span><sub>G</sub></div>
+
+                    <div class="calc-row">
+                        <p><strong>a)</strong> <span class="fz">m</span> = 5 <span class="einheit">kg</span></p>
+                        <p><span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span> = 5 <span class="einheit">kg</span> · 10 <span class="einheit">N/kg</span> =
+                            <input type="number" id="q3a" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <div class="calc-row">
+                        <p><strong>b)</strong> <span class="fz">m</span> = 8 <span class="einheit">kg</span></p>
+                        <p><span class="fz">F</span><sub>G</sub> =
+                            <input type="number" id="q3b" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="checkStep3()">Prüfen</button>
+                    <div class="feedback" id="feedback3"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 1:</strong> Berechne die Gewichtskraft für alle drei Massen.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(2)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(4)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 4: Faustformel ========== -->
+        <div class="step" id="step4">
+            <div class="step-header">Schritt 4: Die Faustformel 100 g = 1 N</div>
+            <div class="step-content">
+                <p>Für kleine Massen gibt es eine praktische <strong>Faustformel</strong>:</p>
+
+                <div class="formula-box">
+                    <span class="big">100 <span class="einheit">g</span> ≙ 1 <span class="einheit">N</span></span>
+                    <p style="margin-top: 10px;">100 Gramm entsprechen etwa 1 Newton Gewichtskraft.</p>
+                </div>
+
+                <div class="example-box">
+                    <h4>Warum stimmt das?</h4>
+                    <p>100 <span class="einheit">g</span> = 0,1 <span class="einheit">kg</span></p>
+                    <p><span class="fz">F</span><sub>G</sub> = 0,1 <span class="einheit">kg</span> · 10 <span class="einheit">N/kg</span> = <strong>1 <span class="einheit">N</span></strong> ✓</p>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 3: Mit der Faustformel rechnen</div>
+
+                    <div class="calc-row">
+                        <p><strong>a)</strong> <span class="fz">m</span> = 200 <span class="einheit">g</span> → <span class="fz">F</span><sub>G</sub> =
+                            <input type="number" id="q4a" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <div class="calc-row">
+                        <p><strong>b)</strong> <span class="fz">m</span> = 500 <span class="einheit">g</span> → <span class="fz">F</span><sub>G</sub> =
+                            <input type="number" id="q4b" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <div class="calc-row">
+                        <p><strong>c)</strong> <span class="fz">m</span> = 1 <span class="einheit">kg</span> = 1000 <span class="einheit">g</span> → <span class="fz">F</span><sub>G</sub> =
+                            <input type="number" id="q4c" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="checkStep4()">Prüfen</button>
+                    <div class="feedback" id="feedback4"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 2:</strong> Rechne Gramm in Newton um.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(3)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(5)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 5: Dezimalzahlen ========== -->
+        <div class="step" id="step5">
+            <div class="step-header">Schritt 5: Mit Dezimalzahlen rechnen</div>
+            <div class="step-content">
+                <p>Jetzt wird es etwas schwieriger: Die Masse ist eine <strong>Dezimalzahl</strong>.</p>
+
+                <div class="warning-box">
+                    <strong>Achtung:</strong> Wenn die Masse in Gramm angegeben ist, musst du erst in <span class="einheit">kg</span> umrechnen!<br>
+                    750 <span class="einheit">g</span> = 0,75 <span class="einheit">kg</span>
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel: <span class="fz">m</span> = 2,5 <span class="einheit">kg</span></h4>
+                    <p><span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span> = 2,5 <span class="einheit">kg</span> · 10 <span class="einheit">N/kg</span> = <strong>25 <span class="einheit">N</span></strong></p>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 4: Dezimalzahlen</div>
+
+                    <div class="calc-row">
+                        <p><strong>a)</strong> <span class="fz">m</span> = 2,5 <span class="einheit">kg</span> → <span class="fz">F</span><sub>G</sub> =
+                            <input type="number" id="q5a" class="inline-input" step="0.1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <div class="calc-row">
+                        <p><strong>b)</strong> <span class="fz">m</span> = 0,4 <span class="einheit">kg</span> → <span class="fz">F</span><sub>G</sub> =
+                            <input type="number" id="q5b" class="inline-input" step="0.1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="checkStep5()">Prüfen</button>
+                    <div class="feedback" id="feedback5"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 3:</strong> Berechne <span class="fz">F</span><sub>G</sub> für Dezimalzahlen.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(4)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(6)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 6: Formel umstellen ========== -->
+        <div class="step" id="step6">
+            <div class="step-header">Schritt 6: Masse berechnen</div>
+            <div class="step-content">
+                <p>Manchmal kennst du die Gewichtskraft und möchtest die <strong>Masse</strong> berechnen.</p>
+
+                <div class="formula-box">
+                    <p>Formel umstellen:</p>
+                    <span class="big"><span class="fz">m</span> = <span class="fz">F</span><sub>G</sub> / <span class="fz">g</span></span>
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel: <span class="fz">F</span><sub>G</sub> = 60 <span class="einheit">N</span></h4>
+                    <p><span class="fz">m</span> = <span class="fz">F</span><sub>G</sub> / <span class="fz">g</span> = 60 <span class="einheit">N</span> / 10 <span class="einheit">N/kg</span> = <strong>6 <span class="einheit">kg</span></strong></p>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 5: Masse berechnen</div>
+
+                    <div class="calc-row">
+                        <p><strong>a)</strong> <span class="fz">F</span><sub>G</sub> = 40 <span class="einheit">N</span> → <span class="fz">m</span> = <span class="fz">F</span><sub>G</sub> / <span class="fz">g</span> = 40 <span class="einheit">N</span> / 10 <span class="einheit">N/kg</span> =
+                            <input type="number" id="q6a" class="inline-input" step="1"> <span class="einheit">kg</span>
+                        </p>
+                    </div>
+
+                    <div class="calc-row">
+                        <p><strong>b)</strong> <span class="fz">F</span><sub>G</sub> = 150 <span class="einheit">N</span> → <span class="fz">m</span> =
+                            <input type="number" id="q6b" class="inline-input" step="1"> <span class="einheit">kg</span>
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="checkStep6()">Prüfen</button>
+                    <div class="feedback" id="feedback6"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 4:</strong> Berechne die Masse aus der Gewichtskraft.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(5)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(7)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 7: Ortsabhängigkeit mit Simulation ========== -->
+        <div class="step" id="step7">
+            <div class="step-header">Schritt 7: Gewichtskraft auf anderen Himmelskörpern</div>
+            <div class="step-content">
+                <p>Der <strong>Ortsfaktor <span class="fz">g</span></strong> ist nicht überall gleich! Auf dem Mond ist er viel kleiner.</p>
+
+                <!-- SIMULATION EINGEBETTET -->
+                <div class="sim-container" id="simContainer">
+                    <div class="sim-header">
+                        <span>Simulation: Federkraftmesser auf verschiedenen Himmelskörpern</span>
+                        <button class="btn-fullscreen" onclick="toggleFullscreen()">
+                            <span id="fullscreenText">Vollbild</span>
+                        </button>
+                    </div>
+                    <iframe class="sim-frame" src="SIM-03-gewichtskraft.html"></iframe>
+                </div>
+
+                <div class="info-box">
+                    <strong>Experimentiere mit der Simulation:</strong>
+                    <ol style="margin-left: 20px; margin-top: 8px;">
+                        <li>Stelle die Masse auf <strong>8 <span class="einheit">kg</span></strong></li>
+                        <li>Wechsle zwischen den Planeten und beobachte die Feder</li>
+                        <li>Notiere: Wo ist die Gewichtskraft am größten?</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <strong>Ortsfaktoren verschiedener Himmelskörper:</strong>
+                    <table style="margin-top: 10px;">
+                        <tr><th>Ort</th><th><span class="fz">g</span> in <span class="einheit">N/kg</span></th></tr>
+                        <tr><td>Erde</td><td>10</td></tr>
+                        <tr><td>Mond</td><td>1,6</td></tr>
+                        <tr><td>Mars</td><td>4</td></tr>
+                    </table>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Wichtig:</strong> Die <strong>Masse</strong> bleibt überall gleich!<br>
+                    Nur die <strong>Gewichtskraft</strong> ändert sich je nach Ort.
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 6: Ein Astronaut mit Anzug (<span class="fz">m</span> = 100 <span class="einheit">kg</span>)</div>
+
+                    <div class="calc-row">
+                        <p><strong>a)</strong> Auf der Erde (<span class="fz">g</span> = 10 <span class="einheit">N/kg</span>):</p>
+                        <p><span class="fz">F</span><sub>G</sub> = 100 <span class="einheit">kg</span> · 10 <span class="einheit">N/kg</span> =
+                            <input type="number" id="q7a" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <div class="calc-row">
+                        <p><strong>b)</strong> Auf dem Mond (<span class="fz">g</span> = 1,6 <span class="einheit">N/kg</span>):</p>
+                        <p><span class="fz">F</span><sub>G</sub> = 100 <span class="einheit">kg</span> · 1,6 <span class="einheit">N/kg</span> =
+                            <input type="number" id="q7b" class="inline-input" step="1"> <span class="einheit">N</span>
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="checkStep7()">Prüfen</button>
+                    <div class="feedback" id="feedback7"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 5:</strong> Berechne die Gewichtskraft auf verschiedenen Himmelskörpern.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(6)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(8)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 8: Zusammenfassung ========== -->
+        <div class="step" id="step8">
+            <div class="step-header">Schritt 8: Zusammenfassung</div>
+            <div class="step-content">
+                <div class="info-box">
+                    <strong>Das hast du gelernt:</strong>
+                    <ul>
+                        <li><strong>Gewichtskraft:</strong> Die Kraft, mit der die Erde einen Körper anzieht</li>
+                        <li><strong>Formel:</strong> <span class="fz">F</span><sub>G</sub> = <span class="fz">m</span> · <span class="fz">g</span></li>
+                        <li><strong>Ortsfaktor Erde:</strong> <span class="fz">g</span> = 10 <span class="einheit">N/kg</span></li>
+                        <li><strong>Faustformel:</strong> 100 <span class="einheit">g</span> ≙ 1 <span class="einheit">N</span></li>
+                        <li><strong>Umstellen:</strong> <span class="fz">m</span> = <span class="fz">F</span><sub>G</sub> / <span class="fz">g</span></li>
+                        <li><strong>Ortsabhängigkeit:</strong> <span class="fz">g</span> ist auf anderen Himmelskörpern anders</li>
+                    </ul>
+                </div>
+
+                <div class="info-box" style="background: #e8f5e9; border-color: #2a7a4b;">
+                    <strong>Geschafft!</strong><br>
+                    Du hast den Lernpfad abgeschlossen. Prüfe, ob dein Arbeitsblatt vollständig ist.<br><br>
+                    <strong>→ Jetzt: Stundenleistung (MT-03)</strong>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 6:</strong> Beantworte die Fragen zu Masse und Gewicht.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(7)">← Zurück</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // LERNPFAD LOGIK (ES5)
+        // ============================================================
+
+        var totalSteps = 8;
+        var currentStep = 1;
+        var visitedSteps = [];
+        var STORAGE_KEY = 'lp-physik-kl7-03-gewichtskraft';
+
+        function parseNumber(val) {
+            if (val === '' || val === null) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        function updateProgress() {
+            var percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function generateStepIndicators() {
+            var container = document.getElementById('stepIndicators');
+            container.innerHTML = '';
+            for (var i = 1; i <= totalSteps; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'step-dot';
+                if (i === currentStep) dot.classList.add('current');
+                if (visitedSteps.indexOf(i) !== -1) dot.classList.add('completed');
+                dot.textContent = i;
+                dot.setAttribute('data-step', i);
+                dot.onclick = function() {
+                    var stepIndex = parseInt(this.getAttribute('data-step'));
+                    showStep(stepIndex);
+                };
+                container.appendChild(dot);
+            }
+        }
+
+        function updateStepIndicators() {
+            var dots = document.querySelectorAll('.step-dot');
+            for (var i = 0; i < dots.length; i++) {
+                var stepNum = i + 1;
+                dots[i].classList.remove('current');
+                if (stepNum === currentStep) dots[i].classList.add('current');
+                if (visitedSteps.indexOf(stepNum) !== -1) dots[i].classList.add('completed');
+            }
+        }
+
+        function showStep(n) {
+            if (visitedSteps.indexOf(currentStep) === -1) {
+                visitedSteps.push(currentStep);
+            }
+            for (var i = 1; i <= totalSteps; i++) {
+                var step = document.getElementById('step' + i);
+                if (step) step.classList.remove('active');
+            }
+            var targetStep = document.getElementById('step' + n);
+            if (targetStep) {
+                targetStep.classList.add('active');
+                currentStep = n;
+                updateProgress();
+                updateStepIndicators();
+                saveProgress();
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function nextStep(n) { showStep(n); }
+        function prevStep(n) { showStep(n); }
+
+        // ============================================================
+        // ÜBUNGEN PRÜFEN
+        // ============================================================
+
+        function checkStep1() {
+            var selected = document.querySelector('input[name="q1"]:checked');
+            var feedback = document.getElementById('feedback1');
+            if (!selected) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = 'Bitte wähle eine Antwort aus.';
+                return;
+            }
+            if (selected.value === 'b') {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! Der Mond hat weniger Masse als die Erde und zieht daher schwächer an. Die Masse des Astronauten bleibt gleich!';
+            } else if (selected.value === 'a') {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Nicht ganz. Die Masse bleibt immer gleich – sie ist eine Stoffeigenschaft. Nur die Anziehungskraft ändert sich!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Auf dem Mond gibt es Schwerkraft, nur schwächer als auf der Erde.';
+            }
+        }
+
+        function checkStep3() {
+            var a = parseNumber(document.getElementById('q3a').value);
+            var b = parseNumber(document.getElementById('q3b').value);
+            var feedback = document.getElementById('feedback3');
+            var correct = 0;
+            if (a === 50) correct++;
+            if (b === 80) correct++;
+
+            if (correct === 2) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Beide richtig! 5·10=50, 8·10=80';
+            } else if (correct > 0) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ ' + correct + ' von 2 richtig. Rechne: m · 10 = F_G';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Denke daran: F_G = m · g = m · 10 N/kg';
+            }
+        }
+
+        function checkStep4() {
+            var a = parseNumber(document.getElementById('q4a').value);
+            var b = parseNumber(document.getElementById('q4b').value);
+            var c = parseNumber(document.getElementById('q4c').value);
+            var feedback = document.getElementById('feedback4');
+            var correct = 0;
+            if (a === 2) correct++;
+            if (b === 5) correct++;
+            if (c === 10) correct++;
+
+            if (correct === 3) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Perfekt! 200g=2N, 500g=5N, 1000g=10N';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ ' + correct + ' von 3 richtig. Teile die Gramm durch 100!';
+            }
+        }
+
+        function checkStep5() {
+            var a = parseNumber(document.getElementById('q5a').value);
+            var b = parseNumber(document.getElementById('q5b').value);
+            var feedback = document.getElementById('feedback5');
+            var correct = 0;
+            if (a === 25) correct++;
+            if (b === 4) correct++;
+
+            if (correct === 2) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Beide richtig! 2,5·10=25 und 0,4·10=4';
+            } else if (correct > 0) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ ' + correct + ' von 2 richtig. Multipliziere mit 10!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Rechne: Masse · 10 = Gewichtskraft';
+            }
+        }
+
+        function checkStep6() {
+            var a = parseNumber(document.getElementById('q6a').value);
+            var b = parseNumber(document.getElementById('q6b').value);
+            var feedback = document.getElementById('feedback6');
+            var correct = 0;
+            if (a === 4) correct++;
+            if (b === 15) correct++;
+
+            if (correct === 2) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! m = F_G / g funktioniert!';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ ' + correct + ' von 2 richtig. Teile F_G durch 10!';
+            }
+        }
+
+        function checkStep7() {
+            var a = parseNumber(document.getElementById('q7a').value);
+            var b = parseNumber(document.getElementById('q7b').value);
+            var feedback = document.getElementById('feedback7');
+            var correct = 0;
+            if (a === 1000) correct++;
+            if (b === 160) correct++;
+
+            if (correct === 2) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Super! Auf der Erde 1000 N, auf dem Mond nur 160 N!';
+            } else if (correct > 0) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ ' + correct + ' von 2 richtig. Rechne: 100 · g für jeden Ort.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Rechne: 100 kg · g = F_G';
+            }
+        }
+
+        // ============================================================
+        // PERSISTENZ
+        // ============================================================
+
+        function saveProgress() {
+            try {
+                localStorage.setItem(STORAGE_KEY + '-step', currentStep);
+                localStorage.setItem(STORAGE_KEY + '-visited', JSON.stringify(visitedSteps));
+                var inputs = document.querySelectorAll('input, select');
+                for (var i = 0; i < inputs.length; i++) {
+                    var el = inputs[i];
+                    if (el.id) {
+                        if (el.type === 'radio') {
+                            if (el.checked) localStorage.setItem(STORAGE_KEY + '-' + el.name, el.value);
+                        } else {
+                            localStorage.setItem(STORAGE_KEY + '-' + el.id, el.value);
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function loadProgress() {
+            try {
+                var savedVisited = localStorage.getItem(STORAGE_KEY + '-visited');
+                if (savedVisited) visitedSteps = JSON.parse(savedVisited);
+                var savedStep = localStorage.getItem(STORAGE_KEY + '-step');
+                if (savedStep) currentStep = parseInt(savedStep);
+
+                var inputs = document.querySelectorAll('input, select');
+                for (var i = 0; i < inputs.length; i++) {
+                    var el = inputs[i];
+                    if (el.type === 'radio') {
+                        var saved = localStorage.getItem(STORAGE_KEY + '-' + el.name);
+                        if (saved && el.value === saved) el.checked = true;
+                    } else if (el.id) {
+                        var saved = localStorage.getItem(STORAGE_KEY + '-' + el.id);
+                        if (saved) el.value = saved;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        document.addEventListener('change', saveProgress);
+
+        // ============================================================
+        // SIMULATION VOLLBILD TOGGLE
+        // ============================================================
+
+        function toggleFullscreen() {
+            var container = document.getElementById('simContainer');
+            var text = document.getElementById('fullscreenText');
+            if (container.classList.contains('fullscreen')) {
+                container.classList.remove('fullscreen');
+                text.textContent = 'Vollbild';
+                document.body.style.overflow = '';
+            } else {
+                container.classList.add('fullscreen');
+                text.textContent = 'Zurück';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // ESC-Taste zum Beenden des Vollbilds
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var container = document.getElementById('simContainer');
+                if (container && container.classList.contains('fullscreen')) {
+                    toggleFullscreen();
+                }
+            }
+        });
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        loadProgress();
+        generateStepIndicators();
+        updateProgress();
+
+        if (currentStep > 1) {
+            for (var i = 1; i <= totalSteps; i++) {
+                var step = document.getElementById('step' + i);
+                if (step) step.classList.remove('active');
+            }
+            var targetStep = document.getElementById('step' + currentStep);
+            if (targetStep) {
+                targetStep.classList.add('active');
+                updateStepIndicators();
+            }
+        }
+    </script>
+</body>
+</html>
