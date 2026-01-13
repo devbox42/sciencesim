@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Gleichstrommotor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 12px 15px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.2em; font-weight: 600; }
+
+        .sim-container {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        @media (max-width: 700px) {
+            .sim-container { grid-template-columns: 1fr; }
+        }
+
+        .main-view {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        .canvas-wrapper {
+            background: #fafafa;
+            border: 1px solid #eee;
+            text-align: center;
+            padding: 10px;
+        }
+        canvas { max-width: 100%; }
+
+        .sidebar {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        .sidebar h3 {
+            font-size: 0.95em;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+        .control-group label {
+            display: block;
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+        }
+        .control-value {
+            font-size: 0.8em;
+            color: #666;
+            text-align: right;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+        .btn-primary { background: #2c5aa0; color: white; }
+        .btn-primary:hover { background: #1e3d6f; }
+        .btn-secondary { background: #666; color: white; }
+        .btn-secondary:hover { background: #444; }
+        .btn-danger { background: #c62828; color: white; }
+        .btn-danger:hover { background: #8e0000; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .toggle-group {
+            margin-bottom: 15px;
+        }
+        .toggle-btn {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 5px;
+            border: 2px solid #ddd;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85em;
+            text-align: left;
+        }
+        .toggle-btn.active {
+            border-color: #2c5aa0;
+            background: #e3f2fd;
+        }
+        .toggle-btn:hover { border-color: #2c5aa0; }
+
+        .info-display {
+            background: #f5f5f5;
+            padding: 10px;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .info-label { color: #666; }
+        .info-value { font-weight: 600; }
+
+        .legend {
+            font-size: 0.8em;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border: 1px solid #999;
+        }
+
+        .explanation {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .explanation h4 {
+            color: #2c5aa0;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .step {
+            flex: 1;
+            height: 4px;
+            background: #ddd;
+        }
+        .step.active { background: #2c5aa0; }
+        .step.q1 { background: #2a7a4b; }
+        .step.q2 { background: #b35c00; }
+        .step.q3 { background: #7b1fa2; }
+        .step.q4 { background: #c62828; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Simulation: Gleichstrommotor</h1>
+    </header>
+
+    <div class="container">
+        <div class="sim-container">
+            <div class="main-view">
+                <div class="canvas-wrapper">
+                    <canvas id="motorCanvas" width="500" height="400"></canvas>
+                </div>
+
+                <div class="step-indicator" id="stepIndicator">
+                    <div class="step" id="step1"></div>
+                    <div class="step" id="step2"></div>
+                    <div class="step" id="step3"></div>
+                    <div class="step" id="step4"></div>
+                </div>
+
+                <div class="explanation" id="explanation">
+                    <h4>Position: 0°</h4>
+                    <p id="explanationText">Die Leiterschleife steht horizontal. Die Lorentzkraft wirkt auf die senkrechten Leiterabschnitte und erzeugt ein maximales Drehmoment.</p>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <h3>Steuerung</h3>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Start</button>
+                    <button class="btn btn-secondary" onclick="resetSim()">↺ Reset</button>
+                </div>
+
+                <div class="control-group">
+                    <label>Geschwindigkeit</label>
+                    <input type="range" id="speedSlider" min="1" max="10" value="3" oninput="updateSpeed()">
+                    <div class="control-value" id="speedValue">Mittel</div>
+                </div>
+
+                <h3>Einstellungen</h3>
+
+                <div class="toggle-group">
+                    <button class="toggle-btn active" id="btnPolarity" onclick="togglePolarity()">
+                        Spannung: + links / − rechts
+                    </button>
+                    <button class="toggle-btn active" id="btnMagnet" onclick="toggleMagnet()">
+                        Magnetfeld: N links / S rechts
+                    </button>
+                </div>
+
+                <div class="toggle-group">
+                    <button class="toggle-btn active" id="btnShowForce" onclick="toggleForce()">
+                        ✓ Lorentzkraft anzeigen
+                    </button>
+                    <button class="toggle-btn active" id="btnShowCurrent" onclick="toggleCurrent()">
+                        ✓ Stromrichtung anzeigen
+                    </button>
+                    <button class="toggle-btn" id="btnShowField" onclick="toggleField()">
+                        Feldlinien anzeigen
+                    </button>
+                </div>
+
+                <h3>Anzeige</h3>
+                <div class="info-display">
+                    <div class="info-row">
+                        <span class="info-label">Winkel:</span>
+                        <span class="info-value" id="angleDisplay">0°</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Drehmoment:</span>
+                        <span class="info-value" id="torqueDisplay">maximal</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Drehrichtung:</span>
+                        <span class="info-value" id="directionDisplay">→ rechts</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Kommutator:</span>
+                        <span class="info-value" id="commutatorDisplay">—</span>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#c62828"></div>
+                        <span>Kraft F / Nordpol / +</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#1565c0"></div>
+                        <span>Südpol / −</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#2e7d32"></div>
+                        <span>Magnetfeld B</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background:#b35c00"></div>
+                        <span>Strom / Spule</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation State
+        var state = {
+            angle: 0,
+            playing: false,
+            speed: 3,
+            polarityNormal: true,
+            magnetNormal: true,
+            showForce: true,
+            showCurrent: true,
+            showField: false,
+            lastCommutatorSwitch: 0
+        };
+
+        var canvas = document.getElementById('motorCanvas');
+        var ctx = canvas.getContext('2d');
+        var animationId = null;
+
+        // Colors
+        var colors = {
+            positive: '#c62828',
+            negative: '#1565c0',
+            magnetic: '#2e7d32',
+            coil: '#b35c00',
+            force: '#c62828',
+            background: '#fafafa',
+            axis: '#666666',
+            brush: '#333333',
+            commutator1: '#b35c00',
+            commutator2: '#d4a574'
+        };
+
+        // Drawing functions
+        function clear() {
+            ctx.fillStyle = colors.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawMagnets() {
+            var leftPole = state.magnetNormal ? 'N' : 'S';
+            var rightPole = state.magnetNormal ? 'S' : 'N';
+            var leftColor = state.magnetNormal ? colors.positive : colors.negative;
+            var rightColor = state.magnetNormal ? colors.negative : colors.positive;
+
+            // Left magnet
+            ctx.fillStyle = leftColor;
+            ctx.fillRect(30, 100, 40, 180);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(30, 100, 40, 180);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(leftPole, 50, 200);
+
+            // Right magnet
+            ctx.fillStyle = rightColor;
+            ctx.fillRect(430, 100, 40, 180);
+            ctx.strokeStyle = '#333';
+            ctx.strokeRect(430, 100, 40, 180);
+            ctx.fillStyle = 'white';
+            ctx.fillText(rightPole, 450, 200);
+
+            // Labels
+            ctx.fillStyle = '#666';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('Stator', 50, 90);
+            ctx.fillText('Stator', 450, 90);
+        }
+
+        function drawFieldLines() {
+            if (!state.showField) return;
+
+            ctx.strokeStyle = colors.magnetic;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            var startX = state.magnetNormal ? 75 : 425;
+            var endX = state.magnetNormal ? 425 : 75;
+
+            for (var y = 130; y <= 250; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(endX, y);
+                ctx.stroke();
+
+                // Arrow
+                var arrowX = 250;
+                var dir = state.magnetNormal ? 1 : -1;
+                ctx.beginPath();
+                ctx.moveTo(arrowX + dir * 8, y - 4);
+                ctx.lineTo(arrowX + dir * 15, y);
+                ctx.lineTo(arrowX + dir * 8, y + 4);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // B label
+            ctx.fillStyle = colors.magnetic;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('B', 250, 270);
+        }
+
+        function drawAxis() {
+            // Vertical axis
+            ctx.strokeStyle = colors.axis;
+            ctx.lineWidth = 3;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(250, 60);
+            ctx.lineTo(250, 120);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Axis knob
+            ctx.fillStyle = colors.axis;
+            ctx.beginPath();
+            ctx.arc(250, 55, 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#666';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Achse', 250, 45);
+        }
+
+        function drawCoil() {
+            var cx = 250;
+            var cy = 190;
+            var width = 140;
+            var height = 80;
+            var rad = state.angle * Math.PI / 180;
+
+            // Calculate coil corners based on rotation
+            var cos = Math.cos(rad);
+            var sin = Math.sin(rad);
+
+            // Coil appears as ellipse when viewed from side
+            var visualWidth = width * Math.abs(cos);
+            var visualHeight = height;
+
+            ctx.strokeStyle = colors.coil;
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+
+            if (Math.abs(cos) > 0.05) {
+                // Draw coil as rectangle rotated
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, visualWidth / 2, visualHeight / 2, 0, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw the "thickness" - front and back wire
+                if (visualWidth > 10) {
+                    ctx.lineWidth = 4;
+                    // Left side
+                    var leftX = cx - visualWidth / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(leftX, cy - visualHeight / 2);
+                    ctx.lineTo(leftX, cy + visualHeight / 2);
+                    ctx.stroke();
+                    // Right side
+                    var rightX = cx + visualWidth / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(rightX, cy - visualHeight / 2);
+                    ctx.lineTo(rightX, cy + visualHeight / 2);
+                    ctx.stroke();
+                }
+            } else {
+                // Edge-on view - just a line
+                ctx.beginPath();
+                ctx.moveTo(cx, cy - visualHeight / 2);
+                ctx.lineTo(cx, cy + visualHeight / 2);
+                ctx.stroke();
+            }
+
+            // Label
+            ctx.fillStyle = colors.coil;
+            ctx.font = '12px sans-serif';
+            ctx.fillText('Rotor', cx, cy + 5);
+        }
+
+        function drawCurrentArrows() {
+            if (!state.showCurrent) return;
+
+            var cx = 250;
+            var cy = 190;
+            var width = 140;
+            var height = 80;
+            var rad = state.angle * Math.PI / 180;
+            var cos = Math.cos(rad);
+            var visualWidth = width * Math.abs(cos);
+
+            if (visualWidth < 20) return;
+
+            // Determine current direction based on polarity and commutator position
+            var currentDir = getCurrentDirection();
+
+            ctx.fillStyle = colors.coil;
+            ctx.font = '16px sans-serif';
+
+            var leftX = cx - visualWidth / 2;
+            var rightX = cx + visualWidth / 2;
+
+            // Current symbols (⊙ = out of page, ⊗ = into page)
+            if (cos > 0) {
+                // Left side: current up or down?
+                ctx.fillText(currentDir > 0 ? '↑' : '↓', leftX - 15, cy);
+                ctx.fillText(currentDir > 0 ? '↓' : '↑', rightX + 10, cy);
+            } else {
+                ctx.fillText(currentDir > 0 ? '↓' : '↑', leftX - 15, cy);
+                ctx.fillText(currentDir > 0 ? '↑' : '↓', rightX + 10, cy);
+            }
+        }
+
+        function drawForceArrows() {
+            if (!state.showForce) return;
+
+            var cx = 250;
+            var cy = 190;
+            var width = 140;
+            var height = 80;
+            var rad = state.angle * Math.PI / 180;
+            var cos = Math.cos(rad);
+            var visualWidth = width * Math.abs(cos);
+
+            if (visualWidth < 20) return;
+
+            var leftX = cx - visualWidth / 2;
+            var rightX = cx + visualWidth / 2;
+
+            // Force magnitude depends on angle (max at 0°/180°, zero at 90°/270°)
+            var forceMag = Math.abs(cos) * 35;
+            if (forceMag < 5) return;
+
+            var forceDir = getForceDirection();
+
+            ctx.strokeStyle = colors.force;
+            ctx.lineWidth = 3;
+            ctx.fillStyle = colors.force;
+
+            // Left force arrow
+            var leftForceDir = forceDir;
+            drawArrow(leftX, cy, leftX + leftForceDir * forceMag, cy);
+
+            // Right force arrow (opposite)
+            drawArrow(rightX, cy, rightX - leftForceDir * forceMag, cy);
+
+            // F labels
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('F', leftX + leftForceDir * forceMag + leftForceDir * 10, cy - 5);
+            ctx.fillText('F', rightX - leftForceDir * forceMag - leftForceDir * 10, cy - 5);
+        }
+
+        function drawArrow(x1, y1, x2, y2) {
+            var headLen = 10;
+            var angle = Math.atan2(y2 - y1, x2 - x1);
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawCommutator() {
+            var cx = 250;
+            var cy = 310;
+            var radius = 25;
+            var rad = state.angle * Math.PI / 180;
+
+            // Commutator halves rotate with coil
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#333';
+
+            // First half
+            ctx.fillStyle = colors.commutator1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, rad, rad + Math.PI);
+            ctx.fill();
+            ctx.stroke();
+
+            // Second half
+            ctx.fillStyle = colors.commutator2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, rad + Math.PI, rad + Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Gap lines
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx + radius * Math.cos(rad), cy + radius * Math.sin(rad));
+            ctx.lineTo(cx - radius * 0.3 * Math.cos(rad), cy - radius * 0.3 * Math.sin(rad));
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + radius * Math.cos(rad + Math.PI), cy + radius * Math.sin(rad + Math.PI));
+            ctx.lineTo(cx - radius * 0.3 * Math.cos(rad + Math.PI), cy - radius * 0.3 * Math.sin(rad + Math.PI));
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = '#333';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Kommutator', cx, cy + radius + 15);
+        }
+
+        function drawBrushes() {
+            var cx = 250;
+            var cy = 310;
+
+            // Left brush (connected to + or -)
+            var leftColor = state.polarityNormal ? colors.positive : colors.negative;
+            var rightColor = state.polarityNormal ? colors.negative : colors.positive;
+            var leftLabel = state.polarityNormal ? '+' : '−';
+            var rightLabel = state.polarityNormal ? '−' : '+';
+
+            ctx.fillStyle = colors.brush;
+            ctx.fillRect(cx - 45, cy - 5, 12, 25);
+            ctx.fillRect(cx + 33, cy - 5, 12, 25);
+
+            // Wires to power supply
+            ctx.strokeStyle = leftColor;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx - 39, cy + 20);
+            ctx.lineTo(cx - 39, cy + 50);
+            ctx.lineTo(cx - 70, cy + 50);
+            ctx.stroke();
+
+            ctx.strokeStyle = rightColor;
+            ctx.beginPath();
+            ctx.moveTo(cx + 39, cy + 20);
+            ctx.lineTo(cx + 39, cy + 50);
+            ctx.lineTo(cx + 70, cy + 50);
+            ctx.stroke();
+
+            // Labels
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillStyle = leftColor;
+            ctx.fillText(leftLabel, cx - 70, cy + 65);
+            ctx.fillStyle = rightColor;
+            ctx.fillText(rightLabel, cx + 70, cy + 65);
+
+            // Brush label
+            ctx.fillStyle = '#666';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('Bürste', cx - 39, cy - 12);
+            ctx.fillText('Bürste', cx + 39, cy - 12);
+        }
+
+        function getCurrentDirection() {
+            // Current direction depends on which commutator half touches which brush
+            var normalizedAngle = ((state.angle % 360) + 360) % 360;
+            var inFirstHalf = (normalizedAngle < 90 || normalizedAngle >= 270);
+
+            var baseDir = inFirstHalf ? 1 : -1;
+            if (!state.polarityNormal) baseDir *= -1;
+
+            return baseDir;
+        }
+
+        function getForceDirection() {
+            // Force direction from Lorentz: F = I × B
+            var currentDir = getCurrentDirection();
+            var fieldDir = state.magnetNormal ? 1 : -1; // 1 = left to right
+
+            // If current up and field right: force out (positive)
+            // Use right-hand rule
+            return currentDir * fieldDir;
+        }
+
+        function getRotationDirection() {
+            // Determines which way the motor turns
+            var forceDir = getForceDirection();
+            var rad = state.angle * Math.PI / 180;
+            var cos = Math.cos(rad);
+
+            // If cos > 0, left side is further left -> force creates clockwise rotation if positive
+            if (cos >= 0) {
+                return forceDir > 0 ? 1 : -1;
+            } else {
+                return forceDir > 0 ? -1 : 1;
+            }
+        }
+
+        function draw() {
+            clear();
+            drawMagnets();
+            drawFieldLines();
+            drawAxis();
+            drawCoil();
+            drawCurrentArrows();
+            drawForceArrows();
+            drawCommutator();
+            drawBrushes();
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            var normalizedAngle = Math.round(((state.angle % 360) + 360) % 360);
+            document.getElementById('angleDisplay').textContent = normalizedAngle + '°';
+
+            // Torque
+            var torquePercent = Math.round(Math.abs(Math.cos(state.angle * Math.PI / 180)) * 100);
+            var torqueText = torquePercent > 80 ? 'maximal' : torquePercent > 20 ? 'mittel' : 'minimal';
+            document.getElementById('torqueDisplay').textContent = torqueText + ' (' + torquePercent + '%)';
+
+            // Direction
+            var rotDir = getRotationDirection();
+            var dirText = rotDir > 0 ? '↻ rechts (CW)' : '↺ links (CCW)';
+            document.getElementById('directionDisplay').textContent = dirText;
+
+            // Commutator status
+            var inFirstHalf = (normalizedAngle < 90 || normalizedAngle >= 270);
+            var switchNear = (normalizedAngle > 80 && normalizedAngle < 100) || (normalizedAngle > 260 && normalizedAngle < 280);
+            var commText = switchNear ? '⚡ Umschaltung!' : (inFirstHalf ? 'Hälfte A' : 'Hälfte B');
+            document.getElementById('commutatorDisplay').textContent = commText;
+
+            // Step indicator
+            updateStepIndicator(normalizedAngle);
+
+            // Explanation
+            updateExplanation(normalizedAngle, torquePercent, switchNear);
+        }
+
+        function updateStepIndicator(angle) {
+            var steps = ['step1', 'step2', 'step3', 'step4'];
+            for (var i = 0; i < steps.length; i++) {
+                document.getElementById(steps[i]).className = 'step';
+            }
+
+            if (angle < 90) {
+                document.getElementById('step1').className = 'step q1';
+            } else if (angle < 180) {
+                document.getElementById('step2').className = 'step q2';
+            } else if (angle < 270) {
+                document.getElementById('step3').className = 'step q3';
+            } else {
+                document.getElementById('step4').className = 'step q4';
+            }
+        }
+
+        function updateExplanation(angle, torque, switching) {
+            var title = 'Position: ' + angle + '°';
+            var text = '';
+
+            if (switching) {
+                text = '⚡ KOMMUTATOR-UMSCHALTUNG: Die Stromrichtung in der Spule kehrt sich um! Dadurch wirkt die Kraft weiterhin in Drehrichtung.';
+            } else if (torque > 80) {
+                text = 'Die Leiterschleife steht fast horizontal. Die Lorentzkraft erzeugt ein MAXIMALES Drehmoment – der Motor dreht mit voller Kraft.';
+            } else if (torque > 20) {
+                text = 'Die Spule dreht sich. Die Lorentzkraft wirkt schräg, das Drehmoment ist mittelmäßig.';
+            } else {
+                text = 'Die Spule steht fast senkrecht. Die Kräfte zeigen parallel zur Achse – KEIN Drehmoment! Nur der Schwung trägt weiter bis zur nächsten Position.';
+            }
+
+            document.querySelector('.explanation h4').textContent = title;
+            document.getElementById('explanationText').textContent = text;
+        }
+
+        function animate() {
+            if (!state.playing) return;
+
+            var rotDir = getRotationDirection();
+            state.angle += rotDir * state.speed * 0.5;
+
+            draw();
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function togglePlay() {
+            state.playing = !state.playing;
+            var btn = document.getElementById('btnPlay');
+
+            if (state.playing) {
+                btn.textContent = '⏸ Pause';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-danger');
+                animate();
+            } else {
+                btn.textContent = '▶ Start';
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+            }
+        }
+
+        function resetSim() {
+            state.playing = false;
+            state.angle = 0;
+            document.getElementById('btnPlay').textContent = '▶ Start';
+            document.getElementById('btnPlay').classList.remove('btn-danger');
+            document.getElementById('btnPlay').classList.add('btn-primary');
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            draw();
+        }
+
+        function updateSpeed() {
+            state.speed = parseInt(document.getElementById('speedSlider').value);
+            var labels = ['', 'Sehr langsam', 'Langsam', 'Mittel', 'Mittel', 'Mittel', 'Schnell', 'Schnell', 'Sehr schnell', 'Sehr schnell', 'Maximum'];
+            document.getElementById('speedValue').textContent = labels[state.speed];
+        }
+
+        function togglePolarity() {
+            state.polarityNormal = !state.polarityNormal;
+            var btn = document.getElementById('btnPolarity');
+            btn.textContent = state.polarityNormal ? 'Spannung: + links / − rechts' : 'Spannung: − links / + rechts';
+            btn.classList.toggle('active', state.polarityNormal);
+            draw();
+        }
+
+        function toggleMagnet() {
+            state.magnetNormal = !state.magnetNormal;
+            var btn = document.getElementById('btnMagnet');
+            btn.textContent = state.magnetNormal ? 'Magnetfeld: N links / S rechts' : 'Magnetfeld: S links / N rechts';
+            btn.classList.toggle('active', state.magnetNormal);
+            draw();
+        }
+
+        function toggleForce() {
+            state.showForce = !state.showForce;
+            var btn = document.getElementById('btnShowForce');
+            btn.textContent = (state.showForce ? '✓ ' : '') + 'Lorentzkraft anzeigen';
+            btn.classList.toggle('active', state.showForce);
+            draw();
+        }
+
+        function toggleCurrent() {
+            state.showCurrent = !state.showCurrent;
+            var btn = document.getElementById('btnShowCurrent');
+            btn.textContent = (state.showCurrent ? '✓ ' : '') + 'Stromrichtung anzeigen';
+            btn.classList.toggle('active', state.showCurrent);
+            draw();
+        }
+
+        function toggleField() {
+            state.showField = !state.showField;
+            var btn = document.getElementById('btnShowField');
+            btn.textContent = (state.showField ? '✓ ' : '') + 'Feldlinien anzeigen';
+            btn.classList.toggle('active', state.showField);
+            draw();
+        }
+
+        // Initialize
+        draw();
+    </script>
+</body>
+</html>
