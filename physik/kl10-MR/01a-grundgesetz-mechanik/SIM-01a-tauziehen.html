@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Tauziehen – Resultierende Kraft</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .sim-container {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .canvas-wrapper {
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 60%, #90EE90 60%, #228B22 100%);
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .team-control {
+            padding: 15px;
+            border: 2px solid;
+        }
+        .team-a { border-color: #c62828; background: #ffebee; }
+        .team-b { border-color: #1565c0; background: #e3f2fd; }
+        .team-control h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .team-a h3 { color: #c62828; }
+        .team-b h3 { color: #1565c0; }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .control-row label { min-width: 120px; font-size: 0.9em; }
+        .control-row input[type="range"] { flex: 1; }
+        .control-row .value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .result-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .result-box h3 { color: #2a7a4b; margin-bottom: 10px; }
+        .result-formula {
+            font-size: 1.3em;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .result-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .result-direction {
+            font-size: 1.1em;
+            padding: 5px 15px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .dir-links { background: #c62828; color: white; }
+        .dir-rechts { background: #1565c0; color: white; }
+        .dir-gleich { background: #888; color: white; }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        button:hover { background: #1e4080; }
+        button.btn-success { background: #2a7a4b; }
+        button.btn-danger { background: #c62828; }
+
+        .person {
+            display: inline-block;
+            width: 30px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        @media (max-width: 600px) {
+            .controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tauziehen – Resultierende Kraft</h1>
+        <p>Physik Klasse 10 | Grundgesetz der Mechanik</p>
+    </header>
+
+    <div class="container">
+        <div class="info-box">
+            <strong>Lernziel:</strong> Verstehe, wie sich Kräfte in entgegengesetzte Richtungen zu einer <strong>resultierenden Kraft</strong> zusammensetzen.
+        </div>
+
+        <div class="sim-container">
+            <div class="canvas-wrapper">
+                <canvas id="simCanvas" width="860" height="300"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="team-control team-a">
+                    <h3>
+                        <span style="font-size:1.5em;">←</span>
+                        Team A (links)
+                    </h3>
+                    <div class="control-row">
+                        <label>Anzahl Personen:</label>
+                        <input type="range" id="teamA-count" min="1" max="5" value="3" step="1">
+                        <span class="value" id="teamA-count-val">3</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Kraft pro Person:</label>
+                        <input type="range" id="teamA-force" min="100" max="300" value="200" step="50">
+                        <span class="value" id="teamA-force-val">200 N</span>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: white; text-align: center;">
+                        <strong>Gesamtkraft Team A:</strong><br>
+                        <span id="teamA-total" style="font-size: 1.5em; color: #c62828; font-weight: bold;">600 N</span>
+                    </div>
+                </div>
+
+                <div class="team-control team-b">
+                    <h3>
+                        Team B (rechts)
+                        <span style="font-size:1.5em;">→</span>
+                    </h3>
+                    <div class="control-row">
+                        <label>Anzahl Personen:</label>
+                        <input type="range" id="teamB-count" min="1" max="5" value="2" step="1">
+                        <span class="value" id="teamB-count-val">2</span>
+                    </div>
+                    <div class="control-row">
+                        <label>Kraft pro Person:</label>
+                        <input type="range" id="teamB-force" min="100" max="300" value="250" step="50">
+                        <span class="value" id="teamB-force-val">250 N</span>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: white; text-align: center;">
+                        <strong>Gesamtkraft Team B:</strong><br>
+                        <span id="teamB-total" style="font-size: 1.5em; color: #1565c0; font-weight: bold;">500 N</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <h3>Resultierende Kraft</h3>
+                <div class="result-formula" id="result-formula">
+                    F<sub>res</sub> = F<sub>A</sub> − F<sub>B</sub> = 600 N − 500 N
+                </div>
+                <div class="result-value" id="result-value">= 100 N</div>
+                <div class="result-direction" id="result-direction">← nach links (Team A gewinnt)</div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn-success" onclick="startAnimation()">▶ Animation starten</button>
+                <button onclick="resetAnimation()">↺ Zurücksetzen</button>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Merke:</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li>Kräfte in <strong>dieselbe Richtung</strong> werden <strong>addiert</strong></li>
+                <li>Kräfte in <strong>entgegengesetzte Richtung</strong> werden <strong>subtrahiert</strong></li>
+                <li>Die <strong>resultierende Kraft</strong> bestimmt, in welche Richtung das System beschleunigt</li>
+            </ul>
+        </div>
+
+        <div class="sim-container">
+            <h3 style="color: #2c5aa0; margin-bottom: 15px;">Aufgabe: Experimentiere!</h3>
+            <ol style="margin-left: 20px; line-height: 2;">
+                <li>Stelle beide Teams auf <strong>gleiche Kraft</strong>. Was passiert?</li>
+                <li>Kann ein Team mit <strong>weniger Personen</strong> gewinnen? Wie?</li>
+                <li>Wie groß muss F<sub>B</sub> sein, damit Team B bei F<sub>A</sub> = 600 N gewinnt?</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var ropeX = 430;
+    var animating = false;
+    var animId = null;
+
+    function getValues() {
+        var countA = parseInt(document.getElementById('teamA-count').value);
+        var forceA = parseInt(document.getElementById('teamA-force').value);
+        var countB = parseInt(document.getElementById('teamB-count').value);
+        var forceB = parseInt(document.getElementById('teamB-force').value);
+        var totalA = countA * forceA;
+        var totalB = countB * forceB;
+        var fRes = totalA - totalB;
+        return { countA: countA, forceA: forceA, countB: countB, forceB: forceB, totalA: totalA, totalB: totalB, fRes: fRes };
+    }
+
+    function updateDisplay() {
+        var v = getValues();
+
+        document.getElementById('teamA-count-val').textContent = v.countA;
+        document.getElementById('teamA-force-val').textContent = v.forceA + ' N';
+        document.getElementById('teamB-count-val').textContent = v.countB;
+        document.getElementById('teamB-force-val').textContent = v.forceB + ' N';
+
+        document.getElementById('teamA-total').textContent = v.totalA + ' N';
+        document.getElementById('teamB-total').textContent = v.totalB + ' N';
+
+        var formula, value, direction, dirClass;
+        if (v.fRes > 0) {
+            formula = 'F<sub>res</sub> = F<sub>A</sub> − F<sub>B</sub> = ' + v.totalA + ' N − ' + v.totalB + ' N';
+            value = '= ' + v.fRes + ' N';
+            direction = '← nach links (Team A gewinnt)';
+            dirClass = 'dir-links';
+        } else if (v.fRes < 0) {
+            formula = 'F<sub>res</sub> = F<sub>B</sub> − F<sub>A</sub> = ' + v.totalB + ' N − ' + v.totalA + ' N';
+            value = '= ' + Math.abs(v.fRes) + ' N';
+            direction = '→ nach rechts (Team B gewinnt)';
+            dirClass = 'dir-rechts';
+        } else {
+            formula = 'F<sub>res</sub> = F<sub>A</sub> − F<sub>B</sub> = ' + v.totalA + ' N − ' + v.totalB + ' N';
+            value = '= 0 N';
+            direction = 'Gleichgewicht (niemand gewinnt)';
+            dirClass = 'dir-gleich';
+        }
+
+        document.getElementById('result-formula').innerHTML = formula;
+        document.getElementById('result-value').textContent = value;
+        var dirEl = document.getElementById('result-direction');
+        dirEl.textContent = direction;
+        dirEl.className = 'result-direction ' + dirClass;
+
+        draw();
+    }
+
+    function draw() {
+        var v = getValues();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Himmel
+        ctx.fillStyle = '#87CEEB';
+        ctx.fillRect(0, 0, canvas.width, 180);
+
+        // Gras
+        ctx.fillStyle = '#90EE90';
+        ctx.fillRect(0, 180, canvas.width, 120);
+
+        // Boden-Linie
+        ctx.strokeStyle = '#228B22';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 180);
+        ctx.lineTo(canvas.width, 180);
+        ctx.stroke();
+
+        // Markierung Mitte
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+        ctx.moveTo(430, 0);
+        ctx.lineTo(430, 300);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Seil
+        ctx.strokeStyle = '#8B4513';
+        ctx.lineWidth = 12;
+        ctx.beginPath();
+        ctx.moveTo(50, 130);
+        ctx.lineTo(ropeX, 130);
+        ctx.lineTo(810, 130);
+        ctx.stroke();
+
+        // Knoten in der Mitte
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.arc(ropeX, 130, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Flag am Knoten
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.moveTo(ropeX, 130);
+        ctx.lineTo(ropeX, 80);
+        ctx.lineTo(ropeX + 30, 95);
+        ctx.lineTo(ropeX, 110);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#B8860B';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Team A (links) - Personen
+        var startXA = ropeX - 50;
+        for (var i = 0; i < v.countA; i++) {
+            drawPerson(startXA - i * 50, 130, '#c62828', 'left');
+        }
+
+        // Team B (rechts) - Personen
+        var startXB = ropeX + 50;
+        for (var j = 0; j < v.countB; j++) {
+            drawPerson(startXB + j * 50, 130, '#1565c0', 'right');
+        }
+
+        // Kraftpfeile
+        var arrowY = 50;
+
+        // Pfeil Team A
+        var arrowLengthA = v.totalA / 5;
+        ctx.strokeStyle = '#c62828';
+        ctx.fillStyle = '#c62828';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(ropeX - 20, arrowY);
+        ctx.lineTo(ropeX - 20 - arrowLengthA, arrowY);
+        ctx.stroke();
+        // Pfeilspitze
+        ctx.beginPath();
+        ctx.moveTo(ropeX - 20 - arrowLengthA, arrowY);
+        ctx.lineTo(ropeX - 10 - arrowLengthA, arrowY - 10);
+        ctx.lineTo(ropeX - 10 - arrowLengthA, arrowY + 10);
+        ctx.closePath();
+        ctx.fill();
+        // Label
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('F_A = ' + v.totalA + ' N', ropeX - 20 - arrowLengthA / 2, arrowY - 15);
+
+        // Pfeil Team B
+        var arrowLengthB = v.totalB / 5;
+        ctx.strokeStyle = '#1565c0';
+        ctx.fillStyle = '#1565c0';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(ropeX + 20, arrowY);
+        ctx.lineTo(ropeX + 20 + arrowLengthB, arrowY);
+        ctx.stroke();
+        // Pfeilspitze
+        ctx.beginPath();
+        ctx.moveTo(ropeX + 20 + arrowLengthB, arrowY);
+        ctx.lineTo(ropeX + 10 + arrowLengthB, arrowY - 10);
+        ctx.lineTo(ropeX + 10 + arrowLengthB, arrowY + 10);
+        ctx.closePath();
+        ctx.fill();
+        // Label
+        ctx.fillText('F_B = ' + v.totalB + ' N', ropeX + 20 + arrowLengthB / 2, arrowY - 15);
+
+        // Resultierende Kraft (unten)
+        if (v.fRes !== 0) {
+            var resY = 250;
+            var resLength = Math.abs(v.fRes) / 5;
+            var resDir = v.fRes > 0 ? -1 : 1;
+            ctx.strokeStyle = '#2a7a4b';
+            ctx.fillStyle = '#2a7a4b';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(ropeX, resY);
+            ctx.lineTo(ropeX + resDir * resLength, resY);
+            ctx.stroke();
+            // Pfeilspitze
+            ctx.beginPath();
+            ctx.moveTo(ropeX + resDir * resLength, resY);
+            ctx.lineTo(ropeX + resDir * resLength - resDir * 12, resY - 12);
+            ctx.lineTo(ropeX + resDir * resLength - resDir * 12, resY + 12);
+            ctx.closePath();
+            ctx.fill();
+            // Label
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillText('F_res = ' + Math.abs(v.fRes) + ' N', ropeX + resDir * resLength / 2, resY + 25);
+        }
+    }
+
+    function drawPerson(x, ropeY, color, dir) {
+        var bodyY = ropeY + 20;
+
+        // Arme (zum Seil)
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        if (dir === 'left') {
+            ctx.moveTo(x, bodyY);
+            ctx.lineTo(x + 30, ropeY);
+        } else {
+            ctx.moveTo(x, bodyY);
+            ctx.lineTo(x - 30, ropeY);
+        }
+        ctx.stroke();
+
+        // Körper
+        ctx.fillStyle = color;
+        ctx.fillRect(x - 12, bodyY, 24, 35);
+
+        // Kopf
+        ctx.beginPath();
+        ctx.arc(x, bodyY - 12, 15, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Gesicht
+        ctx.fillStyle = 'white';
+        if (dir === 'left') {
+            ctx.beginPath();
+            ctx.arc(x - 5, bodyY - 14, 3, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            ctx.beginPath();
+            ctx.arc(x + 5, bodyY - 14, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Beine
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x - 8, bodyY + 35);
+        ctx.lineTo(x - 12, bodyY + 55);
+        ctx.moveTo(x + 8, bodyY + 35);
+        ctx.lineTo(x + 12, bodyY + 55);
+        ctx.stroke();
+    }
+
+    function startAnimation() {
+        if (animating) return;
+        var v = getValues();
+        if (v.fRes === 0) {
+            alert('Gleichgewicht! Das Seil bewegt sich nicht.');
+            return;
+        }
+        animating = true;
+        animate();
+    }
+
+    function animate() {
+        var v = getValues();
+        var speed = v.fRes / 500;
+
+        ropeX -= speed;
+
+        if (ropeX < 200 || ropeX > 660) {
+            animating = false;
+            var winner = v.fRes > 0 ? 'Team A' : 'Team B';
+            setTimeout(function() {
+                alert(winner + ' hat gewonnen!');
+            }, 100);
+            return;
+        }
+
+        draw();
+
+        if (animating) {
+            animId = requestAnimationFrame(animate);
+        }
+    }
+
+    function resetAnimation() {
+        animating = false;
+        if (animId) cancelAnimationFrame(animId);
+        ropeX = 430;
+        draw();
+    }
+
+    // Event Listeners
+    document.querySelectorAll('input[type="range"]').forEach(function(el) {
+        el.addEventListener('input', function() {
+            resetAnimation();
+            updateDisplay();
+        });
+    });
+
+    // Init
+    updateDisplay();
+    </script>
+</body>
+</html>
