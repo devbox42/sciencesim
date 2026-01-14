@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding: Ohmsches Gesetz</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --physik: #2c5aa0;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --positive: #c62828;
+            --negative: #1565c0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: var(--physik);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header .subtitle { font-size: 0.85em; opacity: 0.9; }
+
+        .progress-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .progress-bar { height: 8px; background: var(--border); margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: var(--text-muted); }
+
+        /* Step indicators (MINT-Template Design) */
+        .step-indicators {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .step-dot {
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7em; font-weight: 600;
+            border: 2px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+        }
+        .step-dot:hover { border-color: var(--physik); }
+        .step-dot.current { border-color: var(--physik); border-width: 3px; color: var(--physik); }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
+        .step-dot.completed.current { background: var(--physik); border-color: var(--physik); color: white; }
+        .step-dot.locked { cursor: not-allowed; opacity: 0.4; }
+
+        .slide {
+            display: none;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .slide.active { display: block; }
+        .slide h2 {
+            color: var(--physik);
+            font-size: 1.15em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--physik);
+        }
+        .slide p { margin-bottom: 12px; }
+        .slide ul, .slide ol { margin-left: 1.5em; margin-bottom: 12px; }
+        .slide li { margin-bottom: 6px; }
+
+        .merkkasten {
+            background: var(--bg);
+            border-top: 3px solid var(--physik);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .merkkasten h3 { color: var(--physik); font-size: 1em; margin-bottom: 10px; }
+
+        .hefter-hinweis {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+
+        .simulation-frame { border: 1px solid var(--border); margin: 15px 0; position: relative; }
+        .simulation-frame iframe { width: 100%; height: 420px; border: none; }
+        .sim-controls { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg); }
+        .sim-link { font-size: 0.85em; }
+        .sim-link a { color: var(--physik); }
+        .fullscreen-btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .fullscreen-btn:hover { background: #1e4080; }
+        .fullscreen-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+        .fullscreen-exit-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 10000;
+            padding: 12px;
+        }
+        .fullscreen-exit-overlay.visible { display: block; }
+        .fullscreen-exit-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .simulation-frame.fullscreen-fallback {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            margin: 0;
+            border: none;
+            background: white;
+        }
+        .simulation-frame.fullscreen-fallback iframe { height: 100vh; }
+        .simulation-frame.fullscreen-fallback .sim-controls { display: none; }
+
+        .formelkasten {
+            background: var(--white);
+            border: 2px solid var(--physik);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .formelkasten .formula { font-size: 1.5em; font-weight: 600; color: var(--physik); margin: 10px 0; }
+
+        .exercise {
+            background: #e8f5e9;
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .exercise h3 { color: var(--success); font-size: 1em; margin-bottom: 10px; }
+        .exercise input, .exercise select {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            font-size: 1em;
+        }
+        .exercise input[type="number"] { width: 80px; text-align: center; }
+        .inline-select {
+            padding: 4px 8px;
+            font-size: 0.95em;
+            border: 2px solid var(--physik);
+            background: var(--white);
+            min-width: 120px;
+        }
+        .inline-select.correct { border-color: var(--success); background: #e8f5e9; }
+        .inline-select.incorrect { border-color: var(--error); background: #ffebee; }
+
+        .check-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .feedback { margin-top: 10px; padding: 10px; font-size: 0.9em; display: none; }
+        .feedback.correct { background: #c8e6c9; color: var(--success); display: block; }
+        .feedback.incorrect { background: #ffcdd2; color: var(--error); display: block; }
+        .feedback.hint { background: #fff3e0; color: var(--warning); display: block; }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .nav-btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .nav-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+        .nav-btn.next { margin-left: auto; }
+        .lock-message { color: var(--error); font-size: 0.85em; text-align: center; flex: 1; align-self: center; }
+
+        .analogy-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .analogy-table th, .analogy-table td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+        .analogy-table th { background: var(--physik); color: white; }
+        .analogy-table tr:nth-child(even) { background: var(--bg); }
+
+        .highlight-box {
+            background: #e3f2fd;
+            border: 2px solid var(--physik);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .kennlinie-compare {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        .kennlinie-compare > div {
+            flex: 1;
+            text-align: center;
+        }
+        .kennlinie-compare svg { max-width: 180px; }
+        .kennlinie-compare .label { font-size: 0.9em; margin-top: 5px; font-weight: 600; }
+
+        .quick-calc {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .quick-calc .calc-item {
+            background: var(--bg);
+            padding: 12px;
+            border-left: 3px solid var(--physik);
+        }
+        .quick-calc .calc-item p { margin-bottom: 8px; font-size: 0.95em; }
+
+        .reset-container { text-align: right; margin-top: 20px; }
+        .reset-btn {
+            background: none;
+            color: var(--text-muted);
+            border: 1px solid var(--text-muted);
+            padding: 6px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .var { font-style: italic; }
+        .unit { font-style: normal; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.75em;
+            font-weight: 600;
+            border-radius: 2px;
+            margin-left: 8px;
+        }
+        .badge.new { background: var(--success); color: white; }
+        .badge.recap { background: var(--physik); color: white; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Onboarding: Ohmsches Gesetz</h1>
+        <div class="subtitle">Physik Klasse 8 | Wiederholung + R in Reihen- und Parallelschaltung</div>
+    </header>
+
+    <div class="container">
+        <div class="progress-container">
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-text">Schritt <span id="current-step">1</span> von 8</div>
+            <!-- Step indicators (MINT-Template) -->
+            <div class="step-indicators" id="step-indicators"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 1: BEGRÜSSUNG -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-1">
+            <h2>1. Willkommen zurück! <span class="badge recap">Recap</span></h2>
+            <p><strong>Heute:</strong> Kurze Wiederholung + Neues + Stundenleistung</p>
+
+            <div class="merkkasten">
+                <h3>Das erwartet dich:</h3>
+                <ul>
+                    <li><strong>Wiederholung</strong> (10 min): Wasseranalogie, R = U/I, Kennlinien</li>
+                    <li><strong>Neues</strong> (10 min): R in Reihenschaltung</li>
+                    <li><strong>Stundenleistung</strong> (35 min): Digitaler Test</li>
+                </ul>
+            </div>
+
+            <p>Falls du letzte Woche gefehlt hast: Keine Sorge – dieser Lernpfad bringt dich auf den Stand!</p>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button class="nav-btn next" onclick="nextSlide()">Los geht's →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 2: WASSERANALOGIE RECAP -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-2">
+            <h2>2. Die Wasser-Analogie <span class="badge recap">Recap</span></h2>
+            <p>Das Wassermodell hilft, den Stromkreis zu verstehen:</p>
+
+            <div class="simulation-frame" id="sim-frame-1">
+                <iframe src="SIM-02a-wassermodell.html"></iframe>
+                <div class="sim-controls">
+                    <span class="sim-link"><a href="SIM-02a-wassermodell.html" target="_blank">→ In neuem Tab öffnen</a></span>
+                    <button class="fullscreen-btn" onclick="toggleSimFullscreen('sim-frame-1')">
+                        <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                        Vollbild
+                    </button>
+                </div>
+            </div>
+
+            <div class="merkkasten">
+                <h3>Merke:</h3>
+                <table class="analogy-table">
+                    <tr><th>Wasserkreislauf</th><th>Stromkreis</th></tr>
+                    <tr><td>Wasserdruck (Pumpe)</td><td><strong>Spannung <em>U</em></strong></td></tr>
+                    <tr><td>Wassermenge pro Sekunde</td><td><strong>Stromstärke <em>I</em></strong></td></tr>
+                    <tr><td>Engstelle im Rohr</td><td><strong>Widerstand <em>R</em></strong></td></tr>
+                </table>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 3: R-SCHNELLÜBUNG -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-3">
+            <h2>3. Schnellübung: R = U / I <span class="badge recap">Recap</span></h2>
+            <p>Rechne im Kopf! Die Formel: <strong><em>R</em> = <em>U</em> / <em>I</em></strong></p>
+
+            <div class="quick-calc">
+                <div class="calc-item">
+                    <p><strong>a)</strong> U = 20 V, I = 4 A</p>
+                    <p>R = <input type="number" id="calc-a" style="width:60px"> Ω</p>
+                </div>
+                <div class="calc-item">
+                    <p><strong>b)</strong> R = 10 Ω, I = 3 A</p>
+                    <p>U = <input type="number" id="calc-b" style="width:60px"> V</p>
+                </div>
+                <div class="calc-item">
+                    <p><strong>c)</strong> U = 15 V, R = 5 Ω</p>
+                    <p>I = <input type="number" id="calc-c" style="width:60px"> A</p>
+                </div>
+                <div class="calc-item">
+                    <p><strong>d)</strong> U = 24 V, I = 6 A</p>
+                    <p>R = <input type="number" id="calc-d" style="width:60px"> Ω</p>
+                </div>
+            </div>
+
+            <button class="check-btn" onclick="checkCalc()">Alle prüfen</button>
+            <div class="feedback" id="fb-calc"></div>
+
+            <div class="hefter-hinweis">
+                <ul><li><strong>Aufgabe 1:</strong> Berechne alle vier Aufgaben auf dem Arbeitsblatt</li></ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <span class="lock-message" id="lock-3">Löse mindestens 3 Aufgaben richtig!</span>
+                <button class="nav-btn next" id="next-3" onclick="nextSlide()" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 4: KENNLINIEN RECAP -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-4">
+            <h2>4. Kennlinien im Vergleich <span class="badge recap">Recap</span></h2>
+            <p>Letzte Woche habt ihr zwei Kennlinien aufgenommen:</p>
+
+            <div class="kennlinie-compare">
+                <div>
+                    <svg viewBox="0 0 150 120">
+                        <line x1="20" y1="100" x2="140" y2="100" stroke="#333" stroke-width="2"/>
+                        <line x1="20" y1="100" x2="20" y2="10" stroke="#333" stroke-width="2"/>
+                        <line x1="20" y1="100" x2="130" y2="20" stroke="#2c5aa0" stroke-width="3"/>
+                        <text x="140" y="105" font-size="10" fill="#333">U</text>
+                        <text x="10" y="15" font-size="10" fill="#333">I</text>
+                    </svg>
+                    <div class="label" style="color: var(--physik);">Ohmscher Widerstand</div>
+                    <div style="font-size: 0.8em;">Gerade → R konstant</div>
+                </div>
+                <div>
+                    <svg viewBox="0 0 150 120">
+                        <line x1="20" y1="100" x2="140" y2="100" stroke="#333" stroke-width="2"/>
+                        <line x1="20" y1="100" x2="20" y2="10" stroke="#333" stroke-width="2"/>
+                        <path d="M 20 100 Q 60 60, 130 50" stroke="#c62828" stroke-width="3" fill="none"/>
+                        <text x="140" y="105" font-size="10" fill="#333">U</text>
+                        <text x="10" y="15" font-size="10" fill="#333">I</text>
+                    </svg>
+                    <div class="label" style="color: var(--error);">Glühlampe</div>
+                    <div style="font-size: 0.8em;">Kurve → R steigt mit T</div>
+                </div>
+            </div>
+
+            <div class="exercise">
+                <h3>Warum ist die Glühlampen-Kennlinie gekrümmt?</h3>
+                <p style="margin-bottom: 10px;">Vervollständige die Erklärungskette:</p>
+
+                <div style="line-height: 2.4; font-size: 0.95em;">
+                    <p>Höhere Spannung → mehr
+                        <select id="ex4a" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">Spannung</option>
+                            <option value="correct">Elektronen</option>
+                            <option value="x2">Protonen</option>
+                            <option value="x3">Atome</option>
+                            <option value="x4">Photonen</option>
+                        </select>
+                        fließen (= größerer Strom)
+                    </p>
+                    <p>→ Elektronen stoßen gegen
+                        <select id="ex4b" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">Protonen</option>
+                            <option value="correct">Atomrümpfe</option>
+                            <option value="x2">Neutronen</option>
+                            <option value="x3">andere Elektronen</option>
+                            <option value="x4">Photonen</option>
+                        </select>
+                    </p>
+                    <p>→ Atomrümpfe schwingen
+                        <select id="ex4c" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">schwächer</option>
+                            <option value="x2">langsamer</option>
+                            <option value="correct">stärker</option>
+                            <option value="x3">seltener</option>
+                            <option value="x4">gleichmäßig</option>
+                        </select>
+                    </p>
+                    <p>→ Draht wird
+                        <select id="ex4d" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">kälter</option>
+                            <option value="correct">heißer</option>
+                            <option value="x2">kürzer</option>
+                            <option value="x3">dünner</option>
+                            <option value="x4">leichter</option>
+                        </select>
+                        (Temperatur steigt)
+                    </p>
+                    <p>→ Atomrümpfe nehmen mehr
+                        <select id="ex4e" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">Energie</option>
+                            <option value="correct">Platz</option>
+                            <option value="x2">Ladung</option>
+                            <option value="x3">Masse</option>
+                            <option value="x4">Elektronen</option>
+                        </select>
+                        ein
+                    </p>
+                    <p>→ noch mehr
+                        <select id="ex4f" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">Spannung</option>
+                            <option value="x2">Strom</option>
+                            <option value="correct">Kollisionen</option>
+                            <option value="x3">Atome</option>
+                            <option value="x4">Wärme</option>
+                        </select>
+                        mit Elektronen
+                    </p>
+                    <p>→ Widerstand
+                        <select id="ex4g" class="inline-select">
+                            <option value="">...</option>
+                            <option value="x1">sinkt</option>
+                            <option value="correct">steigt</option>
+                            <option value="x2">bleibt gleich</option>
+                            <option value="x3">verschwindet</option>
+                            <option value="x4">halbiert sich</option>
+                        </select>
+                    </p>
+                </div>
+
+                <button class="check-btn" onclick="checkEx4()">Prüfen</button>
+                <div class="feedback" id="fb4"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <span class="lock-message" id="lock-4">Fülle alle Lücken korrekt aus!</span>
+                <button class="nav-btn next" id="next-4" onclick="nextSlide()" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 5: R IN REIHENSCHALTUNG (NEU!) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-5">
+            <h2>5. NEU: R in Reihenschaltung <span class="badge new">Neu</span></h2>
+            <p>Was passiert, wenn <strong>zwei Widerstände hintereinander</strong> geschaltet werden?</p>
+
+            <div class="simulation-frame" id="sim-frame-2">
+                <iframe src="SIM-02b-widerstand-reihe.html"></iframe>
+                <div class="sim-controls">
+                    <span class="sim-link"><a href="SIM-02b-widerstand-reihe.html" target="_blank">→ In neuem Tab öffnen</a></span>
+                    <button class="fullscreen-btn" onclick="toggleSimFullscreen('sim-frame-2')">
+                        <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                        Vollbild
+                    </button>
+                </div>
+            </div>
+
+            <div class="merkkasten">
+                <h3>Wasseranalogie:</h3>
+                <p>Zwei Engstellen hintereinander = das Wasser muss durch <strong>beide</strong> hindurch!</p>
+                <p>→ Der Gesamtwiderstand ist die <strong>Summe</strong> der Einzelwiderstände.</p>
+            </div>
+
+            <div class="formelkasten">
+                <p><strong>Reihenschaltung:</strong></p>
+                <p class="formula"><em>R</em><sub>ges</sub> = <em>R</em><sub>1</sub> + <em>R</em><sub>2</sub></p>
+            </div>
+
+            <div class="exercise">
+                <h3>Beispiel:</h3>
+                <p>R₁ = 10 Ω und R₂ = 20 Ω in Reihe.</p>
+                <p>R<sub>ges</sub> = <input type="number" id="ex5-input" style="width:60px"> Ω</p>
+                <button class="check-btn" onclick="checkEx5()">Prüfen</button>
+                <div class="feedback" id="fb5"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 1:</strong> Übertrage die Formel R<sub>ges</sub> = R₁ + R₂</li>
+                    <li><strong>Aufgabe 2:</strong> Berechne R<sub>ges</sub> für die Beispiele</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <span class="lock-message" id="lock-5">Löse das Beispiel!</span>
+                <button class="nav-btn next" id="next-5" onclick="nextSlide()" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 6: R IN PARALLELSCHALTUNG -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-6">
+            <h2>6. NEU: R in Parallelschaltung <span class="badge new">Neu</span></h2>
+            <p>Was passiert, wenn zwei Widerstände <strong>parallel</strong> (nebeneinander) geschaltet werden?</p>
+
+            <div class="simulation-frame" id="sim-frame-3">
+                <iframe src="SIM-02c-widerstand-parallel.html"></iframe>
+                <div class="sim-controls">
+                    <span class="sim-link"><a href="SIM-02c-widerstand-parallel.html" target="_blank">→ In neuem Tab öffnen</a></span>
+                    <button class="fullscreen-btn" onclick="toggleSimFullscreen('sim-frame-3')">
+                        <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                        Vollbild
+                    </button>
+                </div>
+            </div>
+
+            <div class="merkkasten">
+                <h3>Wasseranalogie:</h3>
+                <p>Zwei Rohre nebeneinander = das Wasser kann durch <strong>beide gleichzeitig</strong> fließen!</p>
+                <p>→ Der Gesamtwiderstand wird <strong>kleiner</strong> als jeder Einzelwiderstand!</p>
+            </div>
+
+            <div class="formelkasten">
+                <p><strong>Parallelschaltung:</strong></p>
+                <p class="formula">1/<em>R</em><sub>ges</sub> = 1/<em>R</em><sub>1</sub> + 1/<em>R</em><sub>2</sub></p>
+                <p style="font-size: 0.85em; color: var(--text-secondary); margin-top: 10px;">
+                    <strong>Kurzformel:</strong> <em>R</em><sub>ges</sub> = (<em>R</em><sub>1</sub> · <em>R</em><sub>2</sub>) / (<em>R</em><sub>1</sub> + <em>R</em><sub>2</sub>)
+                </p>
+            </div>
+
+            <div class="highlight-box" style="background: #fff3e0; border-color: var(--warning);">
+                <p><strong>Merke:</strong> Bei zwei <em>gleichen</em> Widerständen parallel: R<sub>ges</sub> = R / 2</p>
+                <p style="font-size: 0.9em; margin-top: 5px;">Beispiel: 20 Ω || 20 Ω = 10 Ω (halbiert!)</p>
+            </div>
+
+            <div class="exercise">
+                <h3>Übung: Parallelschaltung berechnen</h3>
+                <p><strong>a)</strong> R₁ = 20 Ω, R₂ = 20 Ω parallel → R<sub>ges</sub> = <input type="number" id="ex6a-input" style="width:60px"> Ω</p>
+                <p style="margin-top: 10px;"><strong>b)</strong> R₁ = 30 Ω, R₂ = 60 Ω parallel → R<sub>ges</sub> = <input type="number" id="ex6b-input" style="width:60px"> Ω</p>
+                <button class="check-btn" onclick="checkEx6()">Prüfen</button>
+                <div class="feedback" id="fb6"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 3:</strong> Übertrage die Formel für Parallelschaltung</li>
+                    <li><strong>Aufgabe 4a+b:</strong> Berechne R<sub>ges</sub> für Parallelschaltungen</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <span class="lock-message" id="lock-6">Löse beide Übungen!</span>
+                <button class="nav-btn next" id="next-6" onclick="nextSlide()" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 7: GEMISCHTE SCHALTUNG (BONUS) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-7">
+            <h2>7. Bonus: Gemischte Schaltung <span class="badge new">★★★</span></h2>
+            <p>Was wenn <strong>Reihen- und Parallelschaltung kombiniert</strong> werden?</p>
+
+            <div class="merkkasten">
+                <h3>Strategie:</h3>
+                <ol style="margin-left: 20px;">
+                    <li>Erkenne Teilschaltungen (parallel / in Reihe)</li>
+                    <li>Berechne <strong>zuerst</strong> die parallelen Widerstände</li>
+                    <li>Dann addiere die Reihenschaltung</li>
+                </ol>
+            </div>
+
+            <div class="exercise">
+                <h3>Beispiel: R₁ = 10 Ω in Reihe mit (R₂ || R₃), wobei R₂ = R₃ = 20 Ω</h3>
+                <p><strong>Schritt 1:</strong> R₂ || R₃ = <input type="number" id="ex7a-input" style="width:60px"> Ω</p>
+                <p style="margin-top: 8px;"><strong>Schritt 2:</strong> R<sub>ges</sub> = R₁ + (R₂||R₃) = <input type="number" id="ex7b-input" style="width:60px"> Ω</p>
+                <button class="check-btn" onclick="checkEx7()">Prüfen</button>
+                <div class="feedback" id="fb7"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 4c:</strong> Analysiere und berechne die gemischte Schaltung</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 8: ABSCHLUSS -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-8">
+            <h2>8. Lernpfad abgeschlossen</h2>
+
+            <div class="highlight-box" style="background: #c8e6c9; border-color: var(--success);">
+                <p style="font-size: 1.1em;"><strong>Du hast den Lernpfad abgeschlossen!</strong></p>
+            </div>
+
+            <div class="merkkasten">
+                <h3>Das hast du gelernt:</h3>
+                <ul>
+                    <li><strong>Wasseranalogie:</strong> Spannung = Druck, Strom = Wassermenge, Widerstand = Engstelle</li>
+                    <li><strong>Ohmsches Gesetz:</strong> R = U / I</li>
+                    <li><strong>Kennlinien:</strong> Ohmscher Widerstand (Gerade) vs. Glühlampe (Kurve)</li>
+                    <li><strong>Reihenschaltung:</strong> R<sub>ges</sub> = R₁ + R₂</li>
+                    <li><strong>Parallelschaltung:</strong> 1/R<sub>ges</sub> = 1/R₁ + 1/R₂</li>
+                    <li><strong>Gemischte Schaltungen:</strong> Erst parallel, dann in Reihe addieren</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">← Zurück</button>
+                <span style="color: var(--success); font-weight: 600;">✓ Lernpfad abgeschlossen</span>
+            </div>
+        </div>
+
+        <div class="reset-container">
+            <button class="reset-btn" onclick="resetProgress()">Fortschritt zurücksetzen</button>
+        </div>
+    </div>
+
+    <div class="fullscreen-exit-overlay" id="fullscreen-exit-overlay">
+        <button class="fullscreen-exit-btn" onclick="exitFullscreen()">✕ Beenden (ESC)</button>
+    </div>
+
+    <script>
+        var LP_ID = 'lp-02b-onboarding';
+        var TOTAL_SLIDES = 8;
+        var currentSlide = 1;
+        var completedEx = {};
+        var unlockedSlides = { 1: true };
+
+        var requirements = { 3: 'calc', 4: 'ex4', 5: 'ex5', 6: 'ex6' };
+
+        function init() {
+            loadProgress();
+            renderDots();
+            showSlide(currentSlide);
+            updateProgress();
+        }
+
+        function loadProgress() {
+            var saved = localStorage.getItem(LP_ID);
+            if (saved) {
+                var data = JSON.parse(saved);
+                currentSlide = data.currentSlide || 1;
+                completedEx = data.completedEx || {};
+                unlockedSlides = data.unlockedSlides || { 1: true };
+
+                // Restore input values
+                if (data.inputs) {
+                    for (var key in data.inputs) {
+                        var el = document.getElementById(key);
+                        if (el) el.value = data.inputs[key];
+                    }
+                }
+            }
+        }
+
+        function saveProgress() {
+            var inputs = {};
+            var inputEls = document.querySelectorAll('input[type="number"], select');
+            for (var i = 0; i < inputEls.length; i++) {
+                if (inputEls[i].id) {
+                    inputs[inputEls[i].id] = inputEls[i].value;
+                }
+            }
+
+            localStorage.setItem(LP_ID, JSON.stringify({
+                currentSlide: currentSlide,
+                completedEx: completedEx,
+                unlockedSlides: unlockedSlides,
+                inputs: inputs
+            }));
+        }
+
+        function renderDots() {
+            var container = document.getElementById('step-indicators');
+            container.innerHTML = '';
+            for (var i = 1; i <= TOTAL_SLIDES; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'step-dot';
+                dot.textContent = i;
+                dot.setAttribute('data-slide', i);
+                dot.onclick = function() {
+                    var t = parseInt(this.getAttribute('data-slide'));
+                    if (unlockedSlides[t]) showSlide(t);
+                };
+                container.appendChild(dot);
+            }
+            updateDots();
+        }
+
+        function updateDots() {
+            var dots = document.querySelectorAll('.step-dot');
+            for (var i = 0; i < dots.length; i++) {
+                var n = i + 1;
+                dots[i].className = 'step-dot';
+                if (n === currentSlide) {
+                    dots[i].classList.add('current');
+                    if (unlockedSlides[n] && n > 1) dots[i].classList.add('completed');
+                } else if (unlockedSlides[n] && n < currentSlide) {
+                    dots[i].classList.add('completed');
+                } else if (!unlockedSlides[n]) {
+                    dots[i].classList.add('locked');
+                }
+            }
+        }
+
+        function showSlide(n) {
+            var slides = document.querySelectorAll('.slide');
+            for (var i = 0; i < slides.length; i++) slides[i].classList.remove('active');
+            var active = document.getElementById('slide-' + n);
+            if (active) active.classList.add('active');
+            currentSlide = n;
+            unlockedSlides[n] = true;
+            document.getElementById('current-step').textContent = n;
+            updateDots();
+            updateProgress();
+            updateNavBtns();
+            saveProgress();
+            window.scrollTo(0, 0);
+        }
+
+        function updateProgress() {
+            var pct = ((currentSlide - 1) / (TOTAL_SLIDES - 1)) * 100;
+            document.getElementById('progress-fill').style.width = pct + '%';
+        }
+
+        function nextSlide() {
+            var req = requirements[currentSlide];
+            if (req && !completedEx[req]) return;
+            if (currentSlide < TOTAL_SLIDES) showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) showSlide(currentSlide - 1);
+        }
+
+        function updateNavBtns() {
+            for (var s in requirements) {
+                var req = requirements[s];
+                var btn = document.getElementById('next-' + s);
+                var lock = document.getElementById('lock-' + s);
+                if (btn) {
+                    if (completedEx[req]) {
+                        btn.disabled = false;
+                        if (lock) lock.style.display = 'none';
+                    } else {
+                        btn.disabled = true;
+                        if (lock) lock.style.display = 'block';
+                    }
+                }
+            }
+        }
+
+        function unlockEx(id) {
+            completedEx[id] = true;
+            updateNavBtns();
+            saveProgress();
+        }
+
+        // Decimal comma support
+        function parseNum(val) {
+            if (val === '' || val === null) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        // Schritt 3: Schnellübung
+        function checkCalc() {
+            var a = parseNum(document.getElementById('calc-a').value);
+            var b = parseNum(document.getElementById('calc-b').value);
+            var c = parseNum(document.getElementById('calc-c').value);
+            var d = parseNum(document.getElementById('calc-d').value);
+
+            var correct = 0;
+            var results = [];
+
+            if (a === 5) { correct++; results.push('a) ✓'); }
+            else results.push('a) ✗ (R = 20/4 = 5 Ω)');
+
+            if (b === 30) { correct++; results.push('b) ✓'); }
+            else results.push('b) ✗ (U = 10·3 = 30 V)');
+
+            if (c === 3) { correct++; results.push('c) ✓'); }
+            else results.push('c) ✗ (I = 15/5 = 3 A)');
+
+            if (d === 4) { correct++; results.push('d) ✓'); }
+            else results.push('d) ✗ (R = 24/6 = 4 Ω)');
+
+            var fb = document.getElementById('fb-calc');
+            if (correct >= 3) {
+                fb.textContent = correct + '/4 richtig! ' + results.join(' | ');
+                fb.className = 'feedback correct';
+                unlockEx('calc');
+            } else {
+                fb.textContent = correct + '/4 richtig. ' + results.join(' | ') + ' – Versuche es nochmal!';
+                fb.className = 'feedback hint';
+            }
+        }
+
+        // Schritt 4: Kennlinien-Erklärungskette (7 Schritte)
+        function checkEx4() {
+            var ids = ['ex4a', 'ex4b', 'ex4c', 'ex4d', 'ex4e', 'ex4f', 'ex4g'];
+            var correct = 0;
+            var filled = 0;
+
+            for (var i = 0; i < ids.length; i++) {
+                var el = document.getElementById(ids[i]);
+                var val = el.value;
+
+                // Reset classes
+                el.classList.remove('correct', 'incorrect');
+
+                if (val !== '') {
+                    filled++;
+                    if (val === 'correct') {
+                        correct++;
+                        el.classList.add('correct');
+                    } else {
+                        el.classList.add('incorrect');
+                    }
+                }
+            }
+
+            var fb = document.getElementById('fb4');
+
+            if (filled < 7) {
+                fb.textContent = 'Bitte fülle alle 7 Lücken aus!';
+                fb.className = 'feedback hint';
+            } else if (correct === 7) {
+                fb.textContent = 'Richtig! Die Kette erklärt, warum der Widerstand bei steigender Temperatur zunimmt.';
+                fb.className = 'feedback correct';
+                unlockEx('ex4');
+            } else {
+                fb.textContent = correct + '/7 richtig. Die roten Felder sind falsch – überprüfe die Logik!';
+                fb.className = 'feedback hint';
+            }
+        }
+
+        // Schritt 5: Reihenschaltung
+        function checkEx5() {
+            var v = parseNum(document.getElementById('ex5-input').value);
+            var fb = document.getElementById('fb5');
+            if (v === 30) {
+                fb.textContent = 'Richtig! R_ges = 10 Ω + 20 Ω = 30 Ω';
+                fb.className = 'feedback correct';
+                unlockEx('ex5');
+            } else if (!isNaN(v)) {
+                fb.textContent = 'Nicht ganz. Addiere die beiden Widerstände: 10 + 20 = ?';
+                fb.className = 'feedback hint';
+            }
+        }
+
+        // Schritt 6: Parallelschaltung
+        function checkEx6() {
+            var a = parseNum(document.getElementById('ex6a-input').value);
+            var b = parseNum(document.getElementById('ex6b-input').value);
+            var fb = document.getElementById('fb6');
+
+            var aCorrect = (a === 10);
+            var bCorrect = (b === 20);
+
+            if (aCorrect && bCorrect) {
+                fb.textContent = 'Beide richtig! a) 20||20 = 10 Ω (halbiert) | b) (30·60)/(30+60) = 1800/90 = 20 Ω';
+                fb.className = 'feedback correct';
+                unlockEx('ex6');
+            } else if (aCorrect && !bCorrect) {
+                fb.textContent = 'a) ✓ | b) Nutze: (30·60)/(30+60) = 1800/90 = ?';
+                fb.className = 'feedback hint';
+            } else if (!aCorrect && bCorrect) {
+                fb.textContent = 'b) ✓ | a) Bei gleichen Widerständen: R_ges = R/2 = 20/2 = ?';
+                fb.className = 'feedback hint';
+            } else if (!isNaN(a) || !isNaN(b)) {
+                fb.textContent = 'Noch nicht richtig. a) Gleiche R: R_ges = R/2 | b) Kurzformel: (R₁·R₂)/(R₁+R₂)';
+                fb.className = 'feedback hint';
+            }
+        }
+
+        // Schritt 7: Gemischte Schaltung
+        function checkEx7() {
+            var a = parseNum(document.getElementById('ex7a-input').value);
+            var b = parseNum(document.getElementById('ex7b-input').value);
+            var fb = document.getElementById('fb7');
+
+            var aCorrect = (a === 10);
+            var bCorrect = (b === 20);
+
+            if (aCorrect && bCorrect) {
+                fb.textContent = 'Super! R₂||R₃ = 20/2 = 10 Ω, dann R_ges = 10 + 10 = 20 Ω';
+                fb.className = 'feedback correct';
+            } else if (aCorrect && !bCorrect) {
+                fb.textContent = 'Schritt 1 ✓ (10 Ω). Jetzt addiere: R₁ + (R₂||R₃) = 10 + 10 = ?';
+                fb.className = 'feedback hint';
+            } else if (!aCorrect && !isNaN(a)) {
+                fb.textContent = 'Schritt 1: R₂ || R₃ = 20 || 20. Bei gleichen R gilt: R_ges = R/2 = ?';
+                fb.className = 'feedback hint';
+            }
+        }
+
+        function resetProgress() {
+            if (!confirm('Wirklich den gesamten Fortschritt löschen?')) return;
+            localStorage.removeItem(LP_ID);
+            location.reload();
+        }
+
+        // Fullscreen
+        var currentFullscreenFrame = null;
+        var exitOverlay = document.getElementById('fullscreen-exit-overlay');
+
+        function toggleSimFullscreen(frameId) {
+            var frame = document.getElementById(frameId);
+            var iframe = frame.querySelector('iframe');
+
+            if (iframe.requestFullscreen || iframe.webkitRequestFullscreen) {
+                if (iframe.requestFullscreen) {
+                    iframe.requestFullscreen();
+                } else if (iframe.webkitRequestFullscreen) {
+                    iframe.webkitRequestFullscreen();
+                }
+                currentFullscreenFrame = frame;
+                exitOverlay.classList.add('visible');
+            } else {
+                frame.classList.add('fullscreen-fallback');
+                currentFullscreenFrame = frame;
+                exitOverlay.classList.add('visible');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function exitFullscreen() {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+
+            if (currentFullscreenFrame) {
+                currentFullscreenFrame.classList.remove('fullscreen-fallback');
+                currentFullscreenFrame = null;
+            }
+
+            exitOverlay.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement) {
+                exitOverlay.classList.remove('visible');
+                currentFullscreenFrame = null;
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && currentFullscreenFrame) {
+                exitFullscreen();
+            }
+        });
+
+        // Auto-save on input change
+        document.addEventListener('input', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                saveProgress();
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
