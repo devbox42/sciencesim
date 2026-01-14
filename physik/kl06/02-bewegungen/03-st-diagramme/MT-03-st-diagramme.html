@@ -958,8 +958,14 @@
             document.getElementById('startBereich').style.display = 'none';
             document.getElementById('testForm').style.display = 'block';
             showQuestionsForNiveau();
-            loadAnswers();
-            updateProgress();
+
+            // Antworten laden und prüfen ob bereits abgegeben
+            var wasSubmitted = loadAnswers();
+            if (wasSubmitted) {
+                restoreSubmittedState();
+            } else {
+                updateProgress();
+            }
         }
 
         function showQuestionsForNiveau() {
@@ -998,6 +1004,9 @@
         }
 
         // ===== SAVE/LOAD =====
+        // Gespeicherte Feedback-Daten für Wiederherstellung
+        var savedFeedback = {};
+
         function saveAnswers() {
             var data = {
                 q1a: document.getElementById('q1a').value,
@@ -1018,7 +1027,13 @@
                 q9b: document.getElementById('q9b').value,
                 q10: getRadioValue('q10'),
                 q11s: document.getElementById('q11s').value,
-                q11v: document.getElementById('q11v').value
+                q11v: document.getElementById('q11v').value,
+                // Persistenz-relevante Felder
+                submitted: testSubmitted,
+                punkte: savedFeedback.punkte || 0,
+                maxBE: savedFeedback.maxBE || 0,
+                note: savedFeedback.note || 0,
+                feedback: savedFeedback.feedback || {}
             };
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
         }
@@ -1047,8 +1062,38 @@
                     if (d.q10) setRadioValue('q10', d.q10);
                     if (d.q11s) document.getElementById('q11s').value = d.q11s;
                     if (d.q11v) document.getElementById('q11v').value = d.q11v;
+
+                    // Wenn bereits abgegeben, Ergebnis wiederherstellen
+                    if (d.submitted) {
+                        testSubmitted = true;
+                        savedFeedback = {
+                            punkte: d.punkte,
+                            maxBE: d.maxBE,
+                            note: d.note,
+                            feedback: d.feedback || {}
+                        };
+                        return true; // Signal: War bereits abgegeben
+                    }
                 }
             } catch (e) {}
+            return false;
+        }
+
+        function restoreSubmittedState() {
+            // Feedback wiederherstellen
+            if (savedFeedback.feedback) {
+                for (var id in savedFeedback.feedback) {
+                    var fb = savedFeedback.feedback[id];
+                    showFeedback(id, fb.type, fb.text);
+                }
+            }
+            // Ergebnis anzeigen
+            updateNotenspiegel(savedFeedback.maxBE);
+            document.getElementById('punkteAnzeige').innerHTML = savedFeedback.punkte + ' / ' + savedFeedback.maxBE + ' BE';
+            document.getElementById('noteAnzeige').innerHTML = 'Note: ' + savedFeedback.note;
+            document.getElementById('noteAnzeige').className = 'note note-' + savedFeedback.note;
+            document.getElementById('ergebnis').style.display = 'block';
+            document.getElementById('progress').style.width = '100%';
         }
 
         // ===== MC STYLING =====
@@ -1122,6 +1167,9 @@
             fb.style.display = 'block';
             fb.className = 'feedback ' + type;
             fb.innerHTML = text;
+            // Feedback für Persistenz speichern
+            if (!savedFeedback.feedback) savedFeedback.feedback = {};
+            savedFeedback.feedback[id] = { type: type, text: text };
         }
 
         // ===== AUSWERTEN =====
@@ -1242,6 +1290,11 @@
             document.getElementById('progress').style.width = '100%';
 
             document.getElementById('ergebnis').scrollIntoView({ behavior: 'smooth' });
+
+            // Ergebnis für Persistenz speichern
+            savedFeedback.punkte = punkte;
+            savedFeedback.maxBE = maxBE;
+            savedFeedback.note = note;
 
             // Als abgegeben markieren und speichern
             testSubmitted = true;
