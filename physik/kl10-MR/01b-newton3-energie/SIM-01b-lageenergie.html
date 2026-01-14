@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lageenergie – Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        header p {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        .sim-container {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+        }
+
+        .canvas-area {
+            background: #fafafa;
+            border: 1px solid #ddd;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-panel {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .control-panel h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2c5aa0;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 5px;
+        }
+
+        .slider-group {
+            margin-bottom: 12px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .slider-group input[type="range"] {
+            width: 100%;
+        }
+
+        .slider-value {
+            font-family: monospace;
+            font-size: 0.9em;
+            background: white;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        .result-display {
+            background: #e3f2fd;
+            border: 2px solid #2c5aa0;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .result-display .label {
+            font-size: 0.85em;
+            color: #555;
+        }
+
+        .result-display .value {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c5aa0;
+            font-family: monospace;
+        }
+
+        .formula-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .formula-box .formula {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.2em;
+            font-style: italic;
+        }
+
+        .formula-box .calc {
+            font-family: monospace;
+            font-size: 0.85em;
+            margin-top: 8px;
+            color: #555;
+        }
+
+        .comparison-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+
+        .comparison-section h3 {
+            font-size: 0.95em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2c5aa0;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .comparison-item {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 12px;
+        }
+
+        .comparison-item h4 {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .comparison-item.a h4 {
+            color: #c62828;
+        }
+
+        .comparison-item.b h4 {
+            color: #1565c0;
+        }
+
+        .comparison-item .params {
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .comparison-item .energy {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .bar-container {
+            margin-top: 15px;
+        }
+
+        .bar-label {
+            font-size: 0.8em;
+            margin-bottom: 4px;
+        }
+
+        .bar-wrapper {
+            background: #ddd;
+            height: 25px;
+            position: relative;
+        }
+
+        .bar {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .bar.a {
+            background: #c62828;
+        }
+
+        .bar.b {
+            background: #1565c0;
+        }
+
+        .bar-value {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            font-weight: 600;
+            color: white;
+        }
+
+        .info-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .info-box h4 {
+            color: #2a7a4b;
+            font-size: 0.95em;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 700px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Lageenergie (potenzielle Energie)</h1>
+            <p>E<sub>pot</sub> = m · g · h – Interaktive Simulation</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="sim-container">
+            <div class="main-layout">
+                <div class="canvas-area">
+                    <canvas id="simCanvas" width="500" height="400"></canvas>
+                </div>
+
+                <div class="sidebar">
+                    <div class="control-panel">
+                        <h3>Parameter einstellen</h3>
+
+                        <div class="slider-group">
+                            <label>Masse m:</label>
+                            <input type="range" id="massSlider" min="1" max="50" value="10" step="1">
+                            <div class="slider-value" id="massValue">10 kg</div>
+                        </div>
+
+                        <div class="slider-group">
+                            <label>Höhe h:</label>
+                            <input type="range" id="heightSlider" min="0" max="20" value="5" step="0.5">
+                            <div class="slider-value" id="heightValue">5 m</div>
+                        </div>
+
+                        <div class="slider-group">
+                            <label>Ortsfaktor g:</label>
+                            <div class="slider-value" style="background: #e3f2fd;">10 m/s² (Erde)</div>
+                        </div>
+                    </div>
+
+                    <div class="formula-box">
+                        <div class="formula">E<sub>pot</sub> = m · g · h</div>
+                        <div class="calc" id="calcDisplay">= 10 · 10 · 5</div>
+                    </div>
+
+                    <div class="result-display">
+                        <div class="label">Lageenergie:</div>
+                        <div class="value" id="energyValue">500 J</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison-section">
+                <h3>Vergleich: Zwei Körper</h3>
+
+                <div class="comparison-grid">
+                    <div class="comparison-item a">
+                        <h4>Körper A (rot)</h4>
+                        <div class="slider-group">
+                            <label>Masse:</label>
+                            <input type="range" id="massA" min="1" max="50" value="20" step="1">
+                            <span id="massAVal">20 kg</span>
+                        </div>
+                        <div class="slider-group">
+                            <label>Höhe:</label>
+                            <input type="range" id="heightA" min="0" max="20" value="10" step="0.5">
+                            <span id="heightAVal">10 m</span>
+                        </div>
+                        <div class="energy" id="energyA">E = 2000 J</div>
+                    </div>
+
+                    <div class="comparison-item b">
+                        <h4>Körper B (blau)</h4>
+                        <div class="slider-group">
+                            <label>Masse:</label>
+                            <input type="range" id="massB" min="1" max="50" value="40" step="1">
+                            <span id="massBVal">40 kg</span>
+                        </div>
+                        <div class="slider-group">
+                            <label>Höhe:</label>
+                            <input type="range" id="heightB" min="0" max="20" value="5" step="0.5">
+                            <span id="heightBVal">5 m</span>
+                        </div>
+                        <div class="energy" id="energyB">E = 2000 J</div>
+                    </div>
+                </div>
+
+                <div class="bar-container">
+                    <div class="bar-label">Energie-Vergleich:</div>
+                    <div style="display: grid; grid-template-columns: 60px 1fr; gap: 5px; align-items: center; margin-bottom: 5px;">
+                        <span style="font-size: 0.85em; color: #c62828;">Körper A:</span>
+                        <div class="bar-wrapper">
+                            <div class="bar a" id="barA" style="width: 50%;"></div>
+                            <span class="bar-value" id="barAVal">2000 J</span>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 60px 1fr; gap: 5px; align-items: center;">
+                        <span style="font-size: 0.85em; color: #1565c0;">Körper B:</span>
+                        <div class="bar-wrapper">
+                            <div class="bar b" id="barB" style="width: 50%;"></div>
+                            <span class="bar-value" id="barBVal">2000 J</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>Merke:</h4>
+                <p>
+                    <strong>Lageenergie</strong> ist die Energie, die ein Körper aufgrund seiner
+                    <strong>Höhe</strong> besitzt. Sie hängt von drei Faktoren ab:
+                </p>
+                <ul style="margin-top: 8px; margin-left: 20px; font-size: 0.85em;">
+                    <li><strong>Masse m:</strong> Mehr Masse = mehr Energie</li>
+                    <li><strong>Höhe h:</strong> Größere Höhe = mehr Energie</li>
+                    <li><strong>Ortsfaktor g:</strong> 10 m/s² auf der Erde (Mond: nur 1,6 m/s²)</li>
+                </ul>
+                <p style="margin-top: 8px;">
+                    Die Lageenergie wird beim Fallen in <strong>Bewegungsenergie</strong> umgewandelt!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var canvas = document.getElementById('simCanvas');
+            var ctx = canvas.getContext('2d');
+
+            var massSlider = document.getElementById('massSlider');
+            var heightSlider = document.getElementById('heightSlider');
+
+            var massValue = document.getElementById('massValue');
+            var heightValue = document.getElementById('heightValue');
+            var calcDisplay = document.getElementById('calcDisplay');
+            var energyValue = document.getElementById('energyValue');
+
+            var massASlider = document.getElementById('massA');
+            var heightASlider = document.getElementById('heightA');
+            var massBSlider = document.getElementById('massB');
+            var heightBSlider = document.getElementById('heightB');
+
+            var g = 10;
+
+            function getMass() {
+                return parseFloat(massSlider.value);
+            }
+
+            function getHeight() {
+                return parseFloat(heightSlider.value);
+            }
+
+            function getMassA() {
+                return parseFloat(massASlider.value);
+            }
+
+            function getHeightA() {
+                return parseFloat(heightASlider.value);
+            }
+
+            function getMassB() {
+                return parseFloat(massBSlider.value);
+            }
+
+            function getHeightB() {
+                return parseFloat(heightBSlider.value);
+            }
+
+            function calculateEnergy(m, h) {
+                return m * g * h;
+            }
+
+            function formatNumber(num) {
+                if (num >= 1000) {
+                    return (num / 1000).toFixed(1).replace('.', ',') + ' kJ';
+                }
+                return num.toFixed(0) + ' J';
+            }
+
+            function updateMainDisplay() {
+                var m = getMass();
+                var h = getHeight();
+                var E = calculateEnergy(m, h);
+
+                massValue.textContent = m + ' kg';
+                heightValue.textContent = h.toFixed(1).replace('.', ',') + ' m';
+                calcDisplay.textContent = '= ' + m + ' · 10 · ' + h.toFixed(1).replace('.', ',');
+                energyValue.textContent = formatNumber(E);
+
+                draw();
+            }
+
+            function updateComparison() {
+                var mA = getMassA();
+                var hA = getHeightA();
+                var mB = getMassB();
+                var hB = getHeightB();
+
+                var eA = calculateEnergy(mA, hA);
+                var eB = calculateEnergy(mB, hB);
+
+                document.getElementById('massAVal').textContent = mA + ' kg';
+                document.getElementById('heightAVal').textContent = hA.toFixed(1).replace('.', ',') + ' m';
+                document.getElementById('massBVal').textContent = mB + ' kg';
+                document.getElementById('heightBVal').textContent = hB.toFixed(1).replace('.', ',') + ' m';
+
+                document.getElementById('energyA').textContent = 'E = ' + formatNumber(eA);
+                document.getElementById('energyB').textContent = 'E = ' + formatNumber(eB);
+
+                var maxE = Math.max(eA, eB, 1);
+                var barA = document.getElementById('barA');
+                var barB = document.getElementById('barB');
+
+                barA.style.width = (eA / maxE * 100) + '%';
+                barB.style.width = (eB / maxE * 100) + '%';
+
+                document.getElementById('barAVal').textContent = formatNumber(eA);
+                document.getElementById('barBVal').textContent = formatNumber(eB);
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, 500, 400);
+
+                var m = getMass();
+                var h = getHeight();
+
+                // Background - sky gradient (simplified)
+                ctx.fillStyle = '#e8f4fc';
+                ctx.fillRect(0, 0, 500, 350);
+
+                // Ground
+                ctx.fillStyle = '#8B7355';
+                ctx.fillRect(0, 350, 500, 50);
+
+                // Height scale on left
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(30, 50);
+                ctx.lineTo(30, 350);
+                ctx.stroke();
+
+                // Height markers
+                ctx.fillStyle = '#555';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'right';
+                for (var i = 0; i <= 20; i += 5) {
+                    var y = 350 - (i / 20) * 300;
+                    ctx.beginPath();
+                    ctx.moveTo(25, y);
+                    ctx.lineTo(35, y);
+                    ctx.stroke();
+                    ctx.fillText(i + ' m', 22, y + 4);
+                }
+
+                // Calculate object position
+                var objectY = 350 - (h / 20) * 300;
+                var objectX = 250;
+                var objectSize = 15 + m * 0.5; // Size based on mass
+
+                // Ground reference line
+                ctx.strokeStyle = '#2c5aa0';
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(40, 350);
+                ctx.lineTo(460, 350);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Height line
+                if (h > 0) {
+                    ctx.strokeStyle = '#2a7a4b';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(objectX, objectY + objectSize);
+                    ctx.lineTo(objectX, 350);
+                    ctx.stroke();
+
+                    // Height arrows
+                    ctx.fillStyle = '#2a7a4b';
+                    ctx.beginPath();
+                    ctx.moveTo(objectX, objectY + objectSize + 5);
+                    ctx.lineTo(objectX - 6, objectY + objectSize + 15);
+                    ctx.lineTo(objectX + 6, objectY + objectSize + 15);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(objectX, 345);
+                    ctx.lineTo(objectX - 6, 335);
+                    ctx.lineTo(objectX + 6, 335);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Height label
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('h = ' + h.toFixed(1).replace('.', ',') + ' m', objectX + 15, (objectY + 350) / 2);
+                }
+
+                // Object (box)
+                ctx.fillStyle = '#2c5aa0';
+                ctx.fillRect(objectX - objectSize, objectY - objectSize, objectSize * 2, objectSize * 2);
+
+                // Object border
+                ctx.strokeStyle = '#1e4080';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(objectX - objectSize, objectY - objectSize, objectSize * 2, objectSize * 2);
+
+                // Mass label on object
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(m + ' kg', objectX, objectY + 4);
+
+                // Energy bar on right
+                var E = calculateEnergy(m, h);
+                var maxE = 50 * 10 * 20; // max possible
+                var barHeight = (E / maxE) * 280;
+
+                ctx.fillStyle = '#ddd';
+                ctx.fillRect(420, 50, 40, 300);
+
+                ctx.fillStyle = '#f9a825';
+                ctx.fillRect(420, 350 - barHeight, 40, barHeight);
+
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(420, 50, 40, 300);
+
+                // Energy label
+                ctx.fillStyle = '#222';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('E_pot', 440, 45);
+
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(formatNumber(E), 440, 370);
+
+                // Reference label
+                ctx.fillStyle = '#888';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Nullniveau', 250, 365);
+            }
+
+            // Event listeners
+            massSlider.addEventListener('input', updateMainDisplay);
+            heightSlider.addEventListener('input', updateMainDisplay);
+
+            massASlider.addEventListener('input', updateComparison);
+            heightASlider.addEventListener('input', updateComparison);
+            massBSlider.addEventListener('input', updateComparison);
+            heightBSlider.addEventListener('input', updateComparison);
+
+            // Initialize
+            updateMainDisplay();
+            updateComparison();
+        })();
+    </script>
+</body>
+</html>

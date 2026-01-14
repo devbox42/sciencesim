@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Formel-Dreieck – Umstellen leicht gemacht</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .sim-container {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .dreieck-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .dreieck-svg {
+            cursor: pointer;
+        }
+
+        .dreieck-cell {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dreieck-cell:hover {
+            filter: brightness(1.1);
+        }
+        .dreieck-cell.hidden {
+            opacity: 0.15;
+        }
+        .dreieck-cell.highlighted {
+            filter: drop-shadow(0 0 10px gold);
+        }
+
+        .formula-display {
+            text-align: center;
+            padding: 30px;
+            background: #e8f5e9;
+            border: 3px solid #2a7a4b;
+            margin: 20px 0;
+        }
+        .formula-display h3 {
+            color: #2a7a4b;
+            margin-bottom: 15px;
+        }
+        .formula-big {
+            font-size: 3em;
+            font-weight: bold;
+            color: #2a7a4b;
+        }
+        .formula-explanation {
+            font-size: 1.1em;
+            margin-top: 15px;
+            color: #555;
+        }
+
+        .instruction {
+            text-align: center;
+            font-size: 1.2em;
+            color: #2c5aa0;
+            margin: 20px 0;
+            padding: 15px;
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+        }
+
+        .buttons-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-f { background: #c62828; color: white; }
+        .btn-m { background: #1565c0; color: white; }
+        .btn-a { background: #2a7a4b; color: white; }
+        .btn:hover { transform: scale(1.05); }
+        .btn.active { box-shadow: 0 0 0 4px gold; }
+
+        .practice-section {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .practice-section h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+
+        .quiz-item {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .quiz-item p { margin-bottom: 10px; }
+        .quiz-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .quiz-option {
+            padding: 10px 20px;
+            border: 2px solid #ddd;
+            background: white;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 1.1em;
+        }
+        .quiz-option:hover { border-color: #2c5aa0; background: #e3f2fd; }
+        .quiz-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .quiz-option.incorrect { border-color: #c62828; background: #ffebee; }
+        .quiz-feedback {
+            margin-top: 10px;
+            padding: 10px;
+            display: none;
+        }
+        .quiz-feedback.show { display: block; }
+        .quiz-feedback.correct { background: #e8f5e9; color: #2a7a4b; }
+        .quiz-feedback.incorrect { background: #ffebee; color: #c62828; }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .summary-table th, .summary-table td {
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: center;
+        }
+        .summary-table th { background: #2c5aa0; color: white; }
+        .summary-table td { font-size: 1.3em; font-family: monospace; }
+        .summary-table tr:nth-child(even) { background: #f5f5f5; }
+
+        @media (max-width: 600px) {
+            .formula-big { font-size: 2em; }
+            .btn { padding: 10px 20px; font-size: 1em; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Formel-Dreieck – Umstellen leicht gemacht</h1>
+        <p>Physik Klasse 10 | Grundgesetz der Mechanik</p>
+    </header>
+
+    <div class="container">
+        <div class="instruction">
+            <strong>Klicke auf die Größe, die du berechnen willst!</strong><br>
+            Sie wird "abgedeckt" und du siehst die richtige Formel.
+        </div>
+
+        <div class="sim-container">
+            <div class="dreieck-wrapper">
+                <svg class="dreieck-svg" width="300" height="260" viewBox="0 0 300 260">
+                    <!-- Dreieck Umriss -->
+                    <polygon points="150,20 30,220 270,220" fill="none" stroke="#2c5aa0" stroke-width="4"/>
+
+                    <!-- Horizontale Trennlinie -->
+                    <line x1="55" y1="120" x2="245" y2="120" stroke="#2c5aa0" stroke-width="3"/>
+
+                    <!-- Vertikale Trennlinie unten -->
+                    <line x1="150" y1="120" x2="150" y2="220" stroke="#2c5aa0" stroke-width="3"/>
+
+                    <!-- F (oben) - klickbar -->
+                    <g class="dreieck-cell" id="cell-f" onclick="selectVariable('f')">
+                        <polygon points="150,25 60,115 240,115" fill="#ffebee"/>
+                        <text x="150" y="85" text-anchor="middle" font-size="48" font-weight="bold" fill="#c62828">F</text>
+                    </g>
+
+                    <!-- m (unten links) - klickbar -->
+                    <g class="dreieck-cell" id="cell-m" onclick="selectVariable('m')">
+                        <polygon points="55,125 35,215 145,215 145,125" fill="#e3f2fd"/>
+                        <text x="95" y="180" text-anchor="middle" font-size="40" font-weight="bold" fill="#1565c0">m</text>
+                    </g>
+
+                    <!-- a (unten rechts) - klickbar -->
+                    <g class="dreieck-cell" id="cell-a" onclick="selectVariable('a')">
+                        <polygon points="155,125 155,215 265,215 245,125" fill="#e8f5e9"/>
+                        <text x="205" y="180" text-anchor="middle" font-size="40" font-weight="bold" fill="#2a7a4b">a</text>
+                    </g>
+
+                    <!-- Multiplikationszeichen -->
+                    <text x="150" y="180" text-anchor="middle" font-size="30" fill="#555">·</text>
+                </svg>
+
+                <div style="text-align: center;">
+                    <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Oder wähle hier:</p>
+                    <div class="buttons-row" style="flex-direction: column; gap: 10px;">
+                        <button class="btn btn-f" id="btn-f" onclick="selectVariable('f')">Suche: <strong>F</strong> (Kraft)</button>
+                        <button class="btn btn-m" id="btn-m" onclick="selectVariable('m')">Suche: <strong>m</strong> (Masse)</button>
+                        <button class="btn btn-a" id="btn-a" onclick="selectVariable('a')">Suche: <strong>a</strong> (Beschleunigung)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="formula-display" id="formula-display">
+                <h3 id="formula-title">Wähle eine Größe aus!</h3>
+                <div class="formula-big" id="formula-result">? = ?</div>
+                <div class="formula-explanation" id="formula-explanation">
+                    Klicke oben auf F, m oder a, um die passende Formel zu sehen.
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>So funktioniert das Formel-Dreieck:</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li>Die gesuchte Größe <strong>abdecken</strong> (anklicken)</li>
+                <li>Was <strong>übrig bleibt</strong>, zeigt die Formel</li>
+                <li><strong>Nebeneinander</strong> = multiplizieren (m · a)</li>
+                <li><strong>Übereinander</strong> = dividieren (F ÷ a oder F ÷ m)</li>
+            </ul>
+        </div>
+
+        <div class="sim-container">
+            <h3 style="color: #2c5aa0; margin-bottom: 15px;">📋 Alle drei Formeln</h3>
+            <table class="summary-table">
+                <tr>
+                    <th>Gesucht</th>
+                    <th>Formel</th>
+                    <th>Bedeutung</th>
+                </tr>
+                <tr>
+                    <td style="color: #c62828;"><strong>F</strong></td>
+                    <td style="color: #c62828;">F = m · a</td>
+                    <td>Kraft = Masse mal Beschleunigung</td>
+                </tr>
+                <tr>
+                    <td style="color: #1565c0;"><strong>m</strong></td>
+                    <td style="color: #1565c0;">m = F ÷ a</td>
+                    <td>Masse = Kraft geteilt durch Beschleunigung</td>
+                </tr>
+                <tr>
+                    <td style="color: #2a7a4b;"><strong>a</strong></td>
+                    <td style="color: #2a7a4b;">a = F ÷ m</td>
+                    <td>Beschleunigung = Kraft geteilt durch Masse</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="practice-section">
+            <h3>🎯 Übung: Welche Formel brauchst du?</h3>
+
+            <div class="quiz-item" id="quiz1">
+                <p><strong>1.</strong> Gegeben: m = 10 kg, a = 5 m/s². Gesucht: F</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkQuiz(1, 'fma', this)">F = m · a</div>
+                    <div class="quiz-option" onclick="checkQuiz(1, 'mfa', this)">m = F ÷ a</div>
+                    <div class="quiz-option" onclick="checkQuiz(1, 'afm', this)">a = F ÷ m</div>
+                </div>
+                <div class="quiz-feedback" id="quiz1-fb"></div>
+            </div>
+
+            <div class="quiz-item" id="quiz2">
+                <p><strong>2.</strong> Gegeben: F = 200 N, a = 10 m/s². Gesucht: m</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkQuiz(2, 'fma', this)">F = m · a</div>
+                    <div class="quiz-option" onclick="checkQuiz(2, 'mfa', this)">m = F ÷ a</div>
+                    <div class="quiz-option" onclick="checkQuiz(2, 'afm', this)">a = F ÷ m</div>
+                </div>
+                <div class="quiz-feedback" id="quiz2-fb"></div>
+            </div>
+
+            <div class="quiz-item" id="quiz3">
+                <p><strong>3.</strong> Gegeben: F = 500 N, m = 50 kg. Gesucht: a</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkQuiz(3, 'fma', this)">F = m · a</div>
+                    <div class="quiz-option" onclick="checkQuiz(3, 'mfa', this)">m = F ÷ a</div>
+                    <div class="quiz-option" onclick="checkQuiz(3, 'afm', this)">a = F ÷ m</div>
+                </div>
+                <div class="quiz-feedback" id="quiz3-fb"></div>
+            </div>
+
+            <div class="quiz-item" id="quiz4">
+                <p><strong>4.</strong> Ein Auto (m = 1000 kg) wird mit F = 4000 N beschleunigt. Gesucht: a</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="checkQuiz(4, 'fma', this)">F = m · a</div>
+                    <div class="quiz-option" onclick="checkQuiz(4, 'mfa', this)">m = F ÷ a</div>
+                    <div class="quiz-option" onclick="checkQuiz(4, 'afm', this)">a = F ÷ m</div>
+                </div>
+                <div class="quiz-feedback" id="quiz4-fb"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var currentSelected = null;
+
+    var formulas = {
+        f: {
+            title: 'Gesucht: Kraft F',
+            result: 'F = m · a',
+            explanation: 'Decke F ab → m und a stehen nebeneinander → multiplizieren!',
+            color: '#c62828'
+        },
+        m: {
+            title: 'Gesucht: Masse m',
+            result: 'm = F ÷ a',
+            explanation: 'Decke m ab → F steht über a → dividieren!',
+            color: '#1565c0'
+        },
+        a: {
+            title: 'Gesucht: Beschleunigung a',
+            result: 'a = F ÷ m',
+            explanation: 'Decke a ab → F steht über m → dividieren!',
+            color: '#2a7a4b'
+        }
+    };
+
+    var quizAnswers = {
+        1: 'fma',
+        2: 'mfa',
+        3: 'afm',
+        4: 'afm'
+    };
+
+    function selectVariable(v) {
+        currentSelected = v;
+
+        // Reset all cells
+        document.querySelectorAll('.dreieck-cell').forEach(function(cell) {
+            cell.classList.remove('hidden', 'highlighted');
+        });
+
+        // Hide selected, highlight others
+        document.getElementById('cell-' + v).classList.add('hidden');
+
+        // Reset buttons
+        document.querySelectorAll('.btn').forEach(function(btn) {
+            btn.classList.remove('active');
+        });
+        document.getElementById('btn-' + v).classList.add('active');
+
+        // Update formula display
+        var f = formulas[v];
+        document.getElementById('formula-title').textContent = f.title;
+        document.getElementById('formula-title').style.color = f.color;
+        document.getElementById('formula-result').textContent = f.result;
+        document.getElementById('formula-result').style.color = f.color;
+        document.getElementById('formula-explanation').textContent = f.explanation;
+    }
+
+    function checkQuiz(num, answer, element) {
+        var correct = quizAnswers[num];
+        var fb = document.getElementById('quiz' + num + '-fb');
+
+        // Disable all options in this quiz
+        var options = element.parentNode.querySelectorAll('.quiz-option');
+        options.forEach(function(opt) {
+            opt.style.pointerEvents = 'none';
+            opt.classList.remove('correct', 'incorrect');
+        });
+
+        if (answer === correct) {
+            element.classList.add('correct');
+            fb.className = 'quiz-feedback show correct';
+            fb.textContent = 'Richtig!';
+        } else {
+            element.classList.add('incorrect');
+            // Show correct answer
+            options.forEach(function(opt) {
+                if (opt.textContent.toLowerCase().replace(/\s/g, '').indexOf(correct.replace('fma', 'f=m·a').replace('mfa', 'm=f÷a').replace('afm', 'a=f÷m')) > -1) {
+                    opt.classList.add('correct');
+                }
+            });
+            // Find and highlight correct
+            var correctMap = { 'fma': 'F = m · a', 'mfa': 'm = F ÷ a', 'afm': 'a = F ÷ m' };
+            options.forEach(function(opt) {
+                if (opt.textContent === correctMap[correct]) {
+                    opt.classList.add('correct');
+                }
+            });
+            fb.className = 'quiz-feedback show incorrect';
+            fb.textContent = 'Falsch. Die richtige Formel ist: ' + correctMap[correct];
+        }
+    }
+    </script>
+</body>
+</html>
