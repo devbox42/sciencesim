@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I(U)-Kennlinie aufnehmen</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --physik: #2c5aa0;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #666666;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--physik);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--physik);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .circuit-area {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            background: #fafafa;
+            border: 1px solid var(--border);
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .value-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--physik);
+        }
+
+        .displays {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .display {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .display .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .display .value {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .display.voltage .value { color: var(--positive); }
+        .display.current .value { color: var(--negative); }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background: var(--physik);
+            color: var(--white);
+            font-weight: 600;
+        }
+
+        .data-table tr.recorded {
+            background: #e8f5e9;
+        }
+
+        .data-table tr.current-row {
+            background: #fff3e0;
+        }
+
+        .record-btn {
+            width: 100%;
+            padding: 10px;
+            background: var(--success);
+            color: var(--white);
+            border: none;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .record-btn:hover {
+            background: #1b5e20;
+        }
+
+        .record-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .progress-info {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .hint-box {
+            background: #fff3e0;
+            border: 1px solid var(--warning);
+            padding: 10px;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 700px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>I(U)-Kennlinie aufnehmen</h1>
+
+        <div class="main-layout">
+            <div class="circuit-area">
+                <canvas id="circuit" width="480" height="320"></canvas>
+            </div>
+
+            <div class="sidebar">
+                <div class="displays">
+                    <div class="display voltage">
+                        <div class="label">Spannung U</div>
+                        <div class="value" id="disp-u">0 V</div>
+                    </div>
+                    <div class="display current">
+                        <div class="label">Stromstärke I</div>
+                        <div class="value" id="disp-i">0,00 A</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Spannung U einstellen</label>
+                    <input type="range" id="voltage-slider" min="0" max="12" step="2" value="0">
+                    <div class="value-box" id="voltage-value">0 V</div>
+                </div>
+
+                <button class="record-btn" id="record-btn" onclick="recordValue()">Messwert aufnehmen</button>
+
+                <table class="data-table">
+                    <tr>
+                        <th>U in V</th>
+                        <th>I in A</th>
+                    </tr>
+                    <tr id="row-0"><td>0</td><td id="i-0">–</td></tr>
+                    <tr id="row-2"><td>2</td><td id="i-2">–</td></tr>
+                    <tr id="row-4"><td>4</td><td id="i-4">–</td></tr>
+                    <tr id="row-6"><td>6</td><td id="i-6">–</td></tr>
+                    <tr id="row-8"><td>8</td><td id="i-8">–</td></tr>
+                    <tr id="row-10"><td>10</td><td id="i-10">–</td></tr>
+                    <tr id="row-12"><td>12</td><td id="i-12">–</td></tr>
+                </table>
+
+                <div class="progress-info" id="progress">0 von 7 Messwerten aufgenommen</div>
+
+                <div class="hint-box">
+                    <strong>Tipp:</strong> Stelle verschiedene Spannungen ein und notiere jeweils die Stromstärke. Der Widerstand beträgt R = 10 Ω.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // I(U)-KENNLINIE SIMULATION (ES5)
+        // Widerstand R = 10 Ohm (konstant)
+        // ============================================
+
+        var canvas = document.getElementById('circuit');
+        var ctx = canvas.getContext('2d');
+        var slider = document.getElementById('voltage-slider');
+
+        var R = 10; // Ohm
+        var U = 0;
+        var I = 0;
+
+        var recorded = {};
+        var recordCount = 0;
+
+        // Elektronen
+        var electrons = [];
+        var MAX_ELECTRONS = 25;
+
+        // ============================================
+        // ELECTRON CLASS
+        // ============================================
+
+        function Electron() {
+            this.reset();
+        }
+
+        Electron.prototype.reset = function() {
+            this.pos = Math.random();
+            this.speed = 0.002 + Math.random() * 0.001;
+        };
+
+        Electron.prototype.update = function() {
+            if (I > 0.01) {
+                this.pos += this.speed * I * 8;
+                if (this.pos > 1) {
+                    this.pos = 0;
+                }
+            }
+        };
+
+        // ============================================
+        // CIRCUIT DRAWING (DIN-Symbole)
+        // ============================================
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawWires();
+            drawSource();
+            drawResistor();
+            drawAmmeter();
+            drawElectrons();
+            drawLabels();
+        }
+
+        function drawWires() {
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+
+            // Obere Leitung
+            ctx.beginPath();
+            ctx.moveTo(80, 80);
+            ctx.lineTo(400, 80);
+            ctx.stroke();
+
+            // Rechte Leitung
+            ctx.beginPath();
+            ctx.moveTo(400, 80);
+            ctx.lineTo(400, 240);
+            ctx.stroke();
+
+            // Untere Leitung
+            ctx.beginPath();
+            ctx.moveTo(400, 240);
+            ctx.lineTo(80, 240);
+            ctx.stroke();
+
+            // Linke Leitung - ZWEI Segmente mit Lücke für Spannungsquelle!
+            // Oberes Segment (von oben bis zum + Pol)
+            ctx.beginPath();
+            ctx.moveTo(80, 80);
+            ctx.lineTo(80, 145);
+            ctx.stroke();
+
+            // Unteres Segment (vom - Pol nach unten)
+            ctx.beginPath();
+            ctx.moveTo(80, 175);
+            ctx.lineTo(80, 240);
+            ctx.stroke();
+        }
+
+        function drawSource() {
+            var cx = 80;
+            var cy = 160;
+
+            // DIN: Zwei parallele Linien
+            // Lange Linie = + (oben)
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 15, cy - 8);
+            ctx.lineTo(cx + 15, cy - 8);
+            ctx.stroke();
+
+            // Kurze dicke Linie = - (unten)
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy + 8);
+            ctx.lineTo(cx + 8, cy + 8);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('+', cx, cy - 18);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.fillText('−', cx, cy + 26);
+
+            // U-Wert
+            ctx.fillStyle = '#333';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('U = ' + U + ' V', cx, cy + 45);
+        }
+
+        function drawResistor() {
+            var cx = 240;
+            var cy = 80;
+
+            // DIN: Rechteck
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(cx - 30, cy - 12, 60, 24);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cx - 30, cy - 12, 60, 24);
+
+            // R-Label
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('R', cx, cy);
+
+            // Wert
+            ctx.font = '10px sans-serif';
+            ctx.fillText('10 Ω', cx, cy + 25);
+        }
+
+        function drawAmmeter() {
+            var cx = 240;
+            var cy = 240;
+
+            // DIN: Kreis mit A
+            ctx.beginPath();
+            ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // A-Label
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('A', cx, cy);
+
+            // Stromwert
+            ctx.font = '11px sans-serif';
+            ctx.fillText('I = ' + I.toFixed(2) + ' A', cx, cy + 35);
+        }
+
+        function drawElectrons() {
+            if (I < 0.01) return;
+
+            ctx.fillStyle = 'rgba(21, 101, 192, 0.8)';
+
+            for (var i = 0; i < electrons.length; i++) {
+                var e = electrons[i];
+                var pos = getElectronPosition(e.pos);
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function getElectronPosition(t) {
+            // Elektronen fließen von − nach + (GEGEN Uhrzeigersinn):
+            // − ist unten an der Quelle → unten (L→R) → rechts (B→T) → oben (R→L) → links (T→B) → +
+            var x, y;
+
+            if (t < 0.25) {
+                // Unten (links nach rechts) - Elektronen verlassen −
+                x = 80 + (400 - 80) * (t / 0.25);
+                y = 240;
+            } else if (t < 0.5) {
+                // Rechts (unten nach oben)
+                x = 400;
+                y = 240 - (240 - 80) * ((t - 0.25) / 0.25);
+            } else if (t < 0.75) {
+                // Oben (rechts nach links)
+                x = 400 - (400 - 80) * ((t - 0.5) / 0.25);
+                y = 80;
+            } else {
+                // Links (oben nach unten) - Elektronen fließen zu +
+                x = 80;
+                y = 80 + (240 - 80) * ((t - 0.75) / 0.25);
+            }
+
+            return { x: x, y: y };
+        }
+
+        function drawLabels() {
+            if (I > 0.01) {
+                // Technische Stromrichtung (rot): + → − (auf oberem Draht: nach rechts)
+                ctx.fillStyle = '#c62828';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('I →', 320, 70);
+
+                // Elektronenfluss (blau): − → + (auf oberem Draht: nach links)
+                ctx.fillStyle = '#1565c0';
+                ctx.fillText('← e⁻', 100, 70);
+            }
+
+            // Legende unten
+            ctx.fillStyle = '#888';
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Rot: techn. Strom (+ → −)  |  Blau: Elektronen (− → +)', 80, 310);
+        }
+
+        // ============================================
+        // UPDATE
+        // ============================================
+
+        function update() {
+            U = parseInt(slider.value);
+            I = U / R;
+
+            // Update electrons
+            for (var i = 0; i < electrons.length; i++) {
+                electrons[i].update();
+            }
+
+            draw();
+            updateDisplays();
+            updateTable();
+
+            requestAnimationFrame(update);
+        }
+
+        function updateDisplays() {
+            document.getElementById('voltage-value').textContent = U + ' V';
+            document.getElementById('disp-u').textContent = U + ' V';
+            document.getElementById('disp-i').textContent = I.toFixed(2).replace('.', ',') + ' A';
+        }
+
+        function updateTable() {
+            // Highlight current row
+            var rows = document.querySelectorAll('.data-table tr');
+            for (var i = 1; i < rows.length; i++) {
+                rows[i].classList.remove('current-row');
+            }
+
+            var currentRow = document.getElementById('row-' + U);
+            if (currentRow && !recorded[U]) {
+                currentRow.classList.add('current-row');
+            }
+
+            // Enable/disable button
+            var btn = document.getElementById('record-btn');
+            if (recorded[U]) {
+                btn.disabled = true;
+                btn.textContent = 'Bereits aufgenommen';
+            } else {
+                btn.disabled = false;
+                btn.textContent = 'Messwert aufnehmen';
+            }
+        }
+
+        // ============================================
+        // RECORD VALUE
+        // ============================================
+
+        function recordValue() {
+            if (recorded[U]) return;
+
+            recorded[U] = I;
+            recordCount++;
+
+            var cell = document.getElementById('i-' + U);
+            cell.textContent = I.toFixed(2).replace('.', ',');
+
+            var row = document.getElementById('row-' + U);
+            row.classList.add('recorded');
+            row.classList.remove('current-row');
+
+            document.getElementById('progress').textContent = recordCount + ' von 7 Messwerten aufgenommen';
+
+            if (recordCount >= 7) {
+                document.getElementById('progress').innerHTML = '<strong style="color: #2a7a4b;">Alle Messwerte aufgenommen!</strong>';
+            }
+        }
+
+        // ============================================
+        // EVENTS
+        // ============================================
+
+        slider.addEventListener('input', function() {
+            updateDisplays();
+            updateTable();
+        });
+
+        // ============================================
+        // INIT
+        // ============================================
+
+        function init() {
+            for (var i = 0; i < MAX_ELECTRONS; i++) {
+                electrons.push(new Electron());
+            }
+            update();
+        }
+
+        init();
+    </script>
+</body>
+</html>
