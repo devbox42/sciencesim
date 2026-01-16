@@ -1880,6 +1880,9 @@
             q27b: 'unten'   // Lorentzkraft→Pole: I⊗ + F→ → B↑ → N unten
         };
 
+        // Flag um zu verhindern, dass saveProgress während des Restore-Vorgangs aufgerufen wird
+        var isRestoring = false;
+
         function selectNiveau(niveau) {
             selectedNiveau = niveau;
 
@@ -1912,7 +1915,10 @@
             }
 
             updateProgress();
-            saveProgress();
+            // Nur speichern wenn NICHT im Restore-Modus
+            if (!isRestoring) {
+                saveProgress();
+            }
         }
 
         function setupOptions() {
@@ -2049,18 +2055,24 @@
         }
 
         function saveProgress() {
+            var answers = collectAllAnswers();
             var data = {
-                answers: collectAllAnswers(),
+                answers: answers,
                 timestamp: new Date().toISOString()
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            // DEBUG: Checkbox-Werte bei Save
+            console.log('[SAVE] q4:', answers.q4, 'q8:', answers.q8, 'q9:', answers.q9);
         }
 
         function loadProgress() {
             var saved = localStorage.getItem(STORAGE_KEY);
+            console.log('[LOAD] Raw localStorage:', saved ? 'exists' : 'empty');
             if (saved) {
                 var data = JSON.parse(saved);
                 if (data.answers) {
+                    // DEBUG: Checkbox-Werte bei Load
+                    console.log('[LOAD] q4:', data.answers.q4, 'q8:', data.answers.q8, 'q9:', data.answers.q9);
                     restoreAnswers(data.answers);
                 }
             }
@@ -2126,12 +2138,15 @@
 
             // Multi-select questions
             ['q4', 'q8', 'q9'].forEach(function(q) {
+                console.log('[RESTORE] ' + q + ':', saved[q], 'length:', saved[q] ? saved[q].length : 'N/A');
                 if (saved[q] && saved[q].length) {
                     saved[q].forEach(function(val) {
                         var cb = document.querySelector('input[name="' + q + '"][value="' + val + '"]');
+                        console.log('[RESTORE] ' + q + ' val=' + val + ' found:', !!cb);
                         if (cb) {
                             cb.checked = true;
                             cb.parentNode.classList.add('selected');
+                            console.log('[RESTORE] ' + q + ' val=' + val + ' checked:', cb.checked, 'selected:', cb.parentNode.classList.contains('selected'));
                         }
                     });
                 }
@@ -2698,7 +2713,6 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             generateSeatDropdown();
-            restoreNiveauDropdown();
             setupOptions();
 
             // Startzeit speichern (beim ersten Öffnen)
@@ -2717,7 +2731,10 @@
                 // Für Klasse 8+ bleibt alles permanent
             }
 
-            // Abgabe-Status prüfen und wiederherstellen
+            // WICHTIG: Restore-Modus aktivieren um zu verhindern, dass saveProgress() aufgerufen wird
+            isRestoring = true;
+
+            // Antworten ZUERST laden, BEVOR Niveau wiederhergestellt wird
             var wasSubmitted = localStorage.getItem(STORAGE_KEY + '-submitted');
             if (wasSubmitted === 'true') {
                 testSubmitted = true;
@@ -2734,6 +2751,12 @@
             } else {
                 loadProgress();
             }
+
+            // Niveau NACH dem Laden der Antworten wiederherstellen
+            restoreNiveauDropdown();
+
+            // Restore-Modus beenden
+            isRestoring = false;
 
             // Event-Listener für alle Antwort-Selects (außer seatSelect und niveauSelect)
             var selects = document.querySelectorAll('select:not(#niveauSelect):not(#seatSelect)');
