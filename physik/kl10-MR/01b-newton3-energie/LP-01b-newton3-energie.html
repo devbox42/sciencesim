@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-01b: Newton 3 + Lageenergie</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f2fd;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+            --positive: #c62828;
+            --negative: #1565c0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: var(--fach);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        header .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .progress-bar {
+            background: var(--border);
+            height: 6px;
+            margin-bottom: 20px;
+        }
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .section {
+            background: var(--white);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .section-nr {
+            background: var(--fach);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .section-title { font-weight: 600; font-size: 1.1em; }
+
+        h2 { font-size: 1.1em; font-weight: 600; margin: 20px 0 10px; color: var(--fach); }
+        h3 { font-size: 1em; font-weight: 600; margin: 15px 0 8px; }
+        p { margin-bottom: 12px; }
+
+        .info-box {
+            background: var(--fach-light);
+            border-left: 4px solid var(--fach);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+
+        .merkbox {
+            background: #fff8e1;
+            border: 2px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .merkbox-title {
+            font-weight: 600;
+            color: #f57c00;
+            margin-bottom: 8px;
+        }
+
+        .hefter-hinweis {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .hefter-hinweis ul { margin-left: 20px; margin-top: 8px; }
+        .hefter-hinweis li { margin-bottom: 4px; }
+
+        .beispiel {
+            background: #f5f5f5;
+            border-left: 4px solid #9e9e9e;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .beispiel-title { font-weight: 600; margin-bottom: 8px; }
+
+        .uebung {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .uebung-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .uebung-title { font-weight: 600; color: var(--success); }
+        .niveau {
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: var(--success);
+            color: white;
+        }
+
+        .formel {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.2em;
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            background: #fafafa;
+            border: 1px solid var(--border);
+        }
+        .formel .fz { font-style: italic; }
+        .formel .einheit { font-family: sans-serif; font-style: normal; }
+
+        .dreieck-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .dreieck {
+            width: 180px;
+            height: 120px;
+            position: relative;
+            text-align: center;
+        }
+        .dreieck-top {
+            border: 2px solid var(--fach);
+            padding: 8px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            background: var(--fach-light);
+        }
+        .dreieck-bottom {
+            display: flex;
+            border: 2px solid var(--fach);
+            border-top: none;
+        }
+        .dreieck-left, .dreieck-right {
+            flex: 1;
+            padding: 8px;
+            font-weight: 600;
+        }
+        .dreieck-left { border-right: 1px solid var(--fach); }
+        .dreieck-middle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2em;
+        }
+
+        .input-group { margin: 10px 0; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+
+        input[type="text"], input[type="number"] {
+            border: 2px solid var(--border);
+            padding: 8px 12px;
+            font-size: 1em;
+            width: 120px;
+            font-family: inherit;
+        }
+        input:focus { outline: none; border-color: var(--fach); }
+        input.correct { border-color: var(--success); background: var(--success-bg); }
+        input.incorrect { border-color: var(--error); background: var(--error-bg); }
+
+        .inline-input {
+            border: none;
+            border-bottom: 2px solid var(--fach);
+            padding: 2px 5px;
+            width: 80px;
+            font-size: inherit;
+            background: transparent;
+            text-align: center;
+        }
+
+        select {
+            border: 2px solid var(--border);
+            padding: 6px 10px;
+            font-size: 1em;
+            font-family: inherit;
+            background: white;
+        }
+
+        button {
+            background: var(--fach);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: white;
+            color: var(--fach);
+            border: 2px solid var(--fach);
+        }
+
+        .feedback {
+            padding: 12px 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .feedback.success { display: block; background: var(--success-bg); border-left: 4px solid var(--success); }
+        .feedback.error { display: block; background: var(--error-bg); border-left: 4px solid var(--error); }
+
+        .sim-container {
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 20px 0;
+            background: #fafafa;
+        }
+        .sim-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--fach);
+        }
+        .sim-canvas {
+            background: white;
+            border: 1px solid var(--border);
+            display: block;
+            margin: 0 auto 15px;
+        }
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+        .sim-control label {
+            font-size: 0.9em;
+            margin-right: 5px;
+        }
+        .sim-output {
+            text-align: center;
+            font-size: 1.1em;
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--fach-light);
+        }
+
+        .skizze {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .skizze img, .skizze svg {
+            max-width: 100%;
+            height: auto;
+        }
+        .skizze-caption {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .section { padding: 15px; }
+            .sim-controls { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Newton 3 + Lageenergie</h1>
+        <p class="meta">Physik 10 MR | Doppelstunde | 16.01.2026</p>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+
+        <!-- ===== TEIL 1: NEWTON 3 ===== -->
+
+        <!-- Schritt 1: Einstieg -->
+        <div class="section" id="section-1">
+            <div class="section-header">
+                <span class="section-nr">1</span>
+                <span class="section-title">Einstieg: Zwei Skater</span>
+            </div>
+
+            <div class="skizze">
+                <svg viewBox="0 0 400 200" width="400" height="200">
+                    <!-- Boden -->
+                    <line x1="0" y1="180" x2="400" y2="180" stroke="#333" stroke-width="2"/>
+                    <!-- Skater links -->
+                    <circle cx="120" cy="130" r="20" fill="#2c5aa0"/>
+                    <line x1="120" y1="150" x2="120" y2="175" stroke="#2c5aa0" stroke-width="4"/>
+                    <line x1="100" y1="175" x2="140" y2="175" stroke="#333" stroke-width="3"/>
+                    <text x="120" y="125" text-anchor="middle" fill="white" font-size="12">A</text>
+                    <!-- Skater rechts -->
+                    <circle cx="280" cy="130" r="20" fill="#c62828"/>
+                    <line x1="280" y1="150" x2="280" y2="175" stroke="#c62828" stroke-width="4"/>
+                    <line x1="260" y1="175" x2="300" y2="175" stroke="#333" stroke-width="3"/>
+                    <text x="280" y="125" text-anchor="middle" fill="white" font-size="12">B</text>
+                    <!-- Hände -->
+                    <line x1="140" y1="140" x2="180" y2="140" stroke="#2c5aa0" stroke-width="3"/>
+                    <line x1="260" y1="140" x2="220" y2="140" stroke="#c62828" stroke-width="3"/>
+                    <!-- Abstoßpunkt -->
+                    <circle cx="200" cy="140" r="8" fill="#ffc107" stroke="#333" stroke-width="2"/>
+                    <!-- Beschriftung -->
+                    <text x="200" y="50" text-anchor="middle" font-size="14" fill="#333">Zwei Skater stoßen sich ab</text>
+                </svg>
+                <p class="skizze-caption">Skater A und B stoßen sich gegenseitig ab.</p>
+            </div>
+
+            <h3>Beobachtung</h3>
+            <p>Zwei Skater stehen auf Eis und stoßen sich mit den Händen voneinander ab.</p>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Nachdenken</span>
+                </div>
+                <p><strong>Wer bewegt sich nach dem Abstoßen?</strong></p>
+                <div class="input-group">
+                    <select id="q1-select">
+                        <option value="">Bitte wählen...</option>
+                        <option value="a">Nur Skater A</option>
+                        <option value="b">Nur Skater B</option>
+                        <option value="beide">Beide Skater</option>
+                        <option value="keiner">Keiner</option>
+                    </select>
+                    <button onclick="checkQ1()" style="margin-left:10px">Prüfen</button>
+                </div>
+                <div id="q1-feedback" class="feedback"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="goToSection(2)">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 2: Wechselwirkungsgesetz -->
+        <div class="section hidden" id="section-2">
+            <div class="section-header">
+                <span class="section-nr">2</span>
+                <span class="section-title">Das Wechselwirkungsgesetz (Newton 3)</span>
+            </div>
+
+            <div class="info-box">
+                <strong>Erkenntnis:</strong> Wenn A auf B eine Kraft ausübt, dann übt B gleichzeitig eine Kraft auf A aus!
+            </div>
+
+            <p>Isaac Newton formulierte dieses Prinzip als drittes Gesetz:</p>
+
+            <div class="merkbox">
+                <div class="merkbox-title">Wechselwirkungsgesetz (Newton 3)</div>
+                <p><strong>"Actio = Reactio"</strong></p>
+                <p>Kräfte treten immer <strong>paarweise</strong> auf.</p>
+                <p style="margin-top:10px">Jedes Kräftepaar hat <strong>drei Eigenschaften</strong>:</p>
+                <ol style="margin-left:20px;margin-top:8px">
+                    <li>Gleich groß (|F₁| = |F₂|)</li>
+                    <li>Entgegengesetzt gerichtet</li>
+                    <li>Wirken an <strong>verschiedenen</strong> Körpern!</li>
+                </ol>
+            </div>
+
+            <div class="skizze">
+                <svg viewBox="0 0 400 150" width="400" height="150">
+                    <!-- Skater A -->
+                    <circle cx="100" cy="75" r="25" fill="#2c5aa0"/>
+                    <text x="100" y="80" text-anchor="middle" fill="white" font-weight="bold">A</text>
+                    <!-- Skater B -->
+                    <circle cx="300" cy="75" r="25" fill="#c62828"/>
+                    <text x="300" y="80" text-anchor="middle" fill="white" font-weight="bold">B</text>
+                    <!-- Kraft A auf B (rot, nach rechts) -->
+                    <line x1="125" y1="60" x2="200" y2="60" stroke="#c62828" stroke-width="4"/>
+                    <polygon points="200,52 220,60 200,68" fill="#c62828"/>
+                    <text x="165" y="50" text-anchor="middle" font-size="12" fill="#c62828">F_A→B</text>
+                    <!-- Kraft B auf A (blau, nach links) -->
+                    <line x1="275" y1="90" x2="200" y2="90" stroke="#2c5aa0" stroke-width="4"/>
+                    <polygon points="200,82 180,90 200,98" fill="#2c5aa0"/>
+                    <text x="235" y="110" text-anchor="middle" font-size="12" fill="#2c5aa0">F_B→A</text>
+                </svg>
+                <p class="skizze-caption">Die Kräfte sind gleich groß, aber entgegengesetzt – und wirken an verschiedenen Körpern!</p>
+            </div>
+
+            <div class="beispiel">
+                <div class="beispiel-title">Häufiger Fehler</div>
+                <p><strong>"Die Kräfte heben sich doch auf?"</strong></p>
+                <p>Nein! Die Kräfte wirken an <em>verschiedenen</em> Körpern. F_A→B wirkt auf B, F_B→A wirkt auf A. Sie können sich nicht aufheben, weil sie nicht am selben Körper angreifen!</p>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 1:</strong> Übertrage das Wechselwirkungsgesetz mit den drei Eigenschaften</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(1)">&larr; Zurück</button>
+                <button onclick="goToSection(3)">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 3: Kräftepaare zeichnen -->
+        <div class="section hidden" id="section-3">
+            <div class="section-header">
+                <span class="section-nr">3</span>
+                <span class="section-title">Kräftepaare erkennen</span>
+            </div>
+
+            <p>In vielen Alltagssituationen wirken Kräftepaare. Hier sind drei Beispiele:</p>
+
+            <h3>Beispiel 1: Schwimmer (★)</h3>
+            <div class="skizze">
+                <svg viewBox="0 0 400 150" width="400" height="150">
+                    <!-- Wasser -->
+                    <rect x="0" y="80" width="400" height="70" fill="#e3f2fd"/>
+                    <text x="380" y="140" text-anchor="end" font-size="10" fill="#1565c0">Wasser</text>
+                    <!-- Schwimmer -->
+                    <ellipse cx="200" cy="85" rx="60" ry="20" fill="#ffcc80"/>
+                    <circle cx="260" cy="80" r="15" fill="#ffcc80"/>
+                    <!-- Hand -->
+                    <line x1="140" y1="90" x2="100" y2="100" stroke="#e65100" stroke-width="4"/>
+                    <!-- Kräfte -->
+                    <line x1="100" y1="100" x2="50" y2="100" stroke="#c62828" stroke-width="3"/>
+                    <polygon points="50,94 35,100 50,106" fill="#c62828"/>
+                    <text x="70" y="90" font-size="11" fill="#c62828">F_Hand→Wasser</text>
+
+                    <line x1="100" y1="115" x2="150" y2="115" stroke="#2c5aa0" stroke-width="3"/>
+                    <polygon points="150,109 165,115 150,121" fill="#2c5aa0"/>
+                    <text x="125" y="130" font-size="11" fill="#2c5aa0">F_Wasser→Hand</text>
+                </svg>
+            </div>
+            <p>Der Schwimmer drückt das Wasser nach hinten → Das Wasser drückt den Schwimmer nach vorne!</p>
+
+            <h3>Beispiel 2: Rakete (★★)</h3>
+            <div class="skizze">
+                <svg viewBox="0 0 400 180" width="400" height="180">
+                    <!-- Rakete -->
+                    <polygon points="200,20 180,80 220,80" fill="#555"/>
+                    <rect x="180" y="80" width="40" height="60" fill="#666"/>
+                    <polygon points="175,140 200,160 225,140" fill="#c62828"/>
+                    <!-- Flamme / Gas -->
+                    <ellipse cx="200" cy="170" rx="15" ry="8" fill="#ff9800"/>
+                    <text x="200" y="178" text-anchor="middle" font-size="9" fill="#333">Gas</text>
+                    <!-- Kräfte -->
+                    <line x1="230" y1="155" x2="230" y2="180" stroke="#c62828" stroke-width="3"/>
+                    <polygon points="224,180 230,195 236,180" fill="#c62828"/>
+                    <text x="270" y="175" font-size="11" fill="#c62828">F_Rakete→Gas</text>
+
+                    <line x1="170" y1="100" x2="170" y2="60" stroke="#2c5aa0" stroke-width="3"/>
+                    <polygon points="164,60 170,45 176,60" fill="#2c5aa0"/>
+                    <text x="130" y="55" font-size="11" fill="#2c5aa0">F_Gas→Rakete</text>
+                </svg>
+            </div>
+            <p>Die Rakete stößt Gas nach unten aus → Das Gas drückt die Rakete nach oben!</p>
+
+            <h3>Beispiel 3: Auto auf Straße (★★★)</h3>
+            <div class="skizze">
+                <svg viewBox="0 0 400 120" width="400" height="120">
+                    <!-- Straße -->
+                    <rect x="0" y="90" width="400" height="30" fill="#555"/>
+                    <!-- Auto -->
+                    <rect x="150" y="50" width="100" height="35" fill="#2c5aa0"/>
+                    <rect x="165" y="35" width="70" height="20" fill="#2c5aa0"/>
+                    <circle cx="175" cy="88" r="12" fill="#333"/>
+                    <circle cx="225" cy="88" r="12" fill="#333"/>
+                    <!-- Kräfte am Reifen -->
+                    <line x1="175" y1="95" x2="130" y2="95" stroke="#c62828" stroke-width="3"/>
+                    <polygon points="130,89 115,95 130,101" fill="#c62828"/>
+                    <text x="145" y="115" font-size="10" fill="#c62828">F_Reifen→Straße</text>
+
+                    <line x1="225" y1="70" x2="280" y2="70" stroke="#2c5aa0" stroke-width="3"/>
+                    <polygon points="280,64 295,70 280,76" fill="#2c5aa0"/>
+                    <text x="255" y="60" font-size="10" fill="#2c5aa0">F_Straße→Reifen</text>
+                </svg>
+            </div>
+            <p>Der Reifen drückt nach hinten auf die Straße → Die Straße drückt das Auto nach vorne!</p>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 1a–c:</strong> Zeichne die Kräftepaare für alle drei Situationen auf deinem Arbeitsblatt</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(2)">&larr; Zurück</button>
+                <button onclick="goToSection(4)">Weiter zur Simulation &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 4: Simulation Tauziehen -->
+        <div class="section hidden" id="section-4">
+            <div class="section-header">
+                <span class="section-nr">4</span>
+                <span class="section-title">Simulation: Tauziehen</span>
+            </div>
+
+            <p>Wenn die Kräfte gleich groß sind – warum beschleunigen unterschiedlich schwere Körper dann unterschiedlich schnell?</p>
+
+            <div class="info-box">
+                <strong>Erinnerung:</strong> Newton 2 sagt: <em>F = m · a</em>, also <em>a = F / m</em>
+            </div>
+
+            <div class="sim-container">
+                <div class="sim-title">Tauziehen-Simulation</div>
+                <canvas id="sim-tauziehen" class="sim-canvas" width="500" height="200"></canvas>
+                <div class="sim-controls">
+                    <div>
+                        <label>Masse A:</label>
+                        <input type="range" id="mass-a" min="10" max="100" value="50" oninput="updateTauziehen()">
+                        <span id="mass-a-val">50</span> kg
+                    </div>
+                    <div>
+                        <label>Masse B:</label>
+                        <input type="range" id="mass-b" min="10" max="100" value="50" oninput="updateTauziehen()">
+                        <span id="mass-b-val">50</span> kg
+                    </div>
+                    <div>
+                        <label>Kraft:</label>
+                        <span id="kraft-val">100</span> N
+                    </div>
+                </div>
+                <div class="sim-output">
+                    <strong>Beschleunigung A:</strong> <span id="acc-a">2,0</span> m/s² &nbsp;|&nbsp;
+                    <strong>Beschleunigung B:</strong> <span id="acc-b">2,0</span> m/s²
+                </div>
+                <div style="text-align:center;margin-top:10px">
+                    <button onclick="animateTauziehen()">Animation starten</button>
+                </div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Beobachtung</span>
+                </div>
+                <p>Stelle Masse A auf 20 kg und Masse B auf 80 kg. Wer beschleunigt stärker?</p>
+                <div class="input-group">
+                    <select id="q2-select">
+                        <option value="">Bitte wählen...</option>
+                        <option value="a">Person A (leichter)</option>
+                        <option value="b">Person B (schwerer)</option>
+                        <option value="gleich">Beide gleich</option>
+                    </select>
+                    <button onclick="checkQ2()" style="margin-left:10px">Prüfen</button>
+                </div>
+                <div id="q2-feedback" class="feedback"></div>
+            </div>
+
+            <div class="merkbox">
+                <div class="merkbox-title">Wichtige Erkenntnis</div>
+                <p>Die <strong>Kräfte</strong> sind immer gleich groß (Newton 3).</p>
+                <p>Aber die <strong>Beschleunigungen</strong> sind unterschiedlich, weil a = F/m!</p>
+                <p>→ Der <em>leichtere</em> Körper beschleunigt stärker.</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(3)">&larr; Zurück</button>
+                <button onclick="goToSection(5)">Weiter zu Teil 2: Energie &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ===== TEIL 2: LAGEENERGIE ===== -->
+
+        <!-- Schritt 5: Überleitung -->
+        <div class="section hidden" id="section-5">
+            <div class="section-header">
+                <span class="section-nr">5</span>
+                <span class="section-title">Energie speichern durch Höhe</span>
+            </div>
+
+            <h2>Teil 2: Lageenergie</h2>
+
+            <p>Stell dir vor: Du hebst einen Stein hoch und lässt ihn fallen. Beim Aufprall passiert etwas – der Stein hat Energie!</p>
+
+            <div class="info-box">
+                <strong>Frage:</strong> Woher kommt diese Energie beim Fallen?
+            </div>
+
+            <p>In Klasse 7 hast du die <strong>Hubarbeit</strong> kennengelernt:</p>
+
+            <div class="formel">
+                <span class="fz">W</span><sub>Hub</sub> = <span class="fz">F</span><sub>G</sub> · <span class="fz">h</span> = <span class="fz">m</span> · <span class="fz">g</span> · <span class="fz">h</span>
+            </div>
+
+            <p>Die Arbeit, die du zum Heben aufwendest, verschwindet nicht – sie wird als <strong>Lageenergie</strong> (potenzielle Energie) im Körper gespeichert!</p>
+
+            <div class="skizze">
+                <svg viewBox="0 0 400 200" width="400" height="200">
+                    <!-- Boden -->
+                    <line x1="50" y1="180" x2="350" y2="180" stroke="#333" stroke-width="2"/>
+                    <text x="55" y="195" font-size="11">h = 0</text>
+                    <!-- Körper unten -->
+                    <rect x="80" y="150" width="40" height="30" fill="#2c5aa0"/>
+                    <text x="100" y="145" text-anchor="middle" font-size="11">E_pot = 0</text>
+                    <!-- Pfeil nach oben -->
+                    <line x1="180" y1="165" x2="180" y2="80" stroke="#388e3c" stroke-width="3" stroke-dasharray="5,3"/>
+                    <polygon points="174,80 180,60 186,80" fill="#388e3c"/>
+                    <text x="195" y="120" font-size="11" fill="#388e3c">Hubarbeit</text>
+                    <!-- Körper oben -->
+                    <rect x="260" y="50" width="40" height="30" fill="#c62828"/>
+                    <text x="280" y="45" text-anchor="middle" font-size="11" fill="#c62828">E_pot = m·g·h</text>
+                    <!-- Höhe h -->
+                    <line x1="320" y1="180" x2="320" y2="65" stroke="#333" stroke-width="1"/>
+                    <line x1="315" y1="180" x2="325" y2="180" stroke="#333" stroke-width="2"/>
+                    <line x1="315" y1="65" x2="325" y2="65" stroke="#333" stroke-width="2"/>
+                    <text x="335" y="125" font-size="12">h</text>
+                </svg>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(4)">&larr; Zurück</button>
+                <button onclick="goToSection(6)">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 6: Formel Lageenergie -->
+        <div class="section hidden" id="section-6">
+            <div class="section-header">
+                <span class="section-nr">6</span>
+                <span class="section-title">Die Formel für Lageenergie</span>
+            </div>
+
+            <div class="merkbox">
+                <div class="merkbox-title">Lageenergie (potenzielle Energie)</div>
+                <div class="formel">
+                    <span class="fz">E</span><sub>pot</sub> = <span class="fz">m</span> · <span class="fz">g</span> · <span class="fz">h</span>
+                </div>
+                <table style="width:100%;margin-top:10px;font-size:0.95em">
+                    <tr>
+                        <td><strong><em>E</em><sub>pot</sub></strong></td>
+                        <td>Lageenergie in Joule (J)</td>
+                    </tr>
+                    <tr>
+                        <td><strong><em>m</em></strong></td>
+                        <td>Masse in Kilogramm (kg)</td>
+                    </tr>
+                    <tr>
+                        <td><strong><em>g</em></strong></td>
+                        <td>Ortsfaktor: <strong>10 m/s²</strong> (auf der Erde)</td>
+                    </tr>
+                    <tr>
+                        <td><strong><em>h</em></strong></td>
+                        <td>Höhe in Meter (m)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="info-box">
+                <strong>Einheit:</strong> 1 J = 1 N·m = 1 kg·m²/s²
+            </div>
+
+            <h3>Formel-Dreieck zum Umstellen</h3>
+
+            <div class="dreieck-container">
+                <div class="dreieck">
+                    <div class="dreieck-top">E<sub>pot</sub></div>
+                    <div class="dreieck-bottom">
+                        <div class="dreieck-left">m</div>
+                        <div class="dreieck-right">g · h</div>
+                    </div>
+                </div>
+            </div>
+
+            <p style="text-align:center">
+                E<sub>pot</sub> = m · g · h &nbsp;|&nbsp;
+                m = E<sub>pot</sub> / (g · h) &nbsp;|&nbsp;
+                h = E<sub>pot</sub> / (m · g)
+            </p>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 2:</strong> Übertrage die Formel E<sub>pot</sub> = m · g · h mit allen Größen und Einheiten</li>
+                    <li><strong>Kasten 3:</strong> Zeichne das Formel-Dreieck</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(5)">&larr; Zurück</button>
+                <button onclick="goToSection(7)">Weiter zum Rechnen &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 7: Übungen -->
+        <div class="section hidden" id="section-7">
+            <div class="section-header">
+                <span class="section-nr">7</span>
+                <span class="section-title">Lageenergie berechnen</span>
+            </div>
+
+            <div class="beispiel">
+                <div class="beispiel-title">Beispielrechnung</div>
+                <p><strong>Gegeben:</strong> m = 5 kg, h = 10 m, g = 10 m/s²</p>
+                <p><strong>Gesucht:</strong> E<sub>pot</sub></p>
+                <p><strong>Lösung:</strong></p>
+                <p>E<sub>pot</sub> = m · g · h = 5 kg · 10 m/s² · 10 m = <strong>500 J</strong></p>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Aufgabe 2a</span>
+                    <span class="niveau">★</span>
+                </div>
+                <p>Ein Ball (m = 2 kg) liegt auf einem Tisch (h = 1 m). Berechne seine Lageenergie.</p>
+                <div class="input-group">
+                    <label>E<sub>pot</sub> = </label>
+                    <input type="number" id="q3a-input" style="width:80px"> J
+                    <button onclick="checkQ3a()" style="margin-left:10px">Prüfen</button>
+                </div>
+                <div id="q3a-feedback" class="feedback"></div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Aufgabe 2b</span>
+                    <span class="niveau">★★</span>
+                </div>
+                <p>Ein Wassereimer (m = 10 kg) wird auf ein Dach (h = 5 m) gehoben. Berechne die Lageenergie.</p>
+                <div class="input-group">
+                    <label>E<sub>pot</sub> = </label>
+                    <input type="number" id="q3b-input" style="width:80px"> J
+                    <button onclick="checkQ3b()" style="margin-left:10px">Prüfen</button>
+                </div>
+                <div id="q3b-feedback" class="feedback"></div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Aufgabe 2c</span>
+                    <span class="niveau">★★</span>
+                </div>
+                <p>Ein Körper hat E<sub>pot</sub> = 400 J und befindet sich in h = 5 m Höhe. Berechne seine Masse.</p>
+                <p><em>Tipp: Stelle die Formel nach m um!</em></p>
+                <div class="input-group">
+                    <label>m = </label>
+                    <input type="number" id="q3c-input" style="width:80px"> kg
+                    <button onclick="checkQ3c()" style="margin-left:10px">Prüfen</button>
+                </div>
+                <div id="q3c-feedback" class="feedback"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 2a–c:</strong> Übertrage deine Rechnungen ins Arbeitsblatt</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(6)">&larr; Zurück</button>
+                <button onclick="goToSection(8)">Weiter zur Simulation &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 8: Simulation Lageenergie -->
+        <div class="section hidden" id="section-8">
+            <div class="section-header">
+                <span class="section-nr">8</span>
+                <span class="section-title">Simulation: Lageenergie</span>
+            </div>
+
+            <div class="sim-container">
+                <div class="sim-title">Lageenergie-Simulation</div>
+                <canvas id="sim-energie" class="sim-canvas" width="500" height="250"></canvas>
+                <div class="sim-controls">
+                    <div>
+                        <label>Masse:</label>
+                        <input type="range" id="sim-mass" min="1" max="50" value="10" oninput="updateEnergie()">
+                        <span id="sim-mass-val">10</span> kg
+                    </div>
+                    <div>
+                        <label>Höhe:</label>
+                        <input type="range" id="sim-height" min="0" max="20" value="10" oninput="updateEnergie()">
+                        <span id="sim-height-val">10</span> m
+                    </div>
+                </div>
+                <div class="sim-output">
+                    E<sub>pot</sub> = <span id="sim-mass-out">10</span> kg · 10 m/s² · <span id="sim-height-out">10</span> m = <strong><span id="sim-epot">1000</span> J</strong>
+                </div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Experiment mit der Simulation</span>
+                </div>
+                <p>Finde heraus: Welche Kombination ergibt E<sub>pot</sub> = 500 J?</p>
+                <p><em>(Es gibt mehrere Möglichkeiten!)</em></p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(7)">&larr; Zurück</button>
+                <button onclick="goToSection(9)">Weiter: Staudamm &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 9: Transfer Staudamm -->
+        <div class="section hidden" id="section-9">
+            <div class="section-header">
+                <span class="section-nr">9</span>
+                <span class="section-title">Anwendung: Der Staudamm</span>
+            </div>
+
+            <p>Ein Staudamm ist ein riesiger Energiespeicher! Das Wasser oben hat Lageenergie, die beim Herunterfließen in elektrische Energie umgewandelt wird.</p>
+
+            <div class="skizze">
+                <svg viewBox="0 0 450 200" width="450" height="200">
+                    <!-- Staumauer -->
+                    <polygon points="150,40 180,180 120,180" fill="#888"/>
+                    <!-- Wasser -->
+                    <rect x="0" y="50" width="150" height="130" fill="#bbdefb"/>
+                    <text x="75" y="100" text-anchor="middle" font-size="12" fill="#1565c0">Wasser</text>
+                    <text x="75" y="115" text-anchor="middle" font-size="11" fill="#1565c0">(E_pot)</text>
+                    <!-- Höhe -->
+                    <line x1="165" y1="50" x2="165" y2="180" stroke="#333" stroke-width="1" stroke-dasharray="3,2"/>
+                    <text x="175" y="115" font-size="11">h</text>
+                    <!-- Rohr -->
+                    <rect x="180" y="160" width="80" height="15" fill="#666"/>
+                    <!-- Turbine -->
+                    <circle cx="290" cy="167" r="20" fill="#4caf50" stroke="#333" stroke-width="2"/>
+                    <text x="290" y="172" text-anchor="middle" font-size="10" fill="white">T</text>
+                    <text x="290" y="145" text-anchor="middle" font-size="10">Turbine</text>
+                    <!-- Generator -->
+                    <rect x="320" y="152" width="30" height="30" fill="#ff9800"/>
+                    <text x="335" y="172" text-anchor="middle" font-size="10" fill="white">G</text>
+                    <text x="335" y="145" text-anchor="middle" font-size="10">Generator</text>
+                    <!-- Strom -->
+                    <line x1="360" y1="167" x2="420" y2="167" stroke="#ffc107" stroke-width="3"/>
+                    <text x="390" y="160" font-size="10">Strom</text>
+                </svg>
+            </div>
+
+            <h3>Energieflussdiagramm</h3>
+            <div style="text-align:center;padding:15px;background:#f5f5f5;border:1px solid #ddd;margin:15px 0">
+                <span style="background:#bbdefb;padding:8px 12px;display:inline-block">E<sub>pot</sub> (Wasser)</span>
+                <span style="font-size:1.5em;margin:0 10px">→</span>
+                <span style="background:#c8e6c9;padding:8px 12px;display:inline-block">E<sub>kin</sub> (Turbine)</span>
+                <span style="font-size:1.5em;margin:0 10px">→</span>
+                <span style="background:#fff3e0;padding:8px 12px;display:inline-block">E<sub>el</sub> (Generator)</span>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-header">
+                    <span class="uebung-title">Aufgabe 4 (Transfer)</span>
+                    <span class="niveau">★★★</span>
+                </div>
+                <p><strong>Erkläre:</strong> Warum kann ein Staudamm Energie speichern?</p>
+                <p><em>Nutze die Begriffe: Masse, Höhe, Lageenergie, E<sub>pot</sub> = m · g · h</em></p>
+                <textarea id="q4-text" rows="4" style="width:100%;padding:10px;font-family:inherit;font-size:1em;border:2px solid #ddd" placeholder="Schreibe deine Erklärung hier..."></textarea>
+                <div style="margin-top:10px">
+                    <button onclick="showQ4Loesung()">Musterlösung anzeigen</button>
+                </div>
+                <div id="q4-loesung" class="feedback success" style="display:none">
+                    <strong>Musterlösung:</strong> Das Wasser im Stausee hat eine große Masse (m) und befindet sich in großer Höhe (h) über der Turbine. Nach der Formel E<sub>pot</sub> = m · g · h hat das Wasser dadurch viel Lageenergie gespeichert. Je mehr Wasser und je höher der Stausee, desto mehr Energie kann gespeichert werden.
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 3:</strong> Berechne die Höhe (auf dem AB)</li>
+                    <li><strong>Aufgabe 4:</strong> Schreibe deine Erklärung zum Staudamm</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(8)">&larr; Zurück</button>
+                <button onclick="goToSection(10)">Weiter zur Zusammenfassung &rarr;</button>
+            </div>
+        </div>
+
+        <!-- Schritt 10: Zusammenfassung -->
+        <div class="section hidden" id="section-10">
+            <div class="section-header">
+                <span class="section-nr">10</span>
+                <span class="section-title">Zusammenfassung</span>
+            </div>
+
+            <h3>Das hast du heute gelernt:</h3>
+
+            <div class="merkbox">
+                <div class="merkbox-title">Newton 3: Wechselwirkungsgesetz</div>
+                <p><strong>Actio = Reactio</strong></p>
+                <p>Kräfte treten immer paarweise auf: gleich groß, entgegengesetzt, an verschiedenen Körpern.</p>
+            </div>
+
+            <div class="merkbox">
+                <div class="merkbox-title">Lageenergie</div>
+                <div class="formel" style="margin:10px 0">
+                    E<sub>pot</sub> = m · g · h
+                </div>
+                <p>Mit g = 10 m/s² (Erde)</p>
+            </div>
+
+            <div class="info-box">
+                <strong>Nächste Stunde:</strong> Kinetische Energie (E<sub>kin</sub> = ½ · m · v²) und der Energieerhaltungssatz
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li>Prüfe: Sind <strong>alle Kästen</strong> auf deinem Arbeitsblatt ausgefüllt?</li>
+                    <li>Prüfe: Hast du <strong>alle Aufgaben</strong> bearbeitet?</li>
+                </ul>
+            </div>
+
+            <div style="text-align:center;margin-top:30px;padding:20px;background:var(--success-bg);border:1px solid var(--success)">
+                <p style="font-size:1.2em;font-weight:600;color:var(--success)">Geschafft!</p>
+                <p>Du hast den Lernpfad abgeschlossen.</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToSection(9)">&larr; Zurück</button>
+                <button onclick="goToSection(1)">Von vorne beginnen</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ===== NAVIGATION =====
+        var currentSection = 1;
+        var totalSections = 10;
+
+        function goToSection(n) {
+            document.getElementById('section-' + currentSection).classList.add('hidden');
+            document.getElementById('section-' + n).classList.remove('hidden');
+            currentSection = n;
+            updateProgress();
+            window.scrollTo(0, 0);
+            saveProgress();
+        }
+
+        function updateProgress() {
+            var pct = (currentSection / totalSections) * 100;
+            document.getElementById('progress').style.width = pct + '%';
+        }
+
+        // ===== PERSISTENZ =====
+        var LP_ID = 'lp-01b-newton3-energie';
+
+        function saveProgress() {
+            localStorage.setItem(LP_ID + '-section', currentSection);
+        }
+
+        function loadProgress() {
+            var saved = localStorage.getItem(LP_ID + '-section');
+            if (saved) {
+                goToSection(parseInt(saved));
+            }
+        }
+
+        // ===== QUIZ-FUNKTIONEN =====
+        function checkQ1() {
+            var sel = document.getElementById('q1-select');
+            var fb = document.getElementById('q1-feedback');
+            if (sel.value === 'beide') {
+                fb.className = 'feedback success';
+                fb.innerHTML = '<strong>Richtig!</strong> Beide Skater bewegen sich – denn Kräfte treten immer paarweise auf!';
+            } else if (sel.value === '') {
+                fb.className = 'feedback error';
+                fb.innerHTML = 'Bitte wähle eine Antwort.';
+            } else {
+                fb.className = 'feedback error';
+                fb.innerHTML = '<strong>Nicht ganz.</strong> Denk daran: Wenn A auf B drückt, drückt B auch auf A. Was passiert dann mit beiden?';
+            }
+        }
+
+        function checkQ2() {
+            var sel = document.getElementById('q2-select');
+            var fb = document.getElementById('q2-feedback');
+            if (sel.value === 'a') {
+                fb.className = 'feedback success';
+                fb.innerHTML = '<strong>Richtig!</strong> Die Kräfte sind gleich groß, aber a = F/m. Bei kleinerer Masse ist die Beschleunigung größer!';
+            } else if (sel.value === '') {
+                fb.className = 'feedback error';
+                fb.innerHTML = 'Bitte wähle eine Antwort.';
+            } else {
+                fb.className = 'feedback error';
+                fb.innerHTML = '<strong>Nicht ganz.</strong> Erinnere dich: a = F/m. Bei gleicher Kraft aber kleinerer Masse...?';
+            }
+        }
+
+        function parseNum(val) {
+            if (val === '' || val === null) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        function checkQ3a() {
+            var inp = document.getElementById('q3a-input');
+            var fb = document.getElementById('q3a-feedback');
+            var val = parseNum(inp.value);
+            // E_pot = 2 kg * 10 * 1 m = 20 J
+            if (Math.abs(val - 20) < 0.5) {
+                inp.className = 'correct';
+                fb.className = 'feedback success';
+                fb.innerHTML = '<strong>Richtig!</strong> E<sub>pot</sub> = 2 kg · 10 m/s² · 1 m = 20 J';
+            } else if (isNaN(val)) {
+                fb.className = 'feedback error';
+                fb.innerHTML = 'Bitte gib eine Zahl ein.';
+            } else {
+                inp.className = 'incorrect';
+                fb.className = 'feedback error';
+                fb.innerHTML = '<strong>Nicht ganz.</strong> Setze ein: E<sub>pot</sub> = m · g · h = 2 · 10 · 1 = ?';
+            }
+        }
+
+        function checkQ3b() {
+            var inp = document.getElementById('q3b-input');
+            var fb = document.getElementById('q3b-feedback');
+            var val = parseNum(inp.value);
+            // E_pot = 10 kg * 10 * 5 m = 500 J
+            if (Math.abs(val - 500) < 1) {
+                inp.className = 'correct';
+                fb.className = 'feedback success';
+                fb.innerHTML = '<strong>Richtig!</strong> E<sub>pot</sub> = 10 kg · 10 m/s² · 5 m = 500 J';
+            } else if (isNaN(val)) {
+                fb.className = 'feedback error';
+                fb.innerHTML = 'Bitte gib eine Zahl ein.';
+            } else {
+                inp.className = 'incorrect';
+                fb.className = 'feedback error';
+                fb.innerHTML = '<strong>Nicht ganz.</strong> Setze ein: E<sub>pot</sub> = 10 · 10 · 5 = ?';
+            }
+        }
+
+        function checkQ3c() {
+            var inp = document.getElementById('q3c-input');
+            var fb = document.getElementById('q3c-feedback');
+            var val = parseNum(inp.value);
+            // m = 400 J / (10 * 5) = 8 kg
+            if (Math.abs(val - 8) < 0.5) {
+                inp.className = 'correct';
+                fb.className = 'feedback success';
+                fb.innerHTML = '<strong>Richtig!</strong> m = E<sub>pot</sub> / (g · h) = 400 / (10 · 5) = 400 / 50 = 8 kg';
+            } else if (isNaN(val)) {
+                fb.className = 'feedback error';
+                fb.innerHTML = 'Bitte gib eine Zahl ein.';
+            } else {
+                inp.className = 'incorrect';
+                fb.className = 'feedback error';
+                fb.innerHTML = '<strong>Nicht ganz.</strong> Umstellen: m = E<sub>pot</sub> / (g · h) = 400 / (10 · 5) = ?';
+            }
+        }
+
+        function showQ4Loesung() {
+            document.getElementById('q4-loesung').style.display = 'block';
+        }
+
+        // ===== SIMULATION: TAUZIEHEN =====
+        function updateTauziehen() {
+            var mA = parseInt(document.getElementById('mass-a').value);
+            var mB = parseInt(document.getElementById('mass-b').value);
+            var F = 100; // Konstante Kraft
+
+            document.getElementById('mass-a-val').textContent = mA;
+            document.getElementById('mass-b-val').textContent = mB;
+            document.getElementById('kraft-val').textContent = F;
+
+            var aA = F / mA;
+            var aB = F / mB;
+
+            document.getElementById('acc-a').textContent = aA.toFixed(1).replace('.', ',');
+            document.getElementById('acc-b').textContent = aB.toFixed(1).replace('.', ',');
+
+            drawTauziehen(mA, mB, F);
+        }
+
+        function drawTauziehen(mA, mB, F) {
+            var canvas = document.getElementById('sim-tauziehen');
+            var ctx = canvas.getContext('2d');
+            var w = canvas.width;
+            var h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Boden
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, h - 20);
+            ctx.lineTo(w, h - 20);
+            ctx.stroke();
+
+            // Seil
+            ctx.strokeStyle = '#8d6e63';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(120, h/2);
+            ctx.lineTo(w - 120, h/2);
+            ctx.stroke();
+
+            // Größe proportional zur Masse
+            var rA = 15 + mA * 0.3;
+            var rB = 15 + mB * 0.3;
+
+            // Person A (links, blau)
+            ctx.fillStyle = '#2c5aa0';
+            ctx.beginPath();
+            ctx.arc(100, h/2, rA, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('A', 100, h/2 + 5);
+            ctx.fillStyle = '#333';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(mA + ' kg', 100, h/2 + rA + 15);
+
+            // Person B (rechts, rot)
+            ctx.fillStyle = '#c62828';
+            ctx.beginPath();
+            ctx.arc(w - 100, h/2, rB, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('B', w - 100, h/2 + 5);
+            ctx.fillStyle = '#333';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(mB + ' kg', w - 100, h/2 + rB + 15);
+
+            // Kraftpfeile
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(100 + rA + 5, h/2 - 20);
+            ctx.lineTo(180, h/2 - 20);
+            ctx.stroke();
+            // Pfeilspitze
+            ctx.fillStyle = '#c62828';
+            ctx.beginPath();
+            ctx.moveTo(180, h/2 - 25);
+            ctx.lineTo(195, h/2 - 20);
+            ctx.lineTo(180, h/2 - 15);
+            ctx.fill();
+
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.beginPath();
+            ctx.moveTo(w - 100 - rB - 5, h/2 - 20);
+            ctx.lineTo(w - 180, h/2 - 20);
+            ctx.stroke();
+            ctx.fillStyle = '#2c5aa0';
+            ctx.beginPath();
+            ctx.moveTo(w - 180, h/2 - 25);
+            ctx.lineTo(w - 195, h/2 - 20);
+            ctx.lineTo(w - 180, h/2 - 15);
+            ctx.fill();
+
+            // Labels
+            ctx.fillStyle = '#c62828';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('F = ' + F + ' N', 150, h/2 - 30);
+            ctx.fillStyle = '#2c5aa0';
+            ctx.fillText('F = ' + F + ' N', w - 150, h/2 - 30);
+        }
+
+        function animateTauziehen() {
+            // Einfache Animation - Personen bewegen sich
+            var mA = parseInt(document.getElementById('mass-a').value);
+            var mB = parseInt(document.getElementById('mass-b').value);
+            var aA = 100 / mA;
+            var aB = 100 / mB;
+
+            var canvas = document.getElementById('sim-tauziehen');
+            var ctx = canvas.getContext('2d');
+            var w = canvas.width;
+            var h = canvas.height;
+
+            var posA = 100;
+            var posB = w - 100;
+            var t = 0;
+
+            function animate() {
+                t += 0.05;
+                if (t > 2) return;
+
+                var dA = 0.5 * aA * t * t * 3;
+                var dB = 0.5 * aB * t * t * 3;
+
+                ctx.clearRect(0, 0, w, h);
+
+                // Boden
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, h - 20);
+                ctx.lineTo(w, h - 20);
+                ctx.stroke();
+
+                var rA = 15 + mA * 0.3;
+                var rB = 15 + mB * 0.3;
+
+                // Person A bewegt sich nach links
+                ctx.fillStyle = '#2c5aa0';
+                ctx.beginPath();
+                ctx.arc(posA - dA, h/2, rA, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('A', posA - dA, h/2 + 5);
+
+                // Person B bewegt sich nach rechts
+                ctx.fillStyle = '#c62828';
+                ctx.beginPath();
+                ctx.arc(posB + dB, h/2, rB, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.fillText('B', posB + dB, h/2 + 5);
+
+                // Seil
+                ctx.strokeStyle = '#8d6e63';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(posA - dA + rA, h/2);
+                ctx.lineTo(posB + dB - rB, h/2);
+                ctx.stroke();
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+
+        // ===== SIMULATION: LAGEENERGIE =====
+        function updateEnergie() {
+            var m = parseInt(document.getElementById('sim-mass').value);
+            var hVal = parseInt(document.getElementById('sim-height').value);
+            var g = 10;
+            var E = m * g * hVal;
+
+            document.getElementById('sim-mass-val').textContent = m;
+            document.getElementById('sim-height-val').textContent = hVal;
+            document.getElementById('sim-mass-out').textContent = m;
+            document.getElementById('sim-height-out').textContent = hVal;
+            document.getElementById('sim-epot').textContent = E;
+
+            drawEnergie(m, hVal, E);
+        }
+
+        function drawEnergie(m, hVal, E) {
+            var canvas = document.getElementById('sim-energie');
+            var ctx = canvas.getContext('2d');
+            var w = canvas.width;
+            var h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Boden
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(0, h - 30, w, 30);
+            ctx.fillStyle = '#333';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('h = 0', 10, h - 10);
+
+            // Höhenskala
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(50, h - 30);
+            ctx.lineTo(50, 20);
+            ctx.stroke();
+
+            for (var i = 0; i <= 20; i += 5) {
+                var y = h - 30 - (i / 20) * (h - 50);
+                ctx.beginPath();
+                ctx.moveTo(45, y);
+                ctx.lineTo(55, y);
+                ctx.stroke();
+                ctx.fillText(i + ' m', 60, y + 4);
+            }
+
+            // Körper
+            var bodyY = h - 30 - (hVal / 20) * (h - 50);
+            var bodySize = 15 + m * 0.5;
+            ctx.fillStyle = '#2c5aa0';
+            ctx.fillRect(150 - bodySize/2, bodyY - bodySize, bodySize, bodySize);
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(m + 'kg', 150, bodyY - bodySize/2 + 4);
+
+            // Höhenlinie
+            ctx.strokeStyle = '#c62828';
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(150, bodyY);
+            ctx.lineTo(150, h - 30);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#c62828';
+            ctx.fillText('h = ' + hVal + ' m', 150, bodyY + 15);
+
+            // Energiebalken
+            var maxE = 50 * 10 * 20; // 10000 J max
+            var barHeight = (E / maxE) * 150;
+
+            ctx.fillStyle = '#e3f2fd';
+            ctx.fillRect(300, h - 30 - 150, 80, 150);
+            ctx.fillStyle = '#2c5aa0';
+            ctx.fillRect(300, h - 30 - barHeight, 80, barHeight);
+            ctx.strokeStyle = '#333';
+            ctx.strokeRect(300, h - 30 - 150, 80, 150);
+
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(E + ' J', 340, h - 35 - barHeight);
+            ctx.font = '12px sans-serif';
+            ctx.fillText('E_pot', 340, h - 10);
+        }
+
+        // ===== INIT =====
+        window.onload = function() {
+            updateProgress();
+            updateTauziehen();
+            updateEnergie();
+            loadProgress();
+        };
+    </script>
+</body>
+</html>
