@@ -2833,6 +2833,100 @@
                     }
                 }
             }
+
+            // Visuelle Markierungen wiederherstellen
+            restoreVisualState();
+        }
+
+        // Visuelle Zustände nach Reload wiederherstellen (Korrekt/Falsch + Feedback)
+        function restoreVisualState() {
+            var saved = localStorage.getItem(STORAGE_KEY);
+            if (!saved) return;
+
+            var data = JSON.parse(saved);
+            var userAnswers = data.answers || {};
+
+            // Single-Choice Fragen markieren
+            var singleQuestions = [
+                'q1', 'q2', 'q3', 'q5', 'q7', 'q10', 'q12',
+                'q13', 'q14', 'q15', 'q16', 'q17', 'q18', 'q19',
+                'q20', 'q21', 'q24', 'q25', 'q26'
+            ];
+            singleQuestions.forEach(function(q) {
+                markRadioQuestion(q, answers[q], userAnswers[q] || '');
+                var isCorrect = userAnswers[q] === answers[q];
+                showFeedback(q, isCorrect);
+            });
+
+            // Multi-Select Fragen markieren
+            ['q4', 'q8', 'q9'].forEach(function(q) {
+                var userVals = userAnswers[q] || [];
+                var correctVals = answers[q];
+                var qOptions = document.querySelectorAll('#' + q + '-options .option');
+                for (var i = 0; i < qOptions.length; i++) {
+                    var val = qOptions[i].dataset.value;
+                    var isCorrectAnswer = correctVals.indexOf(val) !== -1;
+                    var wasSelected = userVals.indexOf(val) !== -1;
+                    if (isCorrectAnswer && wasSelected) {
+                        qOptions[i].classList.add('correct');
+                    } else if (isCorrectAnswer && !wasSelected) {
+                        qOptions[i].classList.add('missed');
+                    } else if (!isCorrectAnswer && wasSelected) {
+                        qOptions[i].classList.add('incorrect');
+                    }
+                }
+                // Feedback
+                var score = 0;
+                for (var j = 0; j < correctVals.length; j++) {
+                    if (userVals.indexOf(correctVals[j]) !== -1) score += 0.5;
+                }
+                for (var k = 0; k < userVals.length; k++) {
+                    if (correctVals.indexOf(userVals[k]) === -1) score -= 0.5;
+                }
+                score = Math.max(0, score);
+                var maxScore = correctVals.length * 0.5;
+                showFeedback(q, score === maxScore);
+            });
+
+            // Dropdown Fragen markieren
+            var dropdownMappings = [
+                { id: 'q6-punkt', key: 'q6punkt', correct: answers.q6punkt },
+                { id: 'q6-kreuz', key: 'q6kreuz', correct: answers.q6kreuz },
+                { id: 'q11-daumen', key: 'q11daumen', correct: answers.q11daumen },
+                { id: 'q11-zeige', key: 'q11zeige', correct: answers.q11zeige },
+                { id: 'q11-mittel', key: 'q11mittel', correct: answers.q11mittel },
+                { id: 'q22-a', key: 'q22a', correct: answers.q22a },
+                { id: 'q22-b', key: 'q22b', correct: answers.q22b },
+                { id: 'q23-a', key: 'q23a', correct: answers.q23a },
+                { id: 'q23-b', key: 'q23b', correct: answers.q23b },
+                { id: 'q27-a', key: 'q27a', correct: answers.q27a },
+                { id: 'q27-b', key: 'q27b', correct: answers.q27b }
+            ];
+
+            dropdownMappings.forEach(function(m) {
+                var el = document.getElementById(m.id);
+                if (el) {
+                    markDropdown(el, m.correct, userAnswers[m.key] || '');
+                }
+            });
+
+            // Feedback für Dropdown-Fragen
+            var q6Correct = (userAnswers.q6punkt === answers.q6punkt) && (userAnswers.q6kreuz === answers.q6kreuz);
+            showFeedback('q6', q6Correct);
+
+            var q11Correct = (userAnswers.q11daumen === answers.q11daumen) &&
+                             (userAnswers.q11zeige === answers.q11zeige) &&
+                             (userAnswers.q11mittel === answers.q11mittel);
+            showFeedback('q11', q11Correct);
+
+            var q22Correct = (userAnswers.q22a === answers.q22a) && (userAnswers.q22b === answers.q22b);
+            showFeedback('q22', q22Correct);
+
+            var q23Correct = (userAnswers.q23a === answers.q23a) && (userAnswers.q23b === answers.q23b);
+            showFeedback('q23', q23Correct);
+
+            var q27Correct = (userAnswers.q27a === answers.q27a) && (userAnswers.q27b === answers.q27b);
+            showFeedback('q27', q27Correct);
         }
     </script>
 </body>
