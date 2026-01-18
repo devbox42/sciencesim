@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vokabeltrainer – Describir fotos</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --muted: #888888;
+            --spanisch: #c41e3a;
+            --success: #2a7a4b;
+            --error: #c62828;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--spanisch);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header .subtitle { font-size: 0.85em; opacity: 0.9; }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .progress {
+            background: var(--border);
+            height: 8px;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            background: var(--spanisch);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: var(--muted);
+        }
+
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+
+        .card:active { transform: scale(0.98); }
+
+        .card-word {
+            font-family: "Palatino Linotype", Palatino, serif;
+            font-size: 1.8em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .card-hint {
+            font-size: 0.9em;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .card-answer {
+            font-size: 1.4em;
+            color: var(--spanisch);
+            margin-top: 15px;
+            display: none;
+        }
+
+        .card.flipped .card-answer { display: block; }
+        .card.flipped .card-hint { display: none; }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            font-size: 1em;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-wrong { background: var(--error); }
+        .btn-correct { background: var(--success); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-restart {
+            background: var(--spanisch);
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .category-select {
+            margin-bottom: 20px;
+        }
+
+        .category-select label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .category-select select {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+        }
+
+        .result {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 30px;
+            text-align: center;
+        }
+
+        .result h2 { color: var(--spanisch); margin-bottom: 15px; }
+        .result .score { font-size: 2em; font-weight: bold; margin: 20px 0; }
+        .result .detail { color: var(--muted); }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .mode-btn.active {
+            border-color: var(--spanisch);
+            background: #fff0f0;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Vokabeltrainer</h1>
+    <div class="subtitle">Describir fotos – Klasse 8</div>
+</header>
+
+<div class="container">
+    <div id="setup">
+        <div class="category-select">
+            <label>Kategorie wählen:</label>
+            <select id="categorySelect">
+                <option value="all">Alle Vokabeln (50)</option>
+                <option value="verben">Verben / Gerundio (12)</option>
+                <option value="positionen">Positionen (4)</option>
+                <option value="bildaufbau">Bildaufbau (6)</option>
+                <option value="personen">Personenbeschreibung (12)</option>
+                <option value="orte">Orte (14)</option>
+            </select>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="modeEsDE" onclick="setMode('es-de')">ES → DE</button>
+            <button class="mode-btn" id="modeDEEs" onclick="setMode('de-es')">DE → ES</button>
+        </div>
+
+        <button class="btn btn-restart" onclick="startTraining()">Start</button>
+    </div>
+
+    <div id="trainer" style="display:none;">
+        <div class="progress">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="stats">
+            <span id="statCurrent">1 / 10</span>
+            <span id="statScore">0 richtig</span>
+        </div>
+
+        <div class="card" id="card" onclick="flipCard()">
+            <div class="card-word" id="cardWord">-</div>
+            <div class="card-hint">Tippen zum Aufdecken</div>
+            <div class="card-answer" id="cardAnswer">-</div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-wrong" id="btnWrong" onclick="answer(false)" disabled>Falsch</button>
+            <button class="btn btn-correct" id="btnCorrect" onclick="answer(true)" disabled>Richtig</button>
+        </div>
+    </div>
+
+    <div id="result" style="display:none;">
+        <div class="result">
+            <h2>Fertig!</h2>
+            <div class="score" id="finalScore">0%</div>
+            <div class="detail" id="finalDetail">0 von 0 richtig</div>
+        </div>
+        <button class="btn btn-restart" onclick="showSetup()">Nochmal</button>
+    </div>
+</div>
+
+<script>
+// Vokabeln
+var vocab = {
+    verben: [
+        { es: 'caminar', de: 'laufen' },
+        { es: 'pasear', de: 'spazieren' },
+        { es: 'mirar', de: 'schauen' },
+        { es: 'hablar', de: 'sprechen' },
+        { es: 'comer', de: 'essen' },
+        { es: 'beber', de: 'trinken' },
+        { es: 'leer', de: 'lesen' },
+        { es: 'escribir', de: 'schreiben' },
+        { es: 'jugar', de: 'spielen' },
+        { es: 'correr', de: 'rennen' },
+        { es: 'reír', de: 'lachen' },
+        { es: 'dormir', de: 'schlafen' }
+    ],
+    positionen: [
+        { es: 'estar de pie', de: 'stehen' },
+        { es: 'estar sentado/a', de: 'sitzen' },
+        { es: 'estar tumbado/a', de: 'liegen' },
+        { es: 'estar apoyado/a', de: 'sich anlehnen' }
+    ],
+    bildaufbau: [
+        { es: 'en primer plano', de: 'im Vordergrund' },
+        { es: 'en segundo plano', de: 'im Mittelgrund' },
+        { es: 'al fondo', de: 'im Hintergrund' },
+        { es: 'a la izquierda', de: 'links' },
+        { es: 'a la derecha', de: 'rechts' },
+        { es: 'en el centro', de: 'in der Mitte' }
+    ],
+    personen: [
+        { es: 'alto/a', de: 'groß' },
+        { es: 'bajo/a', de: 'klein' },
+        { es: 'el pelo largo', de: 'langes Haar' },
+        { es: 'el pelo corto', de: 'kurzes Haar' },
+        { es: 'el pelo rubio', de: 'blondes Haar' },
+        { es: 'el pelo moreno', de: 'braunes Haar' },
+        { es: 'el pelo negro', de: 'schwarzes Haar' },
+        { es: 'el pelo liso', de: 'glattes Haar' },
+        { es: 'el pelo rizado', de: 'lockiges Haar' },
+        { es: 'los ojos azules', de: 'blaue Augen' },
+        { es: 'los ojos verdes', de: 'grüne Augen' },
+        { es: 'los ojos marrones', de: 'braune Augen' }
+    ],
+    orte: [
+        { es: 'el parque', de: 'der Park' },
+        { es: 'el banco', de: 'die Parkbank' },
+        { es: 'el árbol', de: 'der Baum' },
+        { es: 'el césped', de: 'der Rasen' },
+        { es: 'la fuente', de: 'der Brunnen' },
+        { es: 'el camino', de: 'der Weg' },
+        { es: 'la calle', de: 'die Straße' },
+        { es: 'la plaza', de: 'der Platz' },
+        { es: 'el edificio', de: 'das Gebäude' },
+        { es: 'la tienda', de: 'das Geschäft' },
+        { es: 'la cafetería', de: 'das Café' },
+        { es: 'la terraza', de: 'die Terrasse' },
+        { es: 'la mesa', de: 'der Tisch' },
+        { es: 'la silla', de: 'der Stuhl' }
+    ]
+};
+
+var mode = 'es-de';
+var cards = [];
+var currentIndex = 0;
+var correctCount = 0;
+var isFlipped = false;
+
+function setMode(m) {
+    mode = m;
+    document.getElementById('modeEsDE').className = (m === 'es-de') ? 'mode-btn active' : 'mode-btn';
+    document.getElementById('modeDEEs').className = (m === 'de-es') ? 'mode-btn active' : 'mode-btn';
+}
+
+function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = a[i];
+        a[i] = a[j];
+        a[j] = temp;
+    }
+    return a;
+}
+
+function getCards(category) {
+    var result = [];
+    if (category === 'all') {
+        for (var key in vocab) {
+            result = result.concat(vocab[key]);
+        }
+    } else {
+        result = vocab[category] || [];
+    }
+    return shuffle(result);
+}
+
+function startTraining() {
+    var category = document.getElementById('categorySelect').value;
+    cards = getCards(category);
+    currentIndex = 0;
+    correctCount = 0;
+    isFlipped = false;
+
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('trainer').style.display = 'block';
+    document.getElementById('result').style.display = 'none';
+
+    showCard();
+}
+
+function showCard() {
+    if (currentIndex >= cards.length) {
+        showResult();
+        return;
+    }
+
+    var card = cards[currentIndex];
+    var question = (mode === 'es-de') ? card.es : card.de;
+    var answer = (mode === 'es-de') ? card.de : card.es;
+
+    document.getElementById('cardWord').textContent = question;
+    document.getElementById('cardAnswer').textContent = answer;
+    document.getElementById('card').className = 'card';
+    isFlipped = false;
+
+    document.getElementById('btnWrong').disabled = true;
+    document.getElementById('btnCorrect').disabled = true;
+
+    document.getElementById('statCurrent').textContent = (currentIndex + 1) + ' / ' + cards.length;
+    document.getElementById('statScore').textContent = correctCount + ' richtig';
+
+    var progress = (currentIndex / cards.length) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+}
+
+function flipCard() {
+    if (isFlipped) return;
+    isFlipped = true;
+    document.getElementById('card').className = 'card flipped';
+    document.getElementById('btnWrong').disabled = false;
+    document.getElementById('btnCorrect').disabled = false;
+}
+
+function answer(correct) {
+    if (correct) correctCount++;
+    currentIndex++;
+    showCard();
+}
+
+function showResult() {
+    document.getElementById('trainer').style.display = 'none';
+    document.getElementById('result').style.display = 'block';
+
+    var percent = Math.round((correctCount / cards.length) * 100);
+    document.getElementById('finalScore').textContent = percent + '%';
+    document.getElementById('finalDetail').textContent = correctCount + ' von ' + cards.length + ' richtig';
+    document.getElementById('progressFill').style.width = '100%';
+}
+
+function showSetup() {
+    document.getElementById('setup').style.display = 'block';
+    document.getElementById('trainer').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
