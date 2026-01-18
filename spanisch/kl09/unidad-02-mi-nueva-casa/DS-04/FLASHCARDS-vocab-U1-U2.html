@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards: Vocabulario U1 + U2</title>
+    <style>
+        :root {
+            --spanisch: #c41e3a;
+            --spanisch-light: #f8e8eb;
+            --success: #2a7a4b;
+            --success-light: #e8f5e9;
+            --error: #c62828;
+            --error-light: #ffebee;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-muted: #888888;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: var(--spanisch);
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .header-meta {
+            color: var(--text-muted);
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        /* Progress */
+        .progress-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-correct { color: var(--success); font-weight: 600; }
+        .stat-wrong { color: var(--error); font-weight: 600; }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--spanisch);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Category Selector */
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .cat-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            border: 2px solid var(--border);
+            background: var(--white);
+            font-size: 0.85em;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .cat-btn.active {
+            border-color: var(--spanisch);
+            background: var(--spanisch-light);
+            color: var(--spanisch);
+            font-weight: 600;
+        }
+
+        /* Flashcard */
+        .flashcard-container {
+            perspective: 1000px;
+            margin-bottom: 20px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 250px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--border);
+            background: var(--white);
+            padding: 20px;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front {
+            background: var(--spanisch);
+            color: white;
+        }
+
+        .card-word {
+            font-size: 2em;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .card-hint {
+            font-size: 0.9em;
+            margin-top: 15px;
+            opacity: 0.8;
+        }
+
+        .card-translation {
+            font-size: 1.8em;
+            font-weight: 600;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .card-article {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-wrong {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-correct {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-wrong:hover { background: #a02020; }
+        .btn-correct:hover { background: #1f5c38; }
+
+        .btn-flip {
+            background: var(--spanisch);
+            color: white;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn-flip:hover { background: #a01830; }
+
+        /* Control Buttons */
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-control {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            background: var(--white);
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .btn-control:hover {
+            background: var(--bg);
+        }
+
+        /* Result Screen */
+        .result-screen {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 30px;
+            text-align: center;
+            display: none;
+        }
+
+        .result-screen.visible { display: block; }
+
+        .result-score {
+            font-size: 3em;
+            font-weight: 700;
+            color: var(--spanisch);
+        }
+
+        .result-label {
+            font-size: 1.2em;
+            color: var(--text-muted);
+            margin: 10px 0 20px;
+        }
+
+        .result-details {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .result-stat {
+            text-align: center;
+        }
+
+        .result-stat-num {
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .result-stat-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+
+        /* Tap hint */
+        .tap-hint {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85em;
+            margin-bottom: 15px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Flashcards: Vocabulario</h1>
+            <div class="header-meta">Unidad 1 + 2 – Klasse 9</div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-container">
+            <div class="progress-stats">
+                <span>Karte <span id="currentCard">1</span> / <span id="totalCards">0</span></span>
+                <span><span class="stat-correct" id="correctCount">0</span> ✓ | <span class="stat-wrong" id="wrongCount">0</span> ✗</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- Category Selector -->
+        <div class="category-selector">
+            <button class="cat-btn active" onclick="setCategory('all')">Alle</button>
+            <button class="cat-btn" onclick="setCategory('restaurante')">Restaurante</button>
+            <button class="cat-btn" onclick="setCategory('casa')">Casa</button>
+            <button class="cat-btn" onclick="setCategory('muebles')">Muebles</button>
+        </div>
+
+        <!-- Flashcard -->
+        <div class="flashcard-container" id="flashcardContainer">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flashcard-face flashcard-front">
+                    <div class="card-word" id="cardWord">—</div>
+                    <div class="card-hint" id="cardHint"></div>
+                </div>
+                <div class="flashcard-face flashcard-back">
+                    <div class="card-translation" id="cardTranslation">—</div>
+                    <div class="card-article" id="cardArticle"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tap-hint" id="tapHint">Tippe auf die Karte zum Umdrehen</div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons" id="actionButtons" style="display:none;">
+            <button class="btn btn-wrong" onclick="markCard(false)">✗ Nochmal</button>
+            <button class="btn btn-correct" onclick="markCard(true)">✓ Gewusst</button>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="control-buttons">
+            <button class="btn-control" onclick="shuffleCards()">🔀 Mischen</button>
+            <button class="btn-control" onclick="resetProgress()">↺ Neustart</button>
+        </div>
+
+        <!-- Result Screen -->
+        <div class="result-screen" id="resultScreen">
+            <div class="result-score" id="resultScore">0%</div>
+            <div class="result-label">der Vokabeln gewusst</div>
+            <div class="result-details">
+                <div class="result-stat">
+                    <div class="result-stat-num stat-correct" id="resultCorrect">0</div>
+                    <div class="result-stat-label">Richtig</div>
+                </div>
+                <div class="result-stat">
+                    <div class="result-stat-num stat-wrong" id="resultWrong">0</div>
+                    <div class="result-stat-label">Nochmal üben</div>
+                </div>
+            </div>
+            <button class="btn btn-flip" onclick="restartWithWrong()">Falsche nochmal üben</button>
+            <button class="btn-control" style="width:100%;" onclick="resetProgress()">Alle Vokabeln neu starten</button>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════════════════
+    // VOCABULARY DATA
+    // ═══════════════════════════════════════════════════════════════════════════
+    var allVocab = [
+        // Restaurante
+        {es: 'el camarero', de: 'der Kellner', cat: 'restaurante'},
+        {es: 'la camarera', de: 'die Kellnerin', cat: 'restaurante'},
+        {es: 'el menú', de: 'die Speisekarte', cat: 'restaurante'},
+        {es: 'la carta', de: 'die Speisekarte', cat: 'restaurante'},
+        {es: 'la cuenta', de: 'die Rechnung', cat: 'restaurante'},
+        {es: 'la propina', de: 'das Trinkgeld', cat: 'restaurante'},
+        {es: 'el primer plato', de: 'der erste Gang', cat: 'restaurante'},
+        {es: 'el segundo plato', de: 'der zweite Gang', cat: 'restaurante'},
+        {es: 'el postre', de: 'der Nachtisch', cat: 'restaurante'},
+        {es: 'la bebida', de: 'das Getränk', cat: 'restaurante'},
+        {es: 'el plato', de: 'der Teller', cat: 'restaurante'},
+        {es: 'el vaso', de: 'das Glas', cat: 'restaurante'},
+        {es: 'la copa', de: 'das Weinglas', cat: 'restaurante'},
+        {es: 'la taza', de: 'die Tasse', cat: 'restaurante'},
+        {es: 'el cuchillo', de: 'das Messer', cat: 'restaurante'},
+        {es: 'el tenedor', de: 'die Gabel', cat: 'restaurante'},
+        {es: 'la cuchara', de: 'der Löffel', cat: 'restaurante'},
+        {es: 'la servilleta', de: 'die Serviette', cat: 'restaurante'},
+        {es: 'la sal', de: 'das Salz', cat: 'restaurante'},
+        {es: 'la pimienta', de: 'der Pfeffer', cat: 'restaurante'},
+        {es: 'el aceite', de: 'das Öl', cat: 'restaurante'},
+        {es: 'el vinagre', de: 'der Essig', cat: 'restaurante'},
+        {es: 'el azúcar', de: 'der Zucker', cat: 'restaurante'},
+
+        // Casa (Räume)
+        {es: 'el piso', de: 'die Wohnung', cat: 'casa'},
+        {es: 'la casa', de: 'das Haus', cat: 'casa'},
+        {es: 'el pasillo', de: 'der Flur', cat: 'casa'},
+        {es: 'el salón', de: 'das Wohnzimmer', cat: 'casa'},
+        {es: 'la cocina', de: 'die Küche', cat: 'casa'},
+        {es: 'el dormitorio', de: 'das Schlafzimmer', cat: 'casa'},
+        {es: 'el baño', de: 'das Badezimmer', cat: 'casa'},
+        {es: 'el balcón', de: 'der Balkon', cat: 'casa'},
+
+        // Muebles
+        {es: 'la cama', de: 'das Bett', cat: 'muebles'},
+        {es: 'el armario', de: 'der Schrank', cat: 'muebles'},
+        {es: 'la estantería', de: 'das Regal', cat: 'muebles'},
+        {es: 'el sofá', de: 'das Sofa', cat: 'muebles'},
+        {es: 'el sillón', de: 'der Sessel', cat: 'muebles'},
+        {es: 'la mesa', de: 'der Tisch', cat: 'muebles'},
+        {es: 'la silla', de: 'der Stuhl', cat: 'muebles'},
+        {es: 'la lámpara', de: 'die Lampe', cat: 'muebles'},
+        {es: 'el cuadro', de: 'das Bild', cat: 'muebles'},
+        {es: 'el espejo', de: 'der Spiegel', cat: 'muebles'},
+        {es: 'la nevera', de: 'der Kühlschrank', cat: 'muebles'},
+        {es: 'el horno', de: 'der Ofen', cat: 'muebles'},
+        {es: 'la ducha', de: 'die Dusche', cat: 'muebles'},
+        {es: 'el televisor', de: 'der Fernseher', cat: 'muebles'},
+        {es: 'la planta', de: 'die Pflanze', cat: 'muebles'}
+    ];
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════════════════════════════════════════
+    var STORAGE_KEY = 'flashcards-vocab-u1u2';
+    var currentCategory = 'all';
+    var currentDeck = [];
+    var currentIndex = 0;
+    var correctCount = 0;
+    var wrongCount = 0;
+    var wrongCards = [];
+    var isFlipped = false;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function shuffle(array) {
+        var shuffled = array.slice();
+        for (var i = shuffled.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = shuffled[i];
+            shuffled[i] = shuffled[j];
+            shuffled[j] = temp;
+        }
+        return shuffled;
+    }
+
+    function setCategory(cat) {
+        currentCategory = cat;
+
+        // Update buttons
+        var buttons = document.querySelectorAll('.cat-btn');
+        for (var i = 0; i < buttons.length; i++) {
+            buttons[i].classList.remove('active');
+        }
+        event.target.classList.add('active');
+
+        // Filter and shuffle deck
+        if (cat === 'all') {
+            currentDeck = shuffle(allVocab.slice());
+        } else {
+            var filtered = [];
+            for (var j = 0; j < allVocab.length; j++) {
+                if (allVocab[j].cat === cat) {
+                    filtered.push(allVocab[j]);
+                }
+            }
+            currentDeck = shuffle(filtered);
+        }
+
+        // Reset state
+        currentIndex = 0;
+        correctCount = 0;
+        wrongCount = 0;
+        wrongCards = [];
+
+        updateUI();
+        showCard();
+    }
+
+    function showCard() {
+        if (currentIndex >= currentDeck.length) {
+            showResults();
+            return;
+        }
+
+        var card = currentDeck[currentIndex];
+
+        document.getElementById('cardWord').textContent = card.es;
+        document.getElementById('cardHint').textContent = '';
+        document.getElementById('cardTranslation').textContent = card.de;
+
+        // Extract article info
+        var article = '';
+        if (card.es.indexOf('el ') === 0) {
+            article = 'maskulin (el)';
+        } else if (card.es.indexOf('la ') === 0) {
+            article = 'feminin (la)';
+        }
+        document.getElementById('cardArticle').textContent = article;
+
+        // Reset flip state
+        isFlipped = false;
+        document.getElementById('flashcard').classList.remove('flipped');
+        document.getElementById('actionButtons').style.display = 'none';
+        document.getElementById('tapHint').style.display = 'block';
+        document.getElementById('flashcardContainer').style.display = 'block';
+        document.getElementById('resultScreen').classList.remove('visible');
+
+        updateUI();
+    }
+
+    function flipCard() {
+        isFlipped = !isFlipped;
+        var flashcard = document.getElementById('flashcard');
+
+        if (isFlipped) {
+            flashcard.classList.add('flipped');
+            document.getElementById('actionButtons').style.display = 'flex';
+            document.getElementById('tapHint').style.display = 'none';
+        } else {
+            flashcard.classList.remove('flipped');
+            document.getElementById('actionButtons').style.display = 'none';
+            document.getElementById('tapHint').style.display = 'block';
+        }
+    }
+
+    function markCard(correct) {
+        if (correct) {
+            correctCount++;
+        } else {
+            wrongCount++;
+            wrongCards.push(currentDeck[currentIndex]);
+        }
+
+        currentIndex++;
+        showCard();
+        saveProgress();
+    }
+
+    function updateUI() {
+        document.getElementById('currentCard').textContent = Math.min(currentIndex + 1, currentDeck.length);
+        document.getElementById('totalCards').textContent = currentDeck.length;
+        document.getElementById('correctCount').textContent = correctCount;
+        document.getElementById('wrongCount').textContent = wrongCount;
+
+        var progress = currentDeck.length > 0 ? (currentIndex / currentDeck.length) * 100 : 0;
+        document.getElementById('progressFill').style.width = progress + '%';
+    }
+
+    function showResults() {
+        document.getElementById('flashcardContainer').style.display = 'none';
+        document.getElementById('actionButtons').style.display = 'none';
+        document.getElementById('tapHint').style.display = 'none';
+        document.getElementById('resultScreen').classList.add('visible');
+
+        var total = correctCount + wrongCount;
+        var percent = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+
+        document.getElementById('resultScore').textContent = percent + '%';
+        document.getElementById('resultCorrect').textContent = correctCount;
+        document.getElementById('resultWrong').textContent = wrongCount;
+    }
+
+    function restartWithWrong() {
+        if (wrongCards.length === 0) {
+            alert('Keine falschen Karten vorhanden!');
+            return;
+        }
+
+        currentDeck = shuffle(wrongCards.slice());
+        currentIndex = 0;
+        correctCount = 0;
+        wrongCount = 0;
+        wrongCards = [];
+
+        updateUI();
+        showCard();
+    }
+
+    function shuffleCards() {
+        currentDeck = shuffle(currentDeck);
+        currentIndex = 0;
+        correctCount = 0;
+        wrongCount = 0;
+        wrongCards = [];
+
+        updateUI();
+        showCard();
+    }
+
+    function resetProgress() {
+        setCategory(currentCategory);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STORAGE
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function saveProgress() {
+        var data = {
+            category: currentCategory,
+            currentIndex: currentIndex,
+            correctCount: correctCount,
+            wrongCount: wrongCount,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            // Only restore if recent (within 24h)
+            var savedTime = new Date(data.timestamp);
+            var now = new Date();
+            var hoursDiff = (now - savedTime) / (1000 * 60 * 60);
+
+            if (hoursDiff < 24) {
+                currentCategory = data.category || 'all';
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function init() {
+        loadProgress();
+        setCategory(currentCategory);
+    }
+
+    init();
+    </script>
+</body>
+</html>
