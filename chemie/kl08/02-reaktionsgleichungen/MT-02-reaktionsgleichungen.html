@@ -804,6 +804,12 @@
         return (v === '' || v === '1');
     }
 
+    // Für Vorfaktoren: leer oder "1" sind beide korrekt (Vorfaktor 1 wird nicht geschrieben)
+    function checkOne(val) {
+        var v = normalize(val);
+        return (v === '' || v === '1');
+    }
+
     function markInput(id, isCorrect) {
         var el = document.getElementById(id);
         if (el) {
@@ -901,7 +907,8 @@
 
         // ===== FRAGE 4: Atome zählen (4 BE) =====
         var q4Score = 0;
-        if (normalize(document.getElementById('q4a').value) === '1') { q4Score++; markInput('q4a', true); } else { markInput('q4a', false); }
+        var q4aOk = checkOne(document.getElementById('q4a').value);
+        if (q4aOk) { q4Score++; markInput('q4a', true); } else { markInput('q4a', false); }
         if (normalize(document.getElementById('q4b').value) === '2') { q4Score++; markInput('q4b', true); } else { markInput('q4b', false); }
         if (normalize(document.getElementById('q4c').value) === '2') { q4Score++; markInput('q4c', true); } else { markInput('q4c', false); }
         if (normalize(document.getElementById('q4d').value) === '3') { q4Score++; markInput('q4d', true); } else { markInput('q4d', false); }
@@ -911,24 +918,30 @@
 
         // ===== FRAGE 5: Ausgleichen (9 BE) =====
         var q5Score = 0;
-        // Ca: 2-1-2
-        var q5aOk = normalize(document.getElementById('q5a1').value) === '2' && normalize(document.getElementById('q5a2').value) === '1' && normalize(document.getElementById('q5a3').value) === '2';
-        if (q5aOk) q5Score += 3;
-        markInput('q5a1', normalize(document.getElementById('q5a1').value) === '2');
-        markInput('q5a2', normalize(document.getElementById('q5a2').value) === '1');
-        markInput('q5a3', normalize(document.getElementById('q5a3').value) === '2');
-        // Ba: 2-1-2
-        var q5bOk = normalize(document.getElementById('q5b1').value) === '2' && normalize(document.getElementById('q5b2').value) === '1' && normalize(document.getElementById('q5b3').value) === '2';
-        if (q5bOk) q5Score += 3;
-        markInput('q5b1', normalize(document.getElementById('q5b1').value) === '2');
-        markInput('q5b2', normalize(document.getElementById('q5b2').value) === '1');
-        markInput('q5b3', normalize(document.getElementById('q5b3').value) === '2');
-        // CO2: 1-1-1
-        var q5cOk = normalize(document.getElementById('q5c1').value) === '1' && normalize(document.getElementById('q5c2').value) === '1' && normalize(document.getElementById('q5c3').value) === '1';
-        if (q5cOk) q5Score += 3;
-        markInput('q5c1', normalize(document.getElementById('q5c1').value) === '1');
-        markInput('q5c2', normalize(document.getElementById('q5c2').value) === '1');
-        markInput('q5c3', normalize(document.getElementById('q5c3').value) === '1');
+        // Ca: 2-1-2 (Vorfaktor 1 vor O₂ → leer oder "1" akzeptiert)
+        var q5a1Ok = normalize(document.getElementById('q5a1').value) === '2';
+        var q5a2Ok = checkOne(document.getElementById('q5a2').value);
+        var q5a3Ok = normalize(document.getElementById('q5a3').value) === '2';
+        if (q5a1Ok && q5a2Ok && q5a3Ok) q5Score += 3;
+        markInput('q5a1', q5a1Ok);
+        markInput('q5a2', q5a2Ok);
+        markInput('q5a3', q5a3Ok);
+        // Ba: 2-1-2 (Vorfaktor 1 vor O₂ → leer oder "1" akzeptiert)
+        var q5b1Ok = normalize(document.getElementById('q5b1').value) === '2';
+        var q5b2Ok = checkOne(document.getElementById('q5b2').value);
+        var q5b3Ok = normalize(document.getElementById('q5b3').value) === '2';
+        if (q5b1Ok && q5b2Ok && q5b3Ok) q5Score += 3;
+        markInput('q5b1', q5b1Ok);
+        markInput('q5b2', q5b2Ok);
+        markInput('q5b3', q5b3Ok);
+        // CO2: 1-1-1 (alle Vorfaktoren 1 → leer oder "1" akzeptiert)
+        var q5c1Ok = checkOne(document.getElementById('q5c1').value);
+        var q5c2Ok = checkOne(document.getElementById('q5c2').value);
+        var q5c3Ok = checkOne(document.getElementById('q5c3').value);
+        if (q5c1Ok && q5c2Ok && q5c3Ok) q5Score += 3;
+        markInput('q5c1', q5c1Ok);
+        markInput('q5c2', q5c2Ok);
+        markInput('q5c3', q5c3Ok);
         score += q5Score;
         showFeedback('q5', q5Score === 9);
         showQuestionResult('q5', q5Score, 9);
@@ -956,11 +969,14 @@
         if (document.getElementById('q8a').value === 'index') { q8Score++; markInput('q8a', true); } else { markInput('q8a', false); }
         if (document.getElementById('q8a2').value === 'vorfaktor') { q8Score++; markInput('q8a2', true); } else { markInput('q8a2', false); }
         if (document.getElementById('q8b').value === 'stoff') { q8Score++; markInput('q8b', true); } else { markInput('q8b', false); }
-        var q8cOk = normalize(document.getElementById('q8c1').value) === '2' && normalize(document.getElementById('q8c2').value) === '1' && normalize(document.getElementById('q8c3').value) === '2';
-        if (q8cOk) q8Score += 2;
-        markInput('q8c1', normalize(document.getElementById('q8c1').value) === '2');
-        markInput('q8c2', normalize(document.getElementById('q8c2').value) === '1');
-        markInput('q8c3', normalize(document.getElementById('q8c3').value) === '2');
+        // Gleichung: 2 Mg + 1 O₂ → 2 MgO (Vorfaktor 1 vor O₂ → leer oder "1" akzeptiert)
+        var q8c1Ok = normalize(document.getElementById('q8c1').value) === '2';
+        var q8c2Ok = checkOne(document.getElementById('q8c2').value);
+        var q8c3Ok = normalize(document.getElementById('q8c3').value) === '2';
+        if (q8c1Ok && q8c2Ok && q8c3Ok) q8Score += 2;
+        markInput('q8c1', q8c1Ok);
+        markInput('q8c2', q8c2Ok);
+        markInput('q8c3', q8c3Ok);
         score += q8Score;
         showFeedback('q8', q8Score === 5);
         showQuestionResult('q8', q8Score, 5);
