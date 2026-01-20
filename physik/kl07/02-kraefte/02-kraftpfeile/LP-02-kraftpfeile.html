@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Kräfte zusammensetzen</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            font-size: 16px;
+            color: #222;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: max-width 0.3s ease;
+        }
+        header {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            color: #2c5aa0;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+        header .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 8px;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            background: #2c5aa0;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .step {
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+        .step-header {
+            background: #2c5aa0;
+            color: #fff;
+            padding: 10px 15px;
+            font-weight: 600;
+        }
+        .step-content {
+            padding: 20px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .info-box strong { color: #2c5aa0; }
+        .warning-box {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .warning-box strong { color: #b35c00; }
+        .hefter-hinweis {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 15px;
+            margin: 20px 0;
+        }
+        .hefter-hinweis::before {
+            content: "📝 Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .exercise {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .exercise-title {
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px 5px 5px 0;
+        }
+        .btn:hover { background: #1e4a8a; }
+        .btn-success { background: #2a7a4b; }
+        .btn-success:hover { background: #1e5a35; }
+        .btn-secondary { background: #666; }
+        .btn-secondary:hover { background: #444; }
+        .nav-buttons {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .feedback {
+            padding: 10px 15px;
+            margin: 10px 0;
+            display: none;
+        }
+        .feedback.correct {
+            background: #e8f5e9;
+            border: 1px solid #2a7a4b;
+            color: #1b5e20;
+            display: block;
+        }
+        .feedback.incorrect {
+            background: #ffebee;
+            border: 1px solid #c62828;
+            color: #b71c1c;
+            display: block;
+        }
+        select, input[type="text"], input[type="number"] {
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            margin: 5px 0;
+        }
+        select { min-width: 150px; }
+        input[type="number"] { width: 80px; }
+        .matching-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .matching-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        .matching-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .sim-embed {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+        }
+        .sim-embed iframe {
+            width: 100%;
+            height: 650px;
+            border: none;
+        }
+        /* Breiterer Container bei SIM-Steps */
+        .step.has-sim.active ~ .step,
+        .step.has-sim.active {
+            /* handled by container */
+        }
+        .container.wide-mode {
+            max-width: 1100px;
+        }
+        .formula-box {
+            background: #f0f4f8;
+            border-left: 4px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 1.1em;
+        }
+        .example-box {
+            background: #fff;
+            border: 1px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .example-box h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        ul, ol { margin-left: 20px; margin-top: 10px; }
+        li { margin: 5px 0; }
+        .tauziehen-img {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 2em;
+        }
+        /* Step-Indicators */
+        .step-indicators {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .step-dot {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: 600;
+            border: 2px solid #ddd;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #555;
+        }
+        .step-dot:hover {
+            border-color: #2c5aa0;
+        }
+        .step-dot.completed {
+            background: #2a7a4b;
+            border-color: #2a7a4b;
+            color: #fff;
+        }
+        .step-dot.current {
+            border-color: #2c5aa0;
+            border-width: 3px;
+            color: #2c5aa0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lernpfad: Kräfte zusammensetzen</h1>
+            <div class="meta">Physik Klasse 7 | Kraftpfeile und resultierende Kraft</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="step-indicators" id="stepIndicators"></div>
+        </header>
+
+        <!-- ========== SCHRITT 1: Wiederholung ========== -->
+        <div class="step active" id="step1">
+            <div class="step-header">Schritt 1: Wiederholung – Der Kraftpfeil</div>
+            <div class="step-content">
+                <p>Ein <strong>Kraftpfeil</strong> zeigt drei wichtige Eigenschaften einer Kraft:</p>
+
+                <div class="info-box">
+                    <strong>Die 3 Elemente des Kraftpfeils:</strong>
+                    <ol>
+                        <li><strong>Angriffspunkt</strong> – wo die Kraft angreift</li>
+                        <li><strong>Richtung</strong> – wohin die Kraft wirkt (Pfeilspitze)</li>
+                        <li><strong>Betrag/Länge</strong> – wie stark die Kraft ist</li>
+                    </ol>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 1: Zuordnung</div>
+                    <p>Ordne richtig zu:</p>
+                    <div class="matching-container">
+                        <div class="matching-item">
+                            <label>Angriffspunkt zeigt...</label>
+                            <select id="q1a">
+                                <option value="">– Wähle –</option>
+                                <option value="wo">wo die Kraft angreift</option>
+                                <option value="wohin">wohin die Kraft wirkt</option>
+                                <option value="stark">wie stark die Kraft ist</option>
+                            </select>
+                        </div>
+                        <div class="matching-item">
+                            <label>Richtung (Spitze) zeigt...</label>
+                            <select id="q1b">
+                                <option value="">– Wähle –</option>
+                                <option value="wo">wo die Kraft angreift</option>
+                                <option value="wohin">wohin die Kraft wirkt</option>
+                                <option value="stark">wie stark die Kraft ist</option>
+                            </select>
+                        </div>
+                        <div class="matching-item">
+                            <label>Länge zeigt...</label>
+                            <select id="q1c">
+                                <option value="">– Wähle –</option>
+                                <option value="wo">wo die Kraft angreift</option>
+                                <option value="wohin">wohin die Kraft wirkt</option>
+                                <option value="stark">wie stark die Kraft ist</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn" onclick="checkStep1()">Prüfen</button>
+                    <div class="feedback" id="feedback1"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 5:</strong> Nenne die drei Eigenschaften eines Kraftpfeils.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-success" onclick="nextStep(2)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 2: Maßstab ========== -->
+        <div class="step" id="step2">
+            <div class="step-header">Schritt 2: Maßstab verstehen</div>
+            <div class="step-content">
+                <p>Um Kraftpfeile richtig zu zeichnen, brauchen wir einen <strong>Maßstab</strong>.</p>
+
+                <div class="formula-box">
+                    <strong>Maßstab:</strong> 1 cm ≙ 1 N<br>
+                    Das bedeutet: 1 Zentimeter auf dem Papier entspricht 1 Newton Kraft.
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel:</h4>
+                    <p>Eine Kraft von <strong>F = 4 N</strong> wird als <strong>4 cm langer Pfeil</strong> gezeichnet.</p>
+                    <p>Eine Kraft von <strong>F = 2,5 N</strong> wird als <strong>2,5 cm langer Pfeil</strong> gezeichnet.</p>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Häufiger Fehler:</strong> Die Pfeilspitze zählt zur Gesamtlänge!
+                    <div style="margin-top: 10px; text-align: center;">
+                        <svg viewBox="0 0 320 100" width="320" height="100" style="max-width: 100%;">
+                            <!-- Hintergrund -->
+                            <rect width="320" height="100" fill="#fff"/>
+                            <!-- RICHTIG -->
+                            <text x="10" y="25" font-size="12" fill="#2a7a4b" font-weight="bold">✓ RICHTIG:</text>
+                            <line x1="80" y1="20" x2="200" y2="20" stroke="#2a7a4b" stroke-width="3"/>
+                            <polygon points="200,20 188,14 188,26" fill="#2a7a4b"/>
+                            <!-- Maßlinie RICHTIG -->
+                            <line x1="80" y1="35" x2="200" y2="35" stroke="#666" stroke-width="1"/>
+                            <line x1="80" y1="32" x2="80" y2="38" stroke="#666" stroke-width="1"/>
+                            <line x1="200" y1="32" x2="200" y2="38" stroke="#666" stroke-width="1"/>
+                            <text x="140" y="48" font-size="10" fill="#666" text-anchor="middle">4 cm (bis zur Spitze!)</text>
+                            <!-- FALSCH -->
+                            <text x="10" y="75" font-size="12" fill="#c62828" font-weight="bold">✗ FALSCH:</text>
+                            <line x1="80" y1="70" x2="200" y2="70" stroke="#c62828" stroke-width="3"/>
+                            <polygon points="212,70 200,64 200,76" fill="#c62828"/>
+                            <!-- Maßlinie FALSCH -->
+                            <line x1="80" y1="85" x2="200" y2="85" stroke="#666" stroke-width="1" stroke-dasharray="3,2"/>
+                            <text x="140" y="98" font-size="10" fill="#c62828" text-anchor="middle">4 cm + Spitze = zu lang!</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 2: Maßstab anwenden</div>
+                    <p>Maßstab: 1 cm ≙ 1 N</p>
+                    <p>Wie lang muss der Pfeil für F = 5 N sein?</p>
+                    <input type="number" id="q2a" step="0.5" min="0" max="20"> cm
+                    <button class="btn" onclick="checkStep2()">Prüfen</button>
+                    <div class="feedback" id="feedback2"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 1:</strong> Zeichne drei Kraftpfeile im richtigen Maßstab.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(1)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(3)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 3: Kräfte gleiche Richtung ========== -->
+        <div class="step has-sim" id="step3">
+            <div class="step-header">Schritt 3: Kräfte in gleicher Richtung</div>
+            <div class="step-content">
+                <p>Was passiert, wenn <strong>zwei Kräfte in die gleiche Richtung</strong> wirken?</p>
+
+                <div class="info-box">
+                    <strong>Regel:</strong> Bei gleicher Richtung werden die Beträge <strong>addiert</strong>.<br>
+                    F<sub>res</sub> = F₁ + F₂
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel: Zwei Personen schieben einen Schrank</h4>
+                    <p>Person 1 schiebt mit F₁ = 3 N nach rechts →</p>
+                    <p>Person 2 schiebt mit F₂ = 4 N nach rechts →</p>
+                    <p><strong>Resultierende:</strong> F<sub>res</sub> = 3 N + 4 N = <strong>7 N</strong> nach rechts</p>
+                </div>
+
+                <div class="sim-embed">
+                    <p style="padding: 10px; background: #f5f5f5;"><strong>Probiere es aus!</strong> Klicke auf "Gleiche Richtung" in der Simulation:</p>
+                    <iframe src="SIM.html" title="Kräfte-Simulation"></iframe>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 3: Berechne F<sub>res</sub></div>
+                    <p>F₁ = 2 N →, F₂ = 5 N →</p>
+                    <p>F<sub>res</sub> = <input type="number" id="q3a" step="1" min="0" max="20"> N</p>
+                    <button class="btn" onclick="checkStep3()">Prüfen</button>
+                    <div class="feedback" id="feedback3"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 2:</strong> Zeichne Kräfte in gleicher Richtung und berechne F<sub>res</sub>.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(2)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(4)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 4: Kräfte entgegengesetzt ========== -->
+        <div class="step" id="step4">
+            <div class="step-header">Schritt 4: Kräfte in entgegengesetzter Richtung</div>
+            <div class="step-content">
+                <p>Was passiert, wenn <strong>zwei Kräfte gegeneinander</strong> wirken?</p>
+
+                <div class="info-box">
+                    <strong>Regel:</strong> Bei entgegengesetzter Richtung werden die Beträge <strong>subtrahiert</strong>.<br>
+                    F<sub>res</sub> = |F₁ − F₂|<br>
+                    <em>Die Richtung entspricht der größeren Kraft!</em>
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel: Tauziehen</h4>
+                    <div class="tauziehen-img">👤 ← 5N | 3N → 👤</div>
+                    <p>Team links zieht mit F₁ = 5 N nach links ←</p>
+                    <p>Team rechts zieht mit F₂ = 3 N nach rechts →</p>
+                    <p><strong>Resultierende:</strong> F<sub>res</sub> = 5 N − 3 N = <strong>2 N nach links</strong></p>
+                    <p>→ Team links gewinnt!</p>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Achtung:</strong> Vergiss nicht die <strong>Richtung</strong> anzugeben! Die resultierende Kraft zeigt immer in Richtung der stärkeren Kraft.
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 4: Tauziehen</div>
+                    <p>Team A zieht mit F₁ = 8 N nach links ←</p>
+                    <p>Team B zieht mit F₂ = 6 N nach rechts →</p>
+                    <p>F<sub>res</sub> = <input type="number" id="q4a" step="1" min="0" max="20"> N</p>
+                    <p>Richtung:
+                        <select id="q4b">
+                            <option value="">– Wähle –</option>
+                            <option value="links">nach links ←</option>
+                            <option value="rechts">nach rechts →</option>
+                        </select>
+                    </p>
+                    <button class="btn" onclick="checkStep4()">Prüfen</button>
+                    <div class="feedback" id="feedback4"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 3:</strong> Tauziehen – zeichne entgegengesetzte Kräfte und berechne F<sub>res</sub>.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(3)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(5)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 5: Gleichgewicht ========== -->
+        <div class="step" id="step5">
+            <div class="step-header">Schritt 5: Kräftegleichgewicht</div>
+            <div class="step-content">
+                <p>Was passiert, wenn beide Kräfte <strong>gleich stark</strong> sind und <strong>entgegengesetzt</strong> wirken?</p>
+
+                <div class="info-box">
+                    <strong>Kräftegleichgewicht:</strong> Wenn F₁ = F₂ und beide entgegengesetzt wirken, dann ist F<sub>res</sub> = 0 N.<br>
+                    → Der Körper bewegt sich nicht!
+                </div>
+
+                <div class="example-box">
+                    <h4>Beispiel: Unentschiedenes Tauziehen</h4>
+                    <div class="tauziehen-img">👤 ← 4N | 4N → 👤</div>
+                    <p>Beide Teams ziehen mit F = 4 N.</p>
+                    <p>F<sub>res</sub> = 4 N − 4 N = <strong>0 N</strong></p>
+                    <p>→ Das Seil bewegt sich nicht. Unentschieden!</p>
+                </div>
+
+                <p><strong>Probiere es in der Simulation:</strong> Klicke auf "Tauziehen (4N vs 4N)" und beobachte die resultierende Kraft.</p>
+
+                <div class="exercise">
+                    <div class="exercise-title">Übung 5: Gleichgewicht?</div>
+                    <p>Eine Kiste wird von links mit 6 N und von rechts mit 6 N geschoben.</p>
+                    <p>F<sub>res</sub> = <input type="number" id="q5a" step="1" min="0" max="20"> N</p>
+                    <p>Was passiert?
+                        <select id="q5b">
+                            <option value="">– Wähle –</option>
+                            <option value="links">Kiste bewegt sich nach links</option>
+                            <option value="rechts">Kiste bewegt sich nach rechts</option>
+                            <option value="nichts">Kiste bewegt sich nicht</option>
+                        </select>
+                    </p>
+                    <button class="btn" onclick="checkStep5()">Prüfen</button>
+                    <div class="feedback" id="feedback5"></div>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>→ AB Aufgabe 4:</strong> Kräftegleichgewicht beim Armdrücken.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(4)">← Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(6)">Weiter →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 6: Zusammenfassung ========== -->
+        <div class="step" id="step6">
+            <div class="step-header">Schritt 6: Zusammenfassung</div>
+            <div class="step-content">
+                <div class="info-box">
+                    <strong>Das hast du gelernt:</strong>
+                    <ul>
+                        <li><strong>Kraftpfeil:</strong> Angriffspunkt, Richtung, Betrag</li>
+                        <li><strong>Maßstab:</strong> 1 cm ≙ 1 N</li>
+                        <li><strong>Gleiche Richtung:</strong> F<sub>res</sub> = F₁ + F₂</li>
+                        <li><strong>Entgegengesetzt:</strong> F<sub>res</sub> = |F₁ − F₂| (Richtung der größeren!)</li>
+                        <li><strong>Gleichgewicht:</strong> F<sub>res</sub> = 0 N (beide Kräfte gleich groß)</li>
+                    </ul>
+                </div>
+
+                <div class="info-box" style="background: #e8f5e9; border-color: #2a7a4b;">
+                    <strong>Geschafft!</strong><br>
+                    Du hast den Lernpfad abgeschlossen. Prüfe, ob dein Arbeitsblatt vollständig ist.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(5)">← Zurück</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // LERNPFAD LOGIK (ES5)
+        // ============================================================
+
+        var totalSteps = 6;
+        var currentStep = 1;
+        var visitedSteps = [];
+        var STORAGE_KEY = 'lp-kraft-02-v2';
+
+        function updateProgress() {
+            var percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function generateStepIndicators() {
+            var container = document.getElementById('stepIndicators');
+            container.innerHTML = '';
+            for (var i = 1; i <= totalSteps; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'step-dot';
+                if (i === currentStep) dot.classList.add('current');
+                if (visitedSteps.indexOf(i) !== -1) dot.classList.add('completed');
+                dot.textContent = i;
+                dot.setAttribute('data-step', i);
+                dot.onclick = function() {
+                    var stepIndex = parseInt(this.getAttribute('data-step'));
+                    showStep(stepIndex);
+                };
+                container.appendChild(dot);
+            }
+        }
+
+        function updateStepIndicators() {
+            var dots = document.querySelectorAll('.step-dot');
+            for (var i = 0; i < dots.length; i++) {
+                var stepNum = i + 1;
+                dots[i].classList.remove('current');
+                if (stepNum === currentStep) {
+                    dots[i].classList.add('current');
+                }
+                if (visitedSteps.indexOf(stepNum) !== -1) {
+                    dots[i].classList.add('completed');
+                }
+            }
+        }
+
+        function showStep(n) {
+            // Aktuellen Step als besucht markieren
+            if (visitedSteps.indexOf(currentStep) === -1) {
+                visitedSteps.push(currentStep);
+            }
+
+            for (var i = 1; i <= totalSteps; i++) {
+                var step = document.getElementById('step' + i);
+                if (step) {
+                    step.classList.remove('active');
+                }
+            }
+            var targetStep = document.getElementById('step' + n);
+            if (targetStep) {
+                targetStep.classList.add('active');
+                currentStep = n;
+                updateProgress();
+                updateStepIndicators();
+                saveProgress();
+                window.scrollTo(0, 0);
+
+                // Wide-mode für SIM-Steps
+                var container = document.querySelector('.container');
+                if (targetStep.classList.contains('has-sim')) {
+                    container.classList.add('wide-mode');
+                } else {
+                    container.classList.remove('wide-mode');
+                }
+            }
+        }
+
+        function nextStep(n) {
+            showStep(n);
+        }
+
+        function prevStep(n) {
+            showStep(n);
+        }
+
+        // ============================================================
+        // ÜBUNGEN PRÜFEN
+        // ============================================================
+
+        function checkStep1() {
+            var a = document.getElementById('q1a').value;
+            var b = document.getElementById('q1b').value;
+            var c = document.getElementById('q1c').value;
+            var feedback = document.getElementById('feedback1');
+
+            if (a === 'wo' && b === 'wohin' && c === 'stark') {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! Der Kraftpfeil zeigt Angriffspunkt, Richtung und Betrag.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Nicht ganz. Denke daran: Angriffspunkt = wo, Richtung = wohin, Länge = wie stark.';
+            }
+        }
+
+        function checkStep2() {
+            var a = parseFloat(document.getElementById('q2a').value);
+            var feedback = document.getElementById('feedback2');
+
+            if (a === 5) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! 5 N = 5 cm bei Maßstab 1 cm ≙ 1 N.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Nicht ganz. Maßstab 1 cm = 1 N bedeutet: 5 N = 5 cm.';
+            }
+        }
+
+        function checkStep3() {
+            var a = parseFloat(document.getElementById('q3a').value);
+            var feedback = document.getElementById('feedback3');
+
+            if (a === 7) {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! F_res = 2 N + 5 N = 7 N.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Nicht ganz. Bei gleicher Richtung addieren: 2 + 5 = 7 N.';
+            }
+        }
+
+        function checkStep4() {
+            var a = parseFloat(document.getElementById('q4a').value);
+            var b = document.getElementById('q4b').value;
+            var feedback = document.getElementById('feedback4');
+
+            if (a === 2 && b === 'links') {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! 8 N − 6 N = 2 N nach links (Richtung der größeren Kraft).';
+            } else if (a === 2) {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Fast! Der Betrag stimmt (2 N), aber die Richtung? Welches Team ist stärker?';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Nicht ganz. Subtrahiere: 8 N − 6 N = 2 N. Richtung = stärkere Kraft (links).';
+            }
+        }
+
+        function checkStep5() {
+            var a = parseFloat(document.getElementById('q5a').value);
+            var b = document.getElementById('q5b').value;
+            var feedback = document.getElementById('feedback5');
+
+            if (a === 0 && b === 'nichts') {
+                feedback.className = 'feedback correct';
+                feedback.textContent = '✓ Richtig! F_res = 0 N → Kräftegleichgewicht, die Kiste bewegt sich nicht.';
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.textContent = '✗ Nicht ganz. 6 N − 6 N = 0 N → Gleichgewicht, keine Bewegung!';
+            }
+        }
+
+        // ============================================================
+        // PERSISTENZ
+        // ============================================================
+
+        function saveProgress() {
+            try {
+                localStorage.setItem(STORAGE_KEY + '-step', currentStep);
+                localStorage.setItem(STORAGE_KEY + '-visited', JSON.stringify(visitedSteps));
+                // Speichere auch Eingaben
+                var inputs = document.querySelectorAll('input, select');
+                for (var i = 0; i < inputs.length; i++) {
+                    var el = inputs[i];
+                    if (el.id) {
+                        localStorage.setItem(STORAGE_KEY + '-' + el.id, el.value);
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function loadProgress() {
+            try {
+                var savedVisited = localStorage.getItem(STORAGE_KEY + '-visited');
+                if (savedVisited) {
+                    visitedSteps = JSON.parse(savedVisited);
+                }
+                var savedStep = localStorage.getItem(STORAGE_KEY + '-step');
+                if (savedStep) {
+                    currentStep = parseInt(savedStep);
+                }
+                // Lade Eingaben
+                var inputs = document.querySelectorAll('input, select');
+                for (var i = 0; i < inputs.length; i++) {
+                    var el = inputs[i];
+                    if (el.id) {
+                        var saved = localStorage.getItem(STORAGE_KEY + '-' + el.id);
+                        if (saved) {
+                            el.value = saved;
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // Auto-save bei Änderungen
+        document.addEventListener('change', saveProgress);
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        loadProgress();
+        generateStepIndicators();
+        updateProgress();
+
+        // Zeige gespeicherten Step (ohne visitedSteps nochmal zu ändern)
+        if (currentStep > 1) {
+            for (var i = 1; i <= totalSteps; i++) {
+                var step = document.getElementById('step' + i);
+                if (step) step.classList.remove('active');
+            }
+            var targetStep = document.getElementById('step' + currentStep);
+            if (targetStep) {
+                targetStep.classList.add('active');
+                updateStepIndicators();
+                var container = document.querySelector('.container');
+                if (targetStep.classList.contains('has-sim')) {
+                    container.classList.add('wide-mode');
+                } else {
+                    container.classList.remove('wide-mode');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
