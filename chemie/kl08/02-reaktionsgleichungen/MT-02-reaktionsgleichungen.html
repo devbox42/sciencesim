@@ -155,6 +155,18 @@
 
         .hidden { display: none; }
 
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
         @media print {
             button, .progress-container, .selection-row { display: none; }
             .question { page-break-inside: avoid; }
@@ -214,6 +226,15 @@
     </div>
 
     <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
         <div class="info-banner" style="background: #fff3e0; border: 1px solid #b35c00; padding: 10px 15px; margin-bottom: 15px; font-size: 0.9em;">
             <strong>Hilfsmittel erlaubt:</strong> Arbeitsblatt mit Wertigkeitstabelle und Algorithmen
         </div>
@@ -527,6 +548,7 @@
             </div>
             <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
         </div>
+        </div><!-- END questionsContainer -->
 
         <!-- Lehrer-Reset -->
         <div style="margin-top: 40px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; text-align: center;">
@@ -544,6 +566,11 @@
     var STORAGE_KEY = 'mt-chemie-8-02-reaktionsgleichungen';
     var selectedNiveau = 0;
     var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll (Anti-Betrug)
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
 
     // BE pro Niveau
     var niveauPoints = {
@@ -605,6 +632,7 @@
         localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
         document.getElementById('seatNumber').value = num;
         showLockedSeat(num);
+        checkUnlocked();
     }
 
     function showLockedSeat(num) {
@@ -640,6 +668,7 @@
         selectedNiveau = parseInt(val);
         showLockedNiveau(val);
         selectNiveau(selectedNiveau);
+        checkUnlocked();
     }
 
     function showLockedNiveau(val) {
@@ -648,6 +677,22 @@
         document.getElementById('niveauRow').style.display = 'none';
         document.getElementById('niveauConfirmed').style.display = 'block';
         document.getElementById('niveauConfirmed').innerHTML = 'Niveau: <strong style="color:#2a7a4b;">' + niveauStars[val] + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked && niveauLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
     }
 
     function selectNiveau(niveau) {
@@ -809,6 +854,7 @@
         if (niveauLocked !== 'true' || selectedNiveau === 0) { alert('Bitte bestätige zuerst dein Niveau!'); return; }
 
         testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
         var score = 0;
         var maxPoints = niveauPoints[selectedNiveau];
 
@@ -865,13 +911,13 @@
 
         // ===== FRAGE 5: Ausgleichen (9 BE) =====
         var q5Score = 0;
-        // Mg: 2-1-2
+        // Ca: 2-1-2
         var q5aOk = normalize(document.getElementById('q5a1').value) === '2' && normalize(document.getElementById('q5a2').value) === '1' && normalize(document.getElementById('q5a3').value) === '2';
         if (q5aOk) q5Score += 3;
         markInput('q5a1', normalize(document.getElementById('q5a1').value) === '2');
         markInput('q5a2', normalize(document.getElementById('q5a2').value) === '1');
         markInput('q5a3', normalize(document.getElementById('q5a3').value) === '2');
-        // Cu: 2-1-2
+        // Ba: 2-1-2
         var q5bOk = normalize(document.getElementById('q5b1').value) === '2' && normalize(document.getElementById('q5b2').value) === '1' && normalize(document.getElementById('q5b3').value) === '2';
         if (q5bOk) q5Score += 3;
         markInput('q5b1', normalize(document.getElementById('q5b1').value) === '2');
@@ -1056,7 +1102,68 @@
 
         localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
         localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel anzeigen (Anti-Betrug)
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('resultsSection') || document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
         disableAllInputs();
+    }
+
+    // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
     }
 
     function disableAllInputs() {
@@ -1090,10 +1197,18 @@
 
     // ===== INIT =====
     window.onload = function() {
+        // Startzeit beim ersten Aufruf speichern (Anti-Betrug)
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
         generateSeatDropdown();
         restoreNiveauDropdown();
         loadProgress();
         updateProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
 
         // Event-Listener für Speicherung
         var inputs = document.querySelectorAll('input, select');
