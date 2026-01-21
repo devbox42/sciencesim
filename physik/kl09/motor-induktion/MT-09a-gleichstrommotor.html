@@ -841,7 +841,7 @@
        MT-09a Gleichstrommotor - JavaScript (ES5!)
        ═══════════════════════════════════════════════════════════════════════════ */
 
-    // ===== KONFIGURATION ===== v3.0 (Persistenz komplett neu)
+    // ===== KONFIGURATION ===== v4.0 (Template-Pattern)
     var STORAGE_KEY = 'mt-physik-9-09a-gleichstrommotor';
     var selectedNiveau = 0;
     var testSubmitted = false;
@@ -998,43 +998,43 @@
         saveProgress();
     }
 
-    // ===== PERSISTENZ SETUP (Event Delegation) =====
-    function setupPersistence() {
-        // Event Delegation für Radio-Buttons (auf .option Labels)
-        document.addEventListener('click', function(e) {
-            var option = e.target.closest('.option');
-            if (!option) return;
-            if (testSubmitted) return;
-
-            var container = option.closest('.options');
-            if (!container || container.classList.contains('multi-select')) return;
-
-            // Alle Siblings deselektieren
-            var siblings = container.querySelectorAll('.option');
-            for (var i = 0; i < siblings.length; i++) {
-                siblings[i].classList.remove('selected');
-                var radio = siblings[i].querySelector('input[type="radio"]');
-                if (radio) radio.checked = false;
+    // ===== OPTIONS SETUP (exakt wie Template) =====
+    function setupOptions() {
+        // Radio-Button Options
+        var optionContainers = document.querySelectorAll('.options:not(.multi-select)');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    if (testSubmitted) return;
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
             }
+        }
+    }
 
-            // Diese Option selektieren
-            option.classList.add('selected');
-            var radio = option.querySelector('input[type="radio"]');
-            if (radio) radio.checked = true;
-
-            updateProgress();
-            saveProgress();
-        });
-
-        // Event Delegation für alle Dropdowns
-        document.addEventListener('change', function(e) {
-            if (e.target.tagName === 'SELECT' && !testSubmitted) {
-                // Nicht für Platz/Niveau-Selects
-                if (e.target.id === 'seatSelect' || e.target.id === 'niveauSelect') return;
+    // ===== DROPDOWN SETUP =====
+    function setupDropdowns() {
+        var selects = document.querySelectorAll('select');
+        for (var i = 0; i < selects.length; i++) {
+            if (selects[i].id === 'seatSelect' || selects[i].id === 'niveauSelect') continue;
+            selects[i].addEventListener('change', function() {
+                if (testSubmitted) return;
                 updateProgress();
                 saveProgress();
-            }
-        });
+            });
+        }
     }
 
     // ===== WORDBANK =====
@@ -1496,7 +1496,8 @@
 
         generateSeatDropdown();
         restoreNiveauDropdown();
-        setupPersistence();
+        setupOptions();
+        setupDropdowns();
         loadProgress();
         updateProgress();
         checkUnlocked();
