@@ -841,7 +841,7 @@
        MT-09a Gleichstrommotor - JavaScript (ES5!)
        ═══════════════════════════════════════════════════════════════════════════ */
 
-    // ===== KONFIGURATION ===== v2.1 (Persistenz-Fix)
+    // ===== KONFIGURATION ===== v3.0 (Persistenz komplett neu)
     var STORAGE_KEY = 'mt-physik-9-09a-gleichstrommotor';
     var selectedNiveau = 0;
     var testSubmitted = false;
@@ -998,52 +998,43 @@
         saveProgress();
     }
 
-    // ===== OPTIONS SETUP =====
-    function setupOptions() {
-        var optionContainers = document.querySelectorAll('.options:not(.multi-select)');
-        for (var i = 0; i < optionContainers.length; i++) {
-            (function(container) {
-                var options = container.querySelectorAll('.option');
-                for (var j = 0; j < options.length; j++) {
-                    (function(opt) {
-                        opt.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            var siblings = this.parentNode.querySelectorAll('.option');
-                            for (var k = 0; k < siblings.length; k++) {
-                                siblings[k].classList.remove('selected');
-                                var sibRadio = siblings[k].querySelector('input');
-                                if (sibRadio) sibRadio.checked = false;
-                            }
-                            this.classList.add('selected');
-                            var radio = this.querySelector('input');
-                            if (radio) radio.checked = true;
-                            updateProgress();
-                            saveProgress();
-                        });
-                    })(options[j]);
-                }
-            })(optionContainers[i]);
-        }
-    }
+    // ===== PERSISTENZ SETUP (Event Delegation) =====
+    function setupPersistence() {
+        // Event Delegation für Radio-Buttons (auf .option Labels)
+        document.addEventListener('click', function(e) {
+            var option = e.target.closest('.option');
+            if (!option) return;
+            if (testSubmitted) return;
 
-    // ===== DROPDOWN PERSISTENCE =====
-    function setupDropdowns() {
-        var dropdownIds = [
-            'q1-a', 'q1-b', 'q1-c', 'q1-d', 'q1-e',
-            'q16-a', 'q16-b', 'q16-c', 'q16-d', 'q16-e',
-            'q17-a', 'q17-b'
-        ];
-        for (var i = 0; i < dropdownIds.length; i++) {
-            (function(id) {
-                var el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('change', function() {
-                        updateProgress();
-                        saveProgress();
-                    });
-                }
-            })(dropdownIds[i]);
-        }
+            var container = option.closest('.options');
+            if (!container || container.classList.contains('multi-select')) return;
+
+            // Alle Siblings deselektieren
+            var siblings = container.querySelectorAll('.option');
+            for (var i = 0; i < siblings.length; i++) {
+                siblings[i].classList.remove('selected');
+                var radio = siblings[i].querySelector('input[type="radio"]');
+                if (radio) radio.checked = false;
+            }
+
+            // Diese Option selektieren
+            option.classList.add('selected');
+            var radio = option.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+
+            updateProgress();
+            saveProgress();
+        });
+
+        // Event Delegation für alle Dropdowns
+        document.addEventListener('change', function(e) {
+            if (e.target.tagName === 'SELECT' && !testSubmitted) {
+                // Nicht für Platz/Niveau-Selects
+                if (e.target.id === 'seatSelect' || e.target.id === 'niveauSelect') return;
+                updateProgress();
+                saveProgress();
+            }
+        });
     }
 
     // ===== WORDBANK =====
@@ -1505,8 +1496,7 @@
 
         generateSeatDropdown();
         restoreNiveauDropdown();
-        setupOptions();
-        setupDropdowns();
+        setupPersistence();
         loadProgress();
         updateProgress();
         checkUnlocked();
