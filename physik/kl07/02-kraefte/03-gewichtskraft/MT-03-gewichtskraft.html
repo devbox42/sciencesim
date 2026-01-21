@@ -324,6 +324,18 @@
             font-size: 0.9em;
         }
 
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
         @media print {
             .timer-bar, .selection-section, .progress-container, button, .teacher-section { display: none; }
             body { padding-top: 0; }
@@ -362,9 +374,9 @@
                 <label>Niveau:</label>
                 <select id="niveauSelect">
                     <option value="">-- Niveau wählen --</option>
-                    <option value="1">&#9733; Basis (25 BE)</option>
-                    <option value="2">&#9733;&#9733; Standard (30 BE)</option>
-                    <option value="3">&#9733;&#9733;&#9733; Erweitert (31 BE)</option>
+                    <option value="1">&#9733; Basis (23 BE)</option>
+                    <option value="2">&#9733;&#9733; Standard (28 BE)</option>
+                    <option value="3">&#9733;&#9733;&#9733; Erweitert (29 BE)</option>
                 </select>
                 <button class="btn btn-small" onclick="confirmNiveau()">Bestätigen</button>
             </div>
@@ -377,6 +389,14 @@
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
+        </div>
+
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
         </div>
 
         <!-- FRAGEN-CONTAINER -->
@@ -805,10 +825,62 @@
         var selectedNiveau = 0;
         var testSubmitted = false;
 
+        // Tab-Wechsel-Protokoll (Anti-Betrug)
+        var tabSwitchCount = 0;
+        var tabSwitchStart = 0;
+        var tabSwitchSeconds = 0;
+
+        // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+        function formatTimestamp(ts) {
+            if (!ts) return '—';
+            var d = new Date(parseInt(ts));
+            var day = d.getDate();
+            var month = d.getMonth() + 1;
+            var year = d.getFullYear();
+            var hours = d.getHours();
+            var minutes = d.getMinutes();
+            return (day < 10 ? '0' : '') + day + '.' +
+                   (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+                   (hours < 10 ? '0' : '') + hours + ':' +
+                   (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+        }
+
+        // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+        function initTabSwitchTracking() {
+            var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+            var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+            if (savedCount) tabSwitchCount = parseInt(savedCount);
+            if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+            document.addEventListener('visibilitychange', function() {
+                if (testSubmitted) return;
+
+                if (document.hidden) {
+                    tabSwitchStart = Date.now();
+                    tabSwitchCount++;
+                    localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+                } else {
+                    if (tabSwitchStart > 0) {
+                        var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                        tabSwitchSeconds += duration;
+                        localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                        tabSwitchStart = 0;
+                    }
+                }
+            });
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) return seconds + ' Sek.';
+            var min = Math.floor(seconds / 60);
+            var sec = seconds % 60;
+            return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+        }
+
         var niveauPoints = {
-            1: 25,  // ★ Basis
-            2: 30,  // ★★ Standard
-            3: 31   // ★★★ Erweitert
+            1: 23,  // ★ Basis
+            2: 28,  // ★★ Standard
+            3: 29   // ★★★ Erweitert
         };
 
         var answers = {
@@ -873,6 +945,7 @@
             localStorage.setItem(STORAGE_KEY + '-seat', num);
             localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
             showLockedSeat(num);
+            checkUnlocked();
         }
 
         function showLockedSeat(num) {
@@ -886,7 +959,7 @@
             var sel = document.getElementById('niveauSelect');
             var val = sel.value;
             if (!val) { alert('Bitte Niveau wählen!'); return; }
-            var stars = ['', '★ Basis (25 BE)', '★★ Standard (30 BE)', '★★★ Erweitert (31 BE)'][parseInt(val)];
+            var stars = ['', '★ Basis (23 BE)', '★★ Standard (28 BE)', '★★★ Erweitert (29 BE)'][parseInt(val)];
             var ok = confirm('Niveau "' + stars + '" bestätigen?\n\nKann NICHT mehr geändert werden!');
             if (!ok) return;
             localStorage.setItem(STORAGE_KEY + '-niveau', val);
@@ -894,6 +967,7 @@
             selectedNiveau = parseInt(val);
             showLockedNiveau(val);
             activateNiveau(selectedNiveau);
+            checkUnlocked();
         }
 
         function showLockedNiveau(val) {
@@ -902,6 +976,22 @@
             var stars = ['', '★ Basis', '★★ Standard', '★★★ Erweitert'][parseInt(val)];
             locked.innerHTML = '<div class="locked-display niveau-' + val + '">Niveau: <strong>' + stars + '</strong> (' + niveauPoints[val] + ' BE)</div>';
             locked.style.display = 'block';
+        }
+
+        // ===== FRAGEN FREISCHALTEN =====
+        function checkUnlocked() {
+            var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+            var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+            var container = document.getElementById('questionsContainer');
+            var hint = document.getElementById('unlockHint');
+
+            if (seatLocked && niveauLocked) {
+                container.classList.add('unlocked');
+                hint.style.display = 'none';
+            } else {
+                container.classList.remove('unlocked');
+                hint.style.display = 'block';
+            }
         }
 
         function activateNiveau(niveau) {
@@ -975,28 +1065,15 @@
         }
 
         function loadProgress() {
-            // Check submitted
-            if (localStorage.getItem(STORAGE_KEY + '-submitted') === 'true') {
-                testSubmitted = true;
-                var savedNiveau = localStorage.getItem(STORAGE_KEY + '-niveau');
-                if (savedNiveau) {
-                    selectedNiveau = parseInt(savedNiveau);
-                    showLockedNiveau(savedNiveau);
-                    activateNiveau(selectedNiveau);
-                }
-                var savedSeat = localStorage.getItem(STORAGE_KEY + '-seat');
-                if (savedSeat) showLockedSeat(savedSeat);
-                displayResults();
-                return;
-            }
+            var wasSubmitted = localStorage.getItem(STORAGE_KEY + '-submitted') === 'true';
 
-            // Load seat
+            // Load seat (immer)
             if (localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true') {
                 var seat = localStorage.getItem(STORAGE_KEY + '-seat');
                 if (seat) showLockedSeat(seat);
             }
 
-            // Load niveau
+            // Load niveau (immer)
             if (localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true') {
                 var niveau = localStorage.getItem(STORAGE_KEY + '-niveau');
                 if (niveau) {
@@ -1006,7 +1083,7 @@
                 }
             }
 
-            // Load answers
+            // Load answers (IMMER - auch nach Abgabe!)
             var inputs = document.querySelectorAll('input, select');
             for (var i = 0; i < inputs.length; i++) {
                 var el = inputs[i];
@@ -1017,6 +1094,12 @@
                     var saved = localStorage.getItem(STORAGE_KEY + '-' + el.id);
                     if (saved) el.value = saved;
                 }
+            }
+
+            // Nach Abgabe: Ergebnisse anzeigen (NACHDEM Antworten geladen wurden!)
+            if (wasSubmitted) {
+                testSubmitted = true;
+                displayResults();
             }
         }
 
@@ -1038,6 +1121,7 @@
 
             testSubmitted = true;
             localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+            localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
             clearInterval(timerInterval);
             displayResults();
         }
@@ -1065,7 +1149,7 @@
             // ★★ NIVEAU 2
             if (selectedNiveau >= 2) {
                 score += evalNumeric('q13v', 25, 2);
-                score += evalNumeric('q14v', 4, 3);
+                score += evalNumeric('q14v', 15, 3);
             }
 
             // ★★★ NIVEAU 3
@@ -1087,6 +1171,20 @@
 
             document.getElementById('results').style.display = 'block';
             document.getElementById('submitSection').style.display = 'none';
+
+            // Zeitstempel anzeigen (Anti-Betrug)
+            var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+            var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+            var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+            var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+            var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+                '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+                '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+                '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+                '</div>';
+            var resultsEl = document.getElementById('results');
+            if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
             disableAllInputs();
         }
 
@@ -1256,6 +1354,8 @@
         // INIT
         // ============================================================
 
+        initTabSwitchTracking();
+
         // Prüfen ob Session abgelaufen (16h)
         if (checkExpiry()) {
             // Daten wurden gelöscht, Seite neu laden für frischen Start
@@ -1265,6 +1365,7 @@
             if (!testSubmitted) {
                 startTimer();
             }
+            checkUnlocked();
         }
     </script>
 </body>
