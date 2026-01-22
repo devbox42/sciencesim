@@ -820,6 +820,111 @@ $\rho = \dfrac{m}{V} = $ \luecke{2cm}
 
 ---
 
+## ISO 80000 Typografie (Formeln & Einheiten)
+
+> **PFLICHT:** Alle Materialien (LP, AB, ML, LH, MT, SIM) müssen ISO 80000 / DIN 1338 konform sein!
+
+### Grundregeln
+
+| Element | Schreibweise | Beispiel |
+|---------|--------------|----------|
+| **Formelzeichen (Variablen)** | *kursiv* | *F*, *m*, *a*, *U*, *I*, *R* |
+| **Einheiten** | aufrecht (nicht kursiv) | N, kg, m/s², V, A, Ω |
+| **Zahlen** | aufrecht | 5, 3,14, 230 |
+| **Bruchstriche** | horizontal (nicht Slash) | $$\frac{m}{V}$$ statt m/V |
+
+### Indizes
+
+| Index-Typ | Schreibweise | Beispiel | Erklärung |
+|-----------|--------------|----------|-----------|
+| **Deskriptiv** (beschreibend) | aufrecht | *F*<sub>G</sub>, *F*<sub>R</sub>, *U*<sub>ges</sub> | G = Gewicht, R = Reibung, ges = gesamt |
+| **Zählvariable** | *kursiv* | *F*<sub>*n*</sub>, *x*<sub>*i*</sub>, *a*<sub>*k*</sub> | n, i, k sind Laufvariablen |
+
+### Bruchstriche – KEINE Slashes!
+
+**FALSCH:**
+- m/s, kg/m³, ct/kWh, N/m²
+- P = U·I, E = P·t (Punkt als Mal-Zeichen in Text)
+
+**RICHTIG:**
+
+In LaTeX:
+```latex
+$\dfrac{\text{m}}{\text{s}}$, $\dfrac{\text{kg}}{\text{m}^3}$, $\dfrac{\text{ct}}{\text{kWh}}$
+```
+
+In HTML:
+```html
+<span class="frac"><span class="frac-num">m</span><span class="frac-den">s</span></span>
+```
+
+**Ausnahme Slash:** Nur in Fließtext bei sehr einfachen Einheiten erlaubt (z.B. "30 ct/kWh"), aber in Formeln und Aufgabenstellungen IMMER horizontaler Bruchstrich.
+
+### LaTeX-Umsetzung
+
+```latex
+% Formelzeichen kursiv (Standard in $...$)
+$F = m \cdot a$
+
+% Einheiten aufrecht mit \text{} oder \mathrm{}
+$F = 5\,\text{N}$
+$v = 20\,\dfrac{\text{m}}{\text{s}}$
+
+% Deskriptive Indizes aufrecht
+$F_{\text{G}} = m \cdot g$
+$U_{\text{ges}} = U_1 + U_2$
+
+% Zählvariablen-Indizes kursiv (automatisch)
+$F_n$, $x_i$
+```
+
+### HTML-Umsetzung (Lernpfade, Minitests)
+
+```html
+<!-- Formelzeichen kursiv -->
+<span class="fz">F</span> = <span class="fz">m</span> · <span class="fz">a</span>
+
+<!-- Einheiten aufrecht -->
+<span class="einheit">N</span>, <span class="einheit">kg</span>
+
+<!-- Bruch in HTML -->
+<span class="frac">
+    <span class="frac-num">m</span>
+    <span class="frac-den">s</span>
+</span>
+```
+
+**CSS-Klassen:**
+```css
+.fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+.einheit { font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-style: normal; }
+.frac { display: inline-block; vertical-align: middle; text-align: center; }
+.frac-num { display: block; border-bottom: 1px solid currentColor; padding: 0 3px 2px; }
+.frac-den { display: block; padding: 2px 3px 0; }
+```
+
+### Typische Fehler
+
+| FALSCH | RICHTIG | Erklärung |
+|--------|---------|-----------|
+| F = 5 N | *F* = 5 N | Formelzeichen kursiv |
+| *N*, *kg*, *m/s* | N, kg, m/s | Einheiten aufrecht |
+| F<sub>*G*</sub> | *F*<sub>G</sub> | Deskriptiver Index aufrecht |
+| m/s, kg/m³ | m⁄s mit Bruchstrich | Horizontaler Bruchstrich |
+| 5m/s | 5 m/s oder 5 m·s⁻¹ | Leerzeichen zwischen Zahl und Einheit |
+
+### Checkliste ISO 80000
+
+- [ ] Alle Formelzeichen (*F*, *m*, *U*, *I*, etc.) kursiv?
+- [ ] Alle Einheiten (N, V, A, Ω, etc.) aufrecht?
+- [ ] Deskriptive Indizes (G, R, ges, max) aufrecht?
+- [ ] Zählvariablen-Indizes (*n*, *i*, *k*) kursiv?
+- [ ] Horizontale Bruchstriche (keine Slashes in Formeln)?
+- [ ] Leerzeichen zwischen Zahl und Einheit?
+- [ ] Mittelpunkt (·) als Multiplikationszeichen?
+
+---
+
 ## Didaktisches QA-Framework
 
 > **Pflicht-Workflow:** Nach jedem erstellten Unterrichtsmaterial Score ausgeben!

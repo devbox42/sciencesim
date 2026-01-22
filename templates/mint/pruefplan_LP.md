@@ -282,6 +282,72 @@ grep -E '\\(sub)?section|Aufgabe|Kasten' AB-XX.tex
 | 5.7 | SVG-Grafiken | Farben korrekt (rot/blau/grün-Konventionen) |
 | 5.8 | Simulations-Quellenangabe | Autor/Lizenz angegeben |
 
+---
+
+## Phase 5b: ISO 80000 Typografie
+
+> **Ziel:** Alle Formeln und Einheiten entsprechen ISO 80000 / DIN 1338.
+>
+> **Referenz:** `CLAUDE.md` → Abschnitt "ISO 80000 Typografie (Formeln & Einheiten)"
+
+### 5b.1 Formelzeichen & Einheiten
+
+| # | Prüfpunkt | Kriterium |
+|---|-----------|-----------|
+| 5b.1.1 | **Formelzeichen kursiv** | *F*, *m*, *a*, *U*, *I*, *R*, *P*, *E*, *t* etc. |
+| 5b.1.2 | **Einheiten aufrecht** | N, kg, m, s, V, A, Ω, W, J, kWh etc. |
+| 5b.1.3 | **Zahlen aufrecht** | 5, 3,14, 230 (nicht kursiv) |
+| 5b.1.4 | **Leerzeichen Zahl-Einheit** | 5 N (nicht 5N) |
+
+### 5b.2 Indizes
+
+| # | Prüfpunkt | Kriterium |
+|---|-----------|-----------|
+| 5b.2.1 | **Deskriptive Indizes aufrecht** | *F*<sub>G</sub>, *F*<sub>R</sub>, *U*<sub>ges</sub>, *P*<sub>max</sub> |
+| 5b.2.2 | **Zählvariablen kursiv** | *F*<sub>*n*</sub>, *x*<sub>*i*</sub>, *a*<sub>*k*</sub> |
+
+### 5b.3 Bruchstriche
+
+| # | Prüfpunkt | Kriterium |
+|---|-----------|-----------|
+| 5b.3.1 | **Horizontale Bruchstriche** | Keine Slashes in Formeln (m/V → Bruchstrich) |
+| 5b.3.2 | **Einheiten-Brüche** | m/s, ct/kWh als horizontaler Bruch oder Ausnahme-Slash in Fließtext |
+
+### HTML-Prüfung
+
+```bash
+# CSS-Klassen prüfen
+grep -E 'class="fz"|class="einheit"|class="frac"' LP-XX.html
+
+# Formelzeichen kursiv?
+grep -oE '<span class="fz">[A-Za-z]</span>' LP-XX.html | head -10
+
+# Einheiten aufrecht?
+grep -oE '<span class="einheit">[^<]+</span>' LP-XX.html | head -10
+
+# Brüche korrekt?
+grep -oE 'class="frac"' LP-XX.html
+```
+
+### Checkliste ISO 80000 (LP)
+
+- [ ] Alle Formelzeichen (*F*, *m*, *U*, *I*, etc.) kursiv (`<span class="fz">`)?
+- [ ] Alle Einheiten (N, V, A, Ω, etc.) aufrecht (`<span class="einheit">`)?
+- [ ] Deskriptive Indizes (G, R, ges, max) aufrecht?
+- [ ] Zählvariablen-Indizes (*n*, *i*, *k*) kursiv?
+- [ ] Horizontale Bruchstriche (`<span class="frac">`) in Formeln?
+- [ ] Leerzeichen zwischen Zahl und Einheit?
+- [ ] Mittelpunkt (·) als Multiplikationszeichen?
+
+### Typische Fehler (HTML)
+
+| FALSCH | RICHTIG |
+|--------|---------|
+| `F = 5 N` | `<span class="fz">F</span> = 5 <span class="einheit">N</span>` |
+| `m/s` in Formel | `<span class="frac"><span class="frac-num">m</span><span class="frac-den">s</span></span>` |
+| `<i>N</i>` | `<span class="einheit">N</span>` (aufrecht!) |
+| `F<sub><i>G</i></sub>` | `<span class="fz">F</span><sub>G</sub>` (G aufrecht!) |
+
 ### Farbkonventionen (Physik)
 
 | Element | Farbe | Hex |
@@ -408,6 +474,7 @@ open QR-LP-XX.pdf
 - **QR-Codes zeigen auf falsche/alte URL**
 - AB-Verweise in Hefter-Hinweisen falsch
 - **ARBEITSPFAD-Score < 100** (LP und AB nicht vollständig konsistent)
+- **ISO 80000 verletzt** (Einheiten kursiv, Formelzeichen aufrecht, Slashes in Formeln)
 
 ### Kleinere Mängel (Nachbesserung)
 
@@ -443,6 +510,7 @@ open QR-LP-XX.pdf
 | 4. Didaktik | ✅/⚠️/❌ | |
 | 4b. ARBEITSPFAD | ✅/⚠️/❌ | Score: __/100 |
 | 5. Fachlich | ✅/⚠️/❌ | |
+| **5b. ISO 80000** | ✅/⚠️/❌ | Typografie |
 | 6. UI/Layout | ✅/⚠️/❌ | |
 | 7. Deployment | ✅/⚠️/❌ | |
 
@@ -554,6 +622,14 @@ grep -c "✓" ARBEITSPFAD-*.md  # Sollte = Anzahl AB-Elemente
 - [ ] Jedes AB-Element genau 1× im LP angesteuert?
 - [ ] Hefter-Hinweise = ARBEITSPFAD-Sequenz?
 - [ ] Arbeitspfad-Score = 100/100? (Pflicht für Freigabe!)
+
+### ISO 80000 Typografie
+
+- [ ] Formelzeichen kursiv (`<span class="fz">`)?
+- [ ] Einheiten aufrecht (`<span class="einheit">`)?
+- [ ] Deskriptive Indizes aufrecht (G, R, ges, max)?
+- [ ] Horizontale Bruchstriche (`<span class="frac">`)?
+- [ ] Leerzeichen zwischen Zahl und Einheit?
 
 ### Deployment
 
