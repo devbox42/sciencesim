@@ -14,10 +14,10 @@
 | A1 | Aufgabe | Begriffe ergänzen (Lückentext) | 4 | ★ |
 | A2 | Aufgabe | Reaktionsweg berechnen (3 Teilaufgaben) | 6 | ★ |
 | A3 | Aufgabe | Bremsweg aus Tabelle ablesen | 4 | ★ |
-| A4 | Aufgabe | Anhalteweg berechnen (2 Teilaufgaben) | 8 | ★ |
+| A4 | Aufgabe | Anhalteweg berechnen (2 Teilaufgaben) | 10 | ★ |
 | A5 | Aufgabe | Emma vs. Felix Vergleich | 3 | ★★ |
 | A6 | Aufgabe | Verkehrssicherheit bewerten | 3 | ★★★ |
-| **Σ** | | | **31** | |
+| **Σ** | | | **33** | |
 
 ---
 
