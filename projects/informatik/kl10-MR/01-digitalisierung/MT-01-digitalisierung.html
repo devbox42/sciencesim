@@ -1034,7 +1034,7 @@
         </div>
 
         <!-- SUBMIT SECTION -->
-        <div class="submit-section" id="submitSection">
+        <div class="submit-section hidden" id="submitSection">
             <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
             <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
         </div>
@@ -1042,6 +1042,7 @@
         <!-- RESULTS SECTION -->
         <div class="results hidden" id="resultsSection">
             <h2>Ergebnis</h2>
+            <div id="seatNumberResult" style="font-size: 2em; font-weight: 700; color: #c62828; margin: 15px 0; padding: 10px; background: #ffebee; border: 2px solid #c62828;">Platz: --</div>
             <div id="studentNameDisplay"></div>
             <div style="margin-top:20px;">
                 <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte (automatisch):</div>
@@ -1069,6 +1070,11 @@
                 </ol>
             </div>
             <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                <p style="font-size: 0.85em; color: #888; margin-bottom: 10px;">Lehrer: Test zurücksetzen (Code: 2024)</p>
+                <input type="text" id="resetCode" placeholder="Code eingeben" style="padding: 5px; width: 120px; margin-right: 10px;">
+                <button class="btn-secondary" onclick="resetTest()" style="background: #c62828; color: white;">Reset</button>
+            </div>
         </div>
 
         </div><!-- END questionsContainer -->
@@ -1161,14 +1167,17 @@
         var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
         var container = document.getElementById('questionsContainer');
         var hint = document.getElementById('unlockHint');
+        var submitSection = document.getElementById('submitSection');
 
         if (seatLocked) {
             container.classList.add('unlocked');
             hint.style.display = 'none';
+            submitSection.classList.remove('hidden');
             updateProgress();
         } else {
             container.classList.remove('unlocked');
             hint.style.display = 'block';
+            submitSection.classList.add('hidden');
         }
     }
 
@@ -1847,7 +1856,9 @@
         var seatEl = document.getElementById('seatNumber');
         var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
 
-        document.getElementById('studentNameDisplay').textContent = 'Platznummer: ' + platzText;
+        // Platznummer groß und rot anzeigen
+        document.getElementById('seatNumberResult').textContent = 'Platz: ' + platzText;
+        document.getElementById('studentNameDisplay').textContent = '';
         document.getElementById('scoreDisplay').textContent = autoScore + ' / ' + TOTAL_POINTS;
 
         // MR Klasse 10: 6-Noten-System
@@ -1951,6 +1962,31 @@
         if (btnSeatOk) btnSeatOk.disabled = true;
         var varianteBtns = document.querySelectorAll('.variante-btn');
         for (var v = 0; v < varianteBtns.length; v++) varianteBtns[v].disabled = true;
+    }
+
+    // ===== RESET (Lehrer) =====
+    function resetTest() {
+        var code = document.getElementById('resetCode').value;
+        if (code !== '2024') {
+            alert('Falscher Code!');
+            return;
+        }
+        if (!confirm('Test wirklich zurücksetzen?\n\nAlle Eingaben werden gelöscht!')) return;
+
+        // Alle localStorage-Einträge für diesen Test löschen
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf(STORAGE_KEY) === 0) {
+                keysToRemove.push(key);
+            }
+        }
+        for (var j = 0; j < keysToRemove.length; j++) {
+            localStorage.removeItem(keysToRemove[j]);
+        }
+
+        // Seite neu laden
+        location.reload();
     }
 
     // ===== INIT =====
