@@ -154,7 +154,9 @@ grep -E "MT-|minitest|Minitest|stundenleistung|Stundenleistung|Zum Test" LP-*.ht
 
 ## Phase 4b: ARBEITSPFAD-Konsistenz
 
-> **Ziel:** LP und AB sind vollständig aufeinander abgestimmt. Jedes AB-Element wird genau 1× im LP angesteuert.
+> **Ziel:** LP und AB sind **vollständig** aufeinander abgestimmt. **Jede Aufgabe und jeder Aufgabenteil** des AB wird explizit vom LP angesteuert.
+>
+> **KRITISCH:** Score muss **100/100** sein für Freigabe. Keine Ausnahmen.
 >
 > **Template:** `templates/mint/ARBEITSPFAD-TEMPLATE.md`
 
@@ -163,43 +165,63 @@ grep -E "MT-|minitest|Minitest|stundenleistung|Stundenleistung|Zum Test" LP-*.ht
 | # | Prüfpunkt | Kriterium |
 |---|-----------|-----------|
 | 4b.1.1 | Dokument existiert | `ARBEITSPFAD-XX-name.md` vorhanden |
-| 4b.1.2 | AB-Inventar vollständig | Alle Kästen (K), Aufgaben (A), Tabellen (T), Diagramme (D) erfasst |
+| 4b.1.2 | AB-Inventar **vollständig** | Alle Kästen (K), Aufgaben (A), **Aufgabenteile (a, b, c)**, Tabellen (T), Diagramme (D) erfasst |
 | 4b.1.3 | Arbeitspfad-Sequenz | Didaktisch sinnvolle Reihenfolge dokumentiert |
-| 4b.1.4 | Vollständigkeits-Check | Jedes AB-Element genau 1× einem LP-Schritt zugeordnet |
+| 4b.1.4 | Vollständigkeits-Check | **Jedes Element und Teilelement** genau 1× einem LP-Schritt zugeordnet |
 
-### 4b.2 LP ↔ AB Mapping
+### 4b.2 LP ↔ AB Mapping (KRITISCH)
 
 | # | Prüfpunkt | Kriterium |
 |---|-----------|-----------|
 | 4b.2.1 | Jeder Hefter-Hinweis | zeigt auf existierendes AB-Element |
-| 4b.2.2 | Jedes AB-Element | wird durch genau 1 Hefter-Hinweis angesteuert |
-| 4b.2.3 | Keine Lücken | Kein AB-Element wird vergessen |
-| 4b.2.4 | Keine Duplikate | Kein AB-Element wird mehrfach angesteuert |
-| 4b.2.5 | Reihenfolge konsistent | LP-Reihenfolge = AB-Reihenfolge (bei linearem Pfad) |
+| 4b.2.2 | **Jede Aufgabe** | wird durch Hefter-Hinweis angesteuert |
+| 4b.2.3 | **Jeder Aufgabenteil (a, b, c)** | wird explizit genannt (nicht nur "Aufgabe 3") |
+| 4b.2.4 | Keine Lücken | Kein AB-Element wird vergessen |
+| 4b.2.5 | Keine Duplikate | Kein AB-Element wird mehrfach angesteuert |
+| 4b.2.6 | Reihenfolge konsistent | LP-Reihenfolge = AB-Reihenfolge (bei linearem Pfad) |
+
+### Beispiel: Explizite Aufgabenteil-Verweise
+
+```html
+<!-- FALSCH - zu unspezifisch -->
+<div class="hefter-hinweis">
+    Bearbeite <strong>Aufgabe 3</strong>
+</div>
+
+<!-- RICHTIG - explizit jeden Teil -->
+<div class="hefter-hinweis">
+    <ul>
+        <li>Bearbeite <strong>Aufgabe 3a)</strong>: Leistung berechnen</li>
+        <li>Bearbeite <strong>Aufgabe 3b)</strong>: Energie umrechnen</li>
+    </ul>
+</div>
+```
 
 ### 4b.3 Arbeitspfad-Score (10 Kriterien)
 
-| # | Kriterium | Beschreibung |
-|---|-----------|--------------|
-| 1 | **Vollständigkeit** | Jedes AB-Element genau 1× angesteuert? |
-| 2 | **Lückenlosigkeit** | Kann Schüler an jedem Punkt weitermachen? |
-| 3 | **Erkenntnislogik** | Verstehen vor Anwenden? |
-| 4 | **Vorwissen-Kette** | Baut jeder Schritt auf vorherigem auf? |
-| 5 | **Explizite Verweise** | LP zeigt exakt auf AB-Element (Kasten X, Aufgabe Y)? |
-| 6 | **Rücksprung-Begründung** | Jeder Sprung didaktisch begründet? |
-| 7 | **Schüler-Perspektive** | Kann Novize ohne Lehrer folgen? |
-| 8 | **Zeitrealistik** | Pfad in geplanter Zeit machbar? |
-| 9 | **Differenzierung** | Abzweigungen für ★/★★/★★★ eingeplant? |
-| 10 | **Sicherung** | AB am Ende vollständig + prüfungsrelevant? |
+| # | Kriterium | Beschreibung | Punkte |
+|---|-----------|--------------|--------|
+| 1 | **Vollständigkeit** | Jedes AB-Element + Teilelement genau 1× angesteuert? | 15 |
+| 2 | **Explizite Teilaufgaben** | Jedes a), b), c) einzeln genannt? | 15 |
+| 3 | **Lückenlosigkeit** | Kann Schüler an jedem Punkt weitermachen? | 10 |
+| 4 | **Erkenntnislogik** | Verstehen vor Anwenden? | 10 |
+| 5 | **Vorwissen-Kette** | Baut jeder Schritt auf vorherigem auf? | 10 |
+| 6 | **Explizite Verweise** | LP zeigt exakt auf AB-Element (Kasten X, Aufgabe Ya)? | 10 |
+| 7 | **Schüler-Perspektive** | Kann Novize ohne Lehrer folgen? | 10 |
+| 8 | **Zeitrealistik** | Pfad in geplanter Zeit machbar? | 5 |
+| 9 | **Differenzierung** | Abzweigungen für ★/★★/★★★ eingeplant? | 10 |
+| 10 | **Sicherung** | AB am Ende vollständig + prüfungsrelevant? | 5 |
 
 **Bewertung:**
 
 | Score | Status |
 |-------|--------|
-| < 70/100 | ❌ Grundlegende Überarbeitung nötig |
-| 70-84 | ⚠️ Überarbeitung empfohlen |
-| 85-94 | ✓ Akzeptabel, Feinschliff möglich |
-| **≥ 95** | ✅ **FREIGABE** |
+| < 80/100 | ❌ Grundlegende Überarbeitung nötig |
+| 80-89 | ⚠️ Überarbeitung erforderlich |
+| 90-99 | ⚠️ Nachbesserung nötig (fast, aber nicht freigabefähig) |
+| **100/100** | ✅ **FREIGABE** |
+
+> **WICHTIG:** Nur 100/100 führt zur Freigabe. Jeder fehlende Aufgabenteil = Punktabzug.
 
 ### Prüfmethode: ARBEITSPFAD-Konsistenz
 
@@ -222,7 +244,7 @@ grep -E '\\(sub)?section|Aufgabe|Kasten' AB-XX.tex
 - [ ] AB-Inventar vollständig (K1, K2, ..., A1, A2, ...)?
 - [ ] Jedes AB-Element wird im LP genau 1× angesteuert?
 - [ ] Hefter-Hinweise im LP stimmen mit ARBEITSPFAD überein?
-- [ ] Arbeitspfad-Score ≥ 95?
+- [ ] Arbeitspfad-Score = 100/100? (Pflicht!)
 
 ### Hefter-Hinweis Format
 
@@ -385,7 +407,7 @@ open QR-LP-XX.pdf
 - **Eingebettete SIMs/Bilder fehlen online** (HTTP 404)
 - **QR-Codes zeigen auf falsche/alte URL**
 - AB-Verweise in Hefter-Hinweisen falsch
-- **ARBEITSPFAD-Score < 70** (LP und AB nicht konsistent)
+- **ARBEITSPFAD-Score < 100** (LP und AB nicht vollständig konsistent)
 
 ### Kleinere Mängel (Nachbesserung)
 
@@ -395,7 +417,7 @@ open QR-LP-XX.pdf
 - Print-PDFs nicht aktuell kompiliert (lokal)
 - `\href{}` fehlt in .tex (QR nicht klickbar im PDF)
 - Feedback nur richtig/falsch (nicht elaboriert)
-- ARBEITSPFAD-Score 70-94 (Feinschliff nötig)
+- ARBEITSPFAD-Score < 100 (Nachbesserung nötig bis 100/100 erreicht)
 - ARBEITSPFAD-Dokument fehlt (muss nacherstellt werden)
 
 ---
@@ -531,7 +553,7 @@ grep -c "✓" ARBEITSPFAD-*.md  # Sollte = Anzahl AB-Elemente
 - [ ] AB-Inventar vollständig (K1, K2, ..., A1, A2, ...)?
 - [ ] Jedes AB-Element genau 1× im LP angesteuert?
 - [ ] Hefter-Hinweise = ARBEITSPFAD-Sequenz?
-- [ ] Arbeitspfad-Score ≥ 95/100?
+- [ ] Arbeitspfad-Score = 100/100? (Pflicht für Freigabe!)
 
 ### Deployment
 
