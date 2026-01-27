@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Reduktion von Silberoxid (Teilchenebene)</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION: Reduktion Silberoxid - Teilchenebene
+   Chemie Klasse 8 | sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2a7a4b;
+    --accent-light: #e8f5e9;
+    --silver: #a0a0a0;
+    --silver-dark: #707070;
+    --oxygen: #c62828;
+    --oxygen-light: #ef5350;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION CONTAINER
+═══════════════════════════════════════════════════════════════ */
+
+.sim-container {
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.sim-header {
+    background: var(--accent);
+    color: var(--white);
+    padding: 10px 15px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.step-indicator {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.sim-canvas-wrapper {
+    padding: 20px;
+    background: #fafafa;
+    border-bottom: 1px solid var(--border);
+}
+
+#simCanvas {
+    display: block;
+    margin: 0 auto;
+    background: var(--white);
+    border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPLANATION BOX
+═══════════════════════════════════════════════════════════════ */
+
+.explanation {
+    padding: 15px 20px;
+    min-height: 100px;
+}
+
+.explanation h3 {
+    color: var(--accent);
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+
+.explanation p {
+    color: var(--text-secondary);
+    font-size: 0.95em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTROLS
+═══════════════════════════════════════════════════════════════ */
+
+.controls {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--white);
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.btn:hover { background: #1e5a35; }
+.btn:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { background: #666; }
+.btn-secondary:hover { background: #444; }
+
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGEND
+═══════════════════════════════════════════════════════════════ */
+
+.legend {
+    background: var(--bg);
+    padding: 12px 15px;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+}
+
+.legend-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.legend-dot.silver { background: var(--silver); border: 2px solid var(--silver-dark); }
+.legend-dot.oxygen { background: var(--oxygen); }
+
+/* ═══════════════════════════════════════════════════════════════
+   TEMPERATURE DISPLAY
+═══════════════════════════════════════════════════════════════ */
+
+.temp-display {
+    background: var(--bg);
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9em;
+}
+
+.temp-bar {
+    flex: 1;
+    height: 12px;
+    background: #e0e0e0;
+    position: relative;
+    max-width: 200px;
+}
+
+.temp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #ff9800, #f44336);
+    width: 0%;
+    transition: width 0.5s;
+}
+
+.temp-value {
+    font-weight: bold;
+    min-width: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+    #simCanvas { width: 100%; height: auto; }
+    .controls { flex-direction: column; }
+    .nav-buttons { width: 100%; justify-content: space-between; }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Reduktion von Silberoxid (Teilchenebene)</h1>
+            <div class="meta">Chemie Klasse 8 | Thema 2.5 Redoxreaktionen</div>
+        </header>
+
+        <div class="sim-container">
+            <div class="sim-header">
+                <span>Simulation: Was passiert beim Erhitzen?</span>
+                <span class="step-indicator">Schritt <span id="currentStep">1</span> von 5</span>
+            </div>
+
+            <div class="temp-display">
+                <span>Temperatur:</span>
+                <div class="temp-bar">
+                    <div class="temp-fill" id="tempFill"></div>
+                </div>
+                <span class="temp-value" id="tempValue">20 °C</span>
+            </div>
+
+            <div class="sim-canvas-wrapper">
+                <canvas id="simCanvas" width="600" height="350"></canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot silver"></div>
+                    <span>Silber-Ion (Ag<sup>+</sup>)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot oxygen"></div>
+                    <span>Sauerstoff-Ion (O<sup>2-</sup>)</span>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h3 id="explanationTitle">Schritt 1: Ausgangszustand</h3>
+                <p id="explanationText">
+                    Silberoxid (Ag₂O) besteht aus Silber-Ionen (Ag⁺) und Sauerstoff-Ionen (O²⁻).
+                    Sie sind in einem geordneten Gitter angeordnet - einer Ionenverbindung.
+                </p>
+            </div>
+
+            <div class="controls">
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" id="btnPrev" disabled>Zurück</button>
+                    <button class="btn" id="btnNext">Weiter</button>
+                </div>
+                <button class="btn btn-secondary" id="btnReset">Neustart</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIMULATION: Reduktion Silberoxid - Teilchenebene
+// ES5-kompatibel
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var currentStep = 1;
+    var maxSteps = 5;
+    var animationId = null;
+    var particles = [];
+    var oxygenMolecules = [];
+
+    // Farben
+    var SILVER_COLOR = '#a0a0a0';
+    var SILVER_BORDER = '#707070';
+    var OXYGEN_COLOR = '#c62828';
+    var ACCENT = '#2a7a4b';
+
+    // Schritte
+    var steps = [
+        {
+            title: 'Schritt 1: Ausgangszustand – 2 Ag₂O',
+            text: 'Wir sehen 2 Formeleinheiten Silberoxid (2 Ag₂O): 4 Silber-Ionen (Ag⁺, grau) und 2 Sauerstoff-Ionen (O²⁻, rot). Sie sind in einem Ionengitter angeordnet.',
+            temp: 20,
+            vibration: 0
+        },
+        {
+            title: 'Schritt 2: Erhitzen beginnt',
+            text: 'Die Temperatur steigt. Die Ionen im Gitter beginnen stärker zu schwingen. Die Wärmeenergie wird auf die Teilchen übertragen.',
+            temp: 200,
+            vibration: 2
+        },
+        {
+            title: 'Schritt 3: Gitter wird instabil',
+            text: 'Bei etwa 300 °C wird das Gitter instabil. Die Bindungen zwischen Ag⁺ und O²⁻ brechen auf. Die Sauerstoff-Ionen lösen sich.',
+            temp: 300,
+            vibration: 5
+        },
+        {
+            title: 'Schritt 4: Sauerstoff entweicht',
+            text: 'Die 2 Sauerstoff-Ionen verbinden sich zu einem O₂-Molekül und entweichen als Gas. Das ist der Sauerstoff, den wir mit der Glimmspanprobe nachweisen!',
+            temp: 400,
+            vibration: 3,
+            oxygenReleased: true
+        },
+        {
+            title: 'Schritt 5: 4 Ag – Reines Silber bleibt',
+            text: 'Zurück bleiben 4 Silber-Atome (Ag) – metallisch glänzend. Der Sauerstoff wurde dem Silberoxid entzogen. Das ist REDUKTION: 2 Ag₂O → 4 Ag + O₂',
+            temp: 400,
+            vibration: 1,
+            finalState: true
+        }
+    ];
+
+    // Partikel initialisieren (Ag₂O Gitterstruktur)
+    // Reaktion: 2 Ag₂O → 4 Ag + O₂
+    // Wir zeigen 4 Ag-Atome und 2 O-Atome in korrekter Gitteranordnung
+    function initParticles() {
+        particles = [];
+        oxygenMolecules = [];
+
+        var centerX = 250;
+        var centerY = 175;
+        var spacing = 55;
+
+        // Ag₂O Gitterstruktur (vereinfacht):
+        // In der realen Struktur ist jedes O²⁻ von 4 Ag⁺ umgeben (Tetraeder)
+        // 2D-Darstellung: 2 O-Ionen in der Mitte, 4 Ag-Ionen außen
+
+        // Struktur (von oben betrachtet):
+        //      Ag      Ag
+        //        O    O
+        //      Ag      Ag
+
+        var layout = [
+            // Obere Ag-Reihe
+            { x: centerX - spacing, y: centerY - spacing, type: 'silver' },
+            { x: centerX + spacing, y: centerY - spacing, type: 'silver' },
+            // Mittlere O-Reihe (die beiden Sauerstoff-Ionen)
+            { x: centerX - spacing/2, y: centerY, type: 'oxygen' },
+            { x: centerX + spacing/2, y: centerY, type: 'oxygen' },
+            // Untere Ag-Reihe
+            { x: centerX - spacing, y: centerY + spacing, type: 'silver' },
+            { x: centerX + spacing, y: centerY + spacing, type: 'silver' }
+        ];
+
+        for (var i = 0; i < layout.length; i++) {
+            var item = layout[i];
+            particles.push({
+                x: item.x,
+                y: item.y,
+                baseX: item.x,
+                baseY: item.y,
+                radius: item.type === 'oxygen' ? 16 : 22,
+                type: item.type,
+                released: false,
+                opacity: 1
+            });
+        }
+    }
+
+    // Zeichnen
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        var step = steps[currentStep - 1];
+        var vibration = step.vibration || 0;
+
+        // Hintergrund
+        ctx.fillStyle = '#f5f5f5';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Reagenzglas zeichnen (vereinfacht)
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(100, 40);
+        ctx.lineTo(100, 280);
+        ctx.quadraticCurveTo(100, 320, 140, 320);
+        ctx.lineTo(360, 320);
+        ctx.quadraticCurveTo(400, 320, 400, 280);
+        ctx.lineTo(400, 40);
+        ctx.stroke();
+
+        // Öffnung
+        ctx.beginPath();
+        ctx.moveTo(100, 40);
+        ctx.lineTo(80, 30);
+        ctx.moveTo(400, 40);
+        ctx.lineTo(420, 30);
+        ctx.stroke();
+
+        // Gitterbindungen zeichnen (vor den Partikeln)
+        if (!step.finalState && !step.oxygenReleased) {
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 3]);
+
+            // Bindungen zwischen Ag und O (ionische Wechselwirkungen)
+            // Obere Ag zu O
+            var ag1 = particles[0]; // oben links
+            var ag2 = particles[1]; // oben rechts
+            var o1 = particles[2];  // O links
+            var o2 = particles[3];  // O rechts
+            var ag3 = particles[4]; // unten links
+            var ag4 = particles[5]; // unten rechts
+
+            // Nur zeichnen wenn Partikel existieren
+            if (particles.length === 6) {
+                var vib = vibration * 0.5;
+
+                // Verbindungen zeichnen
+                var connections = [
+                    [ag1, o1], [ag1, o2],
+                    [ag2, o1], [ag2, o2],
+                    [ag3, o1], [ag3, o2],
+                    [ag4, o1], [ag4, o2]
+                ];
+
+                for (var c = 0; c < connections.length; c++) {
+                    var from = connections[c][0];
+                    var to = connections[c][1];
+                    ctx.beginPath();
+                    ctx.moveTo(from.x + (Math.random() - 0.5) * vib, from.y + (Math.random() - 0.5) * vib);
+                    ctx.lineTo(to.x + (Math.random() - 0.5) * vib, to.y + (Math.random() - 0.5) * vib);
+                    ctx.stroke();
+                }
+            }
+            ctx.setLineDash([]);
+        }
+
+        // Partikel zeichnen
+        for (var i = 0; i < particles.length; i++) {
+            var p = particles[i];
+
+            if (p.released) continue;
+
+            var vx = (Math.random() - 0.5) * vibration * 2;
+            var vy = (Math.random() - 0.5) * vibration * 2;
+
+            ctx.globalAlpha = p.opacity;
+            ctx.beginPath();
+            ctx.arc(p.x + vx, p.y + vy, p.radius, 0, Math.PI * 2);
+
+            if (p.type === 'silver') {
+                ctx.fillStyle = SILVER_COLOR;
+                ctx.fill();
+                ctx.strokeStyle = SILVER_BORDER;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Ag-Label im Atom
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Ag', p.x + vx, p.y + vy);
+            } else {
+                ctx.fillStyle = OXYGEN_COLOR;
+                ctx.fill();
+
+                // O-Label im Atom
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('O', p.x + vx, p.y + vy);
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
+        // Sauerstoff-Molekül (entweichend)
+        for (var j = 0; j < oxygenMolecules.length; j++) {
+            var mol = oxygenMolecules[j];
+            ctx.globalAlpha = mol.opacity;
+
+            // O₂ als zwei verbundene Kreise
+            ctx.fillStyle = OXYGEN_COLOR;
+            ctx.beginPath();
+            ctx.arc(mol.x - 12, mol.y, 14, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(mol.x + 12, mol.y, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // O-Labels
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('O', mol.x - 12, mol.y);
+            ctx.fillText('O', mol.x + 12, mol.y);
+
+            // Bindung (Doppelbindung)
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(mol.x - 4, mol.y - 2);
+            ctx.lineTo(mol.x + 4, mol.y - 2);
+            ctx.moveTo(mol.x - 4, mol.y + 2);
+            ctx.lineTo(mol.x + 4, mol.y + 2);
+            ctx.stroke();
+
+            ctx.globalAlpha = 1;
+        }
+
+        // Formel-Anzeige
+        ctx.textAlign = 'left';
+        ctx.font = 'bold 14px sans-serif';
+
+        if (currentStep === 1) {
+            ctx.fillStyle = ACCENT;
+            ctx.fillText('2 Ag₂O', 450, 160);
+            ctx.fillStyle = '#666';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('(Silberoxid)', 450, 180);
+        }
+
+        // Labels für Schritt 5
+        if (step.finalState) {
+            ctx.fillStyle = ACCENT;
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillText('4 Ag (reines Silber)', 420, 200);
+
+            ctx.fillStyle = OXYGEN_COLOR;
+            ctx.fillText('O₂ ↑', 480, 60);
+            ctx.font = '12px sans-serif';
+            ctx.fillText('(entweicht)', 470, 80);
+        }
+
+        // Reaktionsgleichung bei Schritt 4-5
+        if (currentStep >= 4) {
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.fillText('2 Ag₂O  →  4 Ag + O₂', 170, 340);
+        }
+
+        // Wärme-Symbol bei Erhitzen
+        if (currentStep >= 2 && currentStep <= 4) {
+            ctx.fillStyle = '#ff9800';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('🔥 Wärme', 430, 300);
+        }
+    }
+
+    // Animation für Sauerstoff-Freisetzung
+    // Die beiden O²⁻-Ionen (Index 2 und 3) verbinden sich zu O₂
+    function animateOxygenRelease() {
+        var o1 = particles[2]; // erstes Sauerstoff-Ion
+        var o2 = particles[3]; // zweites Sauerstoff-Ion
+
+        o1.released = true;
+        o2.released = true;
+
+        // Ein O₂-Molekül aus beiden O-Atomen
+        oxygenMolecules.push({
+            x: (o1.x + o2.x) / 2,
+            y: (o1.y + o2.y) / 2,
+            vy: -1.5,
+            vx: 0.5,
+            opacity: 1
+        });
+
+        animateRising();
+    }
+
+    function animateRising() {
+        var stillMoving = false;
+
+        for (var i = 0; i < oxygenMolecules.length; i++) {
+            var mol = oxygenMolecules[i];
+            if (mol.y > -30 && mol.opacity > 0) {
+                mol.y += mol.vy;
+                mol.x += (mol.vx || 0) + (Math.random() - 0.5) * 1;
+                mol.vy -= 0.02; // beschleunigt nach oben
+                if (mol.y < 80) {
+                    mol.opacity -= 0.015;
+                }
+                stillMoving = true;
+            }
+        }
+
+        draw();
+
+        if (stillMoving) {
+            animationId = requestAnimationFrame(animateRising);
+        }
+    }
+
+    // UI Updates
+    function updateUI() {
+        var step = steps[currentStep - 1];
+
+        document.getElementById('currentStep').textContent = currentStep;
+        document.getElementById('explanationTitle').textContent = step.title;
+        document.getElementById('explanationText').textContent = step.text;
+
+        // Temperatur
+        var tempPercent = (step.temp - 20) / 380 * 100;
+        document.getElementById('tempFill').style.width = tempPercent + '%';
+        document.getElementById('tempValue').textContent = step.temp + ' °C';
+
+        // Buttons
+        document.getElementById('btnPrev').disabled = currentStep === 1;
+        document.getElementById('btnNext').disabled = currentStep === maxSteps;
+        document.getElementById('btnNext').textContent = currentStep === maxSteps ? 'Fertig!' : 'Weiter';
+    }
+
+    // Navigation
+    function nextStep() {
+        if (currentStep < maxSteps) {
+            currentStep++;
+            updateUI();
+
+            if (steps[currentStep - 1].oxygenReleased) {
+                animateOxygenRelease();
+            } else {
+                draw();
+            }
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            initParticles();
+            updateUI();
+            draw();
+        }
+    }
+
+    function reset() {
+        currentStep = 1;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+        initParticles();
+        updateUI();
+        draw();
+    }
+
+    // Event Listeners
+    document.getElementById('btnNext').addEventListener('click', nextStep);
+    document.getElementById('btnPrev').addEventListener('click', prevStep);
+    document.getElementById('btnReset').addEventListener('click', reset);
+
+    // Init
+    initParticles();
+    updateUI();
+    draw();
+
+    // Kontinuierliches Zeichnen für Vibration
+    setInterval(function() {
+        if (currentStep < 4) {
+            draw();
+        }
+    }, 50);
+
+})();
+</script>
+</body>
+</html>
