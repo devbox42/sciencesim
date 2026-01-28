@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Reibungskräfte</title>
+    <style>
+        :root {
+            --physik: #2c5aa0;
+            --physik-light: #e8f0f8;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: var(--physik);
+            color: white;
+            padding: 20px;
+            margin: -20px -20px 20px -20px;
+            position: relative;
+        }
+        header h1 { font-size: 1.4em; font-weight: 600; }
+        header .meta { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .btn-reset {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            font-size: 0.8em;
+            padding: 5px 12px;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+        }
+
+        .progress-bar { background: var(--border); height: 6px; }
+        .progress-fill { background: var(--physik); height: 100%; width: 0%; transition: width 0.3s; }
+
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            border: 2px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+        }
+
+        .step-dot:hover { border-color: var(--physik); }
+        .step-dot.current { background: var(--physik); border-color: var(--physik); color: white; font-weight: 700; }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
+
+        .step {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .step-number {
+            background: var(--physik);
+            color: white;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .step-title { font-weight: 600; color: var(--physik); }
+
+        .stern { color: var(--warning); font-weight: bold; }
+
+        h2 { font-size: 1.1em; font-weight: 600; margin: 20px 0 10px 0; color: var(--text); }
+        p { margin-bottom: 12px; }
+        ul, ol { margin: 10px 0 10px 20px; }
+        li { margin-bottom: 5px; }
+
+        .info-box {
+            background: var(--physik-light);
+            border-left: 4px solid var(--physik);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .alltagsbezug {
+            background: #f3e5f5;
+            border-left: 4px solid #7b1fa2;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .alltagsbezug strong { color: #7b1fa2; }
+
+        .hefter-hinweis {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+
+        .animation-container {
+            background: #f8f9fa;
+            border: 2px solid var(--physik);
+            border-radius: 4px;
+            padding: 20px;
+            margin: 15px 0;
+            color: var(--text);
+            min-height: 280px;
+            position: relative;
+        }
+
+        .ani-title {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .ani-canvas {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            min-height: 180px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ani-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .ani-btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.9em;
+            border-radius: 4px;
+        }
+        .ani-btn:hover { background: #1e4a8a; }
+        .ani-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        .ani-slider-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .ani-slider-group label { font-size: 0.85em; color: #555; }
+        .ani-slider { width: 120px; }
+
+        .ani-display {
+            background: var(--physik-light);
+            border: 1px solid var(--physik);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            color: var(--text);
+        }
+
+        .ani-info {
+            background: var(--physik-light);
+            border-left: 3px solid var(--physik);
+            padding: 8px 12px;
+            margin-top: 10px;
+            font-size: 0.85em;
+        }
+
+        /* Klotz-Animation */
+        .klotz {
+            width: 80px;
+            height: 50px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: 2px solid #922b21;
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8em;
+            transition: left 0.05s linear;
+        }
+
+        .tisch {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(0deg, #5d4e37, #8b7355);
+            border-top: 3px solid #3d3225;
+        }
+
+        .kraftpfeil {
+            position: absolute;
+            height: 4px;
+            background: #f39c12;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .kraftpfeil::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: -6px;
+            border: 8px solid transparent;
+            border-left: 12px solid #f39c12;
+        }
+
+        /* Auto-Animation */
+        .strasse {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: #333;
+        }
+        .strasse-markierung {
+            position: absolute;
+            bottom: 22px;
+            height: 6px;
+            background: white;
+        }
+
+        .auto {
+            position: absolute;
+            bottom: 50px;
+            width: 100px;
+            height: 40px;
+            transition: left 0.1s linear;
+        }
+        .auto-body {
+            width: 100%;
+            height: 25px;
+            background: linear-gradient(0deg, #2980b9, #3498db);
+            border-radius: 5px 5px 0 0;
+            position: absolute;
+            bottom: 15px;
+        }
+        .auto-wheel {
+            width: 20px;
+            height: 20px;
+            background: #222;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 0;
+            border: 3px solid #444;
+        }
+        .auto-wheel.left { left: 10px; }
+        .auto-wheel.right { right: 10px; }
+
+        .bremsweg-marker {
+            position: absolute;
+            bottom: 55px;
+            font-size: 0.7em;
+            color: #e74c3c;
+            text-align: center;
+        }
+
+        /* Formel-Box */
+        .formel-box {
+            background: var(--physik-light);
+            border: 2px solid var(--physik);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .formel {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 1.4em;
+            font-style: italic;
+        }
+        .formel sub { font-size: 0.7em; }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-primary { background: var(--physik); color: white; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .beispiel-liste {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .beispiel-chip {
+            background: var(--physik-light);
+            border: 1px solid var(--physik);
+            padding: 5px 12px;
+            font-size: 0.9em;
+        }
+
+        .vergleich-tabelle {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .vergleich-tabelle th, .vergleich-tabelle td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: center;
+        }
+        .vergleich-tabelle th {
+            background: var(--physik);
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            header { margin: -10px -10px 15px -10px; padding: 15px; }
+            .step { padding: 15px; }
+            .animation-container { padding: 10px; }
+            .step-dot { width: 24px; height: 24px; font-size: 0.65em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Lernpfad: Reibungskräfte</h1>
+            <div class="meta">Physik Klasse 7 – Kräfte</div>
+            <button class="btn-reset" onclick="resetLernpfad()">Neu starten</button>
+        </header>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="step-indicators" id="stepIndicators"></div>
+
+        <!-- SCHRITT 1: Einstieg -->
+        <div class="step active" id="step1">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <span class="step-title">Reibung im Alltag</span>
+            </div>
+
+            <p>Stell dir vor: Du schiebst einen schweren Schrank über den Boden. Warum ist das so anstrengend?</p>
+
+            <div class="alltagsbezug">
+                <strong>Reibung begegnet dir überall:</strong>
+                <div class="beispiel-liste">
+                    <span class="beispiel-chip">Bremsen am Fahrrad</span>
+                    <span class="beispiel-chip">Schuhe auf dem Boden</span>
+                    <span class="beispiel-chip">Autoreifen auf Straße</span>
+                    <span class="beispiel-chip">Hände aneinander reiben</span>
+                    <span class="beispiel-chip">Streichholz anzünden</span>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Was ist Reibung?</strong><br>
+                Reibung ist eine <strong>Kraft</strong>, die einer Bewegung entgegenwirkt. Sie entsteht, wenn zwei Oberflächen aneinander vorbeigleiten oder gleiten wollen.
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>Kopfbereich ausfüllen:</strong>
+                <ul>
+                    <li>Schreibe deinen <strong>Namen</strong> und das <strong>Datum</strong></li>
+                    <li>Lies den Infokasten K1 auf dem Arbeitsblatt</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 2: Animation Haftreibung -->
+        <div class="step" id="step2">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <span class="step-title">Phänomen: Klotz anschieben</span>
+            </div>
+
+            <p>Beobachte genau, was passiert, wenn du versuchst einen Klotz zu schieben:</p>
+
+            <div class="animation-container" id="ani1-container">
+                <div class="ani-title">Animation: Haftreibung und Gleitreibung</div>
+                <div class="ani-canvas" id="ani1-canvas" style="height: 150px;">
+                    <div class="tisch"></div>
+                    <div class="klotz" id="ani1-klotz" style="left: 50px;">Klotz</div>
+                    <div class="kraftpfeil" id="ani1-pfeil" style="left: 130px; width: 0px;"></div>
+                </div>
+                <div class="ani-controls">
+                    <button class="ani-btn" id="ani1-play" onclick="playAni1()">Play</button>
+                    <button class="ani-btn" onclick="resetAni1()">Reset</button>
+                    <div class="ani-display" id="ani1-kraft">Kraft: 0 N</div>
+                    <div class="ani-display" id="ani1-status">Zustand: Ruhe</div>
+                </div>
+                <div class="ani-info" id="ani1-info">
+                    Drücke Play und beobachte: Wann beginnt der Klotz zu gleiten?
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>Beobachtung B1 ausfüllen:</strong>
+                <ul>
+                    <li>Ergänze: "Um den Klotz zu bewegen, muss die Kraft erst..."</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 3: Simulation Kraftmesser -->
+        <div class="step" id="step3">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <span class="step-title">Experiment: Drei Reibungsarten</span>
+            </div>
+
+            <p>Jetzt misst du die Reibungskraft für drei verschiedene Fälle:</p>
+
+            <div class="animation-container" id="sim5a-container">
+                <div class="ani-title">Simulation: Federkraftmesser</div>
+                <div class="ani-canvas" id="sim5a-canvas" style="height: 180px; position: relative;">
+                    <div class="tisch"></div>
+                    <!-- Klotz -->
+                    <div class="klotz" id="sim5a-klotz" style="left: 30px; width: 70px; height: 45px;">
+                        <span id="sim5a-klotz-icon">Klotz</span>
+                    </div>
+                    <!-- Feder (SVG) - verbindet Klotz mit Kraftmesser -->
+                    <svg id="sim5a-feder-svg" style="position: absolute; left: 100px; bottom: 52px; overflow: visible;" width="80" height="30">
+                        <path id="sim5a-feder-path" d="M0,15 L8,5 L16,25 L24,5 L32,25 L40,5 L48,25 L56,5 L64,25 L72,15 L80,15"
+                              stroke="#f39c12" stroke-width="3" fill="none"/>
+                    </svg>
+                    <!-- Kraftmesser-Gehäuse -->
+                    <div id="sim5a-kraftmesser" style="position: absolute; left: 180px; bottom: 42px; background: linear-gradient(180deg, #e0e0e0 0%, #c0c0c0 100%); border: 2px solid #888; border-radius: 6px; padding: 8px 12px; text-align: center;">
+                        <div style="font-size: 0.65em; color: #555; margin-bottom: 2px;">KRAFTMESSER</div>
+                        <div style="background: #f0f0f0; padding: 4px 8px; border-radius: 3px; border: 1px solid #ccc;">
+                            <span style="font-size: 1.4em; font-weight: bold; color: #b35c00; font-family: monospace;" id="sim5a-wert">0.0 N</span>
+                        </div>
+                    </div>
+                    <!-- Hand zieht am Kraftmesser -->
+                    <div id="sim5a-hand" style="position: absolute; left: 280px; bottom: 48px; font-size: 2em;">✋</div>
+                    <!-- Zugrichtungspfeil -->
+                    <div id="sim5a-pfeil" style="position: absolute; left: 310px; bottom: 55px; color: #27ae60; font-size: 1.5em; opacity: 0;">→→</div>
+                </div>
+                <div class="ani-controls">
+                    <div class="ani-slider-group">
+                        <label>Modus:</label>
+                        <select id="sim5a-modus" onchange="resetSim5a()" style="padding: 5px;">
+                            <option value="haft">Haftreibung (Losbrechkraft)</option>
+                            <option value="gleit">Gleitreibung</option>
+                            <option value="roll">Rollreibung</option>
+                        </select>
+                    </div>
+                    <button class="ani-btn" id="sim5a-btn" onclick="messenSim5a()">Messen</button>
+                    <button class="ani-btn" onclick="resetSim5a()">Reset</button>
+                </div>
+                <div class="ani-info" id="sim5a-info">
+                    Wähle einen Modus und drücke „Messen". Trage die Werte in Tabelle T1 ein!
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>Tabelle T1 ausfüllen:</strong>
+                <ul>
+                    <li><strong>Haftreibung</strong> (Losbrechkraft): ___ N</li>
+                    <li><strong>Gleitreibung</strong>: ___ N</li>
+                    <li><strong>Rollreibung</strong>: ___ N</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 4: Erkenntnis Reihenfolge -->
+        <div class="step" id="step4">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <span class="step-title">Erkenntnis: Die Reihenfolge</span>
+            </div>
+
+            <p>Vergleiche deine Messwerte aus Tabelle T1:</p>
+
+            <table class="vergleich-tabelle">
+                <tr>
+                    <th>Reibungsart</th>
+                    <th>Typischer Wert</th>
+                    <th>Symbol</th>
+                </tr>
+                <tr>
+                    <td>Haftreibung</td>
+                    <td><strong>8 N</strong> (am größten!)</td>
+                    <td>F<sub>Haft</sub></td>
+                </tr>
+                <tr>
+                    <td>Gleitreibung</td>
+                    <td><strong>5 N</strong></td>
+                    <td>F<sub>Gleit</sub></td>
+                </tr>
+                <tr>
+                    <td>Rollreibung</td>
+                    <td><strong>1 N</strong> (am kleinsten!)</td>
+                    <td>F<sub>Roll</sub></td>
+                </tr>
+            </table>
+
+            <div class="info-box">
+                <strong>Wichtige Erkenntnis:</strong><br>
+                F<sub>Haft</sub> &gt; F<sub>Gleit</sub> &gt; F<sub>Roll</sub><br><br>
+                Die Haftreibung ist am größten, die Rollreibung am kleinsten!
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>B2 und K2 ausfüllen:</strong>
+                <ul>
+                    <li>Setze die Zeichen &gt; oder &lt; ein</li>
+                    <li>Ergänze den Merkkasten zu den drei Reibungsarten</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 5: Animation Bremsweg -->
+        <div class="step" id="step5">
+            <div class="step-header">
+                <span class="step-number">5</span>
+                <span class="step-title">Anwendung: Bremsweg</span>
+            </div>
+
+            <p>Warum ist Reibung beim Autofahren so wichtig?</p>
+
+            <div class="animation-container" id="ani2-container">
+                <div class="ani-title">Animation: Auto bremst – Bremsweg vergleichen</div>
+                <div class="ani-canvas" id="ani2-canvas" style="height: 140px;">
+                    <!-- Straße mit wechselbarer Farbe -->
+                    <div id="ani2-strasse" class="strasse" style="background: #333;">
+                        <div class="strasse-markierung" style="left: 20px; width: 40px;"></div>
+                        <div class="strasse-markierung" style="left: 80px; width: 40px;"></div>
+                        <div class="strasse-markierung" style="left: 140px; width: 40px;"></div>
+                        <div class="strasse-markierung" style="left: 200px; width: 40px;"></div>
+                        <div class="strasse-markierung" style="left: 260px; width: 40px;"></div>
+                        <div class="strasse-markierung" style="left: 320px; width: 40px;"></div>
+                    </div>
+                    <!-- Bremsweg-Balken (wächst mit) -->
+                    <div id="ani2-bremsbalken" style="position: absolute; left: 20px; bottom: 50px; height: 8px; width: 0; background: #e74c3c; border-radius: 4px;"></div>
+                    <!-- Start-Markierung -->
+                    <div id="ani2-startmarke" style="position: absolute; left: 20px; bottom: 58px; width: 2px; height: 20px; background: #27ae60;"></div>
+                    <div style="position: absolute; left: 8px; bottom: 80px; font-size: 0.6em; color: #27ae60;">START</div>
+                    <!-- Auto -->
+                    <div class="auto" id="ani2-auto" style="left: 20px;">
+                        <div class="auto-body"></div>
+                        <div class="auto-wheel left"></div>
+                        <div class="auto-wheel right"></div>
+                    </div>
+                    <!-- Bremsweg-Anzeige -->
+                    <div id="ani2-bremsweg" style="position: absolute; left: 100px; bottom: 100px; display: none; background: rgba(255,255,255,0.9); border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; color: #222;">
+                        Bremsweg: <strong id="ani2-meter">0</strong> m
+                    </div>
+                    <!-- Straßenzustand-Anzeige -->
+                    <div id="ani2-zustand" style="position: absolute; right: 10px; top: 10px; font-size: 0.8em; color: #555;"></div>
+                </div>
+                <div class="ani-controls">
+                    <button class="ani-btn" onclick="playAni2('trocken')">🌞 Trocken</button>
+                    <button class="ani-btn" onclick="playAni2('nass')">🌧️ Nass</button>
+                    <button class="ani-btn" onclick="playAni2('eis')">❄️ Vereist</button>
+                    <button class="ani-btn" onclick="resetAni2()">Reset</button>
+                </div>
+                <div class="ani-info" id="ani2-info">
+                    Vergleiche: Wie unterscheidet sich der Bremsweg bei verschiedenen Straßenzuständen?
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Verkehrssicherheit:</strong><br>
+                Je geringer die Reibung, desto länger der Bremsweg!<br>
+                Trocken → Nass → Vereist = immer längerer Bremsweg!
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>Aufgabe A1 beantworten:</strong>
+                <ul>
+                    <li>Welche Reibungsart ist beim Bremsen wichtig?</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 6: Simulation Einflussfaktoren -->
+        <div class="step" id="step6">
+            <div class="step-header">
+                <span class="step-number">6</span>
+                <span class="step-title">Experiment: Einflussfaktoren</span>
+            </div>
+
+            <p>Wovon hängt die Reibungskraft ab? Probiere es aus!</p>
+
+            <div class="animation-container" id="sim5b-container">
+                <div class="ani-title">Simulation: Einflussfaktoren der Reibung</div>
+                <div class="ani-canvas" id="sim5b-canvas" style="height: 140px;">
+                    <div id="sim5b-oberflaeche" style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: #8b7355;"></div>
+                    <div class="klotz" id="sim5b-klotz" style="left: 100px; width: 60px; height: 40px;">
+                        <span id="sim5b-gewicht-text" style="font-size: 0.7em;">5 N</span>
+                    </div>
+                </div>
+                <div class="ani-controls" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+                    <div class="ani-slider-group">
+                        <label style="width: 100px;">Gewichtskraft:</label>
+                        <input type="range" class="ani-slider" id="sim5b-gewicht" min="2" max="20" value="5" oninput="updateSim5b()">
+                        <span id="sim5b-gewicht-val">5 N</span>
+                    </div>
+                    <div class="ani-slider-group">
+                        <label style="width: 100px;">Oberfläche:</label>
+                        <input type="range" class="ani-slider" id="sim5b-rauheit" min="1" max="3" value="2" oninput="updateSim5b()">
+                        <span id="sim5b-rauheit-val">mittel</span>
+                    </div>
+                    <div class="ani-display" style="font-size: 1.1em;">
+                        Reibungskraft: <strong id="sim5b-reibung">2.5 N</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>B3 und B4 ausfüllen:</strong>
+                <ul>
+                    <li>Mehr Gewichtskraft = <strong>___</strong> Reibung</li>
+                    <li>Rauere Oberfläche = <strong>___</strong> Reibung</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 7: Erwuenscht/Unerwuenscht -->
+        <div class="step" id="step7">
+            <div class="step-header">
+                <span class="step-number">7</span>
+                <span class="step-title">Erwünschte und unerwünschte Reibung</span>
+            </div>
+
+            <p>Reibung kann nützlich oder störend sein:</p>
+
+            <table class="vergleich-tabelle">
+                <tr>
+                    <th style="background: var(--success);">Erwünscht</th>
+                    <th style="background: var(--error);">Unerwünscht</th>
+                </tr>
+                <tr>
+                    <td>Bremsen funktionieren</td>
+                    <td>Motor verschleißt</td>
+                </tr>
+                <tr>
+                    <td>Schuhe rutschen nicht</td>
+                    <td>Energie geht verloren</td>
+                </tr>
+                <tr>
+                    <td>Schrauben halten</td>
+                    <td>Gelenke nutzen ab</td>
+                </tr>
+            </table>
+
+            <div class="info-box">
+                <strong>Wie kann man Reibung verringern?</strong>
+                <ul>
+                    <li>Schmiermittel (Öl, Fett)</li>
+                    <li>Glatte Oberflächen</li>
+                    <li>Kugellager (Rollreibung statt Gleitreibung)</li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>T2 und A2 ausfüllen:</strong>
+                <ul>
+                    <li>Ergänze je 3 Beispiele für erwünschte/unerwünschte Reibung</li>
+                    <li>Aufgabe A2: Wo ist beim Fahrrad Reibung erwünscht/unerwünscht?</li>
+                </ul>
+            </div>
+
+            <p>Wenn du mit dem Basis-Teil fertig bist, kannst du zum nächsten Schritt gehen.</p>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter zu <span class="stern">***</span></button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 8: Schmierfilm (***) -->
+        <div class="step" id="step8">
+            <div class="step-header">
+                <span class="step-number">8</span>
+                <span class="step-title">Vertiefung: Schmierfilm <span class="stern">***</span></span>
+            </div>
+
+            <p>Warum verringert Öl oder Wasser die Reibung?</p>
+
+            <div class="info-box" style="background: #fff3e0; border-left-color: #f39c12;">
+                <strong style="color: #b35c00;">Wichtig:</strong> Schmiermittel verringern die <strong>Gleitreibung</strong>!
+                Die beweglichen Teile gleiten aneinander vorbei – ein Ölfilm oder Wasserfilm verringert dabei die Reibungskraft.
+            </div>
+
+            <div class="animation-container" id="ani3-container">
+                <div class="ani-title">Animation: Kolben im Zylinder – Gleitreibung mit/ohne Öl</div>
+                <div class="ani-canvas" style="height: 180px; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px;">
+                    <!-- OHNE ÖL -->
+                    <div style="text-align: center; width: 140px;">
+                        <div style="font-size: 0.85em; margin-bottom: 8px; color: #e74c3c; font-weight: bold;">OHNE ÖL</div>
+                        <div style="position: relative; width: 80px; height: 120px; margin: 0 auto; background: linear-gradient(90deg, #555 0%, #777 50%, #555 100%); border: 3px solid #333; border-radius: 4px;">
+                            <!-- Zylinderwand (rau) -->
+                            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: repeating-linear-gradient(180deg, #666 0px, #666 3px, #444 3px, #444 6px);"></div>
+                            <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background: repeating-linear-gradient(180deg, #666 0px, #666 3px, #444 3px, #444 6px);"></div>
+                            <!-- Kolben (bewegt sich) -->
+                            <div id="ani3-kolben1" style="position: absolute; left: 8px; right: 8px; top: 20px; height: 30px; background: linear-gradient(180deg, #888 0%, #aaa 50%, #888 100%); border: 2px solid #555; border-radius: 2px;"></div>
+                            <!-- Reibungsfunken -->
+                            <div id="ani3-funken1" style="position: absolute; left: 2px; top: 25px; font-size: 0.7em; opacity: 0;">⚡</div>
+                            <div id="ani3-funken2" style="position: absolute; right: 2px; top: 35px; font-size: 0.7em; opacity: 0;">⚡</div>
+                        </div>
+                        <div style="color: #e74c3c; margin-top: 8px; font-size: 0.75em;">
+                            <strong>Hohe Gleitreibung</strong><br>
+                            Metall reibt auf Metall!<br>
+                            <span id="ani3-kraft1">F = 8 N</span>
+                        </div>
+                    </div>
+                    <!-- MITTE -->
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 140px;">
+                        <button class="ani-btn" onclick="playAni3()" id="ani3-btn" style="font-size: 0.85em;">▶ Start</button>
+                        <div style="font-size: 1.5em; color: #666; margin-top: 15px;">vs</div>
+                    </div>
+                    <!-- MIT ÖL -->
+                    <div style="text-align: center; width: 140px;">
+                        <div style="font-size: 0.85em; margin-bottom: 8px; color: #27ae60; font-weight: bold;">MIT ÖL</div>
+                        <div style="position: relative; width: 80px; height: 120px; margin: 0 auto; background: linear-gradient(90deg, #555 0%, #777 50%, #555 100%); border: 3px solid #333; border-radius: 4px;">
+                            <!-- Zylinderwand mit Ölfilm -->
+                            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: #f1c40f;"></div>
+                            <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background: #f1c40f;"></div>
+                            <!-- Kolben (bewegt sich) -->
+                            <div id="ani3-kolben2" style="position: absolute; left: 8px; right: 8px; top: 20px; height: 30px; background: linear-gradient(180deg, #888 0%, #aaa 50%, #888 100%); border: 2px solid #555; border-radius: 2px;"></div>
+                            <!-- Ölfilm-Glanz -->
+                            <div style="position: absolute; left: 8px; right: 8px; top: 20px; height: 30px; background: linear-gradient(90deg, rgba(241,196,15,0.3) 0%, transparent 20%, transparent 80%, rgba(241,196,15,0.3) 100%); pointer-events: none;"></div>
+                        </div>
+                        <div style="color: #27ae60; margin-top: 8px; font-size: 0.75em;">
+                            <strong>Geringe Gleitreibung</strong><br>
+                            Ölfilm trennt die Teile!<br>
+                            <span id="ani3-kraft2">F = 2 N</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ani-info" id="ani3-info">
+                    Drücke <strong>Start</strong>: Die Kolben bewegen sich auf und ab. Beobachte den Unterschied!
+                </div>
+            </div>
+
+            <div class="animation-container" id="sim5c-container">
+                <div class="ani-title">Simulation: Wasserfilm-Effekt (Gleitreibung)</div>
+                <div class="ani-canvas" id="sim5c-canvas" style="height: 120px;">
+                    <div id="sim5c-wasser" style="position: absolute; bottom: 40px; left: 0; right: 0; height: 0px; background: rgba(52, 152, 219, 0.5);"></div>
+                    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: #8b7355;"></div>
+                    <div class="klotz" id="sim5c-klotz" style="left: 100px; width: 60px; height: 40px;">Klotz</div>
+                </div>
+                <div class="ani-controls">
+                    <div class="ani-slider-group">
+                        <label>Wassermenge:</label>
+                        <input type="range" class="ani-slider" id="sim5c-wasser-slider" min="0" max="10" value="0" oninput="updateSim5c()">
+                        <span id="sim5c-wasser-val">kein</span>
+                    </div>
+                    <div class="ani-display">
+                        Gleitreibung: <strong id="sim5c-reibung">5 N</strong> <span id="sim5c-vergleich"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>Aufgabe A5 beantworten:</strong>
+                <ul>
+                    <li>Erkläre: Warum verringert ein Schmierfilm die Reibung?</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter zur Formel</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 9: Formel (***) -->
+        <div class="step" id="step9">
+            <div class="step-header">
+                <span class="step-number">9</span>
+                <span class="step-title">Formel: F<sub>R</sub> = μ · F<sub>N</sub> <span class="stern">***</span></span>
+            </div>
+
+            <p>Die Zusammenhänge lassen sich auch als Formel ausdrücken:</p>
+
+            <div class="formel-box">
+                <div class="formel">F<sub>R</sub> = μ · F<sub>N</sub></div>
+                <p style="margin-top: 10px; font-size: 0.9em;">
+                    F<sub>R</sub> = Reibungskraft in N<br>
+                    μ = Reibungszahl (griechisch „my", keine Einheit)<br>
+                    F<sub>N</sub> = Normalkraft in N (auf waagerechter Fläche = Gewichtskraft)
+                </p>
+            </div>
+
+            <div class="animation-container" id="ani4-container">
+                <div class="ani-title">Visualisierung: Reibungszahl μ</div>
+                <div class="ani-canvas" style="height: 100px; display: flex; align-items: center; padding: 0 20px;">
+                    <div style="flex: 1;">
+                        <div style="margin-bottom: 10px;">Material-Kombinationen:</div>
+                        <table style="font-size: 0.85em; color: #333;">
+                            <tr><td>Gummi – Asphalt:</td><td style="padding-left: 10px;"><strong>μ = 0,8</strong></td></tr>
+                            <tr><td>Holz – Holz:</td><td style="padding-left: 10px;"><strong>μ = 0,5</strong></td></tr>
+                            <tr><td>Stahl – Eis:</td><td style="padding-left: 10px;"><strong>μ = 0,03</strong></td></tr>
+                        </table>
+                    </div>
+                    <div style="flex: 1; text-align: center;">
+                        <div style="font-size: 0.8em; color: #555;">Beispielrechnung:</div>
+                        <div style="background: var(--physik-light); border: 1px solid var(--physik); padding: 10px; border-radius: 4px; margin-top: 5px;">
+                            F<sub>N</sub> = 10 N, μ = 0,5<br>
+                            F<sub>R</sub> = 0,5 · 10 N = <strong>5 N</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Was sagt die Formel?</strong>
+                <ul>
+                    <li>Größere Normalkraft (= mehr Gewicht) → größere Reibung</li>
+                    <li>Größeres μ (= rauere Fläche) → größere Reibung</li>
+                    <li>μ hängt von den Materialien ab (Tabellenwert)</li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>K3, A3 und A4 ausfüllen:</strong>
+                <ul>
+                    <li>Übertrage die Formel in Kasten K3</li>
+                    <li>A3: Beschreibe die Abhängigkeiten in eigenen Worten</li>
+                    <li>A4: Lies μ-Werte aus der Tabelle ab und vergleiche</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Zum Abschluss</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 10: Abschluss -->
+        <div class="step" id="step10">
+            <div class="step-header">
+                <span class="step-number">+</span>
+                <span class="step-title">Geschafft!</span>
+            </div>
+
+            <p>Du hast die Reibungskräfte kennengelernt.</p>
+
+            <div class="info-box">
+                <strong>Was du gelernt hast:</strong>
+                <ul>
+                    <li>Es gibt drei Reibungsarten: <strong>Haft-, Gleit-, Rollreibung</strong></li>
+                    <li>Reihenfolge: F<sub>Haft</sub> &gt; F<sub>Gleit</sub> &gt; F<sub>Roll</sub></li>
+                    <li>Reibung hängt ab von <strong>Gewichtskraft</strong> und <strong>Oberfläche</strong></li>
+                    <li>Reibung kann erwünscht oder unerwünscht sein</li>
+                    <li><span class="stern">***</span> Formel: F<sub>R</sub> = μ · F<sub>N</sub></li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>Arbeitsblatt fertigstellen:</strong>
+                <ul>
+                    <li>Prüfe: Sind alle Felder ausgefüllt?</li>
+                    <li>Kontrolliere deine Antworten</li>
+                    <li><strong>Gib dein Arbeitsblatt ab!</strong></li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lernpfad-Steuerung (ES5)
+        var STORAGE_KEY = 'lp-05-reibungskraefte-v1';
+        var totalSteps = 10;
+        var currentStep = 1;
+
+        function init() {
+            var saved = localStorage.getItem(STORAGE_KEY + '-step');
+            if (saved) {
+                currentStep = parseInt(saved) || 1;
+            }
+            createStepIndicators();
+            showStep(currentStep);
+            updateSim5b();
+            updateSim5c();
+        }
+
+        function createStepIndicators() {
+            var container = document.getElementById('stepIndicators');
+            container.innerHTML = '';
+            for (var i = 1; i <= totalSteps; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'step-dot';
+                dot.textContent = i;
+                dot.setAttribute('data-step', i);
+                dot.addEventListener('click', function() {
+                    var step = parseInt(this.getAttribute('data-step'), 10);
+                    if (step <= getMaxStep() + 1) {
+                        showStep(step);
+                    }
+                });
+                container.appendChild(dot);
+            }
+        }
+
+        function getMaxStep() {
+            var saved = localStorage.getItem(STORAGE_KEY + '-maxStep');
+            return saved ? parseInt(saved, 10) : 1;
+        }
+
+        function updateStepIndicators() {
+            var dots = document.querySelectorAll('.step-dot');
+            var maxCompleted = getMaxStep();
+            for (var j = 0; j < dots.length; j++) {
+                var num = parseInt(dots[j].getAttribute('data-step'), 10);
+                dots[j].classList.remove('current', 'completed');
+                if (num === currentStep) {
+                    dots[j].classList.add('current');
+                } else if (num <= maxCompleted) {
+                    dots[j].classList.add('completed');
+                }
+            }
+        }
+
+        function showStep(n) {
+            var steps = document.querySelectorAll('.step');
+            for (var i = 0; i < steps.length; i++) {
+                steps[i].classList.remove('active');
+            }
+            var step = document.getElementById('step' + n);
+            if (step) {
+                step.classList.add('active');
+            }
+            currentStep = n;
+            localStorage.setItem(STORAGE_KEY + '-step', n);
+            // Max-Step tracken
+            var maxStep = getMaxStep();
+            if (n > maxStep) {
+                localStorage.setItem(STORAGE_KEY + '-maxStep', n);
+            }
+            var percent = ((n - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = percent + '%';
+            updateStepIndicators();
+            window.scrollTo(0, 0);
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                showStep(currentStep + 1);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                showStep(currentStep - 1);
+            }
+        }
+
+        function resetLernpfad() {
+            if (confirm('Lernpfad wirklich neu starten?')) {
+                localStorage.removeItem(STORAGE_KEY + '-step');
+                currentStep = 1;
+                showStep(1);
+            }
+        }
+
+        // Animation 1: Haftreibung -> Gleitreibung
+        var ani1Running = false;
+        var ani1Interval = null;
+        var ani1Kraft = 0;
+        var ani1KlotzPos = 50;
+        var ani1Gleitet = false;
+
+        function playAni1() {
+            if (ani1Running) return;
+            ani1Running = true;
+            document.getElementById('ani1-play').disabled = true;
+            ani1Kraft = 0;
+            ani1KlotzPos = 50;
+            ani1Gleitet = false;
+
+            ani1Interval = setInterval(function() {
+                if (!ani1Gleitet) {
+                    ani1Kraft += 0.5;
+                    if (ani1Kraft >= 8) {
+                        ani1Gleitet = true;
+                        ani1Kraft = 5;
+                        document.getElementById('ani1-status').textContent = 'Zustand: Gleiten!';
+                        document.getElementById('ani1-info').textContent = 'Der Klotz gleitet! Beachte: Die Kraft sinkt auf 5 N (Gleitreibung < Haftreibung)';
+                    }
+                } else {
+                    ani1KlotzPos += 3;
+                    if (ani1KlotzPos > 250) {
+                        clearInterval(ani1Interval);
+                        ani1Running = false;
+                        document.getElementById('ani1-play').disabled = false;
+                        document.getElementById('ani1-info').textContent = 'Fertig! Drücke Reset, um es nochmal zu sehen.';
+                    }
+                }
+                document.getElementById('ani1-kraft').textContent = 'Kraft: ' + ani1Kraft.toFixed(1) + ' N';
+                document.getElementById('ani1-klotz').style.left = ani1KlotzPos + 'px';
+                // Pfeil bewegt sich mit Klotz mit (Position = Klotz-Ende)
+                var pfeilPos = ani1KlotzPos + 80; // Klotz ist 80px breit
+                document.getElementById('ani1-pfeil').style.left = pfeilPos + 'px';
+                document.getElementById('ani1-pfeil').style.width = (ani1Kraft * 8) + 'px';
+                if (!ani1Gleitet) {
+                    document.getElementById('ani1-status').textContent = 'Zustand: Haften (Kraft steigt...)';
+                }
+            }, 100);
+        }
+
+        function resetAni1() {
+            if (ani1Interval) clearInterval(ani1Interval);
+            ani1Running = false;
+            ani1Kraft = 0;
+            ani1KlotzPos = 50;
+            ani1Gleitet = false;
+            document.getElementById('ani1-play').disabled = false;
+            document.getElementById('ani1-kraft').textContent = 'Kraft: 0 N';
+            document.getElementById('ani1-status').textContent = 'Zustand: Ruhe';
+            document.getElementById('ani1-klotz').style.left = '50px';
+            document.getElementById('ani1-pfeil').style.left = '130px';
+            document.getElementById('ani1-pfeil').style.width = '0px';
+            document.getElementById('ani1-info').textContent = 'Drücke Play und beobachte: Wann beginnt der Klotz zu gleiten?';
+        }
+
+        // Simulation 5a: Federkraftmesser mit Animation
+        var sim5aWerte = { haft: 8, gleit: 5, roll: 1 };
+        var sim5aRunning = false;
+        var sim5aInterval = null;
+
+        function resetSim5a() {
+            if (sim5aInterval) clearInterval(sim5aInterval);
+            sim5aRunning = false;
+            var modus = document.getElementById('sim5a-modus').value;
+            var klotz = document.getElementById('sim5a-klotz');
+            if (modus === 'roll') {
+                klotz.innerHTML = '<span style="font-size:1em;">⚙⚙</span>';
+            } else {
+                klotz.innerHTML = 'Klotz';
+            }
+            // Positionen zurücksetzen
+            klotz.style.left = '30px';
+            document.getElementById('sim5a-feder-svg').style.left = '100px';
+            document.getElementById('sim5a-feder-svg').setAttribute('width', '80');
+            document.getElementById('sim5a-feder-path').setAttribute('d', 'M0,15 L8,5 L16,25 L24,5 L32,25 L40,5 L48,25 L56,5 L64,25 L72,15 L80,15');
+            document.getElementById('sim5a-kraftmesser').style.left = '180px';
+            document.getElementById('sim5a-hand').style.left = '280px';
+            document.getElementById('sim5a-pfeil').style.opacity = '0';
+            document.getElementById('sim5a-wert').textContent = '0.0 N';
+            document.getElementById('sim5a-btn').disabled = false;
+            document.getElementById('sim5a-info').textContent = 'Wähle einen Modus und drücke „Messen". Trage die Werte in Tabelle T1 ein!';
+        }
+
+        function messenSim5a() {
+            if (sim5aRunning) return;
+            sim5aRunning = true;
+            var modus = document.getElementById('sim5a-modus').value;
+            var wert = sim5aWerte[modus];
+            var klotz = document.getElementById('sim5a-klotz');
+            var federSvg = document.getElementById('sim5a-feder-svg');
+            var federPath = document.getElementById('sim5a-feder-path');
+            var kraftmesser = document.getElementById('sim5a-kraftmesser');
+            var hand = document.getElementById('sim5a-hand');
+            var pfeil = document.getElementById('sim5a-pfeil');
+            var wertDisplay = document.getElementById('sim5a-wert');
+            var info = document.getElementById('sim5a-info');
+            var btn = document.getElementById('sim5a-btn');
+            btn.disabled = true;
+            pfeil.style.opacity = '1';
+
+            var kraftAktuell = 0;
+            var federLaenge = 80;
+            var kraftmesserX = 180;
+            var handX = 280;
+            var klotzX = 30;
+
+            sim5aInterval = setInterval(function() {
+                kraftAktuell += 0.5;
+                // Hand und Kraftmesser ziehen nach rechts
+                federLaenge += 5;
+                kraftmesserX += 5;
+                handX += 5;
+
+                // Feder dehnt sich (neue SVG-Path berechnen)
+                var w = federLaenge;
+                var segments = 8;
+                var segW = w / (segments + 1);
+                var path = 'M0,15 ';
+                for (var i = 1; i <= segments; i++) {
+                    var x = i * segW;
+                    var y = (i % 2 === 1) ? 5 : 25;
+                    path += 'L' + x.toFixed(0) + ',' + y + ' ';
+                }
+                path += 'L' + w + ',15';
+                federSvg.setAttribute('width', w);
+                federPath.setAttribute('d', path);
+                kraftmesser.style.left = kraftmesserX + 'px';
+                hand.style.left = handX + 'px';
+                pfeil.style.left = (handX + 30) + 'px';
+                wertDisplay.textContent = kraftAktuell.toFixed(1) + ' N';
+
+                if (kraftAktuell >= wert) {
+                    clearInterval(sim5aInterval);
+                    wertDisplay.textContent = wert.toFixed(1) + ' N';
+
+                    // Bei Gleitreibung und Rollreibung bewegt sich der Klotz mit
+                    if (modus === 'gleit' || modus === 'roll') {
+                        // Klotz gleitet nach - Animation
+                        var gleitInterval = setInterval(function() {
+                            klotzX += 3;
+                            klotz.style.left = klotzX + 'px';
+                            federSvg.style.left = (klotzX + 70) + 'px';
+                            if (klotzX >= 80) {
+                                clearInterval(gleitInterval);
+                                if (modus === 'gleit') {
+                                    info.textContent = 'Gleitreibung: ' + wert + ' N – Der Klotz gleitet! Kraft bleibt konstant.';
+                                } else {
+                                    info.textContent = 'Rollreibung: ' + wert + ' N – Am kleinsten! Räder rollen sehr leicht.';
+                                }
+                                btn.disabled = false;
+                                sim5aRunning = false;
+                            }
+                        }, 50);
+                    } else {
+                        info.textContent = 'Haftreibung: ' + wert + ' N – Die Losbrechkraft ist am größten! Klotz haftet noch.';
+                        btn.disabled = false;
+                        sim5aRunning = false;
+                    }
+                }
+            }, 100);
+        }
+
+        // Animation 2: Bremsweg (physikalisch korrekte Verzögerung)
+        var ani2Running = false;
+        var ani2Interval = null;
+
+        function playAni2(typ) {
+            if (ani2Running) return;
+            ani2Running = true;
+            var auto = document.getElementById('ani2-auto');
+            var balken = document.getElementById('ani2-bremsbalken');
+            var marker = document.getElementById('ani2-bremsweg');
+            var meter = document.getElementById('ani2-meter');
+            var info = document.getElementById('ani2-info');
+            var strasse = document.getElementById('ani2-strasse');
+            var zustand = document.getElementById('ani2-zustand');
+
+            // Reset
+            auto.style.left = '20px';
+            balken.style.width = '0';
+            marker.style.display = 'block';
+            meter.textContent = '0';
+
+            // Bremsweg je nach Straßenzustand
+            var bremswegData = {
+                trocken: { dist: 120, meter: 12, color: '#333', label: 'Trocken (μ ≈ 0,8)', infoColor: '#27ae60' },
+                nass: { dist: 200, meter: 24, color: '#4a6fa5', label: 'Nass (μ ≈ 0,4)', infoColor: '#f39c12' },
+                eis: { dist: 320, meter: 48, color: '#a8d4e6', label: 'Vereist (μ ≈ 0,1)', infoColor: '#e74c3c' }
+            };
+            var data = bremswegData[typ];
+            strasse.style.background = data.color;
+            zustand.textContent = data.label;
+            zustand.style.color = data.infoColor;
+
+            var startPos = 20;
+            var totalDist = data.dist;
+            var bremsweg = data.meter;
+
+            // Physik: gleichmäßig verzögerte Bewegung
+            var v0 = 10; // Anfangsgeschwindigkeit (px pro Frame)
+            var t = 0;
+            var a = (v0 * v0) / (2 * totalDist); // Verzögerung aus Bremsweg
+
+            ani2Interval = setInterval(function() {
+                t += 1;
+                var v = v0 - a * t;
+                // s(t) = v0*t - 0.5*a*t²
+                var s = v0 * t - 0.5 * a * t * t;
+                var pos = startPos + s;
+
+                // Bremsbalken wächst mit
+                balken.style.width = s + 'px';
+                // Bremsweg-Meter mitrechnen
+                var aktuellerMeter = Math.round((s / totalDist) * bremsweg);
+                meter.textContent = aktuellerMeter;
+                marker.style.left = (pos + 50) + 'px';
+
+                if (v <= 0 || pos >= startPos + totalDist) {
+                    // Auto steht
+                    clearInterval(ani2Interval);
+                    auto.style.left = (startPos + totalDist) + 'px';
+                    balken.style.width = totalDist + 'px';
+                    meter.textContent = bremsweg;
+
+                    if (typ === 'trocken') {
+                        info.innerHTML = '<strong style="color:#27ae60">Trockene Straße:</strong> Bremsweg nur ' + bremsweg + ' m – Hohe Reibung!';
+                    } else if (typ === 'nass') {
+                        info.innerHTML = '<strong style="color:#f39c12">Nasse Straße:</strong> Bremsweg ' + bremsweg + ' m – Weniger Reibung!';
+                    } else {
+                        info.innerHTML = '<strong style="color:#e74c3c">Vereiste Straße:</strong> Bremsweg ' + bremsweg + ' m – Sehr wenig Reibung! Gefährlich!';
+                    }
+                    info.style.borderColor = data.infoColor;
+                    ani2Running = false;
+                } else {
+                    auto.style.left = pos + 'px';
+                }
+            }, 40);
+        }
+
+        function resetAni2() {
+            if (ani2Interval) clearInterval(ani2Interval);
+            ani2Running = false;
+            document.getElementById('ani2-auto').style.left = '20px';
+            document.getElementById('ani2-bremsbalken').style.width = '0';
+            document.getElementById('ani2-bremsweg').style.display = 'none';
+            document.getElementById('ani2-strasse').style.background = '#333';
+            document.getElementById('ani2-zustand').textContent = '';
+            document.getElementById('ani2-info').innerHTML = 'Vergleiche: Wie unterscheidet sich der Bremsweg bei verschiedenen Straßenzuständen?';
+            document.getElementById('ani2-info').style.borderColor = 'var(--physik)';
+        }
+
+        // Animation 3: Motor mit/ohne Öl (Kolbenbewegung)
+        var ani3Running = false;
+        var ani3Interval = null;
+
+        function playAni3() {
+            if (ani3Running) {
+                // Stop
+                clearInterval(ani3Interval);
+                ani3Running = false;
+                document.getElementById('ani3-btn').textContent = '▶ Start';
+                return;
+            }
+            ani3Running = true;
+            document.getElementById('ani3-btn').textContent = '⏹ Stop';
+
+            var kolben1 = document.getElementById('ani3-kolben1');
+            var kolben2 = document.getElementById('ani3-kolben2');
+            var funken1 = document.getElementById('ani3-funken1');
+            var funken2 = document.getElementById('ani3-funken2');
+            var info = document.getElementById('ani3-info');
+
+            var pos = 20;
+            var richtung = 1;
+            var frame = 0;
+
+            ani3Interval = setInterval(function() {
+                frame++;
+                // Kolben 1 (ohne Öl) bewegt sich ruckelig/langsamer
+                if (frame % 3 === 0) { // nur jeden 3. Frame
+                    pos += richtung * 4;
+                    kolben1.style.top = pos + 'px';
+                    // Funken zeigen
+                    funken1.style.opacity = (frame % 6 < 3) ? '1' : '0';
+                    funken2.style.opacity = (frame % 6 >= 3) ? '1' : '0';
+                    funken1.style.top = (pos + 5 + Math.random() * 10) + 'px';
+                    funken2.style.top = (pos + 10 + Math.random() * 10) + 'px';
+                }
+                // Kolben 2 (mit Öl) bewegt sich flüssig
+                kolben2.style.top = pos + 'px';
+
+                if (pos >= 70 || pos <= 20) {
+                    richtung *= -1;
+                }
+            }, 50);
+
+            info.innerHTML = 'Beobachte: <strong style="color:#e74c3c">Ohne Öl</strong> bewegt sich der Kolben ruckelig mit Funken (hohe Reibung). <strong style="color:#27ae60">Mit Öl</strong> gleitet er gleichmäßig (geringe Gleitreibung).';
+        }
+
+        // Simulation 5b: Einflussfaktoren
+        function updateSim5b() {
+            var gewicht = parseInt(document.getElementById('sim5b-gewicht').value);
+            var rauheit = parseInt(document.getElementById('sim5b-rauheit').value);
+
+            document.getElementById('sim5b-gewicht-val').textContent = gewicht + ' N';
+            document.getElementById('sim5b-gewicht-text').textContent = gewicht + ' N';
+
+            var rauheitText = ['glatt', 'mittel', 'rau'][rauheit - 1];
+            document.getElementById('sim5b-rauheit-val').textContent = rauheitText;
+
+            var mu = [0.3, 0.5, 0.8][rauheit - 1];
+            var reibung = (mu * gewicht).toFixed(1);
+            document.getElementById('sim5b-reibung').textContent = reibung + ' N';
+
+            var klotz = document.getElementById('sim5b-klotz');
+            var hoehe = 30 + (gewicht - 2) * 1.5;
+            klotz.style.height = hoehe + 'px';
+
+            var oberflaeche = document.getElementById('sim5b-oberflaeche');
+            var farben = ['#a5d6a7', '#8b7355', '#5d4037'];
+            oberflaeche.style.background = farben[rauheit - 1];
+        }
+
+        // Simulation 5c: Wasserfilm
+        function updateSim5c() {
+            var wasser = parseInt(document.getElementById('sim5c-wasser-slider').value);
+            var wasserText = ['kein', 'wenig', 'wenig', 'mittel', 'mittel', 'mittel', 'viel', 'viel', 'viel', 'sehr viel', 'sehr viel'][wasser];
+            document.getElementById('sim5c-wasser-val').textContent = wasserText;
+
+            var wasserDiv = document.getElementById('sim5c-wasser');
+            wasserDiv.style.height = (wasser * 2) + 'px';
+
+            var basisReibung = 5;
+            var reduktion = wasser * 0.3;
+            var reibung = Math.max(1, basisReibung - reduktion).toFixed(1);
+            document.getElementById('sim5c-reibung').textContent = reibung + ' N';
+
+            var vergleich = document.getElementById('sim5c-vergleich');
+            if (wasser > 0) {
+                var prozent = Math.round((1 - reibung / basisReibung) * 100);
+                vergleich.textContent = '(-' + prozent + '%)';
+                vergleich.style.color = '#27ae60';
+            } else {
+                vergleich.textContent = '(ohne Wasser)';
+                vergleich.style.color = '#888';
+            }
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
