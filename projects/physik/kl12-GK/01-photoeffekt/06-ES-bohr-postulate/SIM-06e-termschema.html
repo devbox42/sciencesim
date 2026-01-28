@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energie-Termschema Wasserstoff</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   TERMSCHEMA INTERAKTIV (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --balmer: #e91e63;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.sim-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.canvas-container {
+    position: relative;
+    background: #fafafa;
+    border: 1px solid var(--border);
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-group label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+select {
+    padding: 8px 12px;
+    font-size: 1em;
+    border: 1px solid var(--border);
+    background: white;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.result-box {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 15px;
+    margin-top: 15px;
+    min-height: 100px;
+}
+
+.result-box h4 {
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-size: 0.95em;
+}
+
+.result-box .formula {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 1.1em;
+    margin: 8px 0;
+}
+
+.result-box .value {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 1.2em;
+    color: var(--text-primary);
+}
+
+.color-preview {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #333;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+.legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    font-size: 0.85em;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-line {
+    width: 20px;
+    height: 3px;
+}
+
+.hint-box {
+    background: #fff3e0;
+    border: 1px solid #ff9800;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.hint-box strong {
+    color: #e65100;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Energie-Termschema Wasserstoff</h1>
+            <div class="meta">Energieniveaus und Übergänge | Physik 12 GK</div>
+        </header>
+
+        <div class="sim-panel">
+            <div class="canvas-container">
+                <canvas id="simCanvas" width="700" height="450"></canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #1565c0;"></div>
+                    <span>Energieniveau</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #e91e63;"></div>
+                    <span>Balmer-Serie (sichtbar)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-line" style="background: #9c27b0;"></div>
+                    <span>Photon</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Von n =</label>
+                    <select id="selectFrom">
+                        <option value="2">2</option>
+                        <option value="3" selected>3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>Nach n =</label>
+                    <select id="selectTo">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                </div>
+                <button class="btn" id="btnTransition">Übergang zeigen</button>
+            </div>
+
+            <div class="result-box" id="resultBox">
+                <h4>Wähle einen Übergang und klicke "Übergang zeigen"</h4>
+                <p style="color: var(--text-secondary); font-size: 0.9em;">
+                    Die Balmer-Serie (Übergänge auf n=2) erzeugt sichtbares Licht.
+                </p>
+            </div>
+        </div>
+
+        <div class="hint-box">
+            <strong>Formel:</strong> E<sub>n</sub> = -13,6 eV / n<sup>2</sup>
+            <br><br>
+            <strong>Aufgabe:</strong> Finde heraus, welche Übergänge sichtbares Licht (400-700 nm) erzeugen!
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// TERMSCHEMA INTERAKTIV (ES5)
+// Energieniveaus und Übergänge im Wasserstoffatom
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+    var selectFrom = document.getElementById('selectFrom');
+    var selectTo = document.getElementById('selectTo');
+    var btnTransition = document.getElementById('btnTransition');
+    var resultBox = document.getElementById('resultBox');
+
+    // Physikalische Konstanten
+    var E_RYDBERG = 13.6; // eV
+    var h = 4.136e-15; // eV*s
+    var c = 3e8; // m/s
+
+    // Energieniveaus (n = 1 bis 6 plus Ionisierung)
+    var levels = [
+        { n: 1, E: -13.6 },
+        { n: 2, E: -3.4 },
+        { n: 3, E: -1.51 },
+        { n: 4, E: -0.85 },
+        { n: 5, E: -0.544 },
+        { n: 6, E: -0.378 },
+        { n: 'inf', E: 0 }
+    ];
+
+    // Animation
+    var animating = false;
+    var photonY = 0;
+    var photonTargetY = 0;
+    var currentTransition = null;
+
+    function energyForN(n) {
+        return -E_RYDBERG / (n * n);
+    }
+
+    function wavelengthFromEnergy(deltaE) {
+        // E = hf = hc/lambda => lambda = hc/E
+        var E_joule = deltaE * 1.602e-19;
+        return (h * 1.602e-19 * c) / E_joule * 1e9; // in nm
+    }
+
+    function wavelengthToColor(lambda) {
+        // Approximation fuer sichtbares Licht
+        if (lambda < 380) return { color: '#8B00FF', name: 'UV' };
+        if (lambda < 450) return { color: '#4B0082', name: 'violett' };
+        if (lambda < 485) return { color: '#0000FF', name: 'blau' };
+        if (lambda < 500) return { color: '#00CCCC', name: 'blaugrün' };
+        if (lambda < 565) return { color: '#00FF00', name: 'grün' };
+        if (lambda < 590) return { color: '#FFFF00', name: 'gelb' };
+        if (lambda < 625) return { color: '#FF7F00', name: 'orange' };
+        if (lambda < 700) return { color: '#FF0000', name: 'rot' };
+        return { color: '#8B0000', name: 'IR' };
+    }
+
+    function yForEnergy(E) {
+        // Mapping: E = 0 (oben) bis E = -13.6 (unten)
+        var top = 50;
+        var bottom = 400;
+        var range = bottom - top;
+        // E geht von -13.6 bis 0
+        var normalized = (E + 13.6) / 13.6;
+        return bottom - normalized * range;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Hintergrund
+        ctx.fillStyle = '#fafafa';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Y-Achse
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(80, 30);
+        ctx.lineTo(80, 420);
+        ctx.stroke();
+
+        // Achsenbeschriftung
+        ctx.fillStyle = '#333';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.save();
+        ctx.translate(25, 225);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('Energie (eV)', 0, 0);
+        ctx.restore();
+
+        // Energieniveaus zeichnen
+        levels.forEach(function(level, index) {
+            var y = yForEnergy(level.E);
+            var x1 = 100;
+            var x2 = 350;
+
+            // Linie
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x1, y);
+            ctx.lineTo(x2, y);
+            ctx.stroke();
+
+            // Beschriftung links
+            ctx.fillStyle = '#333';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'right';
+            var nLabel = level.n === 'inf' ? 'n = \u221E' : 'n = ' + level.n;
+            ctx.fillText(nLabel, x1 - 10, y + 5);
+
+            // Energie rechts
+            ctx.textAlign = 'left';
+            var eLabel = level.E.toFixed(2) + ' eV';
+            if (level.n === 'inf') eLabel = '0 eV (frei)';
+            ctx.fillText(eLabel, x2 + 10, y + 5);
+        });
+
+        // Balmer-Serie markieren
+        ctx.fillStyle = '#e91e63';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'left';
+        var y2 = yForEnergy(-3.4);
+        ctx.fillText('Balmer', 360, y2 + 5);
+
+        // Aktueller Übergang
+        if (currentTransition) {
+            var fromY = yForEnergy(currentTransition.fromE);
+            var toY = yForEnergy(currentTransition.toE);
+
+            // Pfeil
+            ctx.strokeStyle = currentTransition.color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(225, fromY);
+            ctx.lineTo(225, toY);
+            ctx.stroke();
+
+            // Pfeilspitze
+            var arrowDir = toY > fromY ? 1 : -1;
+            ctx.beginPath();
+            ctx.moveTo(225, toY);
+            ctx.lineTo(220, toY - 10 * arrowDir);
+            ctx.lineTo(230, toY - 10 * arrowDir);
+            ctx.closePath();
+            ctx.fillStyle = currentTransition.color;
+            ctx.fill();
+
+            // Photon (animiert oder statisch)
+            var photonX = 450;
+            var photonYDraw = animating ? photonY : (fromY + toY) / 2;
+
+            // Photon-Welle
+            ctx.beginPath();
+            for (var i = 0; i < 60; i++) {
+                var px = photonX + i * 2;
+                var py = photonYDraw + Math.sin(i * 0.5 + Date.now() * 0.01) * 8;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.strokeStyle = currentTransition.color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Photon-Label
+            ctx.fillStyle = currentTransition.color;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Photon', 510, photonYDraw - 20);
+            ctx.font = '12px sans-serif';
+            ctx.fillText(currentTransition.lambda.toFixed(0) + ' nm', 510, photonYDraw + 35);
+        }
+    }
+
+    function showTransition() {
+        var nFrom = parseInt(selectFrom.value);
+        var nTo = parseInt(selectTo.value);
+
+        if (nFrom === nTo) {
+            resultBox.innerHTML = '<h4>Fehler</h4><p>Start und Ziel müssen unterschiedlich sein!</p>';
+            return;
+        }
+
+        if (nFrom < nTo) {
+            // Absorption - Photon wird aufgenommen
+            resultBox.innerHTML = '<h4>Absorption</h4><p>Bei Übergängen nach oben wird ein Photon <strong>aufgenommen</strong>. Wir betrachten hier nur Emission (Übergänge nach unten).</p>';
+            return;
+        }
+
+        var fromE = energyForN(nFrom);
+        var toE = energyForN(nTo);
+        var deltaE = Math.abs(fromE - toE);
+        var lambda = wavelengthFromEnergy(deltaE);
+        var colorInfo = wavelengthToColor(lambda);
+
+        currentTransition = {
+            fromN: nFrom,
+            toN: nTo,
+            fromE: fromE,
+            toE: toE,
+            deltaE: deltaE,
+            lambda: lambda,
+            color: colorInfo.color,
+            colorName: colorInfo.name
+        };
+
+        // Ergebnis anzeigen
+        var isVisible = (lambda >= 380 && lambda <= 700);
+        var isBalmer = (nTo === 2);
+
+        var html = '<h4>Übergang n = ' + nFrom + ' \u2192 n = ' + nTo + '</h4>';
+        html += '<p class="formula">E<sub>' + nFrom + '</sub> = ' + fromE.toFixed(2) + ' eV &nbsp;&nbsp; E<sub>' + nTo + '</sub> = ' + toE.toFixed(2) + ' eV</p>';
+        html += '<p class="formula">\u0394E = |' + fromE.toFixed(2) + ' \u2212 (' + toE.toFixed(2) + ')| = <strong>' + deltaE.toFixed(2) + ' eV</strong></p>';
+        html += '<p class="value">\u03BB = ' + lambda.toFixed(0) + ' nm \u2192 <strong>' + colorInfo.name + '</strong>';
+        html += '<span class="color-preview" style="background: ' + colorInfo.color + ';"></span></p>';
+
+        if (isBalmer) {
+            html += '<p style="margin-top: 10px; color: #e91e63;"><strong>Balmer-Serie</strong> (Übergang auf n=2)</p>';
+        }
+        if (!isVisible) {
+            html += '<p style="margin-top: 10px; color: #666;"><em>Nicht im sichtbaren Bereich!</em></p>';
+        }
+
+        resultBox.innerHTML = html;
+        draw();
+    }
+
+    btnTransition.onclick = showTransition;
+
+    // Initial zeichnen
+    draw();
+
+    // Animation loop fuer Photon-Welle
+    function animate() {
+        if (currentTransition) {
+            draw();
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absorption vs. Emission</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   ABSORPTION VS. EMISSION (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --emission: #e91e63;
+    --absorption: #4caf50;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.sim-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.canvas-container {
+    position: relative;
+    background: #fafafa;
+    border: 1px solid var(--border);
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.mode-toggle {
+    display: flex;
+    gap: 0;
+    margin: 15px 0;
+    justify-content: center;
+}
+
+.mode-btn {
+    padding: 12px 30px;
+    font-size: 1em;
+    font-weight: 600;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    background: white;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.mode-btn:first-child {
+    border-radius: 5px 0 0 5px;
+    border-right: none;
+}
+
+.mode-btn:last-child {
+    border-radius: 0 5px 5px 0;
+}
+
+.mode-btn.active-emission {
+    background: var(--emission);
+    color: white;
+    border-color: var(--emission);
+}
+
+.mode-btn.active-absorption {
+    background: var(--absorption);
+    color: white;
+    border-color: var(--absorption);
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    justify-content: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.info-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.info-box {
+    padding: 15px;
+    border: 2px solid var(--border);
+}
+
+.info-box.emission {
+    border-color: var(--emission);
+    background: #fce4ec;
+}
+
+.info-box.absorption {
+    border-color: var(--absorption);
+    background: #e8f5e9;
+}
+
+.info-box h4 {
+    margin-bottom: 8px;
+    font-size: 1em;
+}
+
+.info-box.emission h4 { color: var(--emission); }
+.info-box.absorption h4 { color: var(--absorption); }
+
+.info-box ul {
+    margin-left: 18px;
+    font-size: 0.9em;
+}
+
+.info-box li {
+    margin-bottom: 5px;
+}
+
+.status-display {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 12px;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.95em;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Absorption vs. Emission</h1>
+            <div class="meta">Zwei Wege der Energie | Physik 12 GK</div>
+        </header>
+
+        <div class="sim-panel">
+            <div class="canvas-container">
+                <canvas id="simCanvas" width="700" height="350"></canvas>
+            </div>
+
+            <div class="mode-toggle">
+                <button class="mode-btn active-emission" id="btnEmission">Emission</button>
+                <button class="mode-btn" id="btnAbsorption">Absorption</button>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="btnStart">Animation starten</button>
+            </div>
+
+            <div class="status-display" id="statusDisplay">
+                Wähle einen Modus und starte die Animation
+            </div>
+
+            <div class="info-panel">
+                <div class="info-box emission">
+                    <h4>Emission</h4>
+                    <ul>
+                        <li>Elektron fällt auf tieferes Niveau</li>
+                        <li>Photon wird <strong>abgegeben</strong></li>
+                        <li>E<sub>Photon</sub> = E<sub>oben</sub> - E<sub>unten</sub></li>
+                        <li>Atom gibt Energie ab</li>
+                    </ul>
+                </div>
+                <div class="info-box absorption">
+                    <h4>Absorption</h4>
+                    <ul>
+                        <li>Elektron springt auf höheres Niveau</li>
+                        <li>Photon wird <strong>aufgenommen</strong></li>
+                        <li>E<sub>Photon</sub> muss <strong>exakt</strong> passen!</li>
+                        <li>Atom nimmt Energie auf</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ABSORPTION VS. EMISSION (ES5)
+// Visualisiert beide Prozesse
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+    var btnEmission = document.getElementById('btnEmission');
+    var btnAbsorption = document.getElementById('btnAbsorption');
+    var btnStart = document.getElementById('btnStart');
+    var statusDisplay = document.getElementById('statusDisplay');
+
+    var mode = 'emission'; // oder 'absorption'
+    var animating = false;
+    var animationProgress = 0;
+    var animationId = null;
+
+    // Geometrie
+    var centerX = 200;
+    var centerY = 175;
+    var nucleusRadius = 12;
+    var orbit1 = 50;  // n=2
+    var orbit2 = 100; // n=3
+
+    // Elektron-Position
+    var electronOrbit = orbit1;
+    var electronAngle = 0;
+
+    // Photon
+    var photonX = 0;
+    var photonVisible = false;
+
+    function setMode(newMode) {
+        mode = newMode;
+        reset();
+
+        if (mode === 'emission') {
+            btnEmission.className = 'mode-btn active-emission';
+            btnAbsorption.className = 'mode-btn';
+            electronOrbit = orbit2;
+            statusDisplay.textContent = 'Emission: Elektron auf n=3, fällt auf n=2 und gibt Photon ab';
+        } else {
+            btnEmission.className = 'mode-btn';
+            btnAbsorption.className = 'mode-btn active-absorption';
+            electronOrbit = orbit1;
+            statusDisplay.textContent = 'Absorption: Elektron auf n=2, Photon kommt an und wird aufgenommen';
+        }
+        draw();
+    }
+
+    function reset() {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+        animating = false;
+        animationProgress = 0;
+        photonVisible = false;
+        photonX = mode === 'absorption' ? 550 : centerX + orbit2;
+        electronOrbit = mode === 'emission' ? orbit2 : orbit1;
+        electronAngle = 0;
+        btnStart.textContent = 'Animation starten';
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Hintergrund
+        ctx.fillStyle = '#fafafa';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Ueberschrift
+        ctx.fillStyle = mode === 'emission' ? '#e91e63' : '#4caf50';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(mode === 'emission' ? 'EMISSION' : 'ABSORPTION', centerX, 30);
+
+        // Orbits zeichnen
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, orbit1, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, orbit2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+
+        // Orbit-Labels
+        ctx.fillStyle = '#888';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('n = 2', centerX + orbit1 + 5, centerY - 5);
+        ctx.fillText('n = 3', centerX + orbit2 + 5, centerY - 5);
+
+        // Atomkern
+        var gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, nucleusRadius);
+        gradient.addColorStop(0, '#ff6659');
+        gradient.addColorStop(1, '#c62828');
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, nucleusRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+', centerX, centerY);
+
+        // Elektron
+        var ex = centerX + electronOrbit * Math.cos(electronAngle);
+        var ey = centerY + electronOrbit * Math.sin(electronAngle);
+
+        ctx.beginPath();
+        ctx.arc(ex, ey, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#1565c0';
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('-', ex, ey + 1);
+
+        // Photon
+        if (photonVisible) {
+            var photonColor = '#e91e63';
+
+            // Photon als Welle
+            ctx.beginPath();
+            for (var i = 0; i < 40; i++) {
+                var px = photonX + i * 2;
+                var py = centerY + Math.sin(i * 0.5 + Date.now() * 0.01) * 6;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.strokeStyle = photonColor;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Photon-Label
+            ctx.fillStyle = photonColor;
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Photon', photonX + 40, centerY - 20);
+            ctx.fillText('\u03BB = 656 nm', photonX + 40, centerY + 30);
+
+            // Pfeil
+            if (mode === 'emission') {
+                // Pfeil nach rechts
+                ctx.beginPath();
+                ctx.moveTo(photonX + 80, centerY);
+                ctx.lineTo(photonX + 70, centerY - 8);
+                ctx.lineTo(photonX + 70, centerY + 8);
+                ctx.closePath();
+                ctx.fillStyle = photonColor;
+                ctx.fill();
+            } else {
+                // Pfeil nach links
+                ctx.beginPath();
+                ctx.moveTo(photonX, centerY);
+                ctx.lineTo(photonX + 10, centerY - 8);
+                ctx.lineTo(photonX + 10, centerY + 8);
+                ctx.closePath();
+                ctx.fillStyle = photonColor;
+                ctx.fill();
+            }
+        }
+
+        // Energie-Diagramm rechts
+        var diagramX = 480;
+        var diagramTop = 80;
+        var diagramBottom = 270;
+
+        // Achse
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(diagramX, diagramTop);
+        ctx.lineTo(diagramX, diagramBottom);
+        ctx.stroke();
+
+        // E-Achse Label
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('E', diagramX, diagramTop - 10);
+
+        // Niveaus
+        var level2Y = diagramBottom - 50;
+        var level3Y = diagramTop + 50;
+
+        ctx.strokeStyle = '#1565c0';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(diagramX - 40, level2Y);
+        ctx.lineTo(diagramX + 40, level2Y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(diagramX - 40, level3Y);
+        ctx.lineTo(diagramX + 40, level3Y);
+        ctx.stroke();
+
+        // Niveau-Labels
+        ctx.fillStyle = '#333';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('n=2, E=-3,4 eV', diagramX + 45, level2Y + 4);
+        ctx.fillText('n=3, E=-1,5 eV', diagramX + 45, level3Y + 4);
+
+        // Übergangs-Pfeil
+        if (animating || animationProgress > 0) {
+            var arrowColor = mode === 'emission' ? '#e91e63' : '#4caf50';
+            ctx.strokeStyle = arrowColor;
+            ctx.fillStyle = arrowColor;
+            ctx.lineWidth = 3;
+
+            if (mode === 'emission') {
+                // Pfeil nach unten
+                ctx.beginPath();
+                ctx.moveTo(diagramX, level3Y + 10);
+                ctx.lineTo(diagramX, level2Y - 10);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(diagramX, level2Y - 10);
+                ctx.lineTo(diagramX - 6, level2Y - 20);
+                ctx.lineTo(diagramX + 6, level2Y - 20);
+                ctx.closePath();
+                ctx.fill();
+            } else {
+                // Pfeil nach oben
+                ctx.beginPath();
+                ctx.moveTo(diagramX, level2Y - 10);
+                ctx.lineTo(diagramX, level3Y + 10);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(diagramX, level3Y + 10);
+                ctx.lineTo(diagramX - 6, level3Y + 20);
+                ctx.lineTo(diagramX + 6, level3Y + 20);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Delta E Label
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('\u0394E = 1,89 eV', diagramX - 15, (level2Y + level3Y) / 2 + 4);
+        }
+    }
+
+    function animate() {
+        if (!animating) return;
+
+        animationProgress += 0.02;
+
+        if (mode === 'emission') {
+            // Elektron fällt, Photon geht raus
+            if (animationProgress < 0.5) {
+                electronOrbit = orbit2 - (orbit2 - orbit1) * (animationProgress * 2);
+            } else {
+                electronOrbit = orbit1;
+                photonVisible = true;
+                photonX = centerX + orbit2 + (animationProgress - 0.5) * 400;
+            }
+        } else {
+            // Photon kommt rein, Elektron springt hoch
+            photonVisible = true;
+            if (animationProgress < 0.5) {
+                photonX = 550 - animationProgress * 600;
+            } else {
+                photonVisible = false;
+                electronOrbit = orbit1 + (orbit2 - orbit1) * ((animationProgress - 0.5) * 2);
+            }
+        }
+
+        electronAngle += 0.05;
+
+        if (animationProgress >= 1) {
+            animating = false;
+            animationProgress = 1;
+            if (mode === 'emission') {
+                electronOrbit = orbit1;
+                statusDisplay.textContent = 'Fertig! Elektron ist auf n=2, Photon wurde emittiert.';
+            } else {
+                electronOrbit = orbit2;
+                photonVisible = false;
+                statusDisplay.textContent = 'Fertig! Photon wurde absorbiert, Elektron ist auf n=3.';
+            }
+            btnStart.textContent = 'Nochmal';
+        }
+
+        draw();
+
+        if (animating) {
+            animationId = requestAnimationFrame(animate);
+        }
+    }
+
+    function start() {
+        if (animationProgress >= 1) {
+            reset();
+            setMode(mode);
+        }
+        animating = true;
+        btnStart.textContent = 'Läuft...';
+        animate();
+    }
+
+    btnEmission.onclick = function() { setMode('emission'); };
+    btnAbsorption.onclick = function() { setMode('absorption'); };
+    btnStart.onclick = start;
+
+    // Initial
+    setMode('emission');
+
+})();
+</script>
+</body>
+</html>
