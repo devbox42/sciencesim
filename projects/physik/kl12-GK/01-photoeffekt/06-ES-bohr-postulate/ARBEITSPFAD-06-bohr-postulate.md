@@ -75,11 +75,13 @@
 |------|-------|--------|----------|
 | 10 min | **Crash-Onboarding** | Kurzform Mi für 2 Nachzügler | LP Step 5 |
 | 5 min | Recap | Quiz zur Aktivierung aller | LP Step 6 |
-| 20 min | Theorie | Energieformel + Emission | SIM-06e, **AB-06b Aufg. 1-2** |
-| 15 min | Verifikation + Rydberg | Theorie vs. Experiment | SIM-06f, **AB-06b Aufg. 3** |
+| **25 min** | Theorie | Energieformel + Emission (mehr Übungszeit) | SIM-06e, **AB-06b Aufg. 1-2** |
+| **20 min** | Verifikation + Rydberg | Theorie vs. Experiment | SIM-06f, **AB-06b Aufg. 3** |
 | 15 min | Transfer | Absorption/Emission | SIM-06g, **AB-06b Aufg. 4** |
-| 15 min | **AFB III** | He⁺ + Grenzen | **AB-06b Aufg. 5-6** |
-| 10 min | **Spektralanalyse** | Sonnenspektrum + Astronomie | SIM-06h, **AB-06b Aufg. 7** |
+| **10 min** | **Spektralanalyse** | Astronomie-Modus vertieft (Vollbild) | SIM-06h, **AB-06b Aufg. 7** |
+| 5 min | Transfer He⁺ | Wasserstoffähnliche Ionen | **AB-06b Aufg. 5** |
+
+**Hausaufgabe/Puffer:** AB-06b Aufgabe 6 (Grenzen des Bohr-Modells, AFB III)
 
 ---
 
