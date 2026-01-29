@@ -33,20 +33,20 @@
 | Datei | Tag | Beschreibung | BE |
 |-------|-----|--------------|-----|
 | AB-06-bohr-postulate.tex | Mi | Qualitativ: Problem + Spektrum | 6 |
-| **AB-06b-bohr-rechnen.tex** | **Fr** | **Quantitativ: Rechnen + AFB III** | **18** |
+| **AB-06b-bohr-rechnen.tex** | **Fr** | **Quantitativ: Rechnen + AFB III + Spektralanalyse** | **20** |
 | ML-06b-bohr-rechnen.tex | Fr | Musterlösung zu AB-06b | |
 
 ### Simulationen
 | Datei | Beschreibung | Phase |
 |-------|--------------|-------|
-| SIM-06a-rutherford-kollaps-v2.html | Rutherford-Kollaps mit EM-Wellen | Problem |
+| SIM-06a-rutherford-kollaps.html | Rutherford-Kollaps mit EM-Wellen (Tagmodus) | Problem |
 | SIM-06b-wasserstoff-spektrum.html | Wasserstoff-Spektrum (Balmer) | Evidenz |
 | SIM-06c-bohr-modell.html | Bohr-Atommodell interaktiv | Hypothese |
 | SIM-06d-anwendungen.html | Anwendungen-Grid (Motivation) | Motivation |
 | SIM-06e-termschema.html | Interaktives Termschema | Theorie |
 | SIM-06f-spektrum-vergleich.html | Theorie vs. Experiment | Verifikation |
 | SIM-06g-absorption.html | Absorption vs. Emission | Transfer |
-| SIM-06h-spektralanalyse.html | Stoffe in Mischspektren identifizieren | Bonus |
+| SIM-06h-spektralanalyse.html | Stoffe in Mischspektren identifizieren | Transfer |
 
 ### QR-Codes
 | Datei | Beschreibung |
