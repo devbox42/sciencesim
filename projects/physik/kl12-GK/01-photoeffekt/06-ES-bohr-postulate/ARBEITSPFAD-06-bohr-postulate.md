@@ -45,6 +45,7 @@
 | SIM-06e-termschema.html | Interaktives Termschema | Theorie |
 | SIM-06f-spektrum-vergleich.html | Theorie vs. Experiment | Verifikation |
 | SIM-06g-absorption.html | Absorption vs. Emission | Transfer |
+| SIM-06h-spektralanalyse.html | Stoffe in Mischspektren identifizieren | Bonus |
 
 ### QR-Codes
 | Datei | Beschreibung |
@@ -71,24 +72,30 @@
 
 | Zeit | Phase | Inhalt | Material |
 |------|-------|--------|----------|
-| 10 min | Recap | Quiz zu Mittwoch | LP Recap |
-| 15 min | Theorie | Energieformel E_n einführen | SIM-06e |
-| 20 min | Übung | Energieniveaus berechnen | AB Aufg. 3 |
-| 15 min | Anwendung | Wellenlänge berechnen | AB Aufg. 4 |
-| 15 min | Verifikation | Theorie trifft Experiment | SIM-06f |
-| 15 min | Transfer | Ionisierung, Absorption/Emission | SIM-06g, AB Aufg. 5 |
+| 10 min | **Crash-Onboarding** | Kurzform Mi für 2 Nachzügler | LP Step 5 |
+| 5 min | Recap | Quiz zur Aktivierung aller | LP Step 6 |
+| 15 min | Theorie | Energieformel E_n anwenden | SIM-06e, AB Aufg. 3 |
+| 10 min | Anwendung | Wellenlänge berechnen | AB Aufg. 4 |
+| 10 min | Verifikation | Theorie trifft Experiment | SIM-06f |
+| 20 min | Transfer + **AFB III** | Ionisierung + He⁺ + Grenzen | SIM-06g, AB Aufg. 5-7 |
+| 15 min | **BONUS** | Spektralanalyse: Stoffe in Mischungen | SIM-06h |
+| 5 min | Sicherung | Abschluss + AB-Check | LP StepEnd |
 
 ---
 
-## AB-STRUKTUR (15 BE)
+## AB-STRUKTUR (21 BE)
 
-| Aufgabe | Thema | BE |
-|---------|-------|-----|
-| 1 | Rutherford-Problem beschreiben | 3 |
-| 2 | Wasserstoff-Spektrum zeichnen | 3 |
-| 3 | Energieniveaus E_1, E_2, E_3 berechnen | 4 |
-| 4 | Wellenlänge berechnen | 3 |
-| 5 | Ionisierungsenergie | 2 |
+| Aufgabe | Thema | BE | AFB |
+|---------|-------|-----|-----|
+| 1 | Rutherford-Problem beschreiben | 3 | I-II |
+| 2 | Wasserstoff-Spektrum zeichnen | 3 | I |
+| 3 | Energieniveaus E_1, E_2, E_3 berechnen | 4 | II |
+| 4 | Wellenlänge berechnen | 3 | II |
+| 5 | Ionisierungsenergie | 2 | II |
+| 6 | **Transfer: He⁺-Ion** | 3 | **III** |
+| 7 | **Grenzen des Bohr-Modells beurteilen** | 3 | **III** |
+
+**AFB-Verteilung:** I: 14%, II: 57%, III: 29% ✓
 
 ---
 
@@ -109,6 +116,16 @@
 
 **Aufgabe 5:**
 - E_ion = |E_1 - E_∞| = |(-13,6) - 0| = 13,6 eV
+
+**Aufgabe 6 (AFB III):**
+- E_3(He⁺) = -13,6·4/9 = -6,04 eV
+- E_2(He⁺) = -13,6·4/4 = -13,6 eV
+- E_Photon = |-6,04 - (-13,6)| = 7,56 eV
+- λ = 1240/7,56 = 164 nm (UV)
+
+**Aufgabe 7 (AFB III):**
+- a) Elektron-Elektron-Wechselwirkung nicht berücksichtigt; Bohr betrachtet nur Coulomb-Kraft zwischen einem Elektron und Kern
+- b) Sinnvoll als Einstieg: erklärt Quantisierung, diskrete Spektren; Modellkompetenz: Wissen, dass Modelle Grenzen haben
 
 ---
 
