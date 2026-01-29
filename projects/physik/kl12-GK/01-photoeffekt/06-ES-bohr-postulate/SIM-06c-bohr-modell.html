@@ -206,6 +206,28 @@ canvas {
     font-style: italic;
     margin-top: 10px;
 }
+
+.btn-mode {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    background: #333;
+    color: #fff;
+    margin-top: 10px;
+}
+
+.btn-mode.day {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.canvas-container.day-mode {
+    background: #f8f8f8;
+    border-color: #ccc;
+}
 </style>
 </head>
 <body>
@@ -232,6 +254,7 @@ canvas {
                         <button class="level-btn" data-n="4">n = 4</button>
                     </div>
                     <div class="hint">Klicke, um das Elektron zu versetzen</div>
+                    <button class="btn-mode day" id="btnMode">☀️ Tagmodus</button>
                 </div>
 
                 <div class="energy-display">
@@ -270,6 +293,11 @@ canvas {
 
     var canvas = document.getElementById('simCanvas');
     var ctx = canvas.getContext('2d');
+    var btnMode = document.getElementById('btnMode');
+    var canvasContainer = document.querySelector('.canvas-container');
+
+    // Tag-/Nachtmodus (Standard: Tag)
+    var isDayMode = true;
 
     // Physikalische Konstanten
     var E1 = -13.6; // Grundzustandsenergie in eV
@@ -390,20 +418,27 @@ canvas {
     }
 
     function draw() {
-        // Hintergrund
-        ctx.fillStyle = '#0a0a15';
+        // Hintergrund (Tag/Nacht)
+        var bgColor = isDayMode ? '#f8f8f8' : '#0a0a15';
+        var textColor = isDayMode ? '#333' : '#888';
+        var activeOrbitColor = isDayMode ? 'rgba(44, 90, 160, 0.7)' : 'rgba(79, 195, 247, 0.6)';
+        var inactiveOrbitColor = isDayMode ? 'rgba(100, 100, 100, 0.4)' : 'rgba(100, 100, 100, 0.3)';
+        var activeLabelColor = isDayMode ? '#2c5aa0' : '#4fc3f7';
+        var inactiveLabelColor = isDayMode ? '#666' : '#666';
+
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Energieniveau-Bahnen
         for (var n = 1; n <= 4; n++) {
             ctx.beginPath();
             ctx.arc(centerX, centerY, levelRadii[n], 0, Math.PI * 2);
-            ctx.strokeStyle = n === currentN ? 'rgba(79, 195, 247, 0.6)' : 'rgba(100, 100, 100, 0.3)';
+            ctx.strokeStyle = n === currentN ? activeOrbitColor : inactiveOrbitColor;
             ctx.lineWidth = n === currentN ? 2 : 1;
             ctx.stroke();
 
             // Niveau-Beschriftung
-            ctx.fillStyle = n === currentN ? '#4fc3f7' : '#666';
+            ctx.fillStyle = n === currentN ? activeLabelColor : inactiveLabelColor;
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('n = ' + n, centerX + levelRadii[n] + 5, centerY - 5);
@@ -500,7 +535,7 @@ canvas {
         }
 
         // Beschriftung
-        ctx.fillStyle = '#888';
+        ctx.fillStyle = textColor;
         ctx.font = '11px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Bohr-Modell des Wasserstoffatoms', centerX, 25);
@@ -561,7 +596,21 @@ canvas {
         };
     });
 
-    // Start
+    btnMode.onclick = function() {
+        isDayMode = !isDayMode;
+        if (isDayMode) {
+            btnMode.textContent = '☀️ Tagmodus';
+            btnMode.classList.add('day');
+            canvasContainer.classList.add('day-mode');
+        } else {
+            btnMode.textContent = '🌙 Nachtmodus';
+            btnMode.classList.remove('day');
+            canvasContainer.classList.remove('day-mode');
+        }
+    };
+
+    // Start (Tagmodus als Standard)
+    canvasContainer.classList.add('day-mode');
     updateDisplay();
     update();
 

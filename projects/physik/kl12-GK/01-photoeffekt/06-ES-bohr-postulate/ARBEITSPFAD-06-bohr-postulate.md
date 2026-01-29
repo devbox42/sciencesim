@@ -29,11 +29,12 @@
 |-------|--------------|
 | LP-06-bohr-postulate.html | Interaktiver Lernpfad (Mi + Fr) |
 
-### Arbeitsblatt (AB)
-| Datei | Beschreibung | BE |
-|-------|--------------|-----|
-| AB-06-bohr-postulate.tex | Arbeitsblatt mit Berechnungen | 15 |
-| AB-06-bohr-postulate.pdf | Kompiliertes PDF | |
+### Arbeitsblätter (AB)
+| Datei | Tag | Beschreibung | BE |
+|-------|-----|--------------|-----|
+| AB-06-bohr-postulate.tex | Mi | Qualitativ: Problem + Spektrum | 6 |
+| **AB-06b-bohr-rechnen.tex** | **Fr** | **Quantitativ: Rechnen + AFB III** | **18** |
+| ML-06b-bohr-rechnen.tex | Fr | Musterlösung zu AB-06b | |
 
 ### Simulationen
 | Datei | Beschreibung | Phase |
@@ -74,58 +75,73 @@
 |------|-------|--------|----------|
 | 10 min | **Crash-Onboarding** | Kurzform Mi für 2 Nachzügler | LP Step 5 |
 | 5 min | Recap | Quiz zur Aktivierung aller | LP Step 6 |
-| 15 min | Theorie | Energieformel E_n anwenden | SIM-06e, AB Aufg. 3 |
-| 10 min | Anwendung | Wellenlänge berechnen | AB Aufg. 4 |
-| 10 min | Verifikation | Theorie trifft Experiment | SIM-06f |
-| 20 min | Transfer + **AFB III** | Ionisierung + He⁺ + Grenzen | SIM-06g, AB Aufg. 5-7 |
-| 15 min | **BONUS** | Spektralanalyse: Stoffe in Mischungen | SIM-06h |
-| 5 min | Sicherung | Abschluss + AB-Check | LP StepEnd |
+| 20 min | Theorie | Energieformel + Emission | SIM-06e, **AB-06b Aufg. 1-2** |
+| 15 min | Verifikation + Rydberg | Theorie vs. Experiment | SIM-06f, **AB-06b Aufg. 3** |
+| 15 min | Transfer | Absorption/Emission | SIM-06g, **AB-06b Aufg. 4** |
+| 15 min | **AFB III** | He⁺ + Grenzen | **AB-06b Aufg. 5-6** |
+| 10 min | **Spektralanalyse** | Sonnenspektrum + Astronomie | SIM-06h, **AB-06b Aufg. 7** |
 
 ---
 
-## AB-STRUKTUR (21 BE)
+## AB-STRUKTUR
 
+### AB-06 (Mittwoch, 6 BE) – Qualitativ
 | Aufgabe | Thema | BE | AFB |
 |---------|-------|-----|-----|
 | 1 | Rutherford-Problem beschreiben | 3 | I-II |
-| 2 | Wasserstoff-Spektrum zeichnen | 3 | I |
-| 3 | Energieniveaus E_1, E_2, E_3 berechnen | 4 | II |
-| 4 | Wellenlänge berechnen | 3 | II |
-| 5 | Ionisierungsenergie | 2 | II |
-| 6 | **Transfer: He⁺-Ion** | 3 | **III** |
-| 7 | **Grenzen des Bohr-Modells beurteilen** | 3 | **III** |
+| 2 | Wasserstoff-Spektrum zeichnen + diskret/kontinuierlich | 3 | I |
 
-**AFB-Verteilung:** I: 14%, II: 57%, III: 29% ✓
+### AB-06b (Freitag, 20 BE) – Quantitativ + AFB III + Spektralanalyse
+| Aufgabe | Thema | BE | AFB |
+|---------|-------|-----|-----|
+| 1 | Energieniveaus E_1 bis E_4 berechnen | 3 | II |
+| 2 | Emission 3→2: Energie + Wellenlänge | 4 | II |
+| 3 | **Rydberg-Formel** anwenden (4→2) | 3 | II |
+| 4 | Absorption 1→3: Energie + Wellenlänge | 3 | II |
+| 5 | **Transfer: He⁺-Ion** | 3 | **III** |
+| 6 | **Grenzen des Bohr-Modells** | 2 | **III** |
+| 7 | **Spektralanalyse** (Sonne) | 2 | II |
+
+**AFB-Verteilung AB-06b:** II: 75%, III: 25% ✓
 
 ---
 
 ## ERWARTUNGSHORIZONT (Kurzform)
 
+### AB-06 (Mittwoch)
+
 **Aufgabe 1:** Elektron strahlt EM-Wellen ab, verliert Energie, spiralt in Kern. Zeit: ~10^-11 s
 
 **Aufgabe 2:** 4 Linien bei ca. 410, 434, 486, 656 nm. Spektrum ist diskret.
 
-**Aufgabe 3:**
-- E_1 = -13,6 eV
-- E_2 = -3,4 eV
-- E_3 = -1,51 eV
-- E_Photon (3→2) = |-1,51 - (-3,4)| = 1,89 eV
+### AB-06b (Freitag)
+
+**Aufgabe 1:** E_1 = -13,6 eV | E_2 = -3,4 eV | E_3 = -1,51 eV | E_4 = -0,85 eV
+
+**Aufgabe 2:**
+- a) E_Photon (3→2) = |(-1,51) - (-3,4)| = 1,89 eV
+- b) λ = 1240/1,89 = 656 nm (rot, H_α)
+
+**Aufgabe 3 (Rydberg):**
+- 1/λ = R_H · (1/4 - 1/16) = 1,097·10^7 · 3/16 = 2,057·10^6 m^-1
+- λ = 486 nm (blau-grün, H_β)
 
 **Aufgabe 4:**
-- λ = hc/E = 1240 eV·nm / 1,89 eV = 656 nm (rot)
+- a) E = |E_1 - E_3| = |(-13,6) - (-1,51)| = 12,09 eV
+- b) λ = 1240/12,09 = 103 nm (UV, Lyman-Serie)
 
-**Aufgabe 5:**
-- E_ion = |E_1 - E_∞| = |(-13,6) - 0| = 13,6 eV
-
-**Aufgabe 6 (AFB III):**
+**Aufgabe 5 (AFB III):**
 - E_3(He⁺) = -13,6·4/9 = -6,04 eV
 - E_2(He⁺) = -13,6·4/4 = -13,6 eV
-- E_Photon = |-6,04 - (-13,6)| = 7,56 eV
-- λ = 1240/7,56 = 164 nm (UV)
+- E_Photon = 7,56 eV → λ = 164 nm (UV)
 
-**Aufgabe 7 (AFB III):**
-- a) Elektron-Elektron-Wechselwirkung nicht berücksichtigt; Bohr betrachtet nur Coulomb-Kraft zwischen einem Elektron und Kern
-- b) Sinnvoll als Einstieg: erklärt Quantisierung, diskrete Spektren; Modellkompetenz: Wissen, dass Modelle Grenzen haben
+**Aufgabe 6 (AFB III):**
+- Elektron-Elektron-Wechselwirkung fehlt
+- Trotzdem sinnvoll: erklärt Quantisierung, fördert Modellkompetenz
+
+**Aufgabe 7:**
+- a) H, He, Na, Ca in Sonnenatmosphäre
+- b) Kontinuierliches Licht von heißer Oberfläche → Absorption in kühlerer Atmosphäre → dunkle Linien
 
 ---
 
