@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Doppelspalt mit Elektronen</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   MINT LERNPFAD - Doppelspalt (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --accent-dark: #1e3d6b;
+    --success: #2a7a4b;
+    --success-bg: #e8f5e9;
+    --warning: #b35c00;
+    --warning-bg: #fff3e0;
+    --error: #c62828;
+    --error-bg: #ffebee;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.4em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    background: #e0e0e0;
+    height: 8px;
+    margin-top: 10px;
+}
+
+.progress-fill {
+    background: var(--accent);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s;
+}
+
+.step-indicators {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.step-dot {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: 600;
+    border: 2px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+}
+
+.step-dot:hover { border-color: var(--accent); }
+.step-dot.completed { background: var(--success); border-color: var(--success); color: var(--white); }
+.step-dot.current { border-color: var(--accent); border-width: 3px; color: var(--accent); }
+
+/* Steps */
+.step {
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+    display: none;
+}
+
+.step.active { display: block; }
+
+.step-header {
+    background: var(--accent);
+    color: var(--white);
+    padding: 10px 15px;
+    font-weight: 600;
+}
+
+.step-content {
+    padding: 20px;
+}
+
+.step-content p { margin-bottom: 12px; }
+.step-content ul, .step-content ol { margin: 10px 0 15px 25px; }
+.step-content li { margin-bottom: 8px; }
+.step-content h3 { font-size: 1em; margin: 15px 0 10px 0; }
+
+/* Boxes */
+.info-box {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 12px 15px;
+    margin: 15px 0;
+}
+
+.info-box strong { color: var(--accent); }
+
+.hefter-hinweis {
+    background: var(--warning-bg);
+    border: 2px solid var(--warning);
+    padding: 12px 15px;
+    margin: 20px 0;
+    font-size: 0.9em;
+}
+
+.hefter-hinweis::before {
+    content: "Arbeitsblatt";
+    display: inline-block;
+    background: var(--warning);
+    color: var(--white);
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+}
+
+.formula-box {
+    background: var(--bg);
+    border: 2px solid var(--accent);
+    padding: 15px;
+    margin: 15px 0;
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.highlight-box {
+    background: #fff8e1;
+    border: 2px solid #ff9800;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+/* Exercises */
+.exercise {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.exercise-title {
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--white);
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    margin: 5px 5px 5px 0;
+}
+
+.btn:hover { background: var(--accent-dark); }
+.btn-success { background: var(--success); }
+.btn-success:hover { background: #1e5a35; }
+.btn-secondary { background: var(--white); color: var(--accent); border: 2px solid var(--accent); }
+.btn-secondary:hover { background: var(--accent-light); }
+
+.nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.feedback {
+    padding: 10px 15px;
+    margin: 10px 0;
+    display: none;
+}
+
+.feedback.correct {
+    background: var(--success-bg);
+    border: 1px solid var(--success);
+    color: #1b5e20;
+    display: block;
+}
+
+.feedback.incorrect {
+    background: var(--error-bg);
+    border: 1px solid var(--error);
+    color: #b71c1c;
+    display: block;
+}
+
+.sim-link {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 12px 20px;
+    text-decoration: none;
+    margin: 10px 0;
+}
+
+.sim-link:hover { background: var(--accent-dark); }
+
+/* Diagram */
+.diagram {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--white);
+    border: 1px solid var(--border);
+}
+
+@media (max-width: 600px) {
+    .container { padding: 10px; }
+    .step-content { padding: 15px; }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Doppelspalt mit Elektronen</h1>
+            <div class="meta">Physik 12 GK | Mi 21.01.2026</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="step-indicators" id="stepIndicators"></div>
+        </header>
+
+        <!-- ========== SCHRITT 1: Wiederholung ========== -->
+        <div class="step active" id="step1">
+            <div class="step-header">Schritt 1: Rückblick De-Broglie</div>
+            <div class="step-content">
+                <p>In der letzten Stunde habt ihr gelernt:</p>
+
+                <div class="formula-box">
+                    <strong>De-Broglie-Wellenlänge:</strong><br><br>
+                    λ = <em>h</em> / <em>p</em> = <em>h</em> / (<em>m</em> · <em>v</em>)
+                </div>
+
+                <p>Elektronen bei 150 V Beschleunigung haben eine Wellenlänge von etwa <strong>100 pm</strong> – das ist im Bereich von Atomabständen in Kristallen.</p>
+
+                <div class="highlight-box">
+                    <strong>Die große Frage:</strong><br>
+                    Wenn Elektronen eine Wellenlänge haben – können wir dann Wellenphänomene wie <strong>Interferenz</strong> beobachten?
+                </div>
+
+                <p>Heute untersuchen wir das berühmteste Experiment der Quantenphysik: <strong>den Doppelspalt mit Elektronen</strong>.</p>
+
+                <div class="nav-buttons">
+                    <span></span>
+                    <button class="btn btn-success" onclick="nextStep(2)">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 2: Doppelspalt-Prinzip ========== -->
+        <div class="step" id="step2">
+            <div class="step-header">Schritt 2: Das Doppelspalt-Prinzip</div>
+            <div class="step-content">
+                <p>Du kennst das Doppelspalt-Experiment aus der Optik (Klasse 9):</p>
+
+                <div class="diagram">
+                    <svg viewBox="0 0 420 160" style="max-width: 100%; height: auto;">
+                        <!-- Quelle -->
+                        <circle cx="25" cy="80" r="12" fill="#2c5aa0"/>
+                        <text x="25" y="115" text-anchor="middle" font-size="10">Quelle</text>
+
+                        <!-- Ebene Wellenfronten vor Spalt -->
+                        <line x1="60" y1="30" x2="60" y2="130" stroke="#2c5aa0" stroke-width="1.5" opacity="0.4"/>
+                        <line x1="80" y1="30" x2="80" y2="130" stroke="#2c5aa0" stroke-width="1.5" opacity="0.5"/>
+                        <line x1="100" y1="30" x2="100" y2="130" stroke="#2c5aa0" stroke-width="1.5" opacity="0.6"/>
+                        <line x1="120" y1="30" x2="120" y2="130" stroke="#2c5aa0" stroke-width="1.5" opacity="0.7"/>
+                        <line x1="140" y1="30" x2="140" y2="130" stroke="#2c5aa0" stroke-width="1.5" opacity="0.8"/>
+                        <!-- Pfeil Ausbreitungsrichtung -->
+                        <path d="M45,80 L55,80 M52,77 L55,80 L52,83" stroke="#2c5aa0" stroke-width="1.5" fill="none"/>
+
+                        <!-- Doppelspalt (3 Balken, 2 Spalte) -->
+                        <rect x="160" y="20" width="8" height="48" fill="#555"/>
+                        <rect x="160" y="76" width="8" height="8" fill="#555"/>
+                        <rect x="160" y="92" width="8" height="48" fill="#555"/>
+                        <text x="164" y="152" text-anchor="middle" font-size="10">Doppelspalt</text>
+                        <!-- Spaltöffnungen markiert -->
+                        <circle cx="164" cy="72" r="2" fill="#c62828"/>
+                        <circle cx="164" cy="88" r="2" fill="#c62828"/>
+
+                        <!-- Huygens-Halbkreise von Spalt 1 (y=72) - expandieren nach rechts -->
+                        <path d="M168,52 A20,20 0 0 1 168,92" stroke="#2c5aa0" stroke-width="1.2" fill="none" opacity="0.5"/>
+                        <path d="M168,32 A40,40 0 0 1 168,112" stroke="#2c5aa0" stroke-width="1.2" fill="none" opacity="0.6"/>
+                        <path d="M168,12 A60,60 0 0 1 168,132" stroke="#2c5aa0" stroke-width="1.2" fill="none" opacity="0.7"/>
+
+                        <!-- Huygens-Halbkreise von Spalt 2 (y=88) - expandieren nach rechts -->
+                        <path d="M168,68 A20,20 0 0 1 168,108" stroke="#c62828" stroke-width="1.2" fill="none" opacity="0.5"/>
+                        <path d="M168,48 A40,40 0 0 1 168,128" stroke="#c62828" stroke-width="1.2" fill="none" opacity="0.6"/>
+                        <path d="M168,28 A60,60 0 0 1 168,148" stroke="#c62828" stroke-width="1.2" fill="none" opacity="0.7"/>
+
+                        <!-- Schirm -->
+                        <rect x="355" y="20" width="8" height="120" fill="#ddd"/>
+                        <text x="359" y="152" text-anchor="middle" font-size="10">Schirm</text>
+
+                        <!-- Interferenzmuster (deutlicher) -->
+                        <rect x="365" y="28" width="10" height="6" fill="#2c5aa0"/>
+                        <rect x="365" y="48" width="10" height="6" fill="#2c5aa0"/>
+                        <rect x="365" y="68" width="10" height="6" fill="#2c5aa0"/>
+                        <rect x="365" y="88" width="10" height="6" fill="#2c5aa0"/>
+                        <rect x="365" y="108" width="10" height="6" fill="#2c5aa0"/>
+                        <rect x="365" y="128" width="10" height="6" fill="#2c5aa0"/>
+                    </svg>
+                </div>
+
+                <div class="info-box">
+                    <strong>Interferenz:</strong> Die Wellen aus beiden Spalten überlagern sich.
+                    <ul style="margin-top: 8px;">
+                        <li><strong>Konstruktiv:</strong> Berg trifft Berg → Verstärkung (helle Streifen)</li>
+                        <li><strong>Destruktiv:</strong> Berg trifft Tal → Auslöschung (dunkle Streifen)</li>
+                    </ul>
+                </div>
+
+                <p>Das <strong>Interferenzmuster</strong> (abwechselnd hell und dunkel) ist der Beweis für Wellenverhalten!</p>
+
+                <div class="hefter-hinweis">
+                    <strong>Kasten 1:</strong> Beschrifte die Skizze auf dem Arbeitsblatt und ergänze die Lücken.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(1)">Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(3)">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 3: Vorhersage ========== -->
+        <div class="step" id="step3">
+            <div class="step-header">Schritt 3: Deine Vorhersage</div>
+            <div class="step-content">
+                <div class="highlight-box">
+                    <strong>Gedankenexperiment:</strong><br>
+                    Was passiert, wenn wir <strong>Elektronen</strong> statt Licht durch den Doppelspalt schicken?
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Aufgabe 1a: Deine Vorhersage</div>
+                    <p>Was erwartest du auf dem Schirm?</p>
+                    <p><strong>Option A:</strong> Zwei Streifen (hinter jedem Spalt einer) – wie bei Kugeln</p>
+                    <p><strong>Option B:</strong> Ein Interferenzmuster – wie bei Wellen</p>
+                    <p style="margin-top: 15px;"><em>Denke kurz nach, bevor du weitermachst...</em></p>
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>Aufgabe 1a:</strong> Kreuze auf dem Arbeitsblatt an und notiere deine Begründung.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(2)">Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(4)">Weiter zur Simulation</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 4: Simulation ========== -->
+        <div class="step" id="step4">
+            <div class="step-header">Schritt 4: Das Experiment (Simulation)</div>
+            <div class="step-content">
+                <p>Jetzt schauen wir uns das Experiment an. Achte besonders darauf, was passiert, wenn die <strong>Intensität sehr gering</strong> wird.</p>
+
+                <div style="margin: 20px 0; border: 1px solid var(--border); background: var(--white);">
+                    <iframe src="SIM-04-doppelspalt.html" style="width: 100%; height: 520px; border: none;"></iframe>
+                </div>
+
+                <div class="exercise">
+                    <div class="exercise-title">Beobachtungsaufgaben</div>
+                    <ol>
+                        <li>Starte mit <strong>Licht</strong> und hoher Intensität. Was siehst du?</li>
+                        <li>Wechsle zu <strong>Elektronen</strong>. Was siehst du?</li>
+                        <li>Reduziere die Intensität auf „sehr gering" (einzelne Elektronen). Was passiert jetzt?</li>
+                        <li>Warte eine Weile. Wie verändert sich das Bild auf dem Schirm?</li>
+                        <li><strong>Schließe einen Spalt</strong> (Dropdown „Spalte"). Was ändert sich?</li>
+                        <li>Klicke auf <strong>„Verteilung zeigen"</strong>, um die Wahrscheinlichkeitsverteilung zu sehen.</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <strong>Die überraschende Beobachtung:</strong><br>
+                    Bei einzelnen Elektronen sieht man erst einzelne <strong>Punkte</strong> (Teilchen!), aber nach vielen Elektronen bildet sich ein <strong>Interferenzmuster</strong> (Welle!)
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>Aufgabe 1b:</strong> Beschreibe deine Beobachtung auf dem Arbeitsblatt.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(3)">Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(5)">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 5: Das Rätsel ========== -->
+        <div class="step" id="step5">
+            <div class="step-header">Schritt 5: Das Rätsel der einzelnen Elektronen</div>
+            <div class="step-content">
+                <div class="highlight-box">
+                    <strong>Das Paradox:</strong><br>
+                    Jedes Elektron geht <strong>einzeln</strong> durch den Doppelspalt.<br>
+                    Es gibt kein anderes Elektron, mit dem es „interferieren" könnte!<br><br>
+                    <em>Woher „weiß" das Elektron, wo es landen darf und wo nicht?</em>
+                </div>
+
+                <p>Denke darüber nach (probiere es in der Simulation!):</p>
+                <ul>
+                    <li>Wenn wir einen Spalt schließen → <strong>keine Interferenz</strong> (nur Beugung)</li>
+                    <li>Wenn beide Spalte offen sind → <strong>Interferenzmuster</strong></li>
+                </ul>
+
+                <p>Das Elektron „spürt" offenbar <strong>beide Spalte</strong>, obwohl es nur eines ist!</p>
+
+                <div class="info-box">
+                    <strong>Quantenmechanische Interpretation:</strong><br>
+                    Das Elektron breitet sich als <strong>Wahrscheinlichkeitswelle</strong> aus und geht „durch beide Spalte gleichzeitig". Erst bei der Messung (Auftreffen auf dem Schirm) „entscheidet" es sich für einen Ort.
+                </div>
+
+                <div class="hefter-hinweis">
+                    <strong>Aufgabe 2a+b:</strong> Ergänze den Lückentext und erkläre in eigenen Worten.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(4)">Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(6)">Weiter</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 6: Komplementarität ========== -->
+        <div class="step" id="step6">
+            <div class="step-header">Schritt 6: Komplementarität</div>
+            <div class="step-content">
+                <p>Die naheliegende Frage: <strong>„Durch welchen Spalt geht das Elektron wirklich?"</strong></p>
+
+                <p>Man kann einen Detektor aufstellen, um das herauszufinden...</p>
+
+                <div class="highlight-box" style="background: #ffebee; border-color: #c62828;">
+                    <strong>Das verblüffende Ergebnis:</strong><br>
+                    Sobald wir messen, durch welchen Spalt das Elektron geht:<br><br>
+                    <span style="font-size: 1.2em; color: #c62828;"><strong>Das Interferenzmuster verschwindet!</strong></span><br><br>
+                    Stattdessen sehen wir zwei Streifen – wie bei klassischen Kugeln.
+                </div>
+
+                <div class="formula-box">
+                    <strong>Komplementaritätsprinzip (Niels Bohr):</strong><br><br>
+                    Wir können <strong>entweder</strong> den Weg des Elektrons bestimmen (Teilchenbild)<br>
+                    <strong>oder</strong> Interferenz beobachten (Wellenbild) –<br><br>
+                    <strong>aber niemals beides gleichzeitig.</strong>
+                </div>
+
+                <p>Die Messung selbst verändert das Verhalten des Elektrons. Das ist keine technische Unzulänglichkeit – es ist ein <strong>fundamentales Prinzip der Natur</strong>.</p>
+
+                <div class="hefter-hinweis">
+                    <strong>Kasten 2 + 3:</strong> Ergänze die Merksätze zum Welle-Teilchen-Dualismus und zur Komplementarität.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(5)">Zurück</button>
+                    <button class="btn btn-success" onclick="nextStep(7)">Weiter zur Zusammenfassung</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== SCHRITT 7: Zusammenfassung ========== -->
+        <div class="step" id="step7">
+            <div class="step-header">Schritt 7: Zusammenfassung</div>
+            <div class="step-content">
+                <div class="formula-box">
+                    <strong>Das Doppelspalt-Experiment zeigt:</strong><br><br>
+                    1. Elektronen zeigen <strong>Interferenz</strong> → Wellencharakter<br><br>
+                    2. Jedes Elektron landet als <strong>Punkt</strong> → Teilchencharakter<br><br>
+                    3. Die Messung beeinflusst das Ergebnis → <strong>Komplementarität</strong>
+                </div>
+
+                <div class="info-box">
+                    <strong>Richard Feynman:</strong><br>
+                    <em>„Das Doppelspalt-Experiment enthält das einzige Geheimnis der Quantenmechanik."</em>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--success-bg); border: 2px solid var(--success);">
+                    <strong>Geschafft!</strong><br>
+                    Kontrolliere, ob alle Kästen und Aufgaben auf dem Arbeitsblatt ausgefüllt sind.
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="prevStep(6)">Zurück</button>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ════════════════════════════════════════════════════════════════
+    // LERNPFAD LOGIK (ES5)
+    // ════════════════════════════════════════════════════════════════
+
+    var TOTAL_STEPS = 7;
+    var STORAGE_KEY = 'lp-physik-12gk-doppelspalt';
+
+    var currentStep = 1;
+    var visitedSteps = [];
+
+    function updateProgress() {
+        var percent = ((currentStep - 1) / (TOTAL_STEPS - 1)) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+    }
+
+    function generateStepIndicators() {
+        var container = document.getElementById('stepIndicators');
+        container.innerHTML = '';
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var dot = document.createElement('div');
+            dot.className = 'step-dot';
+            if (i === currentStep) dot.classList.add('current');
+            if (visitedSteps.indexOf(i) !== -1) dot.classList.add('completed');
+            dot.textContent = i;
+            dot.setAttribute('data-step', i);
+            dot.onclick = function() {
+                var stepIndex = parseInt(this.getAttribute('data-step'));
+                showStep(stepIndex);
+            };
+            container.appendChild(dot);
+        }
+    }
+
+    function updateStepIndicators() {
+        var dots = document.querySelectorAll('.step-dot');
+        for (var i = 0; i < dots.length; i++) {
+            var stepNum = i + 1;
+            dots[i].classList.remove('current');
+            if (stepNum === currentStep) {
+                dots[i].classList.add('current');
+            }
+            if (visitedSteps.indexOf(stepNum) !== -1) {
+                dots[i].classList.add('completed');
+            }
+        }
+    }
+
+    function showStep(n) {
+        if (visitedSteps.indexOf(currentStep) === -1) {
+            visitedSteps.push(currentStep);
+        }
+
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var step = document.getElementById('step' + i);
+            if (step) {
+                step.classList.remove('active');
+            }
+        }
+        var targetStep = document.getElementById('step' + n);
+        if (targetStep) {
+            targetStep.classList.add('active');
+            currentStep = n;
+            updateProgress();
+            updateStepIndicators();
+            saveProgress();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function nextStep(n) { showStep(n); }
+    function prevStep(n) { showStep(n); }
+
+    function saveProgress() {
+        try {
+            localStorage.setItem(STORAGE_KEY + '-step', currentStep);
+            localStorage.setItem(STORAGE_KEY + '-visited', JSON.stringify(visitedSteps));
+        } catch (e) {}
+    }
+
+    function loadProgress() {
+        try {
+            var savedVisited = localStorage.getItem(STORAGE_KEY + '-visited');
+            if (savedVisited) {
+                visitedSteps = JSON.parse(savedVisited);
+            }
+            var savedStep = localStorage.getItem(STORAGE_KEY + '-step');
+            if (savedStep) {
+                currentStep = parseInt(savedStep);
+            }
+        } catch (e) {}
+    }
+
+    // Init
+    loadProgress();
+    generateStepIndicators();
+    updateProgress();
+
+    if (currentStep > 1) {
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var step = document.getElementById('step' + i);
+            if (step) step.classList.remove('active');
+        }
+        var targetStep = document.getElementById('step' + currentStep);
+        if (targetStep) {
+            targetStep.classList.add('active');
+            updateStepIndicators();
+        }
+    }
+    </script>
+</body>
+</html>

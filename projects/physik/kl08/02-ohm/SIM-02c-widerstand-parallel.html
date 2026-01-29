@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widerstände in Parallelschaltung</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --physik: #2c5aa0;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #666666;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--physik);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--physik);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .canvas-area {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            background: #fafafa;
+            border: 1px solid var(--border);
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: var(--text);
+        }
+
+        .control-group .hint {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .value-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--physik);
+        }
+
+        .formula-box {
+            background: var(--bg);
+            border-top: 3px solid var(--physik);
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .formula-box h3 {
+            font-size: 0.9em;
+            color: var(--physik);
+            margin-bottom: 8px;
+        }
+
+        .formula-box .formula {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--physik);
+            margin: 8px 0;
+        }
+
+        .formula-box .shortcut {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .display-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .display-item {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .display-item .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .display-item .value {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .display-item.r1 .value { color: var(--warning); }
+        .display-item.r2 .value { color: var(--success); }
+        .display-item.rges .value { color: var(--physik); }
+        .display-item.flow .value { color: var(--negative); }
+
+        .analogy-box {
+            background: #e3f2fd;
+            border: 1px solid var(--physik);
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .analogy-box h3 {
+            font-size: 0.9em;
+            color: var(--physik);
+            margin-bottom: 8px;
+        }
+
+        .analogy-box p {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .highlight {
+            background: #fff3e0;
+            border: 1px solid var(--warning);
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 0.85em;
+            text-align: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .mode-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .mode-toggle button.active {
+            background: var(--physik);
+            color: white;
+            border-color: var(--physik);
+        }
+
+        .mode-toggle button:hover:not(.active) {
+            background: var(--bg);
+        }
+
+        @media (max-width: 700px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Widerstände in Parallelschaltung</h1>
+
+        <div class="mode-toggle">
+            <button id="btn-water" class="active" onclick="setMode('water')">Wassermodell</button>
+            <button id="btn-circuit" onclick="setMode('circuit')">Stromkreis</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-area">
+                <canvas id="sim" width="520" height="300"></canvas>
+
+                <div class="display-bar">
+                    <div class="display-item r1">
+                        <div class="label">R₁</div>
+                        <div class="value" id="disp-r1">20 Ω</div>
+                    </div>
+                    <div class="display-item r2">
+                        <div class="label">R₂</div>
+                        <div class="value" id="disp-r2">20 Ω</div>
+                    </div>
+                    <div class="display-item rges">
+                        <div class="label">R<sub>ges</sub></div>
+                        <div class="value" id="disp-rges">10 Ω</div>
+                    </div>
+                    <div class="display-item flow">
+                        <div class="label">Stromstärke I</div>
+                        <div class="value" id="disp-flow">1.20 A</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="control-group">
+                    <label style="color: var(--warning);">Widerstand R₁ (oben)</label>
+                    <div class="hint">Oberer Zweig</div>
+                    <input type="range" id="r1-slider" min="10" max="60" value="20">
+                    <div class="value-box" id="r1-value" style="color: var(--warning);">20 Ω</div>
+                </div>
+
+                <div class="control-group">
+                    <label style="color: var(--success);">Widerstand R₂ (unten)</label>
+                    <div class="hint">Unterer Zweig</div>
+                    <input type="range" id="r2-slider" min="10" max="60" value="20">
+                    <div class="value-box" id="r2-value" style="color: var(--success);">20 Ω</div>
+                </div>
+
+                <div class="formula-box">
+                    <h3>Parallelschaltung</h3>
+                    <div class="formula">1/R<sub>ges</sub> = 1/R₁ + 1/R₂</div>
+                    <div class="shortcut">Kurzformel: R<sub>ges</sub> = (R₁·R₂)/(R₁+R₂)</div>
+                    <div id="formula-result" style="font-size: 0.9em; margin-top: 8px;">
+                        = (20·20)/(20+20) = <strong>10 Ω</strong>
+                    </div>
+                </div>
+
+                <div class="analogy-box">
+                    <h3>Wasseranalogie</h3>
+                    <p><strong>Parallelschaltung:</strong></p>
+                    <p>Zwei Rohre <em>nebeneinander</em> = Wasser kann durch beide gleichzeitig!</p>
+                    <p>→ Gesamtwiderstand wird <strong>kleiner!</strong></p>
+                </div>
+
+                <div class="highlight">
+                    <strong>Merke:</strong> Zwei gleiche R parallel → R<sub>ges</sub> = R / 2
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SIMULATION: R IN PARALLELSCHALTUNG (ES5)
+        // ============================================
+
+        var canvas = document.getElementById('sim');
+        var ctx = canvas.getContext('2d');
+
+        var r1Slider = document.getElementById('r1-slider');
+        var r2Slider = document.getElementById('r2-slider');
+
+        // State
+        var R1 = 20;
+        var R2 = 20;
+        var U = 12; // Fixed voltage
+        var mode = 'water'; // 'water' or 'circuit'
+        var particlesTop = [];
+        var particlesBottom = [];
+        var MAX_PARTICLES = 40;
+        var animFrame = 0;
+
+        // ============================================
+        // PARTICLE CLASS (Wassermodell)
+        // ============================================
+
+        function Particle(branch) {
+            this.branch = branch; // 'top' or 'bottom'
+            this.reset();
+        }
+
+        Particle.prototype.reset = function() {
+            this.x = 60 + Math.random() * 20;
+            this.y = 150 + (Math.random() - 0.5) * 20;
+            this.speed = 0.5 + Math.random() * 0.3;
+            this.size = 3 + Math.random() * 2;
+            this.inBranch = false;
+            this.merged = false;
+        };
+
+        Particle.prototype.update = function(flowTop, flowBottom) {
+            var flow = (this.branch === 'top') ? flowTop : flowBottom;
+            var R = (this.branch === 'top') ? R1 : R2;
+            var targetY = (this.branch === 'top') ? 90 : 210;
+            var speed = flow * 2.5 * this.speed;
+
+            // Before split (x < 120)
+            if (this.x < 120) {
+                this.x += speed * 1.2;
+                // Move towards branch
+                if (this.x > 90) {
+                    var dy = targetY - this.y;
+                    this.y += dy * 0.08;
+                }
+            }
+            // In branch (120 - 400)
+            else if (this.x < 400) {
+                this.inBranch = true;
+                // Narrow section 200-280
+                if (this.x > 200 && this.x < 280) {
+                    var narrowFactor = 1 + (R - 10) / 40;
+                    speed = speed * narrowFactor * 0.8;
+                    var maxDev = 8 * (1 - (R - 10) / 60);
+                    if (this.y < targetY - maxDev) this.y = targetY - maxDev;
+                    if (this.y > targetY + maxDev) this.y = targetY + maxDev;
+                } else {
+                    // Normal branch flow
+                    this.y += (targetY - this.y) * 0.05;
+                }
+                this.x += speed;
+                this.y += (Math.random() - 0.5) * 0.4;
+            }
+            // After merge (x >= 400)
+            else {
+                this.merged = true;
+                this.x += speed * 1.2;
+                // Move back to center
+                var dy = 150 - this.y;
+                this.y += dy * 0.1;
+            }
+
+            if (this.x > 480) {
+                this.reset();
+            }
+        };
+
+        Particle.prototype.draw = function() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(21, 101, 192, 0.7)';
+            ctx.fill();
+        };
+
+        // ============================================
+        // CALCULATIONS
+        // ============================================
+
+        function calcRges() {
+            return (R1 * R2) / (R1 + R2);
+        }
+
+        function calcI() {
+            var Rges = calcRges();
+            return U / Rges;
+        }
+
+        function calcI1() {
+            return U / R1;
+        }
+
+        function calcI2() {
+            return U / R2;
+        }
+
+        function calcFlowTop() {
+            return calcI1() * 1.5;
+        }
+
+        function calcFlowBottom() {
+            return calcI2() * 1.5;
+        }
+
+        // ============================================
+        // DRAWING - WATER MODEL
+        // ============================================
+
+        function drawWater() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var pipeH = 25;
+            var cy = 150;
+            var topY = 90;
+            var botY = 210;
+
+            // Pipe gradient
+            var grad = ctx.createLinearGradient(0, 0, 0, 300);
+            grad.addColorStop(0, '#e3f2fd');
+            grad.addColorStop(0.5, '#bbdefb');
+            grad.addColorStop(1, '#e3f2fd');
+
+            ctx.fillStyle = grad;
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 2;
+
+            // Left main pipe (before split)
+            ctx.fillRect(40, cy - pipeH/2, 50, pipeH);
+            ctx.strokeRect(40, cy - pipeH/2, 50, pipeH);
+
+            // Split junction
+            ctx.beginPath();
+            ctx.moveTo(90, cy - pipeH/2);
+            ctx.lineTo(90, cy + pipeH/2);
+            ctx.lineTo(120, botY + pipeH/2);
+            ctx.lineTo(120, botY - pipeH/2);
+            ctx.lineTo(120, topY + pipeH/2);
+            ctx.lineTo(120, topY - pipeH/2);
+            ctx.lineTo(90, cy - pipeH/2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Top branch - before narrow
+            ctx.fillRect(120, topY - pipeH/2, 80, pipeH);
+            ctx.strokeRect(120, topY - pipeH/2, 80, pipeH);
+
+            // Top branch - R1 narrow section
+            var narrow1 = pipeH * (1 - (R1 - 10) / 80);
+            ctx.beginPath();
+            ctx.moveTo(200, topY - pipeH/2);
+            ctx.lineTo(210, topY - narrow1/2);
+            ctx.lineTo(270, topY - narrow1/2);
+            ctx.lineTo(280, topY - pipeH/2);
+            ctx.lineTo(280, topY + pipeH/2);
+            ctx.lineTo(270, topY + narrow1/2);
+            ctx.lineTo(210, topY + narrow1/2);
+            ctx.lineTo(200, topY + pipeH/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Top branch - after narrow
+            ctx.fillRect(280, topY - pipeH/2, 120, pipeH);
+            ctx.strokeRect(280, topY - pipeH/2, 120, pipeH);
+
+            // Bottom branch - before narrow
+            ctx.fillRect(120, botY - pipeH/2, 80, pipeH);
+            ctx.strokeRect(120, botY - pipeH/2, 80, pipeH);
+
+            // Bottom branch - R2 narrow section
+            var narrow2 = pipeH * (1 - (R2 - 10) / 80);
+            ctx.beginPath();
+            ctx.moveTo(200, botY - pipeH/2);
+            ctx.lineTo(210, botY - narrow2/2);
+            ctx.lineTo(270, botY - narrow2/2);
+            ctx.lineTo(280, botY - pipeH/2);
+            ctx.lineTo(280, botY + pipeH/2);
+            ctx.lineTo(270, botY + narrow2/2);
+            ctx.lineTo(210, botY + narrow2/2);
+            ctx.lineTo(200, botY + pipeH/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Bottom branch - after narrow
+            ctx.fillRect(280, botY - pipeH/2, 120, pipeH);
+            ctx.strokeRect(280, botY - pipeH/2, 120, pipeH);
+
+            // Merge junction
+            ctx.beginPath();
+            ctx.moveTo(400, topY - pipeH/2);
+            ctx.lineTo(400, topY + pipeH/2);
+            ctx.lineTo(400, botY - pipeH/2);
+            ctx.lineTo(400, botY + pipeH/2);
+            ctx.lineTo(430, cy + pipeH/2);
+            ctx.lineTo(430, cy - pipeH/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Right main pipe (after merge)
+            ctx.fillRect(430, cy - pipeH/2, 50, pipeH);
+            ctx.strokeRect(430, cy - pipeH/2, 50, pipeH);
+
+            // Draw particles
+            for (var i = 0; i < particlesTop.length; i++) {
+                particlesTop[i].draw();
+            }
+            for (var j = 0; j < particlesBottom.length; j++) {
+                particlesBottom[j].draw();
+            }
+
+            // Labels
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#b35c00';
+            ctx.fillText('R₁ = ' + R1 + ' Ω', 240, topY - 20);
+
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText('R₂ = ' + R2 + ' Ω', 240, botY + 32);
+
+            // Pump
+            ctx.beginPath();
+            ctx.arc(50, cy, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#c62828';
+            ctx.fill();
+            ctx.strokeStyle = '#8e0000';
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('P', 50, cy + 4);
+
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Wassermodell: Zwei Rohre parallel', 40, 25);
+
+            // Flow indicators
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#1565c0';
+            ctx.fillText('I₁ = ' + calcI1().toFixed(2) + ' A', 340, topY - 5);
+            ctx.fillText('I₂ = ' + calcI2().toFixed(2) + ' A', 340, botY + 18);
+        }
+
+        // ============================================
+        // DRAWING - CIRCUIT
+        // ============================================
+
+        function drawCircuit() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Layout: + → wire → SPLIT → R1/R2 → MERGE → wire → -
+            var srcX = 50;        // Voltage source x
+            var srcY = 150;       // Voltage source center y
+            var splitX = 130;     // Split junction x
+            var mergeX = 360;     // Merge junction x
+            var topY = 90;        // Top branch y (R1)
+            var botY = 210;       // Bottom branch y (R2)
+            var returnY = 260;    // Return wire y
+
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+
+            // === VOLTAGE SOURCE (left side, vertical) ===
+            // Wire from + upward to top level
+            ctx.beginPath();
+            ctx.moveTo(srcX, srcY - 15);
+            ctx.lineTo(srcX, topY);
+            ctx.stroke();
+
+            // Wire from - downward to return level
+            ctx.beginPath();
+            ctx.moveTo(srcX, srcY + 15);
+            ctx.lineTo(srcX, returnY);
+            ctx.stroke();
+
+            // + Pol (lange rote Linie)
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(srcX - 12, srcY - 8);
+            ctx.lineTo(srcX + 12, srcY - 8);
+            ctx.stroke();
+
+            // - Pol (kurze dicke blaue Linie)
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(srcX - 8, srcY + 8);
+            ctx.lineTo(srcX + 8, srcY + 8);
+            ctx.stroke();
+
+            // U Beschriftung
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('U', srcX - 18, srcY - 4);
+            ctx.font = '10px sans-serif';
+            ctx.fillText('12 V', srcX - 18, srcY + 10);
+
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+
+            // === WIRE FROM + TO SPLIT ===
+            ctx.beginPath();
+            ctx.moveTo(srcX, topY);
+            ctx.lineTo(splitX, topY);
+            ctx.stroke();
+
+            // === SPLIT JUNCTION (Verzweigung) ===
+            // Wire down from split to bottom branch level
+            ctx.beginPath();
+            ctx.moveTo(splitX, topY);
+            ctx.lineTo(splitX, botY);
+            ctx.stroke();
+
+            // Split junction marker (filled circle)
+            ctx.beginPath();
+            ctx.arc(splitX, topY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+
+            // === TOP BRANCH (R1) ===
+            // Wire to R1
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(splitX, topY);
+            ctx.lineTo(180, topY);
+            ctx.stroke();
+
+            // R1 box (DIN: Rechteck)
+            ctx.strokeStyle = '#b35c00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(180, topY - 15, 70, 30);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(181, topY - 14, 68, 28);
+            ctx.fillStyle = '#b35c00';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('R₁', 215, topY + 4);
+
+            // Wire from R1 to merge
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(250, topY);
+            ctx.lineTo(mergeX, topY);
+            ctx.stroke();
+
+            // R1 value label
+            ctx.fillStyle = '#b35c00';
+            ctx.fillText(R1 + ' Ω', 215, topY - 22);
+
+            // === BOTTOM BRANCH (R2) ===
+            // Wire to R2
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(splitX, botY);
+            ctx.lineTo(180, botY);
+            ctx.stroke();
+
+            // R2 box (DIN: Rechteck)
+            ctx.strokeStyle = '#2a7a4b';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(180, botY - 15, 70, 30);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(181, botY - 14, 68, 28);
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText('R₂', 215, botY + 4);
+
+            // Wire from R2 to merge
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(250, botY);
+            ctx.lineTo(mergeX, botY);
+            ctx.stroke();
+
+            // R2 value label
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText(R2 + ' Ω', 215, botY + 30);
+
+            // === MERGE JUNCTION (Vereinigung) ===
+            // Vertical wire connecting top and bottom branches
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(mergeX, topY);
+            ctx.lineTo(mergeX, botY);
+            ctx.stroke();
+
+            // Merge junction marker (filled circle)
+            ctx.beginPath();
+            ctx.arc(mergeX, botY, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+
+            // === RETURN WIRE TO - ===
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(mergeX, botY);
+            ctx.lineTo(mergeX, returnY);
+            ctx.lineTo(srcX, returnY);
+            ctx.stroke();
+
+            // === CURRENT ARROWS (animated, technical direction: + to -) ===
+            animFrame++;
+            var offset = (animFrame % 30) * 2;
+
+            ctx.fillStyle = '#c62828';
+
+            // Arrows on top branch (from split to merge, going right)
+            for (var i = 0; i < 3; i++) {
+                var x = 140 + i * 80 + offset;
+                if (x > 140 && x < mergeX - 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, topY);
+                    ctx.lineTo(x - 5, topY - 5);
+                    ctx.lineTo(x - 5, topY + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // Arrows on bottom branch (from split to merge, going right)
+            for (var j = 0; j < 3; j++) {
+                var x2 = 140 + j * 80 + offset;
+                if (x2 > 140 && x2 < mergeX - 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(x2, botY);
+                    ctx.lineTo(x2 - 5, botY - 5);
+                    ctx.lineTo(x2 - 5, botY + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // Arrows on return wire (going left along bottom)
+            for (var k = 0; k < 3; k++) {
+                var x3 = mergeX - 30 - k * 100 - offset;
+                if (x3 > srcX + 20 && x3 < mergeX - 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(x3, returnY);
+                    ctx.lineTo(x3 + 5, returnY - 5);
+                    ctx.lineTo(x3 + 5, returnY + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // === LABELS ===
+            // I labels on branches
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('I₁', 300, topY - 8);
+            ctx.fillText('I₂', 300, botY - 8);
+
+            // I values
+            ctx.fillStyle = '#1565c0';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('I₁ = ' + calcI1().toFixed(2) + ' A', 300, topY + 25);
+            ctx.fillText('I₂ = ' + calcI2().toFixed(2) + ' A', 300, botY - 25);
+
+            // Total I on return wire
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.fillText('I_ges = ' + calcI().toFixed(2) + ' A', 200, returnY - 8);
+
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Schaltkreis: Zwei Widerstände parallel', 40, 25);
+
+            // Rges in center (between the two branches)
+            ctx.fillStyle = '#2c5aa0';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('R_ges = ' + calcRges().toFixed(1) + ' Ω', 245, 150);
+        }
+
+        // ============================================
+        // UPDATE LOOP
+        // ============================================
+
+        function update() {
+            var flowTop = calcFlowTop();
+            var flowBottom = calcFlowBottom();
+
+            if (mode === 'water') {
+                // Spawn particles for top branch
+                var spawnRateTop = Math.ceil(flowTop * 0.8);
+                for (var i = 0; i < spawnRateTop && particlesTop.length < MAX_PARTICLES; i++) {
+                    if (Math.random() < 0.12) {
+                        particlesTop.push(new Particle('top'));
+                    }
+                }
+
+                // Spawn particles for bottom branch
+                var spawnRateBot = Math.ceil(flowBottom * 0.8);
+                for (var j = 0; j < spawnRateBot && particlesBottom.length < MAX_PARTICLES; j++) {
+                    if (Math.random() < 0.12) {
+                        particlesBottom.push(new Particle('bottom'));
+                    }
+                }
+
+                // Update particles
+                for (var k = 0; k < particlesTop.length; k++) {
+                    particlesTop[k].update(flowTop, flowBottom);
+                }
+                for (var l = 0; l < particlesBottom.length; l++) {
+                    particlesBottom[l].update(flowTop, flowBottom);
+                }
+
+                drawWater();
+            } else {
+                drawCircuit();
+            }
+
+            updateDisplays();
+            requestAnimationFrame(update);
+        }
+
+        function updateDisplays() {
+            var Rges = calcRges();
+            var I = calcI();
+
+            document.getElementById('r1-value').textContent = R1 + ' Ω';
+            document.getElementById('r2-value').textContent = R2 + ' Ω';
+            document.getElementById('disp-r1').textContent = R1 + ' Ω';
+            document.getElementById('disp-r2').textContent = R2 + ' Ω';
+            document.getElementById('disp-rges').textContent = Rges.toFixed(1) + ' Ω';
+            document.getElementById('disp-flow').textContent = I.toFixed(2) + ' A';
+
+            document.getElementById('formula-result').innerHTML =
+                '= (' + R1 + '·' + R2 + ')/(' + R1 + '+' + R2 + ') = <strong>' + Rges.toFixed(1) + ' Ω</strong>';
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        r1Slider.addEventListener('input', function() {
+            R1 = parseInt(this.value);
+        });
+
+        r2Slider.addEventListener('input', function() {
+            R2 = parseInt(this.value);
+        });
+
+        function setMode(newMode) {
+            mode = newMode;
+            document.getElementById('btn-water').className = (mode === 'water') ? 'active' : '';
+            document.getElementById('btn-circuit').className = (mode === 'circuit') ? 'active' : '';
+
+            if (mode === 'water') {
+                particlesTop = [];
+                particlesBottom = [];
+                for (var i = 0; i < 10; i++) {
+                    var pTop = new Particle('top');
+                    pTop.x = 100 + Math.random() * 300;
+                    particlesTop.push(pTop);
+
+                    var pBot = new Particle('bottom');
+                    pBot.x = 100 + Math.random() * 300;
+                    particlesBottom.push(pBot);
+                }
+            }
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+
+        function init() {
+            for (var i = 0; i < 10; i++) {
+                var pTop = new Particle('top');
+                pTop.x = 100 + Math.random() * 300;
+                particlesTop.push(pTop);
+
+                var pBot = new Particle('bottom');
+                pBot.x = 100 + Math.random() * 300;
+                particlesBottom.push(pBot);
+            }
+            update();
+        }
+
+        init();
+    </script>
+</body>
+</html>

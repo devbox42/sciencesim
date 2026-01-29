@@ -434,10 +434,17 @@
             font-weight: bold;
         }
 
+        .face-option img:hover {
+            border-color: var(--fach) !important;
+            transform: scale(1.02);
+            transition: all 0.2s;
+        }
+
         @media (max-width: 600px) {
             .container { padding: 10px; }
             .step { padding: 15px; }
             .image-compare { grid-template-columns: 1fr; }
+            .face-option img { width: 150px !important; height: 150px !important; }
         }
     </style>
 </head>
@@ -718,14 +725,44 @@
 
         <h3>Übung: Echt oder Fake?</h3>
         <div class="exercise">
-            <p><strong>Trainiere dein Auge!</strong> Klicke auf den Link und versuche, das echte Foto zu erkennen:</p>
-            <div style="text-align: center; margin: 20px 0;">
-                <a href="https://whichfaceisreal.com" target="_blank" class="tool-link" style="font-size: 1.2em; padding: 15px 30px;">Which Face Is Real? spielen</a>
+            <p><strong>Trainiere dein Auge!</strong> Klicke auf das Bild, das du für ECHT hältst:</p>
+
+            <div id="face-game" style="margin: 20px 0;">
+                <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <div class="face-option" id="face-left" onclick="checkFace('left')" style="cursor: pointer; text-align: center;">
+                        <img id="img-left" src="" alt="Gesicht A" style="width: 200px; height: 200px; object-fit: cover; border: 4px solid #ddd; border-radius: 8px;">
+                        <p style="margin-top: 8px; font-weight: 600;">A</p>
+                    </div>
+                    <div class="face-option" id="face-right" onclick="checkFace('right')" style="cursor: pointer; text-align: center;">
+                        <img id="img-right" src="" alt="Gesicht B" style="width: 200px; height: 200px; object-fit: cover; border: 4px solid #ddd; border-radius: 8px;">
+                        <p style="margin-top: 8px; font-weight: 600;">B</p>
+                    </div>
+                </div>
+
+                <div id="face-feedback" style="text-align: center; margin-top: 15px; padding: 15px; display: none; border-radius: 8px;"></div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <div id="face-score" style="font-size: 1.2em; margin-bottom: 10px;">Runde: <span id="round-num">1</span>/5 | Richtig: <span id="correct-num">0</span></div>
+                    <button id="next-round-btn" onclick="loadNewRound()" style="display: none;">Nächste Runde</button>
+                </div>
             </div>
-            <div class="info-box" style="background: #e3f2fd; border-color: #1976d2;">
+
+            <div id="game-complete" style="display: none; text-align: center; padding: 20px; background: var(--success-light); border: 2px solid var(--success); border-radius: 8px; margin-top: 15px;">
+                <p style="font-size: 1.3em; font-weight: 600; color: var(--success);">Übung abgeschlossen!</p>
+                <p style="margin-top: 10px;">Ergebnis: <span id="final-score">0</span>/5 richtig erkannt</p>
+            </div>
+
+            <div class="info-box" style="background: #e3f2fd; border-color: #1976d2; margin-top: 20px;">
                 <strong>📝 Aufgabe auf dem Arbeitsblatt:</strong><br>
-                Spiele 5 Runden und notiere auf deinem AB, welche Merkmale dir geholfen haben!
+                Notiere, welche Merkmale dir geholfen haben, das KI-Bild zu erkennen!
             </div>
+
+            <details style="margin-top: 15px;">
+                <summary style="cursor: pointer; color: var(--gray);">Alternative: Externes Spiel öffnen</summary>
+                <div style="margin-top: 10px;">
+                    <a href="https://whichfaceisreal.com" target="_blank" class="tool-link">Which Face Is Real? (extern)</a>
+                </div>
+            </details>
         </div>
 
         <div class="nav-buttons">
@@ -1129,6 +1166,101 @@ function checkReflexion() {
         fb.innerHTML = 'Denke noch etwas weiter: Was passiert, wenn viele Menschen Falschinformationen glaüben?';
     }
 }
+
+// Face Game Variables
+var faceGameState = {
+    round: 1,
+    maxRounds: 5,
+    correct: 0,
+    realPosition: null,
+    answered: false
+};
+
+function loadNewRound() {
+    if (faceGameState.round > faceGameState.maxRounds) {
+        document.getElementById('face-game').style.display = 'none';
+        document.getElementById('game-complete').style.display = 'block';
+        document.getElementById('final-score').textContent = faceGameState.correct;
+        return;
+    }
+
+    faceGameState.answered = false;
+    document.getElementById('next-round-btn').style.display = 'none';
+    document.getElementById('face-feedback').style.display = 'none';
+    document.getElementById('round-num').textContent = faceGameState.round;
+
+    // Reset borders
+    document.getElementById('img-left').style.borderColor = '#ddd';
+    document.getElementById('img-right').style.borderColor = '#ddd';
+
+    // Randomly decide which side gets the real face
+    faceGameState.realPosition = Math.random() < 0.5 ? 'left' : 'right';
+
+    var imgLeft = document.getElementById('img-left');
+    var imgRight = document.getElementById('img-right');
+
+    // Load images
+    var timestamp = Date.now();
+    var fakeUrl = 'https://thispersondoesnotexist.com?' + timestamp;
+    var realUrl = 'https://randomuser.me/api/portraits/' + (Math.random() < 0.5 ? 'men' : 'women') + '/' + Math.floor(Math.random() * 99) + '.jpg';
+
+    if (faceGameState.realPosition === 'left') {
+        imgLeft.src = realUrl;
+        imgRight.src = fakeUrl;
+    } else {
+        imgLeft.src = fakeUrl;
+        imgRight.src = realUrl;
+    }
+}
+
+function checkFace(clicked) {
+    if (faceGameState.answered) return;
+    faceGameState.answered = true;
+
+    var feedback = document.getElementById('face-feedback');
+    var isCorrect = (clicked === faceGameState.realPosition);
+
+    if (isCorrect) {
+        faceGameState.correct++;
+        feedback.style.background = '#e8f5e9';
+        feedback.style.border = '2px solid #4caf50';
+        feedback.innerHTML = '<strong style="color: #2e7d32;">Richtig!</strong> Du hast das echte Foto erkannt.';
+    } else {
+        feedback.style.background = '#ffebee';
+        feedback.style.border = '2px solid #f44336';
+        feedback.innerHTML = '<strong style="color: #c62828;">Nicht ganz.</strong> Das andere Bild war echt.';
+    }
+
+    feedback.style.display = 'block';
+    document.getElementById('correct-num').textContent = faceGameState.correct;
+
+    // Highlight correct answer
+    var realImg = faceGameState.realPosition === 'left' ? 'img-left' : 'img-right';
+    var fakeImg = faceGameState.realPosition === 'left' ? 'img-right' : 'img-left';
+    document.getElementById(realImg).style.borderColor = '#4caf50';
+    document.getElementById(fakeImg).style.borderColor = '#f44336';
+
+    faceGameState.round++;
+
+    if (faceGameState.round <= faceGameState.maxRounds) {
+        document.getElementById('next-round-btn').style.display = 'inline-block';
+    } else {
+        setTimeout(function() {
+            document.getElementById('face-game').style.display = 'none';
+            document.getElementById('game-complete').style.display = 'block';
+            document.getElementById('final-score').textContent = faceGameState.correct;
+        }, 1500);
+    }
+}
+
+// Initialize face game when step 2 becomes active
+var originalGoToStep = goToStep;
+goToStep = function(step) {
+    originalGoToStep(step);
+    if (step === 2 && faceGameState.round === 1 && !faceGameState.answered) {
+        loadNewRound();
+    }
+};
 
 window.onload = function() { init(); };
 </script>

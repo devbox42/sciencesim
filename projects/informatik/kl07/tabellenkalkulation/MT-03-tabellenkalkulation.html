@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Der Fall "Schülercafé"</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #b35c00;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .story-intro {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 15px 20px;
+            font-size: 0.95em;
+        }
+        .story-intro h2 { color: #b35c00; font-size: 1.1em; margin-bottom: 10px; }
+        .story-intro .detective { font-size: 2em; float: left; margin-right: 15px; }
+
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 140px; }
+
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #b35c00; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-afb { background: #e3f2fd; padding: 3px 8px; font-size: 0.75em; color: #1565c0; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+        .question-text { margin-bottom: 15px; }
+
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #fff3e0; border-color: #b35c00; }
+        .option.selected { background: #fff3e0; border-color: #b35c00; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #b35c00; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #8a4700; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        .results { background: white; border: 2px solid #b35c00; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #b35c00; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #b35c00; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #b35c00; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        select.incorrect { border-color: #c62828; background: #ffebee; }
+        input[type="number"].correct, input[type="text"].correct { border-color: #2a7a4b; background: #e8f5e9; }
+        input[type="number"].incorrect, input[type="text"].incorrect { border-color: #c62828; background: #ffebee; }
+
+        .hidden { display: none; }
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        .spreadsheet {
+            font-family: "SF Mono", Consolas, monospace;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .spreadsheet th, .spreadsheet td {
+            border: 1px solid #888;
+            padding: 6px 12px;
+            text-align: center;
+            min-width: 70px;
+        }
+        .spreadsheet th { background: #666; color: white; font-weight: 600; }
+        .spreadsheet .row-header { background: #666; color: white; font-weight: 600; }
+        .spreadsheet td { background: #fff; }
+        .spreadsheet .formula { background: #fff3e0; font-family: "SF Mono", Consolas, monospace; }
+        .spreadsheet .highlight { background: #ffe0b2; border: 2px solid #b35c00; }
+        .spreadsheet .error { background: #ffcdd2; color: #c62828; font-weight: bold; }
+
+        code { background: #f0f0f0; padding: 2px 6px; font-family: "SF Mono", Consolas, monospace; font-size: 0.95em; }
+
+        .case-reveal {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 3px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .case-reveal h3 { color: #b35c00; font-size: 1.2em; margin-bottom: 10px; }
+        .case-reveal .verdict { font-size: 1.1em; font-weight: 600; }
+
+        .inline-select { padding: 6px 10px; font-size: 1em; border: 1px solid #b35c00; min-width: 200px; }
+        .inline-input { padding: 6px 10px; font-size: 1em; border: 1px solid #b35c00; width: 120px; text-align: center; }
+
+        .section-divider {
+            background: #b35c00;
+            color: white;
+            padding: 10px 20px;
+            margin: 25px 0 15px 0;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🔍 Stundenleistung: Der Fall "Schülercafé"</h1>
+        <div class="header-info">
+            <div class="meta">Informatik Klasse 7A | Do 22.01.2026 | 28 BE</div>
+        </div>
+    </header>
+
+    <div class="story-intro">
+        <span class="detective">🕵️</span>
+        <h2>Deine Mission</h2>
+        <p><strong>Leon</strong> führt die Kasse des Schülercafés. Er behauptet: <em>"Die Abrechnung stimmt – ich habe alles korrekt in Numbers eingetragen!"</em></p>
+        <p style="margin-top:10px;">Doch die Klassenlehrerin hat Zweifel. <strong>Analysiere Leons Tabelle</strong> und finde heraus, ob alles stimmt!</p>
+    </div>
+
+    <div class="selection-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 20px;">
+        <div class="seat-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #b35c00; display: block; margin-bottom: 8px;">Deine Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #b35c00; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 22 Hinweise gefunden</div>
+    </div>
+
+    <div class="container">
+        <div class="unlock-hint" id="unlockHint">
+            <strong>🔐 Ermittlung gesperrt</strong><br><br>
+            Bestätige zuerst deine Platznummer mit OK,<br>
+            um die Ermittlung zu starten!
+        </div>
+
+        <div id="questionsContainer">
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             TEIL A: GRUNDWISSEN (AFB I) – 7 BE
+             ═══════════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider">Teil A: Grundwissen (Hinweise 1–7)</div>
+
+        <!-- HINWEIS 1: Was ist eine Zelle? (1 BE, AFB I) -->
+        <div class="question" id="q1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 1: Was ist eine Zelle?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Bevor du Leons Tabelle analysieren kannst, musst du die Grundbegriffe kennen.<br>
+                Was ist eine <strong>Zelle</strong> in einer Tabellenkalkulation?
+            </div>
+            <div class="options" id="q1-options">
+                <label class="option" data-value="a"><input type="radio" name="q1" value="a">Ein einzelnes Kästchen, in das man Daten eingeben kann</label>
+                <label class="option" data-value="b"><input type="radio" name="q1" value="b">Eine waagerechte Reihe von Kästchen</label>
+                <label class="option" data-value="c"><input type="radio" name="q1" value="c">Eine senkrechte Reihe von Kästchen</label>
+                <label class="option" data-value="d"><input type="radio" name="q1" value="d">Das gesamte Tabellenblatt</label>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">✅ Richtig! Eine Zelle ist ein einzelnes Kästchen.</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Eine Zelle ist ein einzelnes Kästchen. Zeilen sind waagerecht, Spalten senkrecht.</div>
+        </div>
+
+        <!-- HINWEIS 2: Spalte verläuft... (1 BE, AFB I) -->
+        <div class="question" id="q2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 2: Wie verläuft eine Spalte?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Eine <strong>Spalte</strong> verläuft...
+            </div>
+            <div class="options" id="q2-options">
+                <label class="option" data-value="a"><input type="radio" name="q2" value="a">senkrecht (↓ von oben nach unten)</label>
+                <label class="option" data-value="b"><input type="radio" name="q2" value="b">waagerecht (→ von links nach rechts)</label>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">✅ Richtig! <strong>S</strong>palte = <strong>S</strong>enkrecht</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Merke: <strong>S</strong>palte = <strong>S</strong>enkrecht (↓)</div>
+        </div>
+
+        <!-- HINWEIS 3: Zeile verläuft... (1 BE, AFB I) -->
+        <div class="question" id="q3" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 3: Wie verläuft eine Zeile?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Eine <strong>Zeile</strong> verläuft...
+            </div>
+            <div class="options" id="q3-options">
+                <label class="option" data-value="a"><input type="radio" name="q3" value="a">senkrecht (↓ von oben nach unten)</label>
+                <label class="option" data-value="b"><input type="radio" name="q3" value="b">waagerecht (→ von links nach rechts)</label>
+            </div>
+            <div class="feedback-box correct" id="q3-fb-correct">✅ Richtig! Zeile = waagerecht (→)</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Zeile verläuft waagerecht (→ von links nach rechts)</div>
+        </div>
+
+        <!-- HINWEIS 4: Spalten = Buchstaben (1 BE, AFB I) -->
+        <div class="question" id="q4" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 4: Wie werden Spalten bezeichnet?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                <strong>Spalten</strong> werden bezeichnet mit...
+            </div>
+            <div class="options" id="q4-options">
+                <label class="option" data-value="a"><input type="radio" name="q4" value="a">Buchstaben (A, B, C, ...)</label>
+                <label class="option" data-value="b"><input type="radio" name="q4" value="b">Nummern (1, 2, 3, ...)</label>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">✅ Richtig! Spalten = A, B, C, ...</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">Spalten haben Buchstaben (A, B, C, ...), Zeilen haben Nummern.</div>
+        </div>
+
+        <!-- HINWEIS 5: Zeilen = Nummern (1 BE, AFB I) -->
+        <div class="question" id="q5" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 5: Wie werden Zeilen bezeichnet?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                <strong>Zeilen</strong> werden bezeichnet mit...
+            </div>
+            <div class="options" id="q5-options">
+                <label class="option" data-value="a"><input type="radio" name="q5" value="a">Buchstaben (A, B, C, ...)</label>
+                <label class="option" data-value="b"><input type="radio" name="q5" value="b">Nummern (1, 2, 3, ...)</label>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">✅ Richtig! Zeilen = 1, 2, 3, ...</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Zeilen haben Nummern (1, 2, 3, ...), Spalten haben Buchstaben.</div>
+        </div>
+
+        <!-- HINWEIS 6: Formelbeginn (1 BE, AFB I) -->
+        <div class="question" id="q6" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 6: Womit beginnen Formeln?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Formeln in einer Tabellenkalkulation beginnen immer mit...
+            </div>
+            <div class="options" id="q6-options">
+                <label class="option" data-value="a"><input type="radio" name="q6" value="a">einem Buchstaben</label>
+                <label class="option" data-value="b"><input type="radio" name="q6" value="b">dem Gleichheitszeichen =</label>
+                <label class="option" data-value="c"><input type="radio" name="q6" value="c">einer Zahl</label>
+                <label class="option" data-value="d"><input type="radio" name="q6" value="d">einem Leerzeichen</label>
+            </div>
+            <div class="feedback-box correct" id="q6-fb-correct">✅ Genau! Formeln beginnen immer mit <code>=</code></div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">Formeln beginnen immer mit dem Gleichheitszeichen <code>=</code></div>
+        </div>
+
+        <!-- HINWEIS 7: Stern = Multiplikation (1 BE, AFB I) -->
+        <div class="question" id="q7" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 7: Was bedeutet * in Formeln?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Das Zeichen <code>*</code> in einer Formel steht für...
+            </div>
+            <div class="options" id="q7-options">
+                <label class="option" data-value="a"><input type="radio" name="q7" value="a">Addition (+)</label>
+                <label class="option" data-value="b"><input type="radio" name="q7" value="b">Subtraktion (−)</label>
+                <label class="option" data-value="c"><input type="radio" name="q7" value="c">Multiplikation (×)</label>
+                <label class="option" data-value="d"><input type="radio" name="q7" value="d">Division (÷)</label>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">✅ Richtig! <code>*</code> = Multiplikation (mal)</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect"><code>*</code> bedeutet Multiplikation (mal). <code>/</code> steht für Division.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             TEIL B: ANWENDUNG (AFB II) – 12 BE
+             ═══════════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider">Teil B: Anwendung (Hinweise 8–18)</div>
+
+        <!-- HINWEIS 8: Zelladresse finden (1 BE, AFB II) -->
+        <div class="question" id="q8" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 8: Zelladresse finden</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                <strong>Welche Adresse</strong> hat die markierte Zelle mit "0,80"?
+                <table class="spreadsheet" style="margin-top:10px;">
+                    <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+                    <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Verkauft</td></tr>
+                    <tr><td class="row-header">2</td><td>Brezel</td><td class="highlight">0,80</td><td>12</td></tr>
+                    <tr><td class="row-header">3</td><td>Apfel</td><td>0,50</td><td>8</td></tr>
+                </table>
+            </div>
+            <div class="options" id="q8-options">
+                <label class="option" data-value="a"><input type="radio" name="q8" value="a">2B</label>
+                <label class="option" data-value="b"><input type="radio" name="q8" value="b">B2</label>
+                <label class="option" data-value="c"><input type="radio" name="q8" value="c">0,80</label>
+                <label class="option" data-value="d"><input type="radio" name="q8" value="d">Preis-2</label>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">✅ Korrekt! Erst Spalte (B), dann Zeile (2) = <strong>B2</strong>.</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Die Adresse ist <strong>B2</strong> – erst Spalte, dann Zeile.</div>
+        </div>
+
+        <!-- HINWEIS 9: Was berechnet =B2*C2? (1 BE, AFB II) -->
+        <div class="question" id="q9" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 9: Was berechnet diese Formel?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Was berechnet <code>=B2*C2</code>?
+                <table class="spreadsheet" style="margin-top:10px;">
+                    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+                    <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Verkauft</td><td>Umsatz</td></tr>
+                    <tr><td class="row-header">2</td><td>Brezel</td><td>0,80</td><td>12</td><td class="formula">=B2*C2</td></tr>
+                </table>
+            </div>
+            <div class="options" id="q9-options">
+                <label class="option" data-value="a"><input type="radio" name="q9" value="a">Sie zeigt den Text "B2*C2" an</label>
+                <label class="option" data-value="b"><input type="radio" name="q9" value="b">Sie multipliziert 0,80 × 12 = 9,60</label>
+                <label class="option" data-value="c"><input type="radio" name="q9" value="c">Sie addiert 0,80 + 12 = 12,80</label>
+                <label class="option" data-value="d"><input type="radio" name="q9" value="d">Sie dividiert 12 ÷ 0,80 = 15</label>
+            </div>
+            <div class="feedback-box correct" id="q9-fb-correct">✅ Richtig! <code>*</code> = Multiplikation: 0,80 × 12 = 9,60</div>
+            <div class="feedback-box incorrect" id="q9-fb-incorrect"><code>*</code> bedeutet "mal": 0,80 × 12 = 9,60</div>
+        </div>
+
+        <!-- HINWEIS 10: Rechenzeichen zuordnen (2 BE, AFB II) -->
+        <div class="question" id="q10" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Hinweis 10: Rechenzeichen in Formeln</div>
+                <div class="question-meta"><span class="question-points">2 BE</span></div>
+            </div>
+            <div class="question-text">
+                Welches Zeichen steht für welche Rechenart?
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:120px;"><strong>Multiplikation</strong> (mal)</span>
+                    <select id="q10-a" class="inline-select">
+                        <option value="">-- wählen --</option>
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                        <option value="*">*</option>
+                        <option value="/">/</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:120px;"><strong>Division</strong> (geteilt)</span>
+                    <select id="q10-b" class="inline-select">
+                        <option value="">-- wählen --</option>
+                        <option value="+">+</option>
+                        <option value="-">-</option>
+                        <option value="*">*</option>
+                        <option value="/">/</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q10-fb-correct">✅ Richtig! * = mal, / = geteilt</div>
+            <div class="feedback-box incorrect" id="q10-fb-incorrect">* = Multiplikation (mal), / = Division (geteilt)</div>
+        </div>
+
+        <!-- HINWEIS 11: Doppelpunkt (1 BE, AFB II) -->
+        <div class="question" id="q11" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 11: Was bedeutet der Doppelpunkt?</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                In der Formel <code>=SUMME(B1:B4)</code> steht ein Doppelpunkt.<br>
+                <strong>Was bedeutet <code>B1:B4</code>?</strong>
+            </div>
+            <div class="options" id="q11-options">
+                <label class="option" data-value="a"><input type="radio" name="q11" value="a">Nur B1 und B4 (zwei Zellen)</label>
+                <label class="option" data-value="b"><input type="radio" name="q11" value="b">Von B1 bis B4 (alle Zellen dazwischen)</label>
+                <label class="option" data-value="c"><input type="radio" name="q11" value="c">B1 geteilt durch B4</label>
+                <label class="option" data-value="d"><input type="radio" name="q11" value="d">B1 minus B4</label>
+            </div>
+            <div class="feedback-box correct" id="q11-fb-correct">✅ Richtig! Der Doppelpunkt bedeutet "von ... bis ..." (Bereich)</div>
+            <div class="feedback-box incorrect" id="q11-fb-incorrect">Der <code>:</code> bedeutet "von ... bis ..." – also B1, B2, B3 und B4.</div>
+        </div>
+
+        <!-- HINWEIS 12: SUMME-Funktion (1 BE, AFB II) -->
+        <div class="question" id="q12" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 12: Die SUMME-Funktion</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Leon will den <strong>Gesamtumsatz</strong> berechnen. Welche Formel passt?
+                <table class="spreadsheet" style="margin-top:10px;">
+                    <tr><th></th><th>A</th><th>B</th></tr>
+                    <tr><td class="row-header">1</td><td>Brezel</td><td>9,60</td></tr>
+                    <tr><td class="row-header">2</td><td>Apfel</td><td>4,00</td></tr>
+                    <tr><td class="row-header">3</td><td>Saft</td><td>6,00</td></tr>
+                    <tr><td class="row-header">4</td><td>Keks</td><td>4,00</td></tr>
+                    <tr><td class="row-header">5</td><td><strong>Gesamt</strong></td><td class="formula">?</td></tr>
+                </table>
+            </div>
+            <div class="options" id="q12-options">
+                <label class="option" data-value="a"><input type="radio" name="q12" value="a"><code>=SUMME(B1:B4)</code></label>
+                <label class="option" data-value="b"><input type="radio" name="q12" value="b"><code>=SUMME(B1-B4)</code></label>
+                <label class="option" data-value="c"><input type="radio" name="q12" value="c"><code>=SUMME(B1*B4)</code></label>
+                <label class="option" data-value="d"><input type="radio" name="q12" value="d"><code>=SUMME B1:B4</code></label>
+            </div>
+            <div class="feedback-box correct" id="q12-fb-correct">✅ Richtig! <code>=SUMME(B1:B4)</code> addiert alle Werte von B1 bis B4.</div>
+            <div class="feedback-box incorrect" id="q12-fb-incorrect">Richtig ist <code>=SUMME(B1:B4)</code> – mit Doppelpunkt und Klammern!</div>
+        </div>
+
+        <!-- HINWEIS 13: Referenzprinzip (1 BE, AFB II) -->
+        <div class="question" id="q13" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 13: Das Referenzprinzip</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                In C2 steht <code>=A2*B2</code>. Leon ändert A2 von 0,80 auf 1,00.<br>
+                <strong>Was passiert in C2?</strong>
+            </div>
+            <div class="options" id="q13-options">
+                <label class="option" data-value="a"><input type="radio" name="q13" value="a">C2 zeigt weiterhin den alten Wert</label>
+                <label class="option" data-value="b"><input type="radio" name="q13" value="b">C2 berechnet sich automatisch neu</label>
+                <label class="option" data-value="c"><input type="radio" name="q13" value="c">Die Formel wird gelöscht</label>
+                <label class="option" data-value="d"><input type="radio" name="q13" value="d">Es erscheint eine Fehlermeldung</label>
+            </div>
+            <div class="feedback-box correct" id="q13-fb-correct">✅ Genau! Das ist das <strong>Referenzprinzip</strong>: Formeln aktualisieren sich automatisch!</div>
+            <div class="feedback-box incorrect" id="q13-fb-incorrect">Das <strong>Referenzprinzip</strong>: Ändert sich ein Eingabewert, berechnet sich die Formel automatisch neu.</div>
+        </div>
+
+        <!-- HINWEIS 14: Formel schreiben (2 BE, AFB II) -->
+        <div class="question" id="q14" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Hinweis 14: Formel selbst schreiben</div>
+                <div class="question-meta"><span class="question-points">2 BE</span></div>
+            </div>
+            <div class="question-text">
+                <table class="spreadsheet" style="margin-top:10px;">
+                    <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+                    <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Umsatz</td></tr>
+                    <tr><td class="row-header">2</td><td>Milch</td><td>1,50</td><td class="formula">?</td></tr>
+                </table>
+                <br>
+                In C2 soll der <strong>doppelte Preis</strong> (2 × Preis) berechnet werden.<br>
+                <strong>Schreibe die passende Formel:</strong>
+            </div>
+            <div style="margin: 15px 0;">
+                <input type="text" id="q14-input" class="inline-input" style="width:180px; font-family: monospace;" placeholder="=...">
+            </div>
+            <div class="feedback-box correct" id="q14-fb-correct">✅ Richtig! <code>=B2*2</code> oder <code>=2*B2</code> berechnet den doppelten Preis.</div>
+            <div class="feedback-box incorrect" id="q14-fb-incorrect">Die Formel lautet <code>=B2*2</code> – Preis (B2) mal 2.</div>
+        </div>
+
+        <!-- HINWEIS 15: Weitere Zelladresse (2 BE, AFB II) -->
+        <div class="question" id="q15" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Hinweis 15: Zelladressen bestimmen</div>
+                <div class="question-meta"><span class="question-points">2 BE</span></div>
+            </div>
+            <div class="question-text">
+                <table class="spreadsheet" style="margin-top:10px;">
+                    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+                    <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Menge</td><td>Umsatz</td></tr>
+                    <tr><td class="row-header">2</td><td>Brezel</td><td>0,80</td><td>12</td><td>9,60</td></tr>
+                    <tr><td class="row-header">3</td><td class="highlight">Apfel</td><td>0,50</td><td class="highlight">8</td><td>4,00</td></tr>
+                </table>
+                <br>Bestimme die Adressen der <strong>markierten Zellen</strong>:
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:100px;">Zelle "Apfel":</span>
+                    <input type="text" id="q15-a" class="inline-input" style="width:80px; font-family: monospace;" placeholder="?">
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:100px;">Zelle "8":</span>
+                    <input type="text" id="q15-b" class="inline-input" style="width:80px; font-family: monospace;" placeholder="?">
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q15-fb-correct">✅ Richtig! "Apfel" = A3, "8" = C3</div>
+            <div class="feedback-box incorrect" id="q15-fb-incorrect">"Apfel" steht in Spalte A, Zeile 3 = <strong>A3</strong>. "8" steht in Spalte C, Zeile 3 = <strong>C3</strong>.</div>
+        </div>
+
+        <!-- HINWEIS 16: Aufziehen - Wo ist der grüne Punkt? (1 BE, AFB II) -->
+        <div class="question" id="q16" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 16: Der Aufzieh-Trick</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Mit dem <strong>Aufzieh-Trick</strong> (Fill-Handle) kann man Formeln schnell kopieren.<br>
+                <strong>Wo befindet sich der grüne Punkt zum Aufziehen?</strong>
+            </div>
+            <div class="options" id="q16-options">
+                <label class="option" data-value="a"><input type="radio" name="q16" value="a">Oben links in der Zelle</label>
+                <label class="option" data-value="b"><input type="radio" name="q16" value="b">Unten rechts in der Zelle</label>
+                <label class="option" data-value="c"><input type="radio" name="q16" value="c">In der Mitte der Zelle</label>
+                <label class="option" data-value="d"><input type="radio" name="q16" value="d">Oben rechts in der Zelle</label>
+            </div>
+            <div class="feedback-box correct" id="q16-fb-correct">✅ Richtig! Der grüne Punkt ist <strong>unten rechts</strong> in der Zelle.</div>
+            <div class="feedback-box incorrect" id="q16-fb-incorrect">Der grüne Punkt (Fill-Handle) befindet sich <strong>unten rechts</strong> in der Zelle.</div>
+        </div>
+
+        <!-- HINWEIS 17: Formel-Transformation beim Aufziehen (1 BE, AFB II) -->
+        <div class="question" id="q17" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 17: Formeln beim Aufziehen</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                In D2 steht die Formel <code>=B2*C2</code>. Du ziehst die Formel nach unten bis D3.<br>
+                <strong>Was steht dann in D3?</strong>
+            </div>
+            <div class="options" id="q17-options">
+                <label class="option" data-value="a"><input type="radio" name="q17" value="a"><code>=B2*C2</code> (gleiche Formel)</label>
+                <label class="option" data-value="b"><input type="radio" name="q17" value="b"><code>=B3*C3</code> (Zeile passt sich an)</label>
+                <label class="option" data-value="c"><input type="radio" name="q17" value="c"><code>=D2*D2</code> (Spalte passt sich an)</label>
+                <label class="option" data-value="d"><input type="radio" name="q17" value="d"><code>=B1*C1</code> (Zeile geht zurück)</label>
+            </div>
+            <div class="feedback-box correct" id="q17-fb-correct">✅ Genau! Die Zeilennummer passt sich automatisch an: <code>=B3*C3</code></div>
+            <div class="feedback-box incorrect" id="q17-fb-incorrect">Beim Aufziehen nach unten passt sich die <strong>Zeilennummer</strong> an: =B<strong>3</strong>*C<strong>3</strong></div>
+        </div>
+
+        <!-- HINWEIS 18: Autovervollständigung (1 BE, AFB I) -->
+        <div class="question" id="q18" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 18: Autovervollständigung</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Tabellenprogramme bieten <strong>Autovervollständigung</strong> an.<br>
+                Wenn du <code>=SU</code> eintippst, schlägt das Programm automatisch vor:
+            </div>
+            <div class="options" id="q18-options">
+                <label class="option" data-value="a"><input type="radio" name="q18" value="a"><code>SUBTRAHIEREN</code></label>
+                <label class="option" data-value="b"><input type="radio" name="q18" value="b"><code>SUMME</code></label>
+                <label class="option" data-value="c"><input type="radio" name="q18" value="c"><code>SUCHEN</code></label>
+                <label class="option" data-value="d"><input type="radio" name="q18" value="d"><code>SUPER</code></label>
+            </div>
+            <div class="feedback-box correct" id="q18-fb-correct">✅ Richtig! <code>=SU</code> zeigt den Vorschlag <code>SUMME</code>.</div>
+            <div class="feedback-box incorrect" id="q18-fb-incorrect"><code>=SU</code> bietet die Funktion <code>SUMME</code> zur Auswahl an.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             TEIL C: ANALYSE (AFB III) – 6 BE
+             ═══════════════════════════════════════════════════════════════════════════ -->
+        <div class="section-divider">Teil C: Analyse – Der Fall wird gelöst! (Hinweise 19–22)</div>
+
+        <!-- HINWEIS 19: FEHLER FINDEN! (1 BE, AFB III) -->
+        <div class="question" id="q19" data-points="1" style="border: 2px solid #c62828;">
+            <div class="question-header">
+                <div class="question-title">🚨 Hinweis 19: FINDE LEONS FEHLER!</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                Hier ist Leons Abrechnung. Die Lehrerin sagt: <em>"Da stimmt etwas nicht!"</em><br>
+                <strong>Welche Zeile enthält einen Rechenfehler?</strong>
+                <table class="spreadsheet" style="margin-top:10px;">
+                    <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+                    <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Verkauft</td><td>Umsatz</td></tr>
+                    <tr><td class="row-header">2</td><td>Brezel</td><td>0,80</td><td>12</td><td>9,60</td></tr>
+                    <tr><td class="row-header">3</td><td>Apfel</td><td>0,50</td><td>8</td><td>4,00</td></tr>
+                    <tr><td class="row-header">4</td><td>Saft</td><td>1,20</td><td>5</td><td>6,00</td></tr>
+                    <tr><td class="row-header">5</td><td>Keks</td><td>0,40</td><td>10</td><td>4,40</td></tr>
+                    <tr><td class="row-header">6</td><td colspan="3"><strong>GESAMT</strong></td><td><strong>24,00</strong></td></tr>
+                </table>
+            </div>
+            <div class="options" id="q19-options">
+                <label class="option" data-value="a"><input type="radio" name="q19" value="a">Zeile 2: Brezel</label>
+                <label class="option" data-value="b"><input type="radio" name="q19" value="b">Zeile 3: Apfel</label>
+                <label class="option" data-value="c"><input type="radio" name="q19" value="c">Zeile 4: Saft</label>
+                <label class="option" data-value="d"><input type="radio" name="q19" value="d">Zeile 5: Keks</label>
+            </div>
+            <div class="feedback-box correct" id="q19-fb-correct">✅ Richtig! Keks: 0,40 × 10 = 4,00 (nicht 4,40!)</div>
+            <div class="feedback-box incorrect" id="q19-fb-incorrect">Prüfe Zeile 5: 0,40 × 10 = ? Das ist nicht 4,40!</div>
+        </div>
+
+        <!-- HINWEIS 20: Fehlerhafte Zelle (1 BE, AFB III) -->
+        <div class="question" id="q20" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Hinweis 20: Die fehlerhafte Zelle</div>
+                <div class="question-meta"><span class="question-points">1 BE</span></div>
+            </div>
+            <div class="question-text">
+                <strong>Welche Zelladresse</strong> enthält den falschen Wert (4,40)?
+            </div>
+            <div class="options" id="q20-options">
+                <label class="option" data-value="a"><input type="radio" name="q20" value="a">B5</label>
+                <label class="option" data-value="b"><input type="radio" name="q20" value="b">C5</label>
+                <label class="option" data-value="c"><input type="radio" name="q20" value="c">D5</label>
+                <label class="option" data-value="d"><input type="radio" name="q20" value="d">D6</label>
+            </div>
+            <div class="feedback-box correct" id="q20-fb-correct">✅ Richtig! D5 enthält 4,40 statt 4,00.</div>
+            <div class="feedback-box incorrect" id="q20-fb-incorrect">Der Fehler (4,40) steht in Spalte D, Zeile 5 = <strong>D5</strong></div>
+        </div>
+
+        <!-- HINWEIS 21: Fehlerursache (2 BE, AFB III) -->
+        <div class="question" id="q21" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Hinweis 21: Warum ist der Fehler passiert?</div>
+                <div class="question-meta"><span class="question-points">2 BE</span></div>
+            </div>
+            <div class="question-text">
+                Leon hat in D5 statt einer Formel direkt <code>4,40</code> eingetippt.<br>
+                <strong>Warum wäre eine Formel besser gewesen?</strong>
+            </div>
+            <div class="options" id="q21-options">
+                <label class="option" data-value="a"><input type="radio" name="q21" value="a">Formeln sehen professioneller aus</label>
+                <label class="option" data-value="b"><input type="radio" name="q21" value="b">Bei einer Formel hätte der Computer richtig gerechnet (Referenzprinzip)</label>
+                <label class="option" data-value="c"><input type="radio" name="q21" value="c">Formeln kann man nicht löschen</label>
+                <label class="option" data-value="d"><input type="radio" name="q21" value="d">Formeln brauchen weniger Speicherplatz</label>
+            </div>
+            <div class="feedback-box correct" id="q21-fb-correct">✅ Genau! Das <strong>Referenzprinzip</strong>: Der Computer rechnet automatisch richtig – menschliche Rechenfehler werden vermieden!</div>
+            <div class="feedback-box incorrect" id="q21-fb-incorrect">Bei einer Formel <code>=B5*C5</code> hätte der Computer <strong>automatisch richtig gerechnet</strong> (Referenzprinzip).</div>
+        </div>
+
+        <!-- HINWEIS 22: Korrekte Summe berechnen (2 BE, AFB III) -->
+        <div class="question" id="q22" data-points="2" style="border: 2px solid #2a7a4b;">
+            <div class="question-header">
+                <div class="question-title">🎉 Hinweis 22: Die korrekte Summe</div>
+                <div class="question-meta"><span class="question-points">2 BE</span></div>
+            </div>
+            <div class="question-text">
+                Leon hat 24,00 € als Gesamtsumme notiert. Das ist falsch!<br><br>
+                <strong>Berechne die KORREKTE Summe:</strong><br>
+                9,60 + 4,00 + 6,00 + <u>4,00</u> = ?
+            </div>
+            <div style="margin: 15px 0; display: flex; align-items: center; gap: 10px;">
+                <span>Korrekte Summe:</span>
+                <input type="number" id="q22-input" class="inline-input" step="0.01" placeholder="?,??"> €
+            </div>
+            <div class="feedback-box correct" id="q22-fb-correct">
+                <div class="case-reveal">
+                    <h3>🎉 FALL GELÖST!</h3>
+                    <p class="verdict">Die korrekte Summe ist <strong>23,60 €</strong>!</p>
+                    <p style="margin-top:10px;">Leon hat 0,40 € zu viel berechnet.</p>
+                </div>
+            </div>
+            <div class="feedback-box incorrect" id="q22-fb-incorrect">Rechne: 9,60 + 4,00 + 6,00 + 4,00 = ?</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Alle Hinweise gesammelt? Schließe die Ermittlung ab!</p>
+            <button onclick="submitTest()" id="submitBtn">🔍 Ermittlung abschließen</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>📋 Ermittlungsbericht</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Gesammelte Hinweise:</div>
+                <div class="score" id="scoreDisplay">0 / 25</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>100</td><td>96</td><td>90,7</td><td>86</td><td>80</td><td>73,3</td><td>66,7</td><td>60</td><td>53,3</td><td>46,7</td><td>40</td><td>33,3</td><td>26,7</td><td>20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be14">-</td><td id="be13">-</td><td id="be12">-</td><td id="be11">-</td><td id="be10">-</td><td id="be9">-</td><td id="be8">-</td><td id="be7">-</td><td id="be6">-</td><td id="be5">-</td><td id="be4">-</td><td id="be3">-</td><td id="be2">-</td><td id="be1">-</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        </div><!-- END questionsContainer -->
+    </div>
+
+    <script>
+    var STORAGE_KEY = 'mt-info-7a-03-schuelercafe-v4';
+    var testSubmitted = false;
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+    var maxPoints = 28;
+    var totalQuestions = 22;
+
+    var answers = {
+        q1: 'a', q2: 'a', q3: 'b', q4: 'a', q5: 'b', q6: 'b', q7: 'c',
+        q8: 'b', q9: 'b', q10a: '*', q10b: '/',
+        q11: 'b', q12: 'a', q13: 'b', q14: '=B2*2', q15a: 'A3', q15b: 'C3',
+        q16: 'b', q17: 'b', q18: 'b',
+        q19: 'd', q20: 'c', q21: 'b', q22: 23.6
+    };
+
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Ermittler: <strong style="color:#b35c00;">P' + num + '</strong> (gesperrt)';
+    }
+
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+        if (seatLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function setupOptions() {
+        var optionContainers = document.querySelectorAll('.options');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                (function(opt) {
+                    opt.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        var siblings = opt.parentNode.querySelectorAll('.option');
+                        for (var k = 0; k < siblings.length; k++) {
+                            siblings[k].classList.remove('selected');
+                            var sibRadio = siblings[k].querySelector('input');
+                            if (sibRadio) sibRadio.checked = false;
+                        }
+                        opt.classList.add('selected');
+                        var radio = opt.querySelector('input');
+                        if (radio) radio.checked = true;
+                        updateProgress();
+                        saveProgress();
+                    });
+                })(options[j]);
+            }
+        }
+    }
+
+    function setupDropdowns() {
+        var dropdowns = document.querySelectorAll('select[id^="q"]');
+        for (var i = 0; i < dropdowns.length; i++) {
+            dropdowns[i].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+        var textInputs = document.querySelectorAll('input[type="text"][id^="q"]');
+        for (var j = 0; j < textInputs.length; j++) {
+            textInputs[j].addEventListener('input', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+        var numInput = document.getElementById('q22-input');
+        if (numInput) {
+            numInput.addEventListener('input', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+    }
+
+    function isQuestionAnswered(qId) {
+        if (qId === 'q10') {
+            return document.getElementById('q10-a').value && document.getElementById('q10-b').value;
+        } else if (qId === 'q14') {
+            return document.getElementById('q14-input').value !== '';
+        } else if (qId === 'q15') {
+            return document.getElementById('q15-a').value !== '' && document.getElementById('q15-b').value !== '';
+        } else if (qId === 'q22') {
+            return document.getElementById('q22-input').value !== '';
+        } else {
+            return !!document.querySelector('input[name="' + qId + '"]:checked');
+        }
+    }
+
+    function countAnsweredQuestions() {
+        var answered = 0;
+        for (var i = 1; i <= totalQuestions; i++) {
+            if (isQuestionAnswered('q' + i)) answered++;
+        }
+        return { answered: answered, total: totalQuestions };
+    }
+
+    function updateProgress() {
+        var status = countAnsweredQuestions();
+        var percent = (status.answered / status.total) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' Hinweise gefunden';
+    }
+
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        var result = {};
+        for (var i = 1; i <= totalQuestions; i++) {
+            if (i === 10) {
+                result.q10a = document.getElementById('q10-a').value;
+                result.q10b = document.getElementById('q10-b').value;
+            } else if (i === 14) {
+                result.q14 = document.getElementById('q14-input').value;
+            } else if (i === 15) {
+                result.q15a = document.getElementById('q15-a').value;
+                result.q15b = document.getElementById('q15-b').value;
+            } else if (i === 22) {
+                result.q22 = document.getElementById('q22-input').value;
+            } else {
+                result['q' + i] = getRadioValue('q' + i);
+            }
+        }
+        return result;
+    }
+
+    function restoreAnswers(saved) {
+        for (var i = 1; i <= totalQuestions; i++) {
+            if (i === 10) {
+                if (saved.q10a) document.getElementById('q10-a').value = saved.q10a;
+                if (saved.q10b) document.getElementById('q10-b').value = saved.q10b;
+            } else if (i === 14) {
+                if (saved.q14) document.getElementById('q14-input').value = saved.q14;
+            } else if (i === 15) {
+                if (saved.q15a) document.getElementById('q15-a').value = saved.q15a;
+                if (saved.q15b) document.getElementById('q15-b').value = saved.q15b;
+            } else if (i === 22) {
+                if (saved.q22) document.getElementById('q22-input').value = saved.q22;
+            } else {
+                var key = 'q' + i;
+                if (saved[key]) {
+                    var radio = document.querySelector('input[name="' + key + '"][value="' + saved[key] + '"]');
+                    if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+                }
+            }
+        }
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function normalizeFormula(input) {
+        if (!input) return '';
+        var f = input.trim().toUpperCase().replace(/\s+/g, '');
+        return f;
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var userAnswers = collectAllAnswers();
+        var score = 0;
+
+        // Q1-Q9: Single choice (1 BE each)
+        for (var q = 1; q <= 9; q++) {
+            var key = 'q' + q;
+            var correct = userAnswers[key] === answers[key];
+            if (correct) score += 1;
+            markRadioQuestion(key, answers[key], userAnswers[key]);
+            showFeedback(key, correct);
+            showQuestionResult(key, correct ? 1 : 0, 1);
+        }
+
+        // Q10: Dropdowns (2 BE)
+        var q10Score = 0;
+        var q10aEl = document.getElementById('q10-a');
+        var q10bEl = document.getElementById('q10-b');
+        if (userAnswers.q10a === answers.q10a) { q10Score++; q10aEl.classList.add('correct'); } else { q10aEl.classList.add('incorrect'); }
+        if (userAnswers.q10b === answers.q10b) { q10Score++; q10bEl.classList.add('correct'); } else { q10bEl.classList.add('incorrect'); }
+        score += q10Score;
+        showFeedback('q10', q10Score === 2);
+        showQuestionResult('q10', q10Score, 2);
+
+        // Q11-Q13: Single choice (1 BE each)
+        for (var q2 = 11; q2 <= 13; q2++) {
+            var key2 = 'q' + q2;
+            var correct2 = userAnswers[key2] === answers[key2];
+            if (correct2) score += 1;
+            markRadioQuestion(key2, answers[key2], userAnswers[key2]);
+            showFeedback(key2, correct2);
+            showQuestionResult(key2, correct2 ? 1 : 0, 1);
+        }
+
+        // Q14: Formula input (2 BE)
+        var q14Input = document.getElementById('q14-input');
+        var q14Val = normalizeFormula(userAnswers.q14);
+        var q14Correct = (q14Val === '=B2*2' || q14Val === '=2*B2');
+        if (q14Correct) { score += 2; q14Input.classList.add('correct'); }
+        else { q14Input.classList.add('incorrect'); }
+        showFeedback('q14', q14Correct);
+        showQuestionResult('q14', q14Correct ? 2 : 0, 2);
+
+        // Q15: Two cell addresses (2 BE)
+        var q15Score = 0;
+        var q15aEl = document.getElementById('q15-a');
+        var q15bEl = document.getElementById('q15-b');
+        var q15aVal = (userAnswers.q15a || '').trim().toUpperCase();
+        var q15bVal = (userAnswers.q15b || '').trim().toUpperCase();
+        if (q15aVal === 'A3') { q15Score++; q15aEl.classList.add('correct'); } else { q15aEl.classList.add('incorrect'); }
+        if (q15bVal === 'C3') { q15Score++; q15bEl.classList.add('correct'); } else { q15bEl.classList.add('incorrect'); }
+        score += q15Score;
+        showFeedback('q15', q15Score === 2);
+        showQuestionResult('q15', q15Score, 2);
+
+        // Q16-Q18: Aufziehen & Autovervollständigung (je 1 BE)
+        for (var q3 = 16; q3 <= 18; q3++) {
+            var key3 = 'q' + q3;
+            var correct3 = userAnswers[key3] === answers[key3];
+            if (correct3) score += 1;
+            markRadioQuestion(key3, answers[key3], userAnswers[key3]);
+            showFeedback(key3, correct3);
+            showQuestionResult(key3, correct3 ? 1 : 0, 1);
+        }
+
+        // Q19-Q21: Teil C - Single choice (1, 1, 2 BE)
+        var q19Pts = [1, 1, 2];
+        for (var q4 = 19; q4 <= 21; q4++) {
+            var key4 = 'q' + q4;
+            var pts4 = q19Pts[q4 - 19];
+            var correct4 = userAnswers[key4] === answers[key4];
+            if (correct4) score += pts4;
+            markRadioQuestion(key4, answers[key4], userAnswers[key4]);
+            showFeedback(key4, correct4);
+            showQuestionResult(key4, correct4 ? pts4 : 0, pts4);
+        }
+
+        // Q22: Numeric input (2 BE)
+        var q22Input = document.getElementById('q22-input');
+        var q22Val = parseFloat(userAnswers.q22);
+        var q22Correct = Math.abs(q22Val - answers.q22) < 0.05;
+        if (q22Correct) { score += 2; q22Input.classList.add('correct'); }
+        else { q22Input.classList.add('incorrect'); }
+        showFeedback('q22', q22Correct);
+        showQuestionResult('q22', q22Correct ? 2 : 0, 2);
+
+        displayResults(score, maxPoints);
+    }
+
+    function markRadioQuestion(name, correct, selected) {
+        var options = document.querySelectorAll('#' + name + '-options .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (achieved === maxPts) result.classList.add('full');
+        else if (achieved > 0) result.classList.add('partial');
+        else result.classList.add('zero');
+        result.textContent = achieved + '/' + maxPts + ' BE';
+        meta.appendChild(result);
+    }
+
+    function displayResults(score, maxPoints) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+        document.getElementById('studentNameDisplay').textContent = 'Ermittler: ' + platzText;
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPoints + ' BE';
+
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        var npIds = ['be14', 'be13', 'be12', 'be11', 'be10', 'be9', 'be8', 'be7', 'be6', 'be5', 'be4', 'be3', 'be2', 'be1'];
+        for (var i = 0; i < thresholds.length; i++) {
+            var beExact = maxPoints * thresholds[i] / 100;
+            var be = Math.ceil(beExact * 2) / 2;
+            document.getElementById(npIds[i]).textContent = be;
+        }
+
+        var percent = (score / maxPoints) * 100;
+        var np = 0;
+        if (percent >= 100) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 86) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+
+        document.getElementById('gradeDisplay').textContent = np + ' Notenpunkte';
+        if (np > 0) {
+            var cellId = 'be' + np;
+            var cell = document.getElementById(cellId);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        document.getElementById('resultsSection').insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function disableAllInputs() {
+        var radios = document.querySelectorAll('input[type="radio"]');
+        for (var i = 0; i < radios.length; i++) radios[i].disabled = true;
+        var selects = document.querySelectorAll('select');
+        for (var k = 0; k < selects.length; k++) selects[k].disabled = true;
+        var numInputs = document.querySelectorAll('input[type="number"]');
+        for (var m = 0; m < numInputs.length; m++) numInputs[m].disabled = true;
+        var textInputs = document.querySelectorAll('input[type="text"]');
+        for (var n = 0; n < textInputs.length; n++) textInputs[n].disabled = true;
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+    }
+
+    window.onload = function() {
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+        generateSeatDropdown();
+        setupOptions();
+        setupDropdowns();
+        loadProgress();
+        updateProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{FACH}} {{KLASSE}} – {{HALBJAHR}} Stundenplan {{SCHULJAHR}}</title>
+    <style>
+        /* ============================================================
+           STUNDENPLAN-TEMPLATE
+           Version: 1.0 (2026-01-05)
+
+           ANPASSUNGEN:
+           1. {{FACH}}, {{KLASSE}}, {{HALBJAHR}}, {{SCHULJAHR}} ersetzen
+           2. --fach-color anpassen (siehe Farbpalette unten)
+           3. Kalender-Monate anpassen
+           4. Themenblöcke + Stunden einfügen
+
+           FACHFARBEN:
+           --physik:     #2c5aa0 (Blau)
+           --chemie:     #2a7a4b (Grün)
+           --informatik: #b35c00 (Orange)
+           --spanisch:   #c41e3a (Karminrot)
+           ============================================================ */
+
+        :root {
+            /* FACHFARBE HIER ANPASSEN */
+            --fach-color: #2c5aa0;
+
+            /* Themenfarben (bis zu 6 Blöcke) */
+            --theme-1: #7b1fa2;
+            --theme-1-bg: #f3e5f5;
+            --theme-2: #1976d2;
+            --theme-2-bg: #e3f2fd;
+            --theme-3: #388e3c;
+            --theme-3-bg: #e8f5e9;
+            --theme-4: #f57c00;
+            --theme-4-bg: #fff3e0;
+            --theme-5: #d32f2f;
+            --theme-5-bg: #ffebee;
+            --theme-6: #455a64;
+            --theme-6-bg: #eceff1;
+
+            /* System */
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --test-color: #b35c00;
+            --test-bg: #fff3e0;
+            --klausur-color: #c62828;
+            --klausur-bg: #ffcdd2;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        h2 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 20px 0 10px;
+            border-bottom: 2px solid var(--fach-color);
+            padding-bottom: 5px;
+        }
+        h3 { font-size: 0.95em; font-weight: 600; margin: 15px 0 8px; }
+        .meta { color: var(--text-muted); font-size: 0.85em; margin-bottom: 20px; }
+
+        /* Kalender */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .month {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+        .month-title {
+            font-weight: 600;
+            text-align: center;
+            padding: 5px;
+            background: var(--fach-color);
+            color: var(--white);
+            margin: -10px -10px 10px;
+        }
+        .week-row {
+            display: grid;
+            grid-template-columns: 30px repeat(5, 1fr);
+            gap: 2px;
+            margin-bottom: 3px;
+            font-size: 0.8em;
+        }
+        .week-row.header { font-weight: 600; color: var(--text-muted); }
+        .kw { color: #888; font-size: 0.75em; }
+        .day {
+            text-align: center;
+            padding: 3px 2px;
+            border-radius: 2px;
+        }
+        /* Unterrichtstage - ANPASSEN je nach Stundenplan */
+        .day.tag1 { background: #e3f2fd; }  /* z.B. Mittwoch */
+        .day.tag2 { background: #bbdefb; }  /* z.B. Freitag */
+        .day.ferien { background: #eee; color: #999; }
+        .day.test { background: var(--test-bg); border: 1px solid var(--test-color); }
+        .day.klausur { background: var(--klausur-bg); border: 1px solid var(--klausur-color); }
+        .day.notenstopp { border: 2px solid var(--klausur-color); }
+        .day.letzter { background: #222; color: #fff; }
+
+        /* Legende */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+        }
+
+        /* Stundenraster */
+        .stunden-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+        .stunde {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+        .stunde-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .stunde-nr { font-weight: 600; font-size: 1.1em; }
+        .stunde-datum { font-size: 0.85em; color: var(--text-muted); }
+        .stunde-typ {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 2px;
+            background: #eee;
+        }
+        .stunde-typ.es { background: #e3f2fd; }
+        .stunde-typ.ds { background: #bbdefb; }
+        .stunde-typ.test { background: var(--test-bg); color: var(--test-color); font-weight: 600; }
+        .stunde-typ.klausur { background: var(--klausur-bg); color: var(--klausur-color); font-weight: 600; }
+        .stunde-thema { font-weight: 600; margin-bottom: 5px; }
+        .stunde-fz { font-size: 0.85em; color: var(--text-muted); margin-bottom: 5px; }
+        .stunde-inhalt { font-size: 0.85em; color: #333; margin-bottom: 5px; }
+        .stunde-material { font-size: 0.8em; color: var(--fach-color); }
+
+        /* Themenblock-Farben */
+        .theme-1 { border-left: 4px solid var(--theme-1); }
+        .theme-2 { border-left: 4px solid var(--theme-2); }
+        .theme-3 { border-left: 4px solid var(--theme-3); }
+        .theme-4 { border-left: 4px solid var(--theme-4); }
+        .theme-5 { border-left: 4px solid var(--theme-5); }
+        .theme-6 { border-left: 4px solid var(--theme-6); }
+        .bg-1 { background: var(--theme-1-bg); }
+        .bg-2 { background: var(--theme-2-bg); }
+        .bg-3 { background: var(--theme-3-bg); }
+        .bg-4 { background: var(--theme-4-bg); }
+        .bg-5 { background: var(--theme-5-bg); }
+        .bg-6 { background: var(--theme-6-bg); }
+
+        /* AFB-Badges */
+        .afb {
+            display: inline-block;
+            font-size: 0.7em;
+            padding: 1px 4px;
+            border-radius: 2px;
+            background: #eee;
+            margin-left: 3px;
+        }
+        .afb-1 { background: #c8e6c9; }
+        .afb-2 { background: #fff9c4; }
+        .afb-3 { background: #ffcdd2; }
+
+        /* Zusammenfassung */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-box {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        /* Print */
+        @media print {
+            body { background: #fff; padding: 10px; font-size: 11px; }
+            .container { max-width: 100%; }
+            .calendar-grid { grid-template-columns: repeat(4, 1fr); }
+            .stunden-grid { grid-template-columns: repeat(3, 1fr); }
+            .month, .stunde { border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <h1>{{FACH}} {{KLASSE}} – Stundenplan {{HALBJAHR}}</h1>
+        <p class="meta">{{SCHULJAHR}} | Notenstopp: {{NOTENSTOPP}} | Letzter Tag: {{LETZTER_TAG}}</p>
+
+        <!-- KALENDER -->
+        <h2>Kalenderübersicht</h2>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-box" style="background:#e3f2fd"></div> {{TAG1_NAME}} ({{TAG1_TYP}})</div>
+            <div class="legend-item"><div class="legend-box" style="background:#bbdefb"></div> {{TAG2_NAME}} ({{TAG2_TYP}})</div>
+            <div class="legend-item"><div class="legend-box" style="background:var(--test-bg);border:1px solid var(--test-color)"></div> Test</div>
+            <div class="legend-item"><div class="legend-box" style="background:var(--klausur-bg);border:1px solid var(--klausur-color)"></div> Klausur</div>
+            <div class="legend-item"><div class="legend-box" style="background:#eee"></div> Ferien</div>
+        </div>
+
+        <div class="calendar-grid">
+            <!-- MONAT 1 -->
+            <div class="month">
+                <div class="month-title">{{MONAT1_NAME}}</div>
+                <div class="week-row header">
+                    <span class="kw">KW</span>
+                    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span>
+                </div>
+                <!-- Wochen hier einfügen -->
+                <div class="week-row">
+                    <span class="kw">{{KW}}</span>
+                    <span class="day">{{MO}}</span>
+                    <span class="day">{{DI}}</span>
+                    <span class="day tag1" title="{{TOOLTIP}}">{{MI}}</span>
+                    <span class="day">{{DO}}</span>
+                    <span class="day tag2" title="{{TOOLTIP}}">{{FR}}</span>
+                </div>
+                <!-- Weitere Wochen... -->
+            </div>
+
+            <!-- Weitere Monate nach gleichem Schema... -->
+        </div>
+
+        <!-- STUNDENÜBERSICHT -->
+        <h2>Stundenübersicht nach Themenblöcken</h2>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-box bg-1" style="border-left:4px solid var(--theme-1)"></div> {{THEMA1_NAME}}</div>
+            <div class="legend-item"><div class="legend-box bg-2" style="border-left:4px solid var(--theme-2)"></div> {{THEMA2_NAME}}</div>
+            <!-- Weitere Themen... -->
+        </div>
+
+        <!-- THEMENBLOCK 1 -->
+        <h3>{{THEMA1_NAME}} ({{THEMA1_STD}} Std)</h3>
+        <div class="stunden-grid">
+            <!-- Stunde -->
+            <div class="stunde theme-1 bg-1">
+                <div class="stunde-header">
+                    <span class="stunde-nr">{{NR}}</span>
+                    <span class="stunde-datum">{{WOCHENTAG}} {{DATUM}}</span>
+                    <span class="stunde-typ {{TYP_CLASS}}">{{TYP}}</span>
+                </div>
+                <div class="stunde-thema">{{THEMA}}</div>
+                <div class="stunde-fz">{{FEINZIEL}} <span class="afb afb-{{AFB}}">{{AFB}}</span></div>
+                <div class="stunde-inhalt">{{KERNINHALT}}</div>
+                <div class="stunde-material">→ {{MATERIAL}}</div>
+            </div>
+            <!-- Weitere Stunden... -->
+        </div>
+
+        <!-- TEST-Stunde Beispiel -->
+        <div class="stunde theme-1" style="background:var(--test-bg);border:2px solid var(--test-color)">
+            <div class="stunde-header">
+                <span class="stunde-nr">{{NR}}</span>
+                <span class="stunde-datum">{{WOCHENTAG}} {{DATUM}}</span>
+                <span class="stunde-typ test">TEST {{TEST_NR}}</span>
+            </div>
+            <div class="stunde-thema">Test: {{TEST_THEMEN}}</div>
+            <div class="stunde-fz">{{DAUER}} min, {{BE}} BE</div>
+            <div class="stunde-inhalt">{{TEST_INHALTE}}</div>
+        </div>
+
+        <!-- KLAUSUR-Stunde Beispiel -->
+        <div class="stunde theme-5" style="background:var(--klausur-bg);border:2px solid var(--klausur-color)">
+            <div class="stunde-header">
+                <span class="stunde-nr">{{NR}}</span>
+                <span class="stunde-datum">{{WOCHENTAG}} {{DATUM}}</span>
+                <span class="stunde-typ klausur">KLAUSUR</span>
+            </div>
+            <div class="stunde-thema">Klausur {{KLAUSUR_NAME}}</div>
+            <div class="stunde-fz">{{DAUER}} min, {{BE}} BE</div>
+            <div class="stunde-inhalt">{{KLAUSUR_INHALTE}}</div>
+        </div>
+
+        <!-- ZUSAMMENFASSUNG -->
+        <h2>Zusammenfassung</h2>
+        <div class="summary-grid">
+            <div class="summary-box">
+                <strong>Unterricht</strong><br>
+                {{ANZAHL_TERMINE}} Termine ({{ANZAHL_SCHULSTUNDEN}} Schulstunden)
+            </div>
+            <div class="summary-box" style="background:var(--test-bg);border-color:var(--test-color)">
+                <strong>Tests</strong><br>
+                {{ANZAHL_TESTS}} × {{TEST_DAUER}} min (je {{TEST_BE}} BE)
+            </div>
+            <div class="summary-box" style="background:var(--klausur-bg);border-color:var(--klausur-color)">
+                <strong>Klausur</strong><br>
+                {{ANZAHL_KLAUSUREN}} × {{KLAUSUR_DAUER}} min ({{KLAUSUR_BE}} BE)
+            </div>
+            <div class="summary-box" style="background:#e8f5e9;border-color:#388e3c">
+                <strong>Simulationen/Experimente</strong><br>
+                {{ANZAHL_SIM}} ×
+            </div>
+        </div>
+
+        <p style="margin-top:30px;font-size:0.8em;color:#888;text-align:center">
+            Stand: {{STAND}} | {{FACH}} {{KLASSE}}
+        </p>
+    </div>
+</body>
+</html>

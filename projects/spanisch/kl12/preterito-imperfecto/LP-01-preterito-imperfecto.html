@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-01: Pretérito Imperfecto</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+        .nav-bar {
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-title { font-weight: 600; color: #c41e3a; }
+        .nav-steps { display: flex; gap: 6px; flex-wrap: wrap; }
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: pointer;
+            background: #fff;
+        }
+        .step-dot.active { border-color: #c41e3a; background: #c41e3a; color: #fff; }
+        .step-dot.done { border-color: #2a7a4b; background: #2a7a4b; color: #fff; }
+        .progress-info { font-size: 0.9em; color: #555; }
+        .container { max-width: 900px; margin: 20px auto; padding: 0 20px; }
+        .card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 30px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .card.visible { display: block; }
+        .card-header {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #c41e3a;
+        }
+        .card-step { font-size: 0.85em; color: #888; margin-bottom: 5px; }
+        .card-title { font-size: 1.4em; font-weight: 600; color: #222; }
+        .info {
+            background: #fdf2f4;
+            border: 1px solid #c41e3a;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-title { font-weight: 600; color: #c41e3a; margin-bottom: 8px; }
+        .hefter {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .hefter-label {
+            display: inline-block;
+            background: #b35c00;
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .exercise { margin: 20px 0; }
+        .exercise-title { font-weight: 600; margin-bottom: 10px; }
+        .fill-blank {
+            border: none;
+            border-bottom: 2px solid #c41e3a;
+            padding: 2px 5px;
+            width: 120px;
+            font-size: inherit;
+            background: transparent;
+            text-align: center;
+        }
+        .fill-blank.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .fill-blank.wrong { border-color: #c62828; background: #ffebee; }
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-main { background: #c41e3a; color: #fff; }
+        .btn-main:hover { background: #a01830; }
+        .btn-back { background: #fff; border: 1px solid #ddd; color: #555; }
+        .btn-check { background: #2c5aa0; color: #fff; margin-top: 15px; }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .feedback {
+            padding: 12px 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.ok { background: #e8f5e9; border: 1px solid #2a7a4b; color: #2a7a4b; }
+        .feedback.partial { background: #fff3e0; border: 1px solid #b35c00; color: #b35c00; }
+        .feedback.wrong { background: #ffebee; border: 1px solid #c62828; color: #c62828; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #c41e3a; color: #fff; }
+        .stamm { color: #c41e3a; font-weight: 600; }
+        .complete-screen { text-align: center; padding: 40px 20px; }
+        .complete-screen h2 { color: #2a7a4b; font-size: 2em; margin-bottom: 20px; }
+        .score { font-size: 1.5em; margin: 20px 0; }
+        ul, ol { margin-left: 20px; }
+        li { margin-bottom: 8px; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+        .signal-box {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #c41e3a;
+        }
+        .signal-box.indef { border-left-color: #2c5aa0; }
+        .radio-group { margin: 10px 0; }
+        .radio-group label {
+            display: block;
+            padding: 10px 15px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .radio-group label:hover { background: #f5f5f5; }
+        .radio-group input { margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <div class="nav-content">
+        <div class="nav-title">LP-01: Pretérito Imperfecto</div>
+        <div class="nav-steps" id="stepDots"></div>
+        <div class="progress-info"><span id="pct">0</span>%</div>
+    </div>
+</nav>
+
+<div class="container">
+
+    <!-- SCHRITT 1: Willkommen -->
+    <div class="card visible" id="step1">
+        <div class="card-header">
+            <div class="card-step">Schritt 1 von 10</div>
+            <h1 class="card-title">Cuando era niño/a...</h1>
+        </div>
+        <p>In dieser Lektion lernst du das <strong>Pretérito Imperfecto</strong> - die Vergangenheitsform für:</p>
+        <ul>
+            <li>Gewohnheiten und regelmäßige Handlungen in der Vergangenheit</li>
+            <li>Beschreibungen von Zuständen und Hintergründen</li>
+            <li>Gleichzeitige Handlungen</li>
+        </ul>
+        <div class="info">
+            <div class="info-title">Lernziele</div>
+            <ul>
+                <li>Das Imperfecto für -ar, -er, -ir Verben konjugieren</li>
+                <li>Die drei unregelmäßigen Verben <em>ser, ir, ver</em> beherrschen</li>
+                <li>Imperfecto und Indefinido korrekt unterscheiden</li>
+            </ul>
+        </div>
+        <div class="nav-buttons">
+            <div></div>
+            <button class="btn btn-main" onclick="goTo(2)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 2: Konjugation -ar -->
+    <div class="card" id="step2">
+        <div class="card-header">
+            <div class="card-step">Schritt 2 von 10</div>
+            <h1 class="card-title">Verben auf -ar: bailar</h1>
+        </div>
+        <p>Bei Verben auf <strong>-ar</strong> wird der Stamm mit den Endungen <span class="stamm">-aba, -abas, -aba, -ábamos, -abais, -aban</span> verbunden:</p>
+        <table>
+            <tr><th>Person</th><th>bailar (tanzen)</th></tr>
+            <tr><td>yo</td><td>bail<span class="stamm">aba</span></td></tr>
+            <tr><td>tú</td><td>bail<span class="stamm">abas</span></td></tr>
+            <tr><td>él/ella/usted</td><td>bail<span class="stamm">aba</span></td></tr>
+            <tr><td>nosotros/as</td><td>bail<span class="stamm">ábamos</span></td></tr>
+            <tr><td>vosotros/as</td><td>bail<span class="stamm">abais</span></td></tr>
+            <tr><td>ellos/ellas/ustedes</td><td>bail<span class="stamm">aban</span></td></tr>
+        </table>
+        <div class="info">
+            <div class="info-title">Merke</div>
+            <p>Die 1. und 3. Person Singular sind identisch: <strong>yo bailaba = él/ella bailaba</strong></p>
+        </div>
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <p>→ Fülle <strong>Grammatikkasten G1</strong> auf deinem AB aus!</p>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(1)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(3)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 3: Übung -ar -->
+    <div class="card" id="step3">
+        <div class="card-header">
+            <div class="card-step">Schritt 3 von 10</div>
+            <h1 class="card-title">Übung: Verben auf -ar</h1>
+        </div>
+        <div class="exercise">
+            <p class="exercise-title">Ergänze die richtige Form im Imperfecto:</p>
+            <p>1. De niño, yo <input type="text" class="fill-blank" id="ar1" placeholder="..."> (trabajar) en el jardín.</p>
+            <p>2. Mis abuelos siempre <input type="text" class="fill-blank" id="ar2" placeholder="..."> (escuchar) la radio.</p>
+            <p>3. Tú <input type="text" class="fill-blank" id="ar3" placeholder="..."> (jugar) con tus amigos.</p>
+            <p>4. Nosotros <input type="text" class="fill-blank" id="ar4" placeholder="..."> (cantar) canciones populares.</p>
+            <p>5. María <input type="text" class="fill-blank" id="ar5" placeholder="..."> (estudiar) mucho.</p>
+            <p>6. Vosotros <input type="text" class="fill-blank" id="ar6" placeholder="..."> (hablar) español en casa.</p>
+            <button class="btn btn-check" onclick="checkAr()">Prüfen</button>
+            <div class="feedback" id="fbAr"></div>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(2)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(4)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 4: Konjugation -er/-ir -->
+    <div class="card" id="step4">
+        <div class="card-header">
+            <div class="card-step">Schritt 4 von 10</div>
+            <h1 class="card-title">Verben auf -er/-ir: correr, salir</h1>
+        </div>
+        <p>Bei Verben auf <strong>-er</strong> und <strong>-ir</strong> sind die Endungen identisch: <span class="stamm">-ía, -ías, -ía, -íamos, -íais, -ían</span></p>
+        <div class="two-col">
+            <div>
+                <table>
+                    <tr><th colspan="2">correr (laufen)</th></tr>
+                    <tr><td>yo</td><td>corr<span class="stamm">ía</span></td></tr>
+                    <tr><td>tú</td><td>corr<span class="stamm">ías</span></td></tr>
+                    <tr><td>él/ella</td><td>corr<span class="stamm">ía</span></td></tr>
+                    <tr><td>nosotros</td><td>corr<span class="stamm">íamos</span></td></tr>
+                    <tr><td>vosotros</td><td>corr<span class="stamm">íais</span></td></tr>
+                    <tr><td>ellos</td><td>corr<span class="stamm">ían</span></td></tr>
+                </table>
+            </div>
+            <div>
+                <table>
+                    <tr><th colspan="2">salir (ausgehen)</th></tr>
+                    <tr><td>yo</td><td>sal<span class="stamm">ía</span></td></tr>
+                    <tr><td>tú</td><td>sal<span class="stamm">ías</span></td></tr>
+                    <tr><td>él/ella</td><td>sal<span class="stamm">ía</span></td></tr>
+                    <tr><td>nosotros</td><td>sal<span class="stamm">íamos</span></td></tr>
+                    <tr><td>vosotros</td><td>sal<span class="stamm">íais</span></td></tr>
+                    <tr><td>ellos</td><td>sal<span class="stamm">ían</span></td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <p>→ Fülle <strong>Grammatikkasten G2</strong> auf deinem AB aus!</p>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(3)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(5)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 5: Übung -er/-ir -->
+    <div class="card" id="step5">
+        <div class="card-header">
+            <div class="card-step">Schritt 5 von 10</div>
+            <h1 class="card-title">Übung: Verben auf -er/-ir</h1>
+        </div>
+        <div class="exercise">
+            <p class="exercise-title">Ergänze die richtige Form im Imperfecto:</p>
+            <p>1. Yo <input type="text" class="fill-blank" id="er1" placeholder="..."> (vivir) en Madrid.</p>
+            <p>2. Los niños <input type="text" class="fill-blank" id="er2" placeholder="..."> (comer) mucho helado.</p>
+            <p>3. Mi padre <input type="text" class="fill-blank" id="er3" placeholder="..."> (leer) el periódico cada mañana.</p>
+            <p>4. Nosotras <input type="text" class="fill-blank" id="er4" placeholder="..."> (escribir) cartas a nuestros primos.</p>
+            <p>5. ¿Tú <input type="text" class="fill-blank" id="er5" placeholder="..."> (tener) un perro?</p>
+            <p>6. Vosotros <input type="text" class="fill-blank" id="er6" placeholder="..."> (beber) mucha limonada.</p>
+            <button class="btn btn-check" onclick="checkEr()">Prüfen</button>
+            <div class="feedback" id="fbEr"></div>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(4)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(6)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 6: Unregelmäßige Verben -->
+    <div class="card" id="step6">
+        <div class="card-header">
+            <div class="card-step">Schritt 6 von 10</div>
+            <h1 class="card-title">Die drei Ausnahmen: ser, ir, ver</h1>
+        </div>
+        <p>Nur <strong>drei Verben</strong> sind im Imperfecto unregelmäßig:</p>
+        <table>
+            <tr><th>Person</th><th>ser (sein)</th><th>ir (gehen)</th><th>ver (sehen)</th></tr>
+            <tr><td>yo</td><td><span class="stamm">era</span></td><td><span class="stamm">iba</span></td><td><span class="stamm">veía</span></td></tr>
+            <tr><td>tú</td><td><span class="stamm">eras</span></td><td><span class="stamm">ibas</span></td><td><span class="stamm">veías</span></td></tr>
+            <tr><td>él/ella</td><td><span class="stamm">era</span></td><td><span class="stamm">iba</span></td><td><span class="stamm">veía</span></td></tr>
+            <tr><td>nosotros</td><td><span class="stamm">éramos</span></td><td><span class="stamm">íbamos</span></td><td><span class="stamm">veíamos</span></td></tr>
+            <tr><td>vosotros</td><td><span class="stamm">erais</span></td><td><span class="stamm">ibais</span></td><td><span class="stamm">veíais</span></td></tr>
+            <tr><td>ellos</td><td><span class="stamm">eran</span></td><td><span class="stamm">iban</span></td><td><span class="stamm">veían</span></td></tr>
+        </table>
+        <div class="info">
+            <div class="info-title">Tipp</div>
+            <p><strong>ver</strong> behält das <em>e</em> vor der Endung: ve-ía, ve-ías, ve-ía...</p>
+        </div>
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <p>→ Fülle <strong>Grammatikkasten G3</strong> auf deinem AB aus!</p>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(5)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(7)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 7: Übung irreguläre Verben -->
+    <div class="card" id="step7">
+        <div class="card-header">
+            <div class="card-step">Schritt 7 von 10</div>
+            <h1 class="card-title">Übung: ser, ir, ver</h1>
+        </div>
+        <div class="exercise">
+            <p class="exercise-title">Ergänze die richtige Form:</p>
+            <p>1. Cuando yo <input type="text" class="fill-blank" id="irr1" placeholder="..."> (ser) pequeño, vivía en Barcelona.</p>
+            <p>2. Mis padres <input type="text" class="fill-blank" id="irr2" placeholder="..."> (ir) al mercado todos los sábados.</p>
+            <p>3. Nosotros <input type="text" class="fill-blank" id="irr3" placeholder="..."> (ver) la televisión por las tardes.</p>
+            <p>4. Mi abuela <input type="text" class="fill-blank" id="irr4" placeholder="..."> (ser) muy simpática.</p>
+            <p>5. ¿Tú <input type="text" class="fill-blank" id="irr5" placeholder="..."> (ir) a la playa en verano?</p>
+            <p>6. Vosotras <input type="text" class="fill-blank" id="irr6" placeholder="..."> (ver) películas de terror.</p>
+            <button class="btn btn-check" onclick="checkIrr()">Prüfen</button>
+            <div class="feedback" id="fbIrr"></div>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(6)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(8)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 8: Imperfecto vs. Indefinido -->
+    <div class="card" id="step8">
+        <div class="card-header">
+            <div class="card-step">Schritt 8 von 10</div>
+            <h1 class="card-title">Imperfecto vs. Indefinido</h1>
+        </div>
+        <p>Der wichtigste Unterschied zwischen den beiden Vergangenheitsformen:</p>
+        <div class="two-col">
+            <div class="signal-box">
+                <strong>IMPERFECTO</strong> - Hintergrund, Gewohnheit
+                <ul>
+                    <li>siempre, normalmente</li>
+                    <li>cada día, todos los días</li>
+                    <li>a menudo, frecuentemente</li>
+                    <li>mientras, cuando (Hintergrund)</li>
+                    <li>de niño/a, en aquella época</li>
+                </ul>
+            </div>
+            <div class="signal-box indef">
+                <strong>INDEFINIDO</strong> - Einmalige Handlung
+                <ul>
+                    <li>ayer, anteayer</li>
+                    <li>el año pasado, hace dos días</li>
+                    <li>de repente, en ese momento</li>
+                    <li>una vez, dos veces</li>
+                    <li>en 2020, el lunes</li>
+                </ul>
+            </div>
+        </div>
+        <div class="info">
+            <div class="info-title">Eselsbrücke</div>
+            <p><strong>Imperfecto</strong> = Kamera schwenkt (Beschreibung, Hintergrund)<br>
+            <strong>Indefinido</strong> = Foto knipsen (einmalige Aktion)</p>
+        </div>
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <p>→ Fülle <strong>Grammatikkasten G4</strong> auf deinem AB aus!</p>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(7)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(9)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 9: Übung Imperfecto vs. Indefinido -->
+    <div class="card" id="step9">
+        <div class="card-header">
+            <div class="card-step">Schritt 9 von 10</div>
+            <h1 class="card-title">Übung: Imperfecto oder Indefinido?</h1>
+        </div>
+        <div class="exercise">
+            <p class="exercise-title">Wähle die richtige Zeitform:</p>
+
+            <p><strong>1.</strong> Cuando era niño, siempre _____ al parque.</p>
+            <div class="radio-group">
+                <label><input type="radio" name="vs1" value="imp">iba (Imperfecto)</label>
+                <label><input type="radio" name="vs1" value="ind">fui (Indefinido)</label>
+            </div>
+
+            <p><strong>2.</strong> Ayer _____ a María en el supermercado.</p>
+            <div class="radio-group">
+                <label><input type="radio" name="vs2" value="imp">veía (Imperfecto)</label>
+                <label><input type="radio" name="vs2" value="ind">vi (Indefinido)</label>
+            </div>
+
+            <p><strong>3.</strong> Mientras mi madre _____, yo hacía los deberes.</p>
+            <div class="radio-group">
+                <label><input type="radio" name="vs3" value="imp">cocinaba (Imperfecto)</label>
+                <label><input type="radio" name="vs3" value="ind">cocinó (Indefinido)</label>
+            </div>
+
+            <p><strong>4.</strong> El año pasado _____ a España de vacaciones.</p>
+            <div class="radio-group">
+                <label><input type="radio" name="vs4" value="imp">viajábamos (Imperfecto)</label>
+                <label><input type="radio" name="vs4" value="ind">viajamos (Indefinido)</label>
+            </div>
+
+            <p><strong>5.</strong> De repente, el teléfono _____.</p>
+            <div class="radio-group">
+                <label><input type="radio" name="vs5" value="imp">sonaba (Imperfecto)</label>
+                <label><input type="radio" name="vs5" value="ind">sonó (Indefinido)</label>
+            </div>
+
+            <p><strong>6.</strong> Todos los veranos _____ a la playa.</p>
+            <div class="radio-group">
+                <label><input type="radio" name="vs6" value="imp">íbamos (Imperfecto)</label>
+                <label><input type="radio" name="vs6" value="ind">fuimos (Indefinido)</label>
+            </div>
+
+            <button class="btn btn-check" onclick="checkVs()">Prüfen</button>
+            <div class="feedback" id="fbVs"></div>
+        </div>
+        <div class="hefter">
+            <div class="hefter-label">Arbeitsblatt</div>
+            <p>→ Bearbeite <strong>Aufgabe A4</strong> auf deinem AB!</p>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(8)">← Zurück</button>
+            <button class="btn btn-main" onclick="goTo(10)">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 10: Abschluss -->
+    <div class="card" id="step10">
+        <div class="card-header">
+            <div class="card-step">Schritt 10 von 10</div>
+            <h1 class="card-title">¡Muy bien!</h1>
+        </div>
+        <div class="complete-screen">
+            <h2>¡Felicidades!</h2>
+            <p>Du hast den Lernpfad zum Pretérito Imperfecto abgeschlossen.</p>
+            <div class="score">Punkte: <span id="finalScore">0</span> / 30</div>
+
+            <div class="info" style="text-align: left; margin-top: 30px;">
+                <div class="info-title">Zusammenfassung</div>
+                <ul>
+                    <li><strong>-ar Verben:</strong> -aba, -abas, -aba, -ábamos, -abais, -aban</li>
+                    <li><strong>-er/-ir Verben:</strong> -ía, -ías, -ía, -íamos, -íais, -ían</li>
+                    <li><strong>Unregelmäßig:</strong> ser (era), ir (iba), ver (veía)</li>
+                    <li><strong>Verwendung:</strong> Gewohnheiten, Beschreibungen, Hintergrund</li>
+                </ul>
+            </div>
+
+            <div class="hefter" style="margin-top: 20px;">
+                <div class="hefter-label">Nächste Schritte</div>
+                <p>1. Bearbeite <strong>Aufgabe A5</strong> (eigene Sätze) auf deinem AB<br>
+                2. Mache den <strong>Minitest</strong> zur Stundenleistung<br>
+                3. Gib dein Arbeitsblatt ab!</p>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="goTo(9)">← Zurück</button>
+            <button class="btn btn-main" onclick="resetLP()">Neu starten</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+var LP_ID = 'lp01-preterito-imperfecto';
+var TOTAL_STEPS = 10;
+var currentStep = 1;
+var scores = { ar: 0, er: 0, irr: 0, vs: 0 };
+
+function init() {
+    loadStep();
+    loadInputs();
+    loadScores();
+    renderDots();
+    updateProgress();
+    showStep(currentStep);
+}
+
+function renderDots() {
+    var container = document.getElementById('stepDots');
+    container.innerHTML = '';
+    for (var i = 1; i <= TOTAL_STEPS; i++) {
+        var dot = document.createElement('div');
+        dot.className = 'step-dot';
+        dot.textContent = i;
+        dot.onclick = (function(step) {
+            return function() { goTo(step); };
+        })(i);
+        container.appendChild(dot);
+    }
+    updateDots();
+}
+
+function updateDots() {
+    var dots = document.querySelectorAll('.step-dot');
+    for (var i = 0; i < dots.length; i++) {
+        dots[i].className = 'step-dot';
+        if (i + 1 < currentStep) {
+            dots[i].className += ' done';
+        } else if (i + 1 === currentStep) {
+            dots[i].className += ' active';
+        }
+    }
+}
+
+function updateProgress() {
+    var pct = Math.round(((currentStep - 1) / (TOTAL_STEPS - 1)) * 100);
+    document.getElementById('pct').textContent = pct;
+}
+
+function showStep(n) {
+    for (var i = 1; i <= TOTAL_STEPS; i++) {
+        var card = document.getElementById('step' + i);
+        if (card) {
+            card.className = i === n ? 'card visible' : 'card';
+        }
+    }
+    if (n === TOTAL_STEPS) {
+        var total = scores.ar + scores.er + scores.irr + scores.vs;
+        document.getElementById('finalScore').textContent = total;
+    }
+}
+
+function goTo(n) {
+    if (n < 1 || n > TOTAL_STEPS) return;
+    currentStep = n;
+    saveStep(n);
+    showStep(n);
+    updateDots();
+    updateProgress();
+    window.scrollTo(0, 0);
+}
+
+function saveStep(n) {
+    localStorage.setItem(LP_ID + '-step', n);
+}
+
+function loadStep() {
+    var saved = localStorage.getItem(LP_ID + '-step');
+    if (saved) {
+        currentStep = parseInt(saved);
+    }
+}
+
+function saveInput(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        localStorage.setItem(LP_ID + '-' + id, el.value);
+    }
+}
+
+function loadInputs() {
+    var inputs = document.querySelectorAll('input[type="text"]');
+    for (var i = 0; i < inputs.length; i++) {
+        var el = inputs[i];
+        var val = localStorage.getItem(LP_ID + '-' + el.id);
+        if (val) el.value = val;
+        el.onchange = (function(id) {
+            return function() { saveInput(id); };
+        })(el.id);
+        el.oninput = (function(id) {
+            return function() { saveInput(id); };
+        })(el.id);
+    }
+
+    // Radio buttons
+    var radios = document.querySelectorAll('input[type="radio"]');
+    for (var j = 0; j < radios.length; j++) {
+        var r = radios[j];
+        var savedVal = localStorage.getItem(LP_ID + '-' + r.name);
+        if (savedVal && r.value === savedVal) {
+            r.checked = true;
+        }
+        r.onchange = function() {
+            localStorage.setItem(LP_ID + '-' + this.name, this.value);
+        };
+    }
+}
+
+function saveScores() {
+    localStorage.setItem(LP_ID + '-scores', JSON.stringify(scores));
+}
+
+function loadScores() {
+    var saved = localStorage.getItem(LP_ID + '-scores');
+    if (saved) {
+        scores = JSON.parse(saved);
+    }
+}
+
+// Normalisierung für spanische Eingaben (Akzenttoleranz)
+function norm(s) {
+    if (!s) return '';
+    return s.toLowerCase().trim()
+        .replace(/á/g, 'a')
+        .replace(/é/g, 'e')
+        .replace(/í/g, 'i')
+        .replace(/ó/g, 'o')
+        .replace(/ú/g, 'u')
+        .replace(/ñ/g, 'n')
+        .replace(/ü/g, 'u')
+        .replace(/[¿¡?!.,;:]/g, '')
+        .replace(/\s+/g, ' ');
+}
+
+function checkMatch(input, acceptedList) {
+    var userVal = norm(input);
+    for (var i = 0; i < acceptedList.length; i++) {
+        if (userVal === norm(acceptedList[i])) return true;
+    }
+    return false;
+}
+
+function checkAr() {
+    var correct = 0;
+    var answers = {
+        ar1: ['trabajaba'],
+        ar2: ['escuchaban'],
+        ar3: ['jugabas'],
+        ar4: ['cantabamos', 'cantábamos'],
+        ar5: ['estudiaba'],
+        ar6: ['hablabais']
+    };
+    for (var id in answers) {
+        var el = document.getElementById(id);
+        var val = el.value;
+        if (checkMatch(val, answers[id])) {
+            correct++;
+            el.className = 'fill-blank correct';
+        } else {
+            el.className = 'fill-blank wrong';
+        }
+    }
+    scores.ar = correct;
+    saveScores();
+    var fb = document.getElementById('fbAr');
+    fb.className = 'feedback show ' + (correct === 6 ? 'ok' : (correct >= 3 ? 'partial' : 'wrong'));
+    fb.innerHTML = correct + '/6 richtig. ' + (correct < 6 ? 'Tipp: -ar Verben → -aba, -abas, -aba, -ábamos, -abais, -aban' : '¡Perfecto!');
+}
+
+function checkEr() {
+    var correct = 0;
+    var answers = {
+        er1: ['vivia', 'vivía'],
+        er2: ['comian', 'comían'],
+        er3: ['leia', 'leía'],
+        er4: ['escribiamos', 'escribíamos'],
+        er5: ['tenias', 'tenías'],
+        er6: ['bebiais', 'bebíais']
+    };
+    for (var id in answers) {
+        var el = document.getElementById(id);
+        var val = el.value;
+        if (checkMatch(val, answers[id])) {
+            correct++;
+            el.className = 'fill-blank correct';
+        } else {
+            el.className = 'fill-blank wrong';
+        }
+    }
+    scores.er = correct;
+    saveScores();
+    var fb = document.getElementById('fbEr');
+    fb.className = 'feedback show ' + (correct === 6 ? 'ok' : (correct >= 3 ? 'partial' : 'wrong'));
+    fb.innerHTML = correct + '/6 richtig. ' + (correct < 6 ? 'Tipp: -er/-ir Verben → -ía, -ías, -ía, -íamos, -íais, -ían' : '¡Excelente!');
+}
+
+function checkIrr() {
+    var correct = 0;
+    var answers = {
+        irr1: ['era'],
+        irr2: ['iban'],
+        irr3: ['veiamos', 'veíamos'],
+        irr4: ['era'],
+        irr5: ['ibas'],
+        irr6: ['veiais', 'veíais']
+    };
+    for (var id in answers) {
+        var el = document.getElementById(id);
+        var val = el.value;
+        if (checkMatch(val, answers[id])) {
+            correct++;
+            el.className = 'fill-blank correct';
+        } else {
+            el.className = 'fill-blank wrong';
+        }
+    }
+    scores.irr = correct;
+    saveScores();
+    var fb = document.getElementById('fbIrr');
+    fb.className = 'feedback show ' + (correct === 6 ? 'ok' : (correct >= 3 ? 'partial' : 'wrong'));
+    fb.innerHTML = correct + '/6 richtig. ' + (correct < 6 ? 'Merke: ser→era, ir→iba, ver→veía' : '¡Muy bien!');
+}
+
+function checkVs() {
+    var correct = 0;
+    var answers = {
+        vs1: 'imp',
+        vs2: 'ind',
+        vs3: 'imp',
+        vs4: 'ind',
+        vs5: 'ind',
+        vs6: 'imp'
+    };
+    for (var name in answers) {
+        var selected = document.querySelector('input[name="' + name + '"]:checked');
+        if (selected && selected.value === answers[name]) {
+            correct += 2;
+        }
+    }
+    scores.vs = correct;
+    saveScores();
+    var fb = document.getElementById('fbVs');
+    fb.className = 'feedback show ' + (correct === 12 ? 'ok' : (correct >= 6 ? 'partial' : 'wrong'));
+    fb.innerHTML = correct + '/12 richtig. ' + (correct < 12 ? 'Tipp: Signalwörter beachten! "siempre, cada día" → Imperfecto; "ayer, de repente" → Indefinido' : '¡Fantástico!');
+}
+
+function resetLP() {
+    if (!confirm('Wirklich neu starten? Alle Eingaben werden gelöscht.')) return;
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k && k.indexOf(LP_ID) === 0) {
+            keys.push(k);
+        }
+    }
+    for (var j = 0; j < keys.length; j++) {
+        localStorage.removeItem(keys[j]);
+    }
+    scores = { ar: 0, er: 0, irr: 0, vs: 0 };
+    location.reload();
+}
+
+init();
+</script>
+
+</body>
+</html>

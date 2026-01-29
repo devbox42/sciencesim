@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         LP-TEMPLATE-mint.html
+         Version: 1.0
+         Datum: 2026-01-27
+
+         ANPASSBARE VARIABLEN (Suche & Ersetze):
+         - [THEMA]: Titel des Lernpfads (z.B. "Ohmsches Gesetz")
+         - [FACH]: Physik / Chemie / Informatik
+         - [KLASSE]: Klassenstufe (z.B. "8", "10E", "12-GK")
+         - [DS-NR]: Doppelstunden-Nummer (z.B. "DS2")
+         - [ZEIT]: Zeitumfang (z.B. "90 Minuten")
+         - [LP-ID]: LocalStorage-ID (z.B. "physik-kl8-02-ohm")
+         - [FACHFARBE]: Fachfarbe (Physik: #2c5aa0, Chemie: #2a7a4b, Informatik: #b35c00)
+
+         WARM-UP-QUIZ:
+         - Schritt 0 vor dem eigentlichen Lernpfad
+         - 5-10 MC-Fragen (Funfacts, Historie, Alltagsbezug)
+         - Nicht-blockierend (Weitermachen immer möglich)
+         - Feedback pro Frage mit Auflösung
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <title>Lernpfad: [THEMA] | [FACH] Klasse [KLASSE]</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════
+           GRUNDLAYOUT
+           ═══════════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #222;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           FARBEN - ANPASSEN JE NACH FACH!
+           Physik: #2c5aa0 / Chemie: #2a7a4b / Informatik: #b35c00
+           ═══════════════════════════════════════════════════════════════════ */
+        :root {
+            --fach: [FACHFARBE];
+            --fach-light: #e8f0fa; /* Anpassen: Physik: #e8f0fa, Chemie: #e8f5e9, Informatik: #fff3e0 */
+            --success: #2a7a4b;
+            --success-light: #e8f5e9;
+            --warning: #b35c00;
+            --warning-light: #fff3e0;
+            --error: #c62828;
+            --error-light: #ffebee;
+            --gray: #666;
+            --border: #ddd;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           HEADER
+           ═══════════════════════════════════════════════════════════════════ */
+        header {
+            background: var(--fach);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        header .meta {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           FORTSCHRITT
+           ═══════════════════════════════════════════════════════════════════ */
+        .progress-bar {
+            background: #ddd;
+            height: 8px;
+            width: 100%;
+        }
+
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #666;
+        }
+
+        .step-dot:hover { border-color: var(--fach); }
+        .step-dot.active { background: var(--fach); border-color: var(--fach); color: white; font-weight: 700; }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
+        .step-dot.warmup { background: #ffd700; border-color: #e6c200; color: #333; }
+        .step-dot.warmup.active { background: #ffc107; border-color: #ff9800; }
+        .step-dot.warmup.completed { background: #32cd32; border-color: #28a745; color: white; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           SCHRITTE
+           ═══════════════════════════════════════════════════════════════════ */
+        .step {
+            display: none;
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .step.active { display: block; }
+
+        .step h2 {
+            color: var(--fach);
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach-light);
+        }
+
+        .step h3 {
+            font-size: 1.1em;
+            margin: 20px 0 10px 0;
+            color: #333;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           WARM-UP QUIZ STYLES
+           ═══════════════════════════════════════════════════════════════════ */
+        .warmup-container {
+            background: linear-gradient(135deg, #fffde7 0%, #fff8e1 100%);
+            border: 2px solid #ffd54f;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .warmup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .warmup-header .icon {
+            font-size: 2em;
+        }
+
+        .warmup-header h2 {
+            color: #f57c00;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .warmup-intro {
+            background: white;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+
+        .warmup-question {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffd54f;
+        }
+
+        .warmup-question.answered { border-left-color: #4caf50; }
+        .warmup-question.answered.wrong { border-left-color: #f44336; }
+
+        .warmup-question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .warmup-question-number {
+            background: #ffd54f;
+            color: #333;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .warmup-question-type {
+            font-size: 0.8em;
+            color: var(--gray);
+        }
+
+        .warmup-question p {
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .warmup-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .warmup-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .warmup-option:hover { background: #e3f2fd; }
+        .warmup-option.selected { border-color: var(--fach); background: var(--fach-light); }
+        .warmup-option.correct { border-color: #4caf50; background: #e8f5e9; }
+        .warmup-option.incorrect { border-color: #f44336; background: #ffebee; }
+        .warmup-option.disabled { pointer-events: none; opacity: 0.7; }
+
+        .warmup-option input {
+            margin-right: 10px;
+        }
+
+        .warmup-feedback {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .warmup-feedback.visible { display: block; }
+
+        .warmup-feedback.correct {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .warmup-feedback.incorrect {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .warmup-feedback .answer-reveal {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .warmup-feedback .explanation {
+            font-size: 0.95em;
+            color: #333;
+        }
+
+        .warmup-score {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .warmup-score-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--fach);
+        }
+
+        .warmup-score-text {
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+
+        .warmup-skip-info {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: var(--gray);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           CONTENT BOXEN
+           ═══════════════════════════════════════════════════════════════════ */
+        .info-box {
+            background: var(--fach-light);
+            border-left: 4px solid var(--fach);
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .formel-box {
+            background: #f9f9f9;
+            border: 2px solid var(--fach);
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        /* ISO 80000: Formelzeichen kursiv */
+        .formel-box .fz {
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+        }
+
+        /* ISO 80000: Einheiten aufrecht */
+        .formel-box .einheit {
+            font-family: sans-serif;
+            font-style: normal;
+            color: var(--gray);
+            font-size: 0.85em;
+        }
+
+        .merksatz {
+            background: var(--success-light);
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .hefter-hinweis {
+            background: var(--warning-light);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           SIMULATION CONTAINER
+           ═══════════════════════════════════════════════════════════════════ */
+        .sim-container {
+            background: #f9f9f9;
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .sim-container h4 {
+            color: var(--fach);
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        canvas {
+            display: block;
+            margin: 10px auto;
+            background: white;
+            border: 1px solid var(--border);
+        }
+
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sim-controls label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .sim-controls input[type="range"] {
+            width: 120px;
+        }
+
+        .sim-result {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--fach-light);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           ÜBUNGEN
+           ═══════════════════════════════════════════════════════════════════ */
+        .exercise {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .exercise-title {
+            font-weight: 600;
+            color: var(--fach);
+        }
+
+        .niveau-badge {
+            font-size: 0.8em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: var(--fach-light);
+            color: var(--fach);
+        }
+
+        .exercise input[type="text"],
+        .exercise input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            font-size: 1em;
+            width: 120px;
+            text-align: center;
+        }
+
+        .exercise input:focus {
+            outline: 2px solid var(--fach);
+            border-color: var(--fach);
+        }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            display: none;
+        }
+
+        .feedback.correct {
+            display: block;
+            background: var(--success-light);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .feedback.incorrect {
+            display: block;
+            background: var(--error-light);
+            border-left: 4px solid var(--error);
+            color: #333;
+        }
+
+        .feedback.hint {
+            display: block;
+            background: var(--warning-light);
+            border-left: 4px solid var(--warning);
+            color: #333;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           HILFE-SYSTEM
+           ═══════════════════════════════════════════════════════════════════ */
+        .help-system {
+            margin-top: 15px;
+        }
+
+        .help-toggle {
+            background: none;
+            border: 1px solid var(--gray);
+            color: var(--gray);
+            padding: 5px 12px;
+            font-size: 0.85em;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+
+        .help-toggle:hover {
+            background: #f5f5f5;
+        }
+
+        .help-content {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fffde7;
+            border: 1px solid #ffd54f;
+            font-size: 0.9em;
+        }
+
+        .help-content.visible { display: block; }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           BUTTONS
+           ═══════════════════════════════════════════════════════════════════ */
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            background: var(--fach);
+            color: white;
+        }
+
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: white;
+            color: var(--fach);
+            border: 2px solid var(--fach);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-warmup {
+            background: #ff9800;
+        }
+
+        .btn-warmup:hover {
+            background: #f57c00;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           AUDIO BUTTON
+           ═══════════════════════════════════════════════════════════════════ */
+        .audio-btn {
+            background: none;
+            border: 1px solid var(--fach);
+            color: var(--fach);
+            padding: 3px 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           DIFFERENZIERUNG
+           ═══════════════════════════════════════════════════════════════════ */
+        .diff-choice {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .diff-btn {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+        }
+
+        .diff-btn:hover { border-color: var(--fach); }
+        .diff-btn.selected { border-color: var(--fach); background: var(--fach-light); }
+
+        .diff-btn .stars { font-size: 1.2em; margin-bottom: 5px; }
+        .diff-btn .label { font-size: 0.9em; color: var(--gray); }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════════════ */
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .step { padding: 15px; }
+            .diff-choice { flex-direction: column; }
+            canvas { max-width: 100%; height: auto; }
+            .warmup-options { gap: 6px; }
+            .warmup-option { padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>[THEMA]</h1>
+    <div class="meta">[FACH] [KLASSE] | [DS-NR] | [ZEIT]</div>
+</header>
+
+<div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<div class="step-indicator" id="stepIndicator"></div>
+
+<div class="container">
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SCHRITT 0: WARM-UP QUIZ
+
+         Eigenschaften:
+         - 5-10 MC-Fragen (Funfacts, Historie, Alltagsbezug)
+         - Nicht-blockierend (Weiter immer möglich)
+         - Feedback pro Frage mit Auflösung
+         - Optional: 1-3 Fragen aufs AB übernehmen
+
+         Fragetypen:
+         - [funfact]: Wusstest du, dass...?
+         - [historie]: Wer hat X entdeckt?
+         - [alltag]: Wo begegnet dir X?
+         - [schaetzung]: Was schätzt du?
+         - [vorwissen]: Was weißt du schon?
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="step active" id="step0">
+        <div class="warmup-container">
+            <div class="warmup-header">
+                <span class="icon">🧠</span>
+                <h2>Warm-up: Was weißt du schon?</h2>
+            </div>
+
+            <div class="warmup-intro">
+                <p>Bevor es losgeht, teste dein Vorwissen! Diese Fragen zeigen dir, was du vielleicht schon weißt – und machen neugierig auf das Thema.</p>
+                <p style="color: var(--gray); font-size: 0.9em; margin-top: 10px;">
+                    <strong>Hinweis:</strong> Du kannst jederzeit weitermachen. Falsche Antworten sind kein Problem!
+                </p>
+            </div>
+
+            <!-- WARM-UP FRAGE 1: Funfact -->
+            <div class="warmup-question" id="warmup-q1">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 1</span>
+                    <span class="warmup-question-type">Funfact</span>
+                </div>
+                <p>[WARMUP-FRAGE-1-TEXT]</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'a')">
+                        <input type="radio" name="warmup1" value="a">
+                        <span>[OPTION-1A]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'b')">
+                        <input type="radio" name="warmup1" value="b">
+                        <span>[OPTION-1B]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'c')">
+                        <input type="radio" name="warmup1" value="c">
+                        <span>[OPTION-1C]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'd')">
+                        <input type="radio" name="warmup1" value="d">
+                        <span>[OPTION-1D]</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb1">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">[ERKLAERUNG-1]</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 2: Historie -->
+            <div class="warmup-question" id="warmup-q2">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 2</span>
+                    <span class="warmup-question-type">Historie</span>
+                </div>
+                <p>[WARMUP-FRAGE-2-TEXT]</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'a')">
+                        <input type="radio" name="warmup2" value="a">
+                        <span>[OPTION-2A]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'b')">
+                        <input type="radio" name="warmup2" value="b">
+                        <span>[OPTION-2B]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'c')">
+                        <input type="radio" name="warmup2" value="c">
+                        <span>[OPTION-2C]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'd')">
+                        <input type="radio" name="warmup2" value="d">
+                        <span>[OPTION-2D]</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb2">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">[ERKLAERUNG-2]</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 3: Alltagsbezug -->
+            <div class="warmup-question" id="warmup-q3">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 3</span>
+                    <span class="warmup-question-type">Alltagsbezug</span>
+                </div>
+                <p>[WARMUP-FRAGE-3-TEXT]</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'a')">
+                        <input type="radio" name="warmup3" value="a">
+                        <span>[OPTION-3A]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'b')">
+                        <input type="radio" name="warmup3" value="b">
+                        <span>[OPTION-3B]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'c')">
+                        <input type="radio" name="warmup3" value="c">
+                        <span>[OPTION-3C]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'd')">
+                        <input type="radio" name="warmup3" value="d">
+                        <span>[OPTION-3D]</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb3">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">[ERKLAERUNG-3]</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 4: Schätzfrage -->
+            <div class="warmup-question" id="warmup-q4">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 4</span>
+                    <span class="warmup-question-type">Schätzfrage</span>
+                </div>
+                <p>[WARMUP-FRAGE-4-TEXT]</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'a')">
+                        <input type="radio" name="warmup4" value="a">
+                        <span>[OPTION-4A]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'b')">
+                        <input type="radio" name="warmup4" value="b">
+                        <span>[OPTION-4B]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'c')">
+                        <input type="radio" name="warmup4" value="c">
+                        <span>[OPTION-4C]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'd')">
+                        <input type="radio" name="warmup4" value="d">
+                        <span>[OPTION-4D]</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb4">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">[ERKLAERUNG-4]</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 5: Vorwissen -->
+            <div class="warmup-question" id="warmup-q5">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 5</span>
+                    <span class="warmup-question-type">Vorwissen</span>
+                </div>
+                <p>[WARMUP-FRAGE-5-TEXT]</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'a')">
+                        <input type="radio" name="warmup5" value="a">
+                        <span>[OPTION-5A]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'b')">
+                        <input type="radio" name="warmup5" value="b">
+                        <span>[OPTION-5B]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'c')">
+                        <input type="radio" name="warmup5" value="c">
+                        <span>[OPTION-5C]</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'd')">
+                        <input type="radio" name="warmup5" value="d">
+                        <span>[OPTION-5D]</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb5">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">[ERKLAERUNG-5]</div>
+                </div>
+            </div>
+
+            <!-- Weitere Fragen (6-10) können hier eingefügt werden -->
+
+            <!-- Ergebnis-Anzeige -->
+            <div class="warmup-score" id="warmupScore" style="display: none;">
+                <div class="warmup-score-display"><span id="warmupScoreValue">0</span> / <span id="warmupScoreMax">5</span></div>
+                <div class="warmup-score-text" id="warmupScoreText">Gut gemacht!</div>
+            </div>
+
+            <p class="warmup-skip-info">
+                Du kannst jederzeit auf "Weiter" klicken – auch ohne alle Fragen zu beantworten.
+            </p>
+        </div>
+
+        <div class="nav-buttons">
+            <span></span>
+            <button onclick="finishWarmup(); nextStep();">Weiter zum Lernpfad →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SCHRITT 1: EINSTIEG
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step1">
+        <h2>1. [EINSTIEG-TITEL]</h2>
+
+        <p>[EINSTIEG-TEXT]</p>
+
+        <div class="info-box">
+            <strong>[INFO-BOX-TITEL]</strong>
+            <p>[INFO-BOX-TEXT]</p>
+        </div>
+
+        <!-- Beispiel: Vorhersage / Einstiegsfrage -->
+        <div class="exercise">
+            <p><strong>Deine Vorhersage:</strong> [EINSTIEGS-FRAGE]</p>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin: 10px 0; cursor: pointer;">
+                    <input type="radio" name="einstieg" value="a"> [ANTWORT-A]
+                </label>
+                <label style="display: block; margin: 10px 0; cursor: pointer;">
+                    <input type="radio" name="einstieg" value="b"> [ANTWORT-B]
+                </label>
+                <label style="display: block; margin: 10px 0; cursor: pointer;">
+                    <input type="radio" name="einstieg" value="c"> [ANTWORT-C]
+                </label>
+            </div>
+            <div class="feedback" id="feedback1"></div>
+        </div>
+
+        <button onclick="checkEinstieg()" style="margin-top: 15px;">Antwort prüfen</button>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SCHRITT 2: ERARBEITUNG / SIMULATION
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step2">
+        <h2>2. [ERARBEITUNG-TITEL]</h2>
+
+        <p>[ERARBEITUNG-TEXT]</p>
+
+        <div class="sim-container">
+            <h4>[SIM-TITEL]</h4>
+
+            <div class="sim-controls">
+                <label>
+                    [SLIDER-1-LABEL]: <span id="slider1Display">50</span> [EINHEIT-1]
+                    <input type="range" id="slider1" min="0" max="100" value="50" oninput="updateSimulation()">
+                </label>
+            </div>
+
+            <canvas id="simulationCanvas" width="400" height="200"></canvas>
+
+            <div class="sim-result">
+                [ERGEBNIS-LABEL]: <strong><span id="simResult">0</span> [ERGEBNIS-EINHEIT]</strong>
+            </div>
+        </div>
+
+        <div class="merksatz">
+            <strong>Erkenntnis:</strong> [ERKENNTNIS-TEXT]
+        </div>
+
+        <div class="hefter-hinweis">
+            <strong>Kasten K1:</strong> [AB-VERWEIS-1]
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SCHRITT 3: DEFINITION / FORMEL
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step3">
+        <h2>3. [DEFINITION-TITEL]</h2>
+
+        <div class="info-box">
+            <strong>Definition:</strong>
+            <button class="audio-btn" onclick="speak('[VORLESE-TEXT]')">🔊</button>
+            <p style="margin-top: 10px; font-size: 1.1em;">
+                [DEFINITION-TEXT]
+            </p>
+        </div>
+
+        <div class="formel-box">
+            <span class="fz">[FORMEL-ZEICHEN-1]</span> = <span class="fz">[FORMEL-ZEICHEN-2]</span> · <span class="fz">[FORMEL-ZEICHEN-3]</span>
+            <br><br>
+            <span class="einheit">[FORMEL-WORT] = [GROESSE-1] × [GROESSE-2]</span>
+            <br>
+            <span class="einheit">[[FORMELZEICHEN]] = [EINHEIT]</span>
+        </div>
+
+        <div class="hefter-hinweis">
+            <strong>Kasten K2:</strong> [AB-VERWEIS-2]
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SCHRITT 4: ÜBUNG DIFFERENZIERT
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step4">
+        <h2>4. Übung: [UEBUNG-TITEL]</h2>
+
+        <p>Wähle dein Niveau und bearbeite die Aufgaben:</p>
+
+        <div class="diff-choice">
+            <div class="diff-btn selected" onclick="selectDiff(1)" id="diff1">
+                <div class="stars">★</div>
+                <div class="label">Basis</div>
+            </div>
+            <div class="diff-btn" onclick="selectDiff(2)" id="diff2">
+                <div class="stars">★★</div>
+                <div class="label">Standard</div>
+            </div>
+            <div class="diff-btn" onclick="selectDiff(3)" id="diff3">
+                <div class="stars">★★★</div>
+                <div class="label">Erweiterung</div>
+            </div>
+        </div>
+
+        <!-- ★ BASIS -->
+        <div class="exercise" id="ex-level1">
+            <div class="exercise-header">
+                <span class="exercise-title">★ [AUFGABE-1-TITEL]</span>
+                <span class="niveau-badge">[BE-1] BE</span>
+            </div>
+            <p>[AUFGABE-1-TEXT]</p>
+            <p style="margin: 15px 0;">
+                [LOESUNG-ANSATZ] = <input type="text" id="ex1-input" style="width: 80px;" placeholder="?"> [EINHEIT]
+            </p>
+
+            <div class="help-system">
+                <button class="help-toggle" onclick="toggleHelp('help1')">💡 Hilfe</button>
+                <div class="help-content" id="help1">[HILFE-1-TEXT]</div>
+            </div>
+
+            <button onclick="checkEx1()" style="margin-top: 15px;">Prüfen</button>
+            <div class="feedback" id="fb-ex1"></div>
+        </div>
+
+        <!-- ★★ STANDARD -->
+        <div class="exercise" id="ex-level2" style="display: none;">
+            <div class="exercise-header">
+                <span class="exercise-title">★★ [AUFGABE-2-TITEL]</span>
+                <span class="niveau-badge">[BE-2] BE</span>
+            </div>
+            <p>[AUFGABE-2-TEXT]</p>
+            <p style="margin: 15px 0;">
+                [LOESUNG-ANSATZ-2] = <input type="text" id="ex2-input" style="width: 80px;" placeholder="?"> [EINHEIT]
+            </p>
+            <button onclick="checkEx2()" style="margin-top: 15px;">Prüfen</button>
+            <div class="feedback" id="fb-ex2"></div>
+        </div>
+
+        <!-- ★★★ ERWEITERUNG -->
+        <div class="exercise" id="ex-level3" style="display: none;">
+            <div class="exercise-header">
+                <span class="exercise-title">★★★ [AUFGABE-3-TITEL]</span>
+                <span class="niveau-badge">[BE-3] BE</span>
+            </div>
+            <p>[AUFGABE-3-TEXT]</p>
+            <textarea id="ex3-input" style="width: 100%; height: 80px; margin-top: 10px; padding: 10px; font-family: inherit;" placeholder="Deine Antwort..."></textarea>
+            <button onclick="checkEx3()" style="margin-top: 15px;">Prüfen</button>
+            <div class="feedback" id="fb-ex3"></div>
+        </div>
+
+        <div class="hefter-hinweis">
+            <strong>Übung Ü1:</strong> [AB-VERWEIS-UEBUNG]
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SCHRITT 5: ZUSAMMENFASSUNG
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step5">
+        <h2>5. Zusammenfassung</h2>
+
+        <div class="merksatz">
+            <strong>Das Wichtigste:</strong><br>
+            [ZUSAMMENFASSUNG-TEXT]
+        </div>
+
+        <div class="formel-box">
+            <span class="fz">[FORMEL]</span>
+        </div>
+
+        <h3>Das hast du gelernt:</h3>
+        <ul style="margin: 15px 0 15px 25px;">
+            <li>✓ [LERNZIEL-1]</li>
+            <li>✓ [LERNZIEL-2]</li>
+            <li>✓ [LERNZIEL-3]</li>
+        </ul>
+
+        <div class="hefter-hinweis">
+            <strong>Kasten K3:</strong> [AB-VERWEIS-ZUSAMMENFASSUNG]
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--success-light); border: 2px solid var(--success);">
+            <p style="font-size: 1.2em; color: var(--success);">🎉 <strong>Geschafft!</strong></p>
+            <p style="margin-top: 10px;">Du hast den Lernpfad "[THEMA]" abgeschlossen.</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button class="btn-success" onclick="finish()">✓ Abschließen</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// KONFIGURATION - ANPASSEN!
+// ═══════════════════════════════════════════════════════════════════════════
+
+var LP_ID = '[LP-ID]'; // z.B. 'physik-kl8-02-ohm'
+var TOTAL_STEPS = 6; // Inkl. Warm-up (Schritt 0)
+var currentStep = 0;
+var WARMUP_QUESTIONS = 5; // Anzahl Warm-up-Fragen
+
+// Warm-up Antworten (richtige Optionen: 'a', 'b', 'c' oder 'd')
+var warmupAnswers = {
+    1: '[RICHTIG-1]', // z.B. 'c'
+    2: '[RICHTIG-2]',
+    3: '[RICHTIG-3]',
+    4: '[RICHTIG-4]',
+    5: '[RICHTIG-5]'
+};
+
+var warmupState = {};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function init() {
+    // Schritt-Indikatoren erstellen (inkl. Warm-up)
+    var indicator = document.getElementById('stepIndicator');
+    for (var i = 0; i < TOTAL_STEPS; i++) {
+        var dot = document.createElement('div');
+        var classes = 'step-dot';
+        if (i === 0) {
+            classes += ' warmup active';
+            dot.textContent = '?';  // Warm-up Symbol
+        } else {
+            dot.textContent = i;    // Schrittnummer
+        }
+        dot.className = classes;
+        dot.setAttribute('data-step', i);
+        dot.onclick = (function(step) {
+            return function() { goToStep(step); };
+        })(i);
+        indicator.appendChild(dot);
+    }
+
+    // Gespeicherten Fortschritt laden
+    var saved = localStorage.getItem(LP_ID + '-step');
+    if (saved !== null) {
+        currentStep = parseInt(saved);
+        goToStep(currentStep);
+    }
+
+    // Warm-up-Status laden
+    var warmupSaved = localStorage.getItem(LP_ID + '-warmup');
+    if (warmupSaved) {
+        warmupState = JSON.parse(warmupSaved);
+        restoreWarmupState();
+    }
+
+    // Gespeicherte Eingaben laden
+    loadInputs();
+}
+
+function goToStep(step) {
+    if (step < 0 || step >= TOTAL_STEPS) return;
+
+    // Alle Schritte ausblenden
+    var steps = document.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.remove('active');
+    }
+
+    // Zielschritt anzeigen
+    document.getElementById('step' + step).classList.add('active');
+
+    // Indikatoren aktualisieren
+    var dots = document.querySelectorAll('.step-dot');
+    for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.remove('active');
+        if (i < step) {
+            dots[i].classList.add('completed');
+        }
+        if (i === step) {
+            dots[i].classList.add('active');
+        }
+    }
+
+    // Fortschrittsbalken
+    var progress = (step / (TOTAL_STEPS - 1)) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    currentStep = step;
+    localStorage.setItem(LP_ID + '-step', step);
+
+    window.scrollTo(0, 0);
+}
+
+function nextStep() {
+    goToStep(currentStep + 1);
+}
+
+function prevStep() {
+    goToStep(currentStep - 1);
+}
+
+function finish() {
+    alert('Lernpfad abgeschlossen! Vergiss nicht, dein Arbeitsblatt zu kontrollieren.');
+    localStorage.setItem(LP_ID + '-completed', 'true');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WARM-UP QUIZ
+// ═══════════════════════════════════════════════════════════════════════════
+
+function selectWarmupOption(questionNum, option) {
+    // Wenn bereits beantwortet, nichts tun
+    if (warmupState[questionNum] && warmupState[questionNum].answered) {
+        return;
+    }
+
+    var questionEl = document.getElementById('warmup-q' + questionNum);
+    var options = questionEl.querySelectorAll('.warmup-option');
+    var feedbackEl = document.getElementById('warmup-fb' + questionNum);
+    var correctAnswer = warmupAnswers[questionNum];
+    var isCorrect = (option === correctAnswer);
+
+    // Alle Optionen deaktivieren
+    for (var i = 0; i < options.length; i++) {
+        options[i].classList.add('disabled');
+        options[i].classList.remove('selected');
+    }
+
+    // Ausgewählte und richtige Option markieren
+    var selectedIndex = option.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, etc.
+    var correctIndex = correctAnswer.charCodeAt(0) - 97;
+
+    options[selectedIndex].classList.add(isCorrect ? 'correct' : 'incorrect');
+    if (!isCorrect) {
+        options[correctIndex].classList.add('correct');
+    }
+
+    // Feedback anzeigen
+    feedbackEl.classList.add('visible');
+    feedbackEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+    feedbackEl.querySelector('.answer-reveal').textContent = isCorrect ? '✓ Richtig!' : '✗ Nicht ganz.';
+
+    // Frage als beantwortet markieren
+    questionEl.classList.add('answered');
+    if (!isCorrect) {
+        questionEl.classList.add('wrong');
+    }
+
+    // Status speichern
+    warmupState[questionNum] = {
+        answered: true,
+        selected: option,
+        correct: isCorrect
+    };
+    localStorage.setItem(LP_ID + '-warmup', JSON.stringify(warmupState));
+
+    // Score aktualisieren
+    updateWarmupScore();
+}
+
+function updateWarmupScore() {
+    var correct = 0;
+    var answered = 0;
+    for (var i = 1; i <= WARMUP_QUESTIONS; i++) {
+        if (warmupState[i] && warmupState[i].answered) {
+            answered++;
+            if (warmupState[i].correct) {
+                correct++;
+            }
+        }
+    }
+
+    if (answered > 0) {
+        var scoreEl = document.getElementById('warmupScore');
+        scoreEl.style.display = 'block';
+        document.getElementById('warmupScoreValue').textContent = correct;
+        document.getElementById('warmupScoreMax').textContent = WARMUP_QUESTIONS;
+
+        var textEl = document.getElementById('warmupScoreText');
+        if (correct === WARMUP_QUESTIONS) {
+            textEl.textContent = 'Perfekt! Du bist bestens vorbereitet!';
+        } else if (correct >= WARMUP_QUESTIONS * 0.6) {
+            textEl.textContent = 'Gut gemacht! Du weißt schon einiges.';
+        } else {
+            textEl.textContent = 'Kein Problem – jetzt lernst du es!';
+        }
+    }
+}
+
+function restoreWarmupState() {
+    for (var i = 1; i <= WARMUP_QUESTIONS; i++) {
+        if (warmupState[i] && warmupState[i].answered) {
+            var questionEl = document.getElementById('warmup-q' + i);
+            var options = questionEl.querySelectorAll('.warmup-option');
+            var feedbackEl = document.getElementById('warmup-fb' + i);
+            var correctAnswer = warmupAnswers[i];
+            var selectedOption = warmupState[i].selected;
+            var isCorrect = warmupState[i].correct;
+
+            // Alle Optionen deaktivieren
+            for (var j = 0; j < options.length; j++) {
+                options[j].classList.add('disabled');
+            }
+
+            // Markierungen wiederherstellen
+            var selectedIndex = selectedOption.charCodeAt(0) - 97;
+            var correctIndex = correctAnswer.charCodeAt(0) - 97;
+
+            options[selectedIndex].classList.add(isCorrect ? 'correct' : 'incorrect');
+            if (!isCorrect) {
+                options[correctIndex].classList.add('correct');
+            }
+
+            // Feedback anzeigen
+            feedbackEl.classList.add('visible');
+            feedbackEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+            feedbackEl.querySelector('.answer-reveal').textContent = isCorrect ? '✓ Richtig!' : '✗ Nicht ganz.';
+
+            // Frage markieren
+            questionEl.classList.add('answered');
+            if (!isCorrect) {
+                questionEl.classList.add('wrong');
+            }
+        }
+    }
+    updateWarmupScore();
+}
+
+function finishWarmup() {
+    var dot = document.querySelector('.step-dot.warmup');
+    if (dot) {
+        dot.classList.add('completed');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EINGABEN SPEICHERN/LADEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function saveInput(id, value) {
+    localStorage.setItem(LP_ID + '-' + id, value);
+}
+
+function loadInputs() {
+    var inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea');
+    for (var i = 0; i < inputs.length; i++) {
+        var id = inputs[i].id;
+        if (id) {
+            var saved = localStorage.getItem(LP_ID + '-' + id);
+            if (saved) {
+                inputs[i].value = saved;
+            }
+            inputs[i].addEventListener('change', function() {
+                saveInput(this.id, this.value);
+            });
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HILFSFUNKTIONEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function parseNumber(value) {
+    if (value === '' || value === null) return NaN;
+    var normalized = String(value).replace(',', '.').replace(/\s/g, '');
+    return parseFloat(normalized);
+}
+
+function formatNumber(num) {
+    return String(num).replace('.', ',');
+}
+
+function speak(text) {
+    if ('speechSynthesis' in window) {
+        var utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'de-DE';
+        utterance.rate = 0.9;
+        speechSynthesis.speak(utterance);
+    } else {
+        alert(text);
+    }
+}
+
+function toggleHelp(id) {
+    var el = document.getElementById(id);
+    el.classList.toggle('visible');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EINSTIEG PRÜFEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function checkEinstieg() {
+    var radios = document.getElementsByName('einstieg');
+    var selected = '';
+    for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+            selected = radios[i].value;
+            break;
+        }
+    }
+
+    var fb = document.getElementById('feedback1');
+
+    // ANPASSEN: Richtige Antwort und Feedback
+    if (selected === '[RICHTIGE-ANTWORT]') {
+        fb.className = 'feedback correct';
+        fb.innerHTML = '✓ [FEEDBACK-RICHTIG]';
+    } else if (selected !== '') {
+        fb.className = 'feedback incorrect';
+        fb.innerHTML = '✗ [FEEDBACK-FALSCH]';
+    } else {
+        fb.className = 'feedback hint';
+        fb.innerHTML = 'Bitte wähle eine Antwort.';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIMULATION
+// ═══════════════════════════════════════════════════════════════════════════
+
+function updateSimulation() {
+    var slider1 = parseFloat(document.getElementById('slider1').value);
+    document.getElementById('slider1Display').textContent = slider1;
+
+    // ANPASSEN: Berechnungslogik
+    var result = slider1; // Beispiel
+    document.getElementById('simResult').textContent = formatNumber(result);
+
+    // Optional: Canvas zeichnen
+    drawSimulation(result);
+}
+
+function drawSimulation(value) {
+    var canvas = document.getElementById('simulationCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width;
+    var h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // ANPASSEN: Visualisierung
+    ctx.fillStyle = '#2c5aa0';
+    ctx.fillRect(50, h - value - 20, 100, value);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIFFERENZIERUNG
+// ═══════════════════════════════════════════════════════════════════════════
+
+function selectDiff(level) {
+    for (var i = 1; i <= 3; i++) {
+        document.getElementById('diff' + i).classList.remove('selected');
+    }
+    document.getElementById('diff' + level).classList.add('selected');
+
+    document.getElementById('ex-level1').style.display = level >= 1 ? 'block' : 'none';
+    document.getElementById('ex-level2').style.display = level >= 2 ? 'block' : 'none';
+    document.getElementById('ex-level3').style.display = level >= 3 ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÜBUNGEN PRÜFEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+function checkEx1() {
+    var input = parseNumber(document.getElementById('ex1-input').value);
+    var fb = document.getElementById('fb-ex1');
+
+    // ANPASSEN: Richtige Antwort und Toleranz
+    var correct = 0; // [RICHTIGE-ANTWORT-1]
+    var tolerance = 0.5;
+
+    if (Math.abs(input - correct) < tolerance) {
+        fb.className = 'feedback correct';
+        fb.innerHTML = '✓ [FEEDBACK-EX1-RICHTIG]';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.innerHTML = '✗ [FEEDBACK-EX1-FALSCH]';
+    }
+
+    saveInput('ex1-input', document.getElementById('ex1-input').value);
+}
+
+function checkEx2() {
+    var input = parseNumber(document.getElementById('ex2-input').value);
+    var fb = document.getElementById('fb-ex2');
+
+    // ANPASSEN: Richtige Antwort
+    var correct = 0; // [RICHTIGE-ANTWORT-2]
+
+    if (Math.abs(input - correct) < 0.5) {
+        fb.className = 'feedback correct';
+        fb.innerHTML = '✓ [FEEDBACK-EX2-RICHTIG]';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.innerHTML = '✗ [FEEDBACK-EX2-FALSCH]';
+    }
+
+    saveInput('ex2-input', document.getElementById('ex2-input').value);
+}
+
+function checkEx3() {
+    var input = document.getElementById('ex3-input').value.toLowerCase();
+    var fb = document.getElementById('fb-ex3');
+
+    // ANPASSEN: Schlüsselwörter prüfen
+    var hasKeyword1 = input.indexOf('[KEYWORD-1]') > -1;
+    var hasKeyword2 = input.indexOf('[KEYWORD-2]') > -1;
+
+    if ((hasKeyword1 || hasKeyword2) && input.length > 20) {
+        fb.className = 'feedback correct';
+        fb.innerHTML = '✓ [FEEDBACK-EX3-RICHTIG]';
+    } else if (input.length > 10) {
+        fb.className = 'feedback hint';
+        fb.innerHTML = '⚠️ [FEEDBACK-EX3-HINWEIS]';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.innerHTML = '✗ [FEEDBACK-EX3-FALSCH]';
+    }
+
+    saveInput('ex3-input', document.getElementById('ex3-input').value);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INITIALISIERUNG
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.onload = function() {
+    init();
+};
+</script>
+
+</body>
+</html>

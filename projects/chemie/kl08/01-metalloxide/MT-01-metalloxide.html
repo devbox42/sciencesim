@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Reaktion von Metallen mit Sauerstoff</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════
+           MINT-MINITEST - Chemie Klasse 8: Metalloxide
+           Fachfarbe: chemie=#2a7a4b
+           ═══════════════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER (Chemie-Grün) === */
+        header {
+            background: #2a7a4b;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2a7a4b; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2a7a4b; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-niveau { padding: 2px 8px; font-size: 0.8em; font-weight: 600; border-radius: 3px; }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2a7a4b; }
+        .option.selected { background: #e8f5e9; border-color: #2a7a4b; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* Multi-Select */
+        .multi-select .option { position: relative; padding-left: 40px; }
+        .multi-select .option:before { content: ""; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border: 2px solid #888; background: white; }
+        .multi-select .option.selected:before { background: #2a7a4b; border-color: #2a7a4b; }
+        .multi-select .option.selected:after { content: "\2713"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* Niveau-Hinweis */
+        .niveau-hinweis { background: #fff3e0; border: 1px solid #b35c00; color: #b35c00; padding: 8px 12px; margin-bottom: 12px; font-size: 0.85em; font-style: italic; }
+        .nicht-gewertet-box { background: #f5f5f5; border: 1px solid #888; color: #666; padding: 10px 15px; margin-top: 12px; text-align: center; font-weight: 600; }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2a7a4b; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e5a35; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        button.btn-success { background: #2a7a4b; }
+        .results { background: white; border: 2px solid #2a7a4b; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2a7a4b; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2a7a4b; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #2a7a4b; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        /* Dropdown-Markierung */
+        select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .hidden { display: none; }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+            .niveau-hinweis { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Reaktion von Metallen mit Sauerstoff</h1>
+        <div class="header-info">
+            <div class="meta">Chemie Klasse 8 | Thema 2.4 | Differenziert (★/★★/★★★)</div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PLATZ + NIVEAU AUSWAHL
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="selection-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0;">
+        <!-- Platz-Auswahl -->
+        <div class="seat-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2a7a4b; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2a7a4b; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+
+        <!-- Niveau-Auswahl -->
+        <div class="niveau-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2a7a4b; display: block; margin-bottom: 8px;">Niveau:</label>
+            <div id="niveauWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="niveauRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="niveauSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2a7a4b; min-width: 180px;">
+                    <option value="">-- wählen --</option>
+                    <option value="1">★ Basis (15 BE)</option>
+                    <option value="2">★★ Standard (20 BE)</option>
+                    <option value="3">★★★ Erweitert (25 BE)</option>
+                </select>
+                <button id="btnNiveauOk" onclick="confirmNiveau()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="niveauConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Niveau wählen...</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
+        <!-- ═══════════════════════════════════════════════════════════════════
+             NIVEAU 1 (★) FRAGEN - FZ1, FZ2, FZ3, FZ4
+             ═══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Q1: Begriffe Oxidation (FZ1) -->
+        <div class="question" id="q1" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 1: Oxidation</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Nenne</strong> die richtige Definition für "Oxidation".</div>
+            <div class="options" id="q1-options">
+                <label class="option" data-value="a"><input type="radio" name="q1" value="a">Eine Verbindung aus zwei Metallen</label>
+                <label class="option" data-value="b"><input type="radio" name="q1" value="b">Die Reaktion eines Stoffes mit Sauerstoff</label>
+                <label class="option" data-value="c"><input type="radio" name="q1" value="c">Die Trennung einer chemischen Verbindung</label>
+                <label class="option" data-value="d"><input type="radio" name="q1" value="d">Eine Reaktion mit Wasser</label>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Richtig! Oxidation ist die Reaktion eines Stoffes mit Sauerstoff.</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Die Oxidation ist die Reaktion eines Stoffes mit Sauerstoff.</div>
+        </div>
+
+        <!-- Q2: Begriffe Oxid (FZ2) -->
+        <div class="question" id="q2" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 2: Oxid</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Nenne</strong> die richtige Definition für "Oxid".</div>
+            <div class="options" id="q2-options">
+                <label class="option" data-value="a"><input type="radio" name="q2" value="a">Ein Metall, das nicht rostet</label>
+                <label class="option" data-value="b"><input type="radio" name="q2" value="b">Eine chemische Verbindung aus einem Element und Sauerstoff</label>
+                <label class="option" data-value="c"><input type="radio" name="q2" value="c">Ein Stoff aus nur einer Atomsorte</label>
+                <label class="option" data-value="d"><input type="radio" name="q2" value="d">Der Vorgang der Verbrennung</label>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig! Ein Oxid ist eine Verbindung aus einem Element und Sauerstoff.</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Ein Oxid ist eine chemische Verbindung aus einem Element und Sauerstoff.</div>
+        </div>
+
+        <!-- Q3: Zuordnung Element/Verbindung (FZ3) -->
+        <div class="question" id="q3" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 3: Element oder Verbindung?</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Ordne zu</strong>: Welcher Stoff ist ein Element, welcher eine Verbindung?</div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:120px;">Magnesium (Mg)</span>
+                    <select id="q3-a" style="padding:8px;flex:1;max-width:200px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="element">Element</option>
+                        <option value="verbindung">Verbindung</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:120px;">Magnesiumoxid (MgO)</span>
+                    <select id="q3-b" style="padding:8px;flex:1;max-width:200px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="element">Element</option>
+                        <option value="verbindung">Verbindung</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! Mg ist ein Element (eine Atomsorte), MgO ist eine Verbindung (zwei Atomsorten).</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Mg = Element (eine Atomsorte), MgO = Verbindung (Mg + O = zwei Atomsorten).</div>
+        </div>
+
+        <!-- Q4: Wortgleichungen (FZ4) -->
+        <div class="question" id="q4" data-niveau="1" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 4: Wortgleichungen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Ergänze</strong> die Wortgleichungen:</div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span>a) Magnesium + Sauerstoff →</span>
+                    <select id="q4-a" style="padding:8px;min-width:180px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="magnesiumoxid">Magnesiumoxid</option>
+                        <option value="eisenoxid">Eisenoxid</option>
+                        <option value="kupferoxid">Kupferoxid</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span>b)</span>
+                    <select id="q4-b" style="padding:8px;min-width:120px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="eisen">Eisen</option>
+                        <option value="kupfer">Kupfer</option>
+                        <option value="aluminium">Aluminium</option>
+                    </select>
+                    <span>+ Sauerstoff → Eisenoxid</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span>c) Kupfer +</span>
+                    <select id="q4-c" style="padding:8px;min-width:120px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="sauerstoff">Sauerstoff</option>
+                        <option value="wasserstoff">Wasserstoff</option>
+                        <option value="stickstoff">Stickstoff</option>
+                    </select>
+                    <span>→ Kupferoxid</span>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Alles richtig! Das Schema ist immer: Metall + Sauerstoff → Metalloxid</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">Schema: Metall + Sauerstoff → Metalloxid (Name des Metalls + "oxid")</div>
+        </div>
+
+        <!-- Q5: Beobachtungen (FZ6) -->
+        <div class="question" id="q5" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 5: Beobachtungen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Wähle</strong> alle richtigen Beobachtungen bei der Verbrennung von Magnesium. <strong>(Mehrfachauswahl)</strong></div>
+            <div class="options multi-select" id="q5-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q5" value="a">Sehr helle, weiße Flamme</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q5" value="b">Blaue Flamme</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q5" value="c">Weißes Pulver entsteht</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q5" value="d">Das Metall wird flüssig und bleibt silbern</label>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">Richtig! Mg verbrennt mit gleißend weißer Flamme zu weißem MgO-Pulver.</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Mg verbrennt mit sehr heller, weißer Flamme. Es entsteht weißes Pulver (MgO).</div>
+        </div>
+
+        <!-- Q6: Korrosion (FZ9) -->
+        <div class="question" id="q6" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 6: Korrosion</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Nenne</strong> ein Beispiel für Korrosion im Alltag.</div>
+            <div class="options" id="q6-options">
+                <label class="option" data-value="a"><input type="radio" name="q6" value="a">Rost an einem Fahrrad</label>
+                <label class="option" data-value="b"><input type="radio" name="q6" value="b">Wasser gefriert zu Eis</label>
+                <label class="option" data-value="c"><input type="radio" name="q6" value="c">Salz löst sich in Wasser</label>
+                <label class="option" data-value="d"><input type="radio" name="q6" value="d">Ein Magnet zieht Eisen an</label>
+            </div>
+            <div class="feedback-box correct" id="q6-fb-correct">Richtig! Rost ist ein typisches Beispiel für Korrosion (langsame Oxidation).</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">Rost an einem Fahrrad ist Korrosion - die langsame Oxidation von Eisen.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             NIVEAU 2 (★★) FRAGEN - FZ5, FZ7, FZ8
+             ═══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Q7: Formelgleichung (FZ5) -->
+        <div class="question" id="q7" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 7: Formelgleichung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Wähle</strong> die richtige ausgeglichene Formelgleichung für die Verbrennung von Magnesium.</div>
+            <div class="options" id="q7-options">
+                <label class="option" data-value="a"><input type="radio" name="q7" value="a">Mg + O₂ → MgO</label>
+                <label class="option" data-value="b"><input type="radio" name="q7" value="b">2 Mg + O₂ → 2 MgO</label>
+                <label class="option" data-value="c"><input type="radio" name="q7" value="c">Mg + O → MgO</label>
+                <label class="option" data-value="d"><input type="radio" name="q7" value="d">4 Mg + O₂ → 4 MgO</label>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">Richtig! 2 Mg + O₂ → 2 MgO (ausgeglichen: 2 Mg links = 2 Mg rechts, 2 O links = 2 O rechts)</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">2 Mg + O₂ → 2 MgO ist richtig. Sauerstoff kommt als O₂ vor, daher brauchen wir 2 Mg und 2 MgO.</div>
+        </div>
+
+        <!-- Q8: Massenerhaltung (FZ7) -->
+        <div class="question" id="q8" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 8: Massenerhaltung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Nenne</strong> das Gesetz, das aussagt: "Die Gesamtmasse der Ausgangsstoffe ist gleich der Gesamtmasse der Produkte."</div>
+            <div class="options" id="q8-options">
+                <label class="option" data-value="a"><input type="radio" name="q8" value="a">Gesetz von der Erhaltung der Masse</label>
+                <label class="option" data-value="b"><input type="radio" name="q8" value="b">Gesetz der konstanten Proportionen</label>
+                <label class="option" data-value="c"><input type="radio" name="q8" value="c">Energieerhaltungssatz</label>
+                <label class="option" data-value="d"><input type="radio" name="q8" value="d">Hebelgesetz</label>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">Richtig! Das Gesetz von der Erhaltung der Masse besagt: Masse(Edukte) = Masse(Produkte).</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Es ist das Gesetz von der Erhaltung der Masse: m(Ausgangsstoffe) = m(Produkte).</div>
+        </div>
+
+        <!-- Q9: Masse des Oxids (FZ8) -->
+        <div class="question" id="q9" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 9: Masse des Oxids</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">12 g Magnesium reagieren mit 8 g Sauerstoff. <strong>Berechne</strong>: Wie viel Gramm Magnesiumoxid entstehen?</div>
+            <div class="options" id="q9-options">
+                <label class="option" data-value="a"><input type="radio" name="q9" value="a">4 g</label>
+                <label class="option" data-value="b"><input type="radio" name="q9" value="b">12 g</label>
+                <label class="option" data-value="c"><input type="radio" name="q9" value="c">20 g</label>
+                <label class="option" data-value="d"><input type="radio" name="q9" value="d">96 g</label>
+            </div>
+            <div class="feedback-box correct" id="q9-fb-correct">Richtig! 12 g + 8 g = 20 g (Massenerhaltung)</div>
+            <div class="feedback-box incorrect" id="q9-fb-incorrect">Nach dem Gesetz der Massenerhaltung: 12 g Mg + 8 g O₂ = 20 g MgO.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             NIVEAU 3 (★★★) FRAGEN - FZ10
+             ═══════════════════════════════════════════════════════════════════ -->
+
+        <!-- Q10: Passivierung (FZ10) -->
+        <div class="question" id="q10" data-niveau="3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 10: Vergleich Oxidschichten</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Vergleiche</strong>: Was ist der Unterschied zwischen der Oxidschicht von Magnesium und Aluminium?</div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span style="min-width:100px;">Magnesium:</span>
+                    <select id="q10-a" style="padding:8px;min-width:250px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="poroes">porös → Reaktion läuft weiter</option>
+                        <option value="dicht">dicht → Reaktion stoppt (Passivierung)</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span style="min-width:100px;">Aluminium:</span>
+                    <select id="q10-b" style="padding:8px;min-width:250px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="poroes">porös → Reaktion läuft weiter</option>
+                        <option value="dicht">dicht → Reaktion stoppt (Passivierung)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q10-fb-correct">Richtig! Mg hat eine poröse Schicht (Sauerstoff dringt durch), Al hat eine dichte Schicht (Passivierung schützt).</div>
+            <div class="feedback-box incorrect" id="q10-fb-incorrect">Mg = porös (Reaktion läuft vollständig ab), Al = dicht (Passivierung schützt das Metall).</div>
+        </div>
+
+        <!-- Q11: Erklärung Passivierung (FZ10) -->
+        <div class="question" id="q11" data-niveau="3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 11: Passivierung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Erkläre</strong>, warum Aluminium "nicht rostet", obwohl es mit Sauerstoff reagiert. <strong>(Mehrfachauswahl)</strong></div>
+            <div class="options multi-select" id="q11-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q11" value="a">Al bildet sofort eine dünne Oxidschicht</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q11" value="b">Die Oxidschicht ist dicht und fest</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q11" value="c">Die Schicht schützt das Metall vor weiterer Oxidation</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q11" value="d">Aluminium reagiert gar nicht mit Sauerstoff</label>
+            </div>
+            <div class="feedback-box correct" id="q11-fb-correct">Richtig! Al bildet eine dichte Oxidschicht (Al₂O₃), die das Metall schützt = Passivierung.</div>
+            <div class="feedback-box incorrect" id="q11-fb-incorrect">Al reagiert mit O₂, aber die Al₂O₃-Schicht ist dicht und schützt vor weiterer Oxidation (Passivierung).</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin:10px 0;font-size:0.9em;" id="niveauDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 0</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>100</td><td>96</td><td>90,7</td><td>86</td><td>80</td><td>73,3</td><td>66,7</td><td>60</td><td>53,3</td><td>46,7</td><td>40</td><td>33,3</td><td>26,7</td><td>20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be14">-</td><td id="be13">-</td><td id="be12">-</td><td id="be11">-</td><td id="be10">-</td><td id="be9">-</td><td id="be8">-</td><td id="be7">-</td><td id="be6">-</td><td id="be5">-</td><td id="be4">-</td><td id="be3">-</td><td id="be2">-</td><td id="be1">-</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+        </div><!-- END questionsContainer -->
+    </div>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MT-01-METALLOXIDE - JavaScript (ES5!)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    // ===== KONFIGURATION =====
+    var STORAGE_KEY = 'mt-chemie-8-2-4-metalloxide';
+    var selectedNiveau = 0;
+    var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll (Anti-Betrug)
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // BE pro Niveau
+    var niveauPoints = {
+        1: 15,   // ★ Basis: Q1-Q6 (1+1+2+3+2+1 = 10) + Bonus
+        2: 20,   // ★★ Standard: + Q7-Q9 (2+1+2 = 5)
+        3: 25    // ★★★ Erweitert: + Q10-Q11 (2+3 = 5)
+    };
+
+    // Korrekte Antworten
+    var answers = {
+        q1: 'b',
+        q2: 'b',
+        q3a: 'element',
+        q3b: 'verbindung',
+        q4a: 'magnesiumoxid',
+        q4b: 'eisen',
+        q4c: 'sauerstoff',
+        q5: ['a', 'c'],  // Multi-Select
+        q6: 'a',
+        q7: 'b',
+        q8: 'a',
+        q9: 'c',
+        q10a: 'poroes',
+        q10b: 'dicht',
+        q11: ['a', 'b', 'c']  // Multi-Select (nicht d!)
+    };
+
+    // ===== PLATZ-FUNKTIONEN =====
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#2a7a4b;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== NIVEAU-FUNKTIONEN =====
+    function restoreNiveauDropdown() {
+        var saved = localStorage.getItem(STORAGE_KEY + '-niveau');
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (saved && niveauLocked === 'true') {
+            selectedNiveau = parseInt(saved);
+            showLockedNiveau(saved);
+            selectNiveau(selectedNiveau);
+        } else if (saved) {
+            document.getElementById('niveauSelect').value = saved;
+        }
+    }
+
+    function confirmNiveau() {
+        var select = document.getElementById('niveauSelect');
+        var val = select.value;
+        if (!val) { alert('Bitte wähle zuerst ein Niveau!'); return; }
+        var niveauStars = ['', '★ Basis', '★★ Standard', '★★★ Erweitert'][parseInt(val)];
+        var ok = confirm('Niveau "' + niveauStars + '" bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-niveau', val);
+        localStorage.setItem(STORAGE_KEY + '-niveau-locked', 'true');
+        selectedNiveau = parseInt(val);
+        showLockedNiveau(val);
+        selectNiveau(selectedNiveau);
+        checkUnlocked();
+    }
+
+    function showLockedNiveau(val) {
+        var niveauStars = ['', '★ Basis (' + niveauPoints[1] + ' BE)', '★★ Standard (' + niveauPoints[2] + ' BE)', '★★★ Erweitert (' + niveauPoints[3] + ' BE)'][parseInt(val)];
+        document.getElementById('niveauWarning').style.display = 'none';
+        document.getElementById('niveauRow').style.display = 'none';
+        document.getElementById('niveauConfirmed').style.display = 'block';
+        document.getElementById('niveauConfirmed').innerHTML = 'Niveau: <strong style="color:#2a7a4b;">' + niveauStars + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked && niveauLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function selectNiveau(niveau) {
+        selectedNiveau = niveau;
+        var questions = document.querySelectorAll('.question');
+        for (var j = 0; j < questions.length; j++) {
+            var qNiveau = parseInt(questions[j].dataset.niveau);
+            var qId = questions[j].id;
+            var existingHint = document.getElementById(qId + '-niveau-hinweis');
+            if (qNiveau > niveau) {
+                if (!existingHint) {
+                    var hint = document.createElement('div');
+                    hint.className = 'niveau-hinweis';
+                    hint.id = qId + '-niveau-hinweis';
+                    hint.innerHTML = 'Diese Aufgabe wird bei deinem Niveau <strong>nicht gewertet</strong>.';
+                    var header = questions[j].querySelector('.question-header');
+                    if (header && header.nextSibling) header.parentNode.insertBefore(hint, header.nextSibling);
+                }
+            } else if (existingHint) {
+                existingHint.remove();
+            }
+        }
+        updateProgress();
+        saveProgress();
+    }
+
+    // ===== OPTIONS SETUP =====
+    function setupOptions() {
+        // Single-select
+        var optionContainers = document.querySelectorAll('.options:not(.multi-select)');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+        // Multi-select
+        var multiOptions = document.querySelectorAll('.multi-select .option');
+        for (var m = 0; m < multiOptions.length; m++) {
+            multiOptions[m].addEventListener('click', function(e) {
+                e.preventDefault();
+                this.classList.toggle('selected');
+                var checkbox = this.querySelector('input');
+                checkbox.checked = this.classList.contains('selected');
+                updateProgress();
+                saveProgress();
+            });
+        }
+        // Dropdowns
+        var selects = document.querySelectorAll('select:not(#seatSelect):not(#niveauSelect)');
+        for (var s = 0; s < selects.length; s++) {
+            selects[s].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+    }
+
+    // ===== PROGRESS =====
+    function isQuestionAnswered(qId) {
+        switch(qId) {
+            case 'q1': return !!document.querySelector('input[name="q1"]:checked');
+            case 'q2': return !!document.querySelector('input[name="q2"]:checked');
+            case 'q3': return document.getElementById('q3-a').value && document.getElementById('q3-b').value;
+            case 'q4': return document.getElementById('q4-a').value && document.getElementById('q4-b').value && document.getElementById('q4-c').value;
+            case 'q5': return !!document.querySelector('input[name="q5"]:checked');
+            case 'q6': return !!document.querySelector('input[name="q6"]:checked');
+            case 'q7': return !!document.querySelector('input[name="q7"]:checked');
+            case 'q8': return !!document.querySelector('input[name="q8"]:checked');
+            case 'q9': return !!document.querySelector('input[name="q9"]:checked');
+            case 'q10': return document.getElementById('q10-a').value && document.getElementById('q10-b').value;
+            case 'q11': return !!document.querySelector('input[name="q11"]:checked');
+            default: return false;
+        }
+    }
+
+    function countAnsweredQuestions() {
+        if (selectedNiveau === 0) return { answered: 0, total: 0 };
+        var answered = 0, total = 0;
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            if (qNiveau <= selectedNiveau) {
+                total++;
+                if (isQuestionAnswered(questions[i].id)) answered++;
+            }
+        }
+        return { answered: answered, total: total };
+    }
+
+    function updateProgress() {
+        if (selectedNiveau === 0) {
+            document.getElementById('progressText').textContent = 'Niveau wählen...';
+            document.getElementById('progressFill').style.width = '0%';
+            return;
+        }
+        var status = countAnsweredQuestions();
+        var percent = status.total > 0 ? (status.answered / status.total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' beantwortet (' + niveauPoints[selectedNiveau] + ' BE)';
+    }
+
+    // ===== PERSISTENCE =====
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        return {
+            q1: getRadioValue('q1'),
+            q2: getRadioValue('q2'),
+            q3a: document.getElementById('q3-a').value,
+            q3b: document.getElementById('q3-b').value,
+            q4a: document.getElementById('q4-a').value,
+            q4b: document.getElementById('q4-b').value,
+            q4c: document.getElementById('q4-c').value,
+            q5: getCheckboxValues('q5'),
+            q6: getRadioValue('q6'),
+            q7: getRadioValue('q7'),
+            q8: getRadioValue('q8'),
+            q9: getRadioValue('q9'),
+            q10a: document.getElementById('q10-a').value,
+            q10b: document.getElementById('q10-b').value,
+            q11: getCheckboxValues('q11')
+        };
+    }
+
+    function restoreAnswers(saved) {
+        var singleQuestions = ['q1', 'q2', 'q6', 'q7', 'q8', 'q9'];
+        singleQuestions.forEach(function(q) {
+            if (saved[q]) {
+                var radio = document.querySelector('input[name="' + q + '"][value="' + saved[q] + '"]');
+                if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+            }
+        });
+        ['q5', 'q11'].forEach(function(q) {
+            if (saved[q] && saved[q].length) {
+                saved[q].forEach(function(val) {
+                    var cb = document.querySelector('input[name="' + q + '"][value="' + val + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+        });
+        if (saved.q3a) document.getElementById('q3-a').value = saved.q3a;
+        if (saved.q3b) document.getElementById('q3-b').value = saved.q3b;
+        if (saved.q4a) document.getElementById('q4-a').value = saved.q4a;
+        if (saved.q4b) document.getElementById('q4-b').value = saved.q4b;
+        if (saved.q4c) document.getElementById('q4-c').value = saved.q4c;
+        if (saved.q10a) document.getElementById('q10-a').value = saved.q10a;
+        if (saved.q10b) document.getElementById('q10-b').value = saved.q10b;
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function getCheckboxValues(name) {
+        var checked = document.querySelectorAll('input[name="' + name + '"]:checked');
+        var values = [];
+        for (var i = 0; i < checked.length; i++) values.push(checked[i].value);
+        return values;
+    }
+
+    // ===== SUBMIT TEST =====
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (niveauLocked !== 'true' || selectedNiveau === 0) { alert('Bitte bestätige zuerst dein Niveau!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var userAnswers = collectAllAnswers();
+        var score = 0;
+        var maxPoints = niveauPoints[selectedNiveau];
+
+        // ===== NIVEAU 1 (★) =====
+        if (selectedNiveau >= 1) {
+            // Q1: Single-Choice (1 BE)
+            var q1Correct = userAnswers.q1 === answers.q1;
+            score += q1Correct ? 1 : 0;
+            markRadioQuestion('q1', answers.q1, userAnswers.q1);
+            showFeedback('q1', q1Correct);
+            showQuestionResult('q1', q1Correct ? 1 : 0, 1);
+
+            // Q2: Single-Choice (1 BE)
+            var q2Correct = userAnswers.q2 === answers.q2;
+            score += q2Correct ? 1 : 0;
+            markRadioQuestion('q2', answers.q2, userAnswers.q2);
+            showFeedback('q2', q2Correct);
+            showQuestionResult('q2', q2Correct ? 1 : 0, 1);
+
+            // Q3: Dropdown (2 BE)
+            var q3Score = 0;
+            var q3aEl = document.getElementById('q3-a');
+            var q3bEl = document.getElementById('q3-b');
+            if (userAnswers.q3a === answers.q3a) { q3Score++; q3aEl.classList.add('correct'); } else { q3aEl.classList.add('incorrect'); }
+            if (userAnswers.q3b === answers.q3b) { q3Score++; q3bEl.classList.add('correct'); } else { q3bEl.classList.add('incorrect'); }
+            score += q3Score;
+            showFeedback('q3', q3Score === 2);
+            showQuestionResult('q3', q3Score, 2);
+
+            // Q4: Dropdown (3 BE)
+            var q4Score = 0;
+            var q4aEl = document.getElementById('q4-a');
+            var q4bEl = document.getElementById('q4-b');
+            var q4cEl = document.getElementById('q4-c');
+            if (userAnswers.q4a === answers.q4a) { q4Score++; q4aEl.classList.add('correct'); } else { q4aEl.classList.add('incorrect'); }
+            if (userAnswers.q4b === answers.q4b) { q4Score++; q4bEl.classList.add('correct'); } else { q4bEl.classList.add('incorrect'); }
+            if (userAnswers.q4c === answers.q4c) { q4Score++; q4cEl.classList.add('correct'); } else { q4cEl.classList.add('incorrect'); }
+            score += q4Score;
+            showFeedback('q4', q4Score === 3);
+            showQuestionResult('q4', q4Score, 3);
+
+            // Q5: Multi-Select (2 BE)
+            var q5Score = scoreMultiSelect('q5', answers.q5, userAnswers.q5, 2);
+            score += q5Score;
+            showFeedback('q5', q5Score >= 1.5);
+            showQuestionResult('q5', q5Score, 2);
+
+            // Q6: Single-Choice (1 BE)
+            var q6Correct = userAnswers.q6 === answers.q6;
+            score += q6Correct ? 1 : 0;
+            markRadioQuestion('q6', answers.q6, userAnswers.q6);
+            showFeedback('q6', q6Correct);
+            showQuestionResult('q6', q6Correct ? 1 : 0, 1);
+
+            // Niveau 1 hat nur 10 BE aus Fragen, aber niveauPoints[1] = 15
+            // Die 5 zusätzlichen BE sind "Bonus" für Niveau-1-Wahl (einfacher Test)
+            // Alternativ: niveauPoints[1] = 10 setzen
+        }
+
+        // ===== NIVEAU 2 (★★) =====
+        var q7NotGraded = selectedNiveau < 2;
+        var q7Correct = userAnswers.q7 === answers.q7;
+        var q7Pts = q7Correct ? 2 : 0;
+        if (!q7NotGraded) score += q7Pts;
+        markRadioQuestion('q7', answers.q7, userAnswers.q7);
+        showFeedback('q7', q7Correct);
+        showQuestionResult('q7', q7Pts, 2, q7NotGraded);
+
+        var q8NotGraded = selectedNiveau < 2;
+        var q8Correct = userAnswers.q8 === answers.q8;
+        var q8Pts = q8Correct ? 1 : 0;
+        if (!q8NotGraded) score += q8Pts;
+        markRadioQuestion('q8', answers.q8, userAnswers.q8);
+        showFeedback('q8', q8Correct);
+        showQuestionResult('q8', q8Pts, 1, q8NotGraded);
+
+        var q9NotGraded = selectedNiveau < 2;
+        var q9Correct = userAnswers.q9 === answers.q9;
+        var q9Pts = q9Correct ? 2 : 0;
+        if (!q9NotGraded) score += q9Pts;
+        markRadioQuestion('q9', answers.q9, userAnswers.q9);
+        showFeedback('q9', q9Correct);
+        showQuestionResult('q9', q9Pts, 2, q9NotGraded);
+
+        // ===== NIVEAU 3 (★★★) =====
+        var q10NotGraded = selectedNiveau < 3;
+        var q10Score = 0;
+        var q10aEl = document.getElementById('q10-a');
+        var q10bEl = document.getElementById('q10-b');
+        if (userAnswers.q10a === answers.q10a) { q10Score++; q10aEl.classList.add('correct'); } else { q10aEl.classList.add('incorrect'); }
+        if (userAnswers.q10b === answers.q10b) { q10Score++; q10bEl.classList.add('correct'); } else { q10bEl.classList.add('incorrect'); }
+        if (!q10NotGraded) score += q10Score;
+        showFeedback('q10', q10Score === 2);
+        showQuestionResult('q10', q10Score, 2, q10NotGraded);
+
+        var q11NotGraded = selectedNiveau < 3;
+        var q11Score = scoreMultiSelect('q11', answers.q11, userAnswers.q11, 3);
+        if (!q11NotGraded) score += q11Score;
+        showFeedback('q11', q11Score >= 2);
+        showQuestionResult('q11', q11Score, 3, q11NotGraded);
+
+        markNichtGewertet();
+        displayResults(score, maxPoints);
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    function scoreMultiSelect(qId, correctAnswers, userAnswers, maxPoints) {
+        var qOptions = document.querySelectorAll('#' + qId + '-options .option');
+        var correctCount = 0;
+        var incorrectCount = 0;
+        for (var i = 0; i < qOptions.length; i++) {
+            var val = qOptions[i].dataset.value;
+            var isCorrectAnswer = correctAnswers.indexOf(val) !== -1;
+            var wasSelected = userAnswers.indexOf(val) !== -1;
+            if (isCorrectAnswer && wasSelected) { correctCount++; qOptions[i].classList.add('correct'); }
+            else if (isCorrectAnswer && !wasSelected) { qOptions[i].classList.add('missed'); }
+            else if (!isCorrectAnswer && wasSelected) { incorrectCount++; qOptions[i].classList.add('incorrect'); }
+        }
+        var score = correctCount - incorrectCount;
+        return Math.max(0, Math.min(score, maxPoints));
+    }
+
+    function markRadioQuestion(name, correct, selected) {
+        var options = document.querySelectorAll('#' + name + '-options .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts, notGraded) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (notGraded) {
+            result.style.background = '#f0f0f0';
+            result.style.color = '#888';
+            result.textContent = '(' + achieved + ')/' + maxPts + ' BE';
+        } else {
+            if (achieved === maxPts) result.classList.add('full');
+            else if (achieved > 0) result.classList.add('partial');
+            else result.classList.add('zero');
+            result.textContent = achieved + '/' + maxPts + ' BE';
+        }
+        meta.appendChild(result);
+    }
+
+    function markNichtGewertet() {
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            var qId = questions[i].id;
+            if (qNiveau > selectedNiveau) {
+                var hint = document.getElementById(qId + '-niveau-hinweis');
+                if (hint) hint.remove();
+                var existingBox = document.getElementById(qId + '-nicht-gewertet');
+                if (!existingBox) {
+                    var box = document.createElement('div');
+                    box.className = 'nicht-gewertet-box';
+                    box.id = qId + '-nicht-gewertet';
+                    box.textContent = 'Nicht gewertet, nur informativ';
+                    questions[i].appendChild(box);
+                }
+            }
+        }
+    }
+
+    function displayResults(score, maxPoints) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+        var niveauStars = ['', '\u2605', '\u2605\u2605', '\u2605\u2605\u2605'][selectedNiveau];
+
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: ' + platzText;
+        document.getElementById('niveauDisplay').textContent = 'Niveau: ' + niveauStars + ' (' + maxPoints + ' BE)';
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPoints;
+
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        var npIds = ['be14', 'be13', 'be12', 'be11', 'be10', 'be9', 'be8', 'be7', 'be6', 'be5', 'be4', 'be3', 'be2', 'be1'];
+        for (var i = 0; i < thresholds.length; i++) {
+            var beExact = maxPoints * thresholds[i] / 100;
+            var be = Math.ceil(beExact * 2) / 2;
+            document.getElementById(npIds[i]).textContent = be;
+        }
+
+        var percent = (score / maxPoints) * 100;
+        var np = 0;
+        if (percent >= 100) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 86) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+
+        document.getElementById('gradeDisplay').textContent = np + ' Notenpunkte';
+        if (np > 0) {
+            var cellId = 'be' + np;
+            var cell = document.getElementById(cellId);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel anzeigen (Anti-Betrug)
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('resultsSection') || document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function disableAllInputs() {
+        var radios = document.querySelectorAll('input[type="radio"]');
+        for (var i = 0; i < radios.length; i++) radios[i].disabled = true;
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        for (var j = 0; j < checkboxes.length; j++) checkboxes[j].disabled = true;
+        var selects = document.querySelectorAll('select');
+        for (var k = 0; k < selects.length; k++) selects[k].disabled = true;
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+        var btnNiveauOk = document.getElementById('btnNiveauOk');
+        if (btnNiveauOk) btnNiveauOk.disabled = true;
+    }
+
+    // ===== INIT =====
+    window.onload = function() {
+        // Startzeit beim ersten Aufruf speichern (Anti-Betrug)
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        generateSeatDropdown();
+        restoreNiveauDropdown();
+        setupOptions();
+        loadProgress();
+        updateProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
+
+        // Bereits abgegeben?
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            testSubmitted = true;
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widerstände in Reihenschaltung</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --physik: #2c5aa0;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #666666;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--physik);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--physik);
+        }
+
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .canvas-area {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            background: #fafafa;
+            border: 1px solid var(--border);
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: var(--text);
+        }
+
+        .control-group .hint {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .value-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1em;
+            color: var(--physik);
+        }
+
+        .formula-box {
+            background: var(--bg);
+            border-top: 3px solid var(--physik);
+            padding: 12px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .formula-box h3 {
+            font-size: 0.9em;
+            color: var(--physik);
+            margin-bottom: 8px;
+        }
+
+        .formula-box .formula {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--physik);
+            margin: 8px 0;
+        }
+
+        .display-bar {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .display-item {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        .display-item .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .display-item .value {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .display-item.r1 .value { color: var(--warning); }
+        .display-item.r2 .value { color: var(--success); }
+        .display-item.rges .value { color: var(--physik); }
+        .display-item.flow .value { color: var(--negative); }
+
+        .analogy-box {
+            background: #e3f2fd;
+            border: 1px solid var(--physik);
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .analogy-box h3 {
+            font-size: 0.9em;
+            color: var(--physik);
+            margin-bottom: 8px;
+        }
+
+        .analogy-box p {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .mode-toggle button {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .mode-toggle button.active {
+            background: var(--physik);
+            color: white;
+            border-color: var(--physik);
+        }
+
+        .mode-toggle button:hover:not(.active) {
+            background: var(--bg);
+        }
+
+        @media (max-width: 700px) {
+            .main-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Widerstände in Reihenschaltung</h1>
+
+        <div class="mode-toggle">
+            <button id="btn-water" class="active" onclick="setMode('water')">Wassermodell</button>
+            <button id="btn-circuit" onclick="setMode('circuit')">Stromkreis</button>
+        </div>
+
+        <div class="main-layout">
+            <div class="canvas-area">
+                <canvas id="sim" width="520" height="300"></canvas>
+
+                <div class="display-bar">
+                    <div class="display-item r1">
+                        <div class="label">R₁</div>
+                        <div class="value" id="disp-r1">20 Ω</div>
+                    </div>
+                    <div class="display-item r2">
+                        <div class="label">R₂</div>
+                        <div class="value" id="disp-r2">30 Ω</div>
+                    </div>
+                    <div class="display-item rges">
+                        <div class="label">R<sub>ges</sub></div>
+                        <div class="value" id="disp-rges">50 Ω</div>
+                    </div>
+                    <div class="display-item flow">
+                        <div class="label">Stromstärke I</div>
+                        <div class="value" id="disp-flow">0.24 A</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="control-group">
+                    <label style="color: var(--warning);">Widerstand R₁</label>
+                    <div class="hint">Erste Engstelle / Widerstand</div>
+                    <input type="range" id="r1-slider" min="10" max="50" value="20">
+                    <div class="value-box" id="r1-value" style="color: var(--warning);">20 Ω</div>
+                </div>
+
+                <div class="control-group">
+                    <label style="color: var(--success);">Widerstand R₂</label>
+                    <div class="hint">Zweite Engstelle / Widerstand</div>
+                    <input type="range" id="r2-slider" min="10" max="50" value="30">
+                    <div class="value-box" id="r2-value" style="color: var(--success);">30 Ω</div>
+                </div>
+
+                <div class="formula-box">
+                    <h3>Reihenschaltung</h3>
+                    <div class="formula">R<sub>ges</sub> = R₁ + R₂</div>
+                    <div id="formula-result" style="font-size: 0.9em; margin-top: 8px;">
+                        = 20 Ω + 30 Ω = <strong>50 Ω</strong>
+                    </div>
+                </div>
+
+                <div class="analogy-box">
+                    <h3>Wasseranalogie</h3>
+                    <p><strong>Reihenschaltung:</strong></p>
+                    <p>Zwei Engstellen <em>hintereinander</em> = Wasser muss durch beide!</p>
+                    <p>→ Widerstände <strong>addieren</strong> sich.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SIMULATION: R IN REIHENSCHALTUNG (ES5)
+        // ============================================
+
+        var canvas = document.getElementById('sim');
+        var ctx = canvas.getContext('2d');
+
+        var r1Slider = document.getElementById('r1-slider');
+        var r2Slider = document.getElementById('r2-slider');
+
+        // State
+        var R1 = 20;
+        var R2 = 30;
+        var U = 12; // Fixed voltage
+        var mode = 'water'; // 'water' or 'circuit'
+        var particles = [];
+        var MAX_PARTICLES = 60;
+        var animFrame = 0;
+
+        // ============================================
+        // PARTICLE CLASS (Wassermodell)
+        // ============================================
+
+        function Particle() {
+            this.reset();
+        }
+
+        Particle.prototype.reset = function() {
+            this.x = 50 + Math.random() * 20;
+            this.y = 150 + (Math.random() - 0.5) * 30;
+            this.speed = 0.6 + Math.random() * 0.4;
+            this.size = 3 + Math.random() * 2;
+        };
+
+        Particle.prototype.update = function(flow) {
+            var speed = flow * 3 * this.speed;
+
+            // Engstelle 1: 150-200
+            if (this.x > 150 && this.x < 200) {
+                var narrowFactor1 = 1 + (R1 - 10) / 30;
+                speed = speed * narrowFactor1;
+                var maxY1 = 15 * (1 - (R1 - 10) / 50);
+                if (this.y < 150 - maxY1) this.y = 150 - maxY1;
+                if (this.y > 150 + maxY1) this.y = 150 + maxY1;
+            }
+
+            // Engstelle 2: 320-370
+            if (this.x > 320 && this.x < 370) {
+                var narrowFactor2 = 1 + (R2 - 10) / 30;
+                speed = speed * narrowFactor2;
+                var maxY2 = 15 * (1 - (R2 - 10) / 50);
+                if (this.y < 150 - maxY2) this.y = 150 - maxY2;
+                if (this.y > 150 + maxY2) this.y = 150 + maxY2;
+            }
+
+            this.x += speed;
+            this.y += (Math.random() - 0.5) * 0.6;
+
+            if (this.x > 480) {
+                this.reset();
+            }
+        };
+
+        Particle.prototype.draw = function() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(21, 101, 192, 0.7)';
+            ctx.fill();
+        };
+
+        // ============================================
+        // CALCULATIONS
+        // ============================================
+
+        function calcRges() {
+            return R1 + R2;
+        }
+
+        function calcI() {
+            var Rges = calcRges();
+            return U / Rges;
+        }
+
+        function calcFlow() {
+            return calcI() * 2; // Scale for animation
+        }
+
+        // ============================================
+        // DRAWING - WATER MODEL
+        // ============================================
+
+        function drawWater() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var pipeH = 40;
+            var cy = 150;
+
+            // Pipe gradient
+            var grad = ctx.createLinearGradient(0, cy - 20, 0, cy + 20);
+            grad.addColorStop(0, '#e3f2fd');
+            grad.addColorStop(0.5, '#bbdefb');
+            grad.addColorStop(1, '#e3f2fd');
+
+            ctx.fillStyle = grad;
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 2;
+
+            // Left pipe (before R1)
+            ctx.fillRect(40, cy - pipeH/2, 110, pipeH);
+            ctx.strokeRect(40, cy - pipeH/2, 110, pipeH);
+
+            // R1 narrow section
+            var narrow1 = pipeH * (1 - (R1 - 10) / 60);
+            ctx.beginPath();
+            ctx.moveTo(150, cy - pipeH/2);
+            ctx.lineTo(160, cy - narrow1/2);
+            ctx.lineTo(190, cy - narrow1/2);
+            ctx.lineTo(200, cy - pipeH/2);
+            ctx.lineTo(200, cy + pipeH/2);
+            ctx.lineTo(190, cy + narrow1/2);
+            ctx.lineTo(160, cy + narrow1/2);
+            ctx.lineTo(150, cy + pipeH/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Middle pipe (between R1 and R2)
+            ctx.fillRect(200, cy - pipeH/2, 120, pipeH);
+            ctx.strokeRect(200, cy - pipeH/2, 120, pipeH);
+
+            // R2 narrow section
+            var narrow2 = pipeH * (1 - (R2 - 10) / 60);
+            ctx.beginPath();
+            ctx.moveTo(320, cy - pipeH/2);
+            ctx.lineTo(330, cy - narrow2/2);
+            ctx.lineTo(360, cy - narrow2/2);
+            ctx.lineTo(370, cy - pipeH/2);
+            ctx.lineTo(370, cy + pipeH/2);
+            ctx.lineTo(360, cy + narrow2/2);
+            ctx.lineTo(330, cy + narrow2/2);
+            ctx.lineTo(320, cy + pipeH/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Right pipe (after R2)
+            ctx.fillRect(370, cy - pipeH/2, 110, pipeH);
+            ctx.strokeRect(370, cy - pipeH/2, 110, pipeH);
+
+            // Draw particles
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].draw();
+            }
+
+            // Labels
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#b35c00';
+            ctx.fillText('R₁ = ' + R1 + ' Ω', 175, cy + 45);
+
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText('R₂ = ' + R2 + ' Ω', 345, cy + 45);
+
+            // Pump
+            ctx.beginPath();
+            ctx.arc(50, cy, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#c62828';
+            ctx.fill();
+            ctx.strokeStyle = '#8e0000';
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('P', 50, cy + 4);
+
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Wassermodell: Zwei Engstellen in Reihe', 40, 25);
+        }
+
+        // ============================================
+        // DRAWING - CIRCUIT
+        // ============================================
+
+        function drawCircuit() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var cy = 150;
+
+            // Main wire
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+
+            // Top wire
+            ctx.beginPath();
+            ctx.moveTo(60, cy - 50);
+            ctx.lineTo(130, cy - 50);
+            ctx.stroke();
+
+            // R1 (resistor box - DIN: Rechteck)
+            ctx.strokeStyle = '#b35c00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(130, cy - 65, 60, 30);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(131, cy - 64, 58, 28);
+            ctx.fillStyle = '#b35c00';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('R₁', 160, cy - 47);
+
+            // Wire between R1 and R2
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(190, cy - 50);
+            ctx.lineTo(280, cy - 50);
+            ctx.stroke();
+
+            // R2 (resistor box - DIN: Rechteck)
+            ctx.strokeStyle = '#2a7a4b';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(280, cy - 65, 60, 30);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(281, cy - 64, 58, 28);
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText('R₂', 310, cy - 47);
+
+            // Right top wire
+            ctx.strokeStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(340, cy - 50);
+            ctx.lineTo(410, cy - 50);
+            ctx.stroke();
+
+            // Right vertical
+            ctx.beginPath();
+            ctx.moveTo(410, cy - 50);
+            ctx.lineTo(410, cy + 50);
+            ctx.stroke();
+
+            // Bottom wire
+            ctx.beginPath();
+            ctx.moveTo(410, cy + 50);
+            ctx.lineTo(60, cy + 50);
+            ctx.stroke();
+
+            // Left vertical (broken for voltage source)
+            ctx.beginPath();
+            ctx.moveTo(60, cy + 50);
+            ctx.lineTo(60, cy + 15);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(60, cy - 15);
+            ctx.lineTo(60, cy - 50);
+            ctx.stroke();
+
+            // Voltage source (DIN: lange Linie = +, kurze dicke = -)
+            // + Pol oben (lange rote Linie)
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(48, cy - 8);
+            ctx.lineTo(72, cy - 8);
+            ctx.stroke();
+
+            // - Pol unten (kurze dicke blaue Linie)
+            ctx.strokeStyle = '#1565c0';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(52, cy + 8);
+            ctx.lineTo(68, cy + 8);
+            ctx.stroke();
+
+            // U Beschriftung links neben Spannungsquelle
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('U', 42, cy - 4);
+            ctx.font = '10px sans-serif';
+            ctx.fillText('12 V', 42, cy + 10);
+
+            // Amperemeter
+            ctx.beginPath();
+            ctx.arc(235, cy - 50, 15, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('A', 235, cy - 46);
+
+            // Current arrows (technische Stromrichtung: rot, von + nach -)
+            animFrame++;
+            var offset = (animFrame % 40) * 2;
+            ctx.fillStyle = '#c62828';
+            for (var i = 0; i < 5; i++) {
+                var x = 80 + i * 80 + offset;
+                if (x < 400) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, cy - 50);
+                    ctx.lineTo(x - 6, cy - 56);
+                    ctx.lineTo(x - 6, cy - 44);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            // I-Label über dem oberen Draht
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('I', 100, cy - 62);
+
+            // Values
+            ctx.fillStyle = '#b35c00';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(R1 + ' Ω', 160, cy - 75);
+
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText(R2 + ' Ω', 310, cy - 75);
+
+            // I value
+            ctx.fillStyle = '#1565c0';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('I = ' + calcI().toFixed(2) + ' A', 235, cy - 70);
+
+            // Title
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'left';
+            ctx.fillText('Schaltkreis: Zwei Widerstände in Reihe', 40, 25);
+
+            // Rges
+            ctx.fillStyle = '#2c5aa0';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('R_ges = ' + calcRges() + ' Ω', 235, cy + 100);
+        }
+
+        // ============================================
+        // UPDATE LOOP
+        // ============================================
+
+        function update() {
+            var flow = calcFlow();
+
+            if (mode === 'water') {
+                // Spawn particles
+                var spawnRate = Math.ceil(flow * 1.2);
+                for (var i = 0; i < spawnRate && particles.length < MAX_PARTICLES; i++) {
+                    if (Math.random() < 0.15) {
+                        particles.push(new Particle());
+                    }
+                }
+
+                // Update particles
+                for (var j = 0; j < particles.length; j++) {
+                    particles[j].update(flow);
+                }
+
+                drawWater();
+            } else {
+                drawCircuit();
+            }
+
+            updateDisplays();
+            requestAnimationFrame(update);
+        }
+
+        function updateDisplays() {
+            var Rges = calcRges();
+            var I = calcI();
+
+            document.getElementById('r1-value').textContent = R1 + ' Ω';
+            document.getElementById('r2-value').textContent = R2 + ' Ω';
+            document.getElementById('disp-r1').textContent = R1 + ' Ω';
+            document.getElementById('disp-r2').textContent = R2 + ' Ω';
+            document.getElementById('disp-rges').textContent = Rges + ' Ω';
+            document.getElementById('disp-flow').textContent = I.toFixed(2) + ' A';
+
+            document.getElementById('formula-result').innerHTML =
+                '= ' + R1 + ' Ω + ' + R2 + ' Ω = <strong>' + Rges + ' Ω</strong>';
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        r1Slider.addEventListener('input', function() {
+            R1 = parseInt(this.value);
+        });
+
+        r2Slider.addEventListener('input', function() {
+            R2 = parseInt(this.value);
+        });
+
+        function setMode(newMode) {
+            mode = newMode;
+            document.getElementById('btn-water').className = (mode === 'water') ? 'active' : '';
+            document.getElementById('btn-circuit').className = (mode === 'circuit') ? 'active' : '';
+
+            if (mode === 'water') {
+                particles = [];
+                for (var i = 0; i < 20; i++) {
+                    var p = new Particle();
+                    p.x = 50 + Math.random() * 400;
+                    particles.push(p);
+                }
+            }
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+
+        function init() {
+            for (var i = 0; i < 20; i++) {
+                var p = new Particle();
+                p.x = 50 + Math.random() * 400;
+                particles.push(p);
+            }
+            update();
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+Liste der verbindlich zu beherrschenden sprachlich-stilistischen Mittel
+
+                    Recursos
+   Stilmittel                                 Erklärung                     Ejemplos
+                   estilísticos
+
+
+                                     Aneinanderreihung von
+                                                                     A las aladas almas de
+Alliteration    la aliteración       Wörtern mit gleichen
+                                                                     las rosas
+                                     Anfangslauten
+
+
+                                     polarisierende
+                                                                     Es tan corto el amor, y
+Antithese       la antítesis         Gegenüberstellung von
+                                                                     es tan largo el olvido
+                                     gegensätzlichen Begriffen
+
+
+                                                                     Día, noche, ponientes,
+                                     Aufzählung bzw.
+                                                                     madrugadas, espacios,
+Aufzählung      la enumeración       Aneinanderreihung von
+                                                                     ondas nuevas, antiguas,
+                                     Wörtern
+                                                                     fugitivas, perpetuas,...
+
+
+
+Hyperbel        la hipérbole         starke Übertreibung             Sonrisa de oreja a oreja.
+
+
+
+                                     Verbildlichung von
+Metapher        la metáfora          Sachverhalten durch             Tus ojos son el mar.
+                                     Bedeutungsübertragung
+
+
+                                     Vermenschlichung einer          Las estrellas nos
+Personifikation la personificación   Sache, eines Tieres oder        miraban mientras la
+                                     eines Gegenstandes              ciudad sonreía.
+
+
+
+Rhetorische     la interrogación     (Schein-)Frage, auf die keine   ¿Qué me pasa? ¿Qué
+Frage           retórica             Antwort erwartet wird           estoy haciendo?
+
+
+
+                                     Veranschaulichung durch ein     Tu cabello oscuro
+Vergleich       la comparación
+                                     Vergleichswort                  hermoso como la noche.
+
+
+                                                                     Temprano madrugó la
+                                     Wiederholung von Wörtern        madrugada, temprano
+Wiederholung    la repetición
+                                     oder Satzteilen                 estás rodando por el
+                                                                     suelo.
+

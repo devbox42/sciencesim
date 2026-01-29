@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wetter Rostock – Live Dashboard | IROSTO113</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --yellow: #d29922;
+            --red: #f85149;
+            --blue: #58a6ff;
+            --purple: #a371f7;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .station-badge {
+            font-size: 0.6em;
+            background: var(--accent);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .header-meta {
+            text-align: right;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--green);
+        }
+
+        .status-indicator.offline {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--red);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .grid-top {
+            grid-template-columns: 350px 1fr 300px;
+        }
+
+        .grid-main {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .grid-charts {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .grid-forecast {
+            grid-template-columns: repeat(7, 1fr);
+        }
+
+        @media (max-width: 1400px) {
+            .grid-top { grid-template-columns: 1fr 1fr; }
+            .grid-main { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 900px) {
+            .grid-top { grid-template-columns: 1fr; }
+            .grid-main { grid-template-columns: 1fr; }
+            .grid-charts { grid-template-columns: 1fr; }
+            .grid-forecast { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-link {
+            font-size: 0.75em;
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .card-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Current Weather Large Display */
+        .current-display {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .weather-icon-large {
+            font-size: 4em;
+            line-height: 1;
+        }
+
+        .temp-display {
+            flex: 1;
+        }
+
+        .temp-main {
+            font-size: 3.5em;
+            font-weight: 300;
+            line-height: 1;
+        }
+
+        .temp-unit {
+            font-size: 0.35em;
+            vertical-align: top;
+            color: var(--text-secondary);
+        }
+
+        .temp-details {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .condition-text {
+            font-size: 1em;
+            font-weight: 500;
+            color: var(--text);
+            margin-top: 4px;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .metric-box {
+            background: rgba(255,255,255,0.03);
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.7em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .metric-sub {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+        }
+
+        /* Map Container */
+        .map-container {
+            height: 400px;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #radarMap {
+            height: 100%;
+            width: 100%;
+            background: #1a1a2e;
+        }
+
+        .map-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 6px;
+        }
+
+        .map-btn {
+            background: rgba(0,0,0,0.7);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .map-btn:hover {
+            background: rgba(0,0,0,0.9);
+        }
+
+        .map-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .radar-time {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.85em;
+        }
+
+        .radar-legend {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
+        }
+
+        .legend-bar {
+            width: 120px;
+            height: 12px;
+            background: linear-gradient(to right,
+                transparent 0%,
+                #00ff00 20%,
+                #ffff00 40%,
+                #ff9900 60%,
+                #ff0000 80%,
+                #ff00ff 100%);
+            border-radius: 2px;
+            margin-bottom: 4px;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            height: 180px;
+            position: relative;
+        }
+
+        /* Hourly Scroll */
+        .hourly-scroll {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 6px 0;
+        }
+
+        .hourly-item {
+            flex: 0 0 55px;
+            text-align: center;
+            padding: 8px 4px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 4px;
+        }
+
+        .hourly-time {
+            font-size: 0.7em;
+            color: var(--text-secondary);
+        }
+
+        .hourly-icon {
+            font-size: 1.3em;
+            margin: 4px 0;
+        }
+
+        .hourly-temp {
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .hourly-precip {
+            font-size: 0.65em;
+            color: var(--blue);
+        }
+
+        /* Daily Forecast */
+        .forecast-day {
+            text-align: center;
+            padding: 10px 6px;
+        }
+
+        .forecast-name {
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .forecast-icon {
+            font-size: 1.8em;
+            margin: 6px 0;
+        }
+
+        .forecast-temps {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.85em;
+        }
+
+        .temp-high { font-weight: 600; }
+        .temp-low { color: var(--text-secondary); }
+
+        .forecast-precip {
+            font-size: 0.7em;
+            color: var(--blue);
+            margin-top: 4px;
+        }
+
+        /* WU Embed */
+        .wu-embed {
+            width: 100%;
+            height: 350px;
+            border: none;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        /* Sun Info */
+        .sun-row {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            padding: 8px 0;
+        }
+
+        .sun-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .sun-icon {
+            font-size: 1.5em;
+            margin-bottom: 4px;
+        }
+
+        .sun-time {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .sun-label {
+            font-size: 0.7em;
+            color: var(--text-secondary);
+        }
+
+        /* Alert */
+        .alert-bar {
+            background: rgba(248, 81, 73, 0.15);
+            border: 1px solid var(--red);
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .alert-bar.active {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-icon {
+            font-size: 1.3em;
+        }
+
+        .alert-text {
+            flex: 1;
+            font-size: 0.9em;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: var(--red);
+        }
+
+        /* Data Source Tabs */
+        .source-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .source-tab {
+            padding: 6px 12px;
+            font-size: 0.75em;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .source-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--accent);
+        }
+
+        /* WU specific card */
+        .wu-card {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 900px) {
+            .wu-card { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>
+                    Wetter Rostock
+                    <span class="station-badge">IROSTO113</span>
+                </h1>
+                <div style="margin-top: 4px;">
+                    <span class="status-indicator" id="stationStatus">
+                        <span class="status-dot"></span>
+                        <span id="statusText">Verbinde...</span>
+                    </span>
+                </div>
+            </div>
+            <div class="header-meta">
+                <div>Station: Stadtmitte, Rostock</div>
+                <div>54.08°N, 12.13°E | 31m ü. NHN</div>
+                <div id="lastUpdate">--</div>
+            </div>
+        </header>
+
+        <div class="alert-bar" id="alertBar">
+            <span class="alert-icon">⚠️</span>
+            <div class="alert-text">
+                <span class="alert-title">Wetterwarnung</span>
+                <span id="alertMessage"></span>
+            </div>
+        </div>
+
+        <!-- Top Row: Current + Radar Map + Details -->
+        <div class="grid grid-top" style="margin-bottom: 12px;">
+            <!-- Current Conditions -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Aktuell</span>
+                    <span id="currentTime">--:--</span>
+                </div>
+                <div class="current-display">
+                    <div class="weather-icon-large" id="currentIcon">--</div>
+                    <div class="temp-display">
+                        <div class="temp-main">
+                            <span id="currentTemp">--</span><span class="temp-unit">°C</span>
+                        </div>
+                        <div class="temp-details">
+                            Gefühlt <span id="feelsLike">--</span>°C
+                        </div>
+                        <div class="condition-text" id="conditionText">--</div>
+                    </div>
+                </div>
+                <div class="metrics-grid" style="margin-top: 12px;">
+                    <div class="metric-box">
+                        <div class="metric-label">Luftfeuchtigkeit</div>
+                        <div class="metric-value"><span id="humidity">--</span>%</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Taupunkt</div>
+                        <div class="metric-value"><span id="dewpoint">--</span>°C</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Wind</div>
+                        <div class="metric-value"><span id="windSpeed">--</span> km/h</div>
+                        <div class="metric-sub"><span id="windDir">--</span></div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Böen</div>
+                        <div class="metric-value"><span id="windGust">--</span> km/h</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Luftdruck</div>
+                        <div class="metric-value"><span id="pressure">--</span> hPa</div>
+                        <div class="metric-sub" id="pressureTrend">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Niederschlag</div>
+                        <div class="metric-value"><span id="precip">--</span> mm</div>
+                        <div class="metric-sub">Heute</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Radar Map -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Regenradar Norddeutschland</span>
+                    <a href="https://www.rainviewer.com/" target="_blank" class="card-link">RainViewer →</a>
+                </div>
+                <div class="map-container">
+                    <div id="radarMap"></div>
+                    <div class="radar-time" id="radarTime">--:--</div>
+                    <div class="map-controls">
+                        <button class="map-btn" id="btnPrev">◀</button>
+                        <button class="map-btn active" id="btnPlay">▶</button>
+                        <button class="map-btn" id="btnNext">▶▶</button>
+                    </div>
+                    <div class="radar-legend">
+                        <div class="legend-bar"></div>
+                        <div class="legend-labels">
+                            <span>leicht</span>
+                            <span>stark</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sun & Additional Info -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Sonne & Atmosphäre</span>
+                </div>
+                <div class="sun-row">
+                    <div class="sun-item">
+                        <div class="sun-icon">🌅</div>
+                        <div class="sun-time" id="sunrise">--:--</div>
+                        <div class="sun-label">Aufgang</div>
+                    </div>
+                    <div class="sun-item">
+                        <div class="sun-icon">🌇</div>
+                        <div class="sun-time" id="sunset">--:--</div>
+                        <div class="sun-label">Untergang</div>
+                    </div>
+                </div>
+                <div class="metrics-grid" style="margin-top: 8px;">
+                    <div class="metric-box">
+                        <div class="metric-label">Tageslänge</div>
+                        <div class="metric-value" id="dayLength">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">UV-Index</div>
+                        <div class="metric-value" id="uvIndex">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Solarstrahlung</div>
+                        <div class="metric-value"><span id="solarRad">--</span> W/m²</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Sichtweite</div>
+                        <div class="metric-value"><span id="visibility">--</span> km</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Forecast -->
+        <div class="card" style="margin-bottom: 12px;">
+            <div class="card-header">
+                <span class="card-title">Stündliche Vorhersage (48h)</span>
+            </div>
+            <div class="hourly-scroll" id="hourlyForecast">
+                <div class="loading"><span class="spinner"></span> Laden...</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-charts" style="margin-bottom: 12px;">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Temperaturverlauf</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Niederschlag & Bewölkung</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="precipChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Wind & Böen</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="windChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Luftdruck</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="pressureChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7-Day Forecast -->
+        <div class="card" style="margin-bottom: 12px;">
+            <div class="card-header">
+                <span class="card-title">7-Tage-Vorhersage</span>
+            </div>
+            <div class="grid grid-forecast" id="dailyForecast">
+                <div class="loading"><span class="spinner"></span> Laden...</div>
+            </div>
+        </div>
+
+        <!-- Weather Underground Embeds -->
+        <div class="grid grid-charts">
+            <div class="card wu-card">
+                <div class="card-header">
+                    <span class="card-title">Weather Underground – IROSTO113 Live</span>
+                    <a href="https://www.wunderground.com/dashboard/pws/IROSTO113" target="_blank" class="card-link">
+                        Vollständiges Dashboard →
+                    </a>
+                </div>
+                <iframe
+                    src="https://www.wunderground.com/dashboard/pws/IROSTO113/graph/2026-01-10/2026-01-10/daily"
+                    class="wu-embed"
+                    loading="lazy"
+                    id="wuGraphFrame"
+                ></iframe>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">WU Vorhersage Rostock</span>
+                    <a href="https://www.wunderground.com/forecast/de/rostock" target="_blank" class="card-link">
+                        Details →
+                    </a>
+                </div>
+                <iframe
+                    src="https://www.wunderground.com/hourly/de/rostock"
+                    class="wu-embed"
+                    loading="lazy"
+                ></iframe>
+            </div>
+        </div>
+
+        <footer>
+            <strong>Datenquellen:</strong>
+            <a href="https://www.wunderground.com/dashboard/pws/IROSTO113" target="_blank">Weather Underground IROSTO113</a> (Aktuell, primär) |
+            <a href="https://open-meteo.com/" target="_blank">Open-Meteo API</a> (DWD ICON, Prognose/Fallback) |
+            <a href="https://www.rainviewer.com/" target="_blank">RainViewer</a> (Radar)
+            <br>
+            <span style="color: var(--text-secondary);">Koordinaten: 54.0817°N, 12.1308°E | Station: EcoWitt WS69 | Aktualisierung: alle 5 Minuten</span>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ============================================
+        // CONFIGURATION
+        // ============================================
+        var CONFIG = {
+            lat: 54.0817,
+            lon: 12.1308,
+            timezone: 'Europe/Berlin',
+            stationId: 'IROSTO113',
+            // Weather Underground PWS API (public key from WU dashboard)
+            wuApiKey: 'e1f10a1e78da46f5b10a1e78da96f525',
+            // Map center for radar (Northern Germany)
+            mapCenter: [54.1, 12.1],
+            mapZoom: 7
+        };
+
+        // Data source tracking
+        var dataSource = 'loading';
+
+        // Weather codes (WMO)
+        var WEATHER_CODES = {
+            0: { icon: '☀️', desc: 'Klar' },
+            1: { icon: '🌤️', desc: 'Überwiegend klar' },
+            2: { icon: '⛅', desc: 'Teilweise bewölkt' },
+            3: { icon: '☁️', desc: 'Bewölkt' },
+            45: { icon: '🌫️', desc: 'Nebel' },
+            48: { icon: '🌫️', desc: 'Reifnebel' },
+            51: { icon: '🌧️', desc: 'Leichter Nieselregen' },
+            53: { icon: '🌧️', desc: 'Nieselregen' },
+            55: { icon: '🌧️', desc: 'Starker Nieselregen' },
+            61: { icon: '🌧️', desc: 'Leichter Regen' },
+            63: { icon: '🌧️', desc: 'Regen' },
+            65: { icon: '🌧️', desc: 'Starker Regen' },
+            66: { icon: '🌨️', desc: 'Gefrierender Regen' },
+            67: { icon: '🌨️', desc: 'Starker gefr. Regen' },
+            71: { icon: '🌨️', desc: 'Leichter Schneefall' },
+            73: { icon: '🌨️', desc: 'Schneefall' },
+            75: { icon: '❄️', desc: 'Starker Schneefall' },
+            77: { icon: '🌨️', desc: 'Schneegriesel' },
+            80: { icon: '🌦️', desc: 'Leichte Schauer' },
+            81: { icon: '🌦️', desc: 'Schauer' },
+            82: { icon: '⛈️', desc: 'Starke Schauer' },
+            85: { icon: '🌨️', desc: 'Schneeschauer' },
+            86: { icon: '❄️', desc: 'Starke Schneeschauer' },
+            95: { icon: '⛈️', desc: 'Gewitter' },
+            96: { icon: '⛈️', desc: 'Gewitter mit Hagel' },
+            99: { icon: '⛈️', desc: 'Schweres Gewitter' }
+        };
+
+        // ============================================
+        // UTILITIES
+        // ============================================
+        function formatTime(date) {
+            return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+
+        function getWeatherInfo(code) {
+            return WEATHER_CODES[code] || { icon: '❓', desc: 'Unbekannt' };
+        }
+
+        function windDirToText(deg) {
+            var dirs = ['N', 'NNO', 'NO', 'ONO', 'O', 'OSO', 'SO', 'SSO', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            return dirs[Math.round(deg / 22.5) % 16];
+        }
+
+        // ============================================
+        // WEATHER UNDERGROUND PWS API
+        // ============================================
+        async function fetchWUCurrentData() {
+            var url = 'https://api.weather.com/v2/pws/observations/current?' +
+                'apiKey=' + CONFIG.wuApiKey +
+                '&stationId=' + CONFIG.stationId +
+                '&numericPrecision=decimal&format=json&units=m';
+
+            try {
+                var response = await fetch(url);
+                if (!response.ok) throw new Error('WU API error: ' + response.status);
+                var data = await response.json();
+                return data;
+            } catch (error) {
+                console.warn('WU Current data fetch failed:', error);
+                return null;
+            }
+        }
+
+        async function fetchWUHistoryData() {
+            var url = 'https://api.weather.com/v2/pws/observations/hourly/7day?' +
+                'apiKey=' + CONFIG.wuApiKey +
+                '&stationId=' + CONFIG.stationId +
+                '&numericPrecision=decimal&format=json&units=m';
+
+            try {
+                var response = await fetch(url);
+                if (!response.ok) throw new Error('WU API error: ' + response.status);
+                var data = await response.json();
+                return data;
+            } catch (error) {
+                console.warn('WU History data fetch failed:', error);
+                return null;
+            }
+        }
+
+        function updateFromWUData(wuData) {
+            if (!wuData || !wuData.observations || wuData.observations.length === 0) {
+                return false;
+            }
+
+            var obs = wuData.observations[0];
+            var metric = obs.metric;
+
+            // Update current conditions from WU
+            if (metric.temp !== null) {
+                document.getElementById('currentTemp').textContent = Math.round(metric.temp);
+            }
+            if (metric.heatIndex !== null && metric.temp !== null) {
+                // Use heat index as "feels like" in summer, wind chill in winter
+                var feelsLike = metric.temp < 10 ? (metric.windChill || metric.temp) : (metric.heatIndex || metric.temp);
+                document.getElementById('feelsLike').textContent = Math.round(feelsLike);
+            }
+            if (obs.humidity !== null) {
+                document.getElementById('humidity').textContent = obs.humidity;
+            }
+            if (metric.dewpt !== null) {
+                document.getElementById('dewpoint').textContent = Math.round(metric.dewpt);
+            }
+            if (metric.windSpeed !== null) {
+                document.getElementById('windSpeed').textContent = Math.round(metric.windSpeed);
+            }
+            if (metric.windGust !== null) {
+                document.getElementById('windGust').textContent = Math.round(metric.windGust);
+            }
+            if (obs.winddir !== null) {
+                document.getElementById('windDir').textContent = windDirToText(obs.winddir) + ' (' + Math.round(obs.winddir) + '°)';
+            }
+            if (metric.pressure !== null) {
+                document.getElementById('pressure').textContent = Math.round(metric.pressure);
+            }
+            if (metric.precipTotal !== null) {
+                document.getElementById('precip').textContent = metric.precipTotal.toFixed(1);
+            }
+            if (obs.solarRadiation !== null) {
+                document.getElementById('solarRad').textContent = Math.round(obs.solarRadiation);
+            }
+            if (obs.uv !== null) {
+                document.getElementById('uvIndex').textContent = obs.uv;
+            }
+
+            // Update timestamp
+            var obsTime = new Date(obs.obsTimeLocal);
+            document.getElementById('currentTime').textContent = formatTime(obsTime);
+            document.getElementById('lastUpdate').textContent = 'WU: ' + obsTime.toLocaleString('de-DE');
+
+            // Check data freshness (< 30 min old)
+            var ageMinutes = (Date.now() - obsTime.getTime()) / 60000;
+            if (ageMinutes > 30) {
+                return false; // Data too old, use fallback
+            }
+
+            // Update status indicator
+            document.getElementById('stationStatus').classList.remove('offline');
+            document.getElementById('statusText').textContent = 'IROSTO113 Live';
+            dataSource = 'wu';
+
+            // Check for storm alerts
+            if (metric.windGust && metric.windGust > 60) {
+                document.getElementById('alertBar').classList.add('active');
+                document.getElementById('alertMessage').textContent = ' Sturmböen bis ' + Math.round(metric.windGust) + ' km/h gemessen!';
+            }
+
+            return true;
+        }
+
+        function updateChartsFromWUHistory(wuHistory) {
+            if (!wuHistory || !wuHistory.observations || wuHistory.observations.length === 0) {
+                return false;
+            }
+
+            var observations = wuHistory.observations.slice(-48); // Last 48 hours
+            var labels = [], temps = [], pressure = [], wind = [], gusts = [];
+
+            observations.forEach(function(obs) {
+                var time = new Date(obs.obsTimeLocal);
+                labels.push(formatTime(time));
+                temps.push(obs.metric.temp);
+                pressure.push(obs.metric.pressure);
+                wind.push(obs.metric.windSpeed);
+                gusts.push(obs.metric.windGust || obs.metric.windSpeed);
+            });
+
+            // Update charts with WU history data
+            tempChart.data.labels = labels;
+            tempChart.data.datasets[0].data = temps;
+            tempChart.data.datasets[0].label = 'Temperatur (IROSTO113)';
+            tempChart.data.datasets[1].data = []; // No "feels like" in WU history
+            tempChart.update();
+
+            pressureChart.data.labels = labels;
+            pressureChart.data.datasets[0].data = pressure;
+            pressureChart.data.datasets[0].label = 'Luftdruck (IROSTO113)';
+            pressureChart.update();
+
+            windChart.data.labels = labels;
+            windChart.data.datasets[0].data = wind;
+            windChart.data.datasets[0].label = 'Wind (IROSTO113)';
+            windChart.data.datasets[1].data = gusts;
+            windChart.data.datasets[1].label = 'Böen (IROSTO113)';
+            windChart.update();
+
+            // Pressure trend from WU data
+            if (pressure.length >= 2) {
+                var diff = pressure[pressure.length - 1] - pressure[0];
+                document.getElementById('pressureTrend').textContent =
+                    diff > 2 ? '↗ Steigend' : diff < -2 ? '↘ Fallend' : '→ Stabil';
+            }
+
+            return true;
+        }
+
+        // ============================================
+        // RADAR MAP (RainViewer)
+        // ============================================
+        var map, radarLayers = [], radarFrames = [], currentFrame = 0, isPlaying = true, playInterval;
+
+        function initRadarMap() {
+            map = L.map('radarMap', {
+                center: CONFIG.mapCenter,
+                zoom: CONFIG.mapZoom,
+                zoomControl: false
+            });
+
+            // Dark basemap
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap, © CARTO',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Add Rostock marker
+            L.marker([CONFIG.lat, CONFIG.lon])
+                .addTo(map)
+                .bindPopup('<b>IROSTO113</b><br>Rostock Stadtmitte');
+
+            // Zoom control
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            // Fetch radar data
+            fetchRadarData();
+        }
+
+        async function fetchRadarData() {
+            try {
+                var response = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+                var data = await response.json();
+
+                radarFrames = [];
+
+                // Past frames
+                if (data.radar && data.radar.past) {
+                    data.radar.past.forEach(function(frame) {
+                        radarFrames.push({
+                            time: frame.time,
+                            path: frame.path,
+                            type: 'past'
+                        });
+                    });
+                }
+
+                // Nowcast (forecast) frames
+                if (data.radar && data.radar.nowcast) {
+                    data.radar.nowcast.forEach(function(frame) {
+                        radarFrames.push({
+                            time: frame.time,
+                            path: frame.path,
+                            type: 'forecast'
+                        });
+                    });
+                }
+
+                // Create layers
+                radarLayers = radarFrames.map(function(frame) {
+                    return L.tileLayer(data.host + frame.path + '/256/{z}/{x}/{y}/2/1_1.png', {
+                        opacity: 0,
+                        zIndex: 100
+                    });
+                });
+
+                // Add all layers to map
+                radarLayers.forEach(function(layer) {
+                    layer.addTo(map);
+                });
+
+                // Start at most recent past frame
+                currentFrame = data.radar.past.length - 1;
+                showFrame(currentFrame);
+
+                // Start animation
+                startRadarAnimation();
+
+            } catch (error) {
+                console.error('Error fetching radar data:', error);
+            }
+        }
+
+        function showFrame(index) {
+            radarLayers.forEach(function(layer, i) {
+                layer.setOpacity(i === index ? 0.7 : 0);
+            });
+
+            var frame = radarFrames[index];
+            if (frame) {
+                var date = new Date(frame.time * 1000);
+                var timeStr = formatTime(date);
+                var typeLabel = frame.type === 'forecast' ? ' (Prognose)' : '';
+                document.getElementById('radarTime').textContent = timeStr + typeLabel;
+            }
+        }
+
+        function startRadarAnimation() {
+            if (playInterval) clearInterval(playInterval);
+
+            playInterval = setInterval(function() {
+                if (!isPlaying) return;
+                currentFrame = (currentFrame + 1) % radarFrames.length;
+                showFrame(currentFrame);
+            }, 800);
+        }
+
+        // Radar controls
+        document.getElementById('btnPlay').addEventListener('click', function() {
+            isPlaying = !isPlaying;
+            this.textContent = isPlaying ? '⏸' : '▶';
+            this.classList.toggle('active', isPlaying);
+        });
+
+        document.getElementById('btnPrev').addEventListener('click', function() {
+            isPlaying = false;
+            document.getElementById('btnPlay').textContent = '▶';
+            document.getElementById('btnPlay').classList.remove('active');
+            currentFrame = (currentFrame - 1 + radarFrames.length) % radarFrames.length;
+            showFrame(currentFrame);
+        });
+
+        document.getElementById('btnNext').addEventListener('click', function() {
+            isPlaying = false;
+            document.getElementById('btnPlay').textContent = '▶';
+            document.getElementById('btnPlay').classList.remove('active');
+            currentFrame = (currentFrame + 1) % radarFrames.length;
+            showFrame(currentFrame);
+        });
+
+        // ============================================
+        // CHARTS
+        // ============================================
+        var tempChart, precipChart, windChart, pressureChart;
+
+        function initCharts() {
+            var baseOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#8b949e', maxTicksLimit: 8, font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        ticks: { color: '#8b949e', font: { size: 10 } }
+                    }
+                }
+            };
+
+            tempChart = new Chart(document.getElementById('tempChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Temperatur',
+                        data: [],
+                        borderColor: '#f85149',
+                        backgroundColor: 'rgba(248, 81, 73, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }, {
+                        label: 'Gefühlt',
+                        data: [],
+                        borderColor: '#d29922',
+                        borderDash: [4, 4],
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    ...baseOptions,
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: '#8b949e', boxWidth: 12, font: { size: 10 } } }
+                    }
+                }
+            });
+
+            precipChart = new Chart(document.getElementById('precipChart'), {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Niederschlag',
+                        data: [],
+                        backgroundColor: 'rgba(88, 166, 255, 0.6)',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Bewölkung',
+                        data: [],
+                        type: 'line',
+                        borderColor: '#8b949e',
+                        tension: 0.3,
+                        pointRadius: 0,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    ...baseOptions,
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: '#8b949e', boxWidth: 12, font: { size: 10 } } }
+                    },
+                    scales: {
+                        ...baseOptions.scales,
+                        y1: {
+                            position: 'right',
+                            grid: { display: false },
+                            ticks: { color: '#8b949e', font: { size: 10 } },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            windChart = new Chart(document.getElementById('windChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Wind',
+                        data: [],
+                        borderColor: '#3fb950',
+                        tension: 0.3,
+                        pointRadius: 0
+                    }, {
+                        label: 'Böen',
+                        data: [],
+                        borderColor: '#f85149',
+                        borderDash: [3, 3],
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    ...baseOptions,
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { color: '#8b949e', boxWidth: 12, font: { size: 10 } } }
+                    }
+                }
+            });
+
+            pressureChart = new Chart(document.getElementById('pressureChart'), {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Luftdruck',
+                        data: [],
+                        borderColor: '#a371f7',
+                        backgroundColor: 'rgba(163, 113, 247, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: baseOptions
+            });
+        }
+
+        // ============================================
+        // WEATHER DATA (Open-Meteo)
+        // ============================================
+        async function fetchWeatherData() {
+            var url = 'https://api.open-meteo.com/v1/forecast?' +
+                'latitude=' + CONFIG.lat + '&longitude=' + CONFIG.lon +
+                '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover' +
+                '&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,pressure_msl,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,uv_index,dewpoint_2m' +
+                '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,uv_index_max' +
+                '&timezone=' + CONFIG.timezone +
+                '&forecast_days=7';
+
+            try {
+                var response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching weather:', error);
+                return null;
+            }
+        }
+
+        function updateCurrentWeather(data) {
+            var c = data.current;
+            var info = getWeatherInfo(c.weather_code);
+
+            document.getElementById('currentTemp').textContent = Math.round(c.temperature_2m);
+            document.getElementById('feelsLike').textContent = Math.round(c.apparent_temperature);
+            document.getElementById('currentIcon').textContent = info.icon;
+            document.getElementById('conditionText').textContent = info.desc;
+            document.getElementById('humidity').textContent = c.relative_humidity_2m;
+            document.getElementById('windSpeed').textContent = Math.round(c.wind_speed_10m);
+            document.getElementById('windGust').textContent = Math.round(c.wind_gusts_10m);
+            document.getElementById('windDir').textContent = windDirToText(c.wind_direction_10m) + ' (' + Math.round(c.wind_direction_10m) + '°)';
+            document.getElementById('pressure').textContent = Math.round(c.pressure_msl);
+            document.getElementById('precip').textContent = c.precipitation.toFixed(1);
+            document.getElementById('currentTime').textContent = formatTime(new Date());
+
+            // Find current hour index for additional data
+            var now = new Date();
+            var hourIndex = now.getHours();
+            if (data.hourly) {
+                document.getElementById('dewpoint').textContent = Math.round(data.hourly.dewpoint_2m[hourIndex]);
+                document.getElementById('uvIndex').textContent = Math.round(data.hourly.uv_index[hourIndex]);
+                document.getElementById('visibility').textContent = Math.round(data.hourly.visibility[hourIndex] / 1000);
+                document.getElementById('solarRad').textContent = '--'; // Not in Open-Meteo
+            }
+
+            // Update status
+            document.getElementById('stationStatus').classList.remove('offline');
+            document.getElementById('statusText').textContent = 'Online (DWD)';
+            document.getElementById('lastUpdate').textContent = 'Aktualisiert: ' + new Date().toLocaleString('de-DE');
+
+            // Check for alerts
+            if (c.wind_gusts_10m > 60) {
+                document.getElementById('alertBar').classList.add('active');
+                document.getElementById('alertMessage').textContent = ' Sturmböen bis ' + Math.round(c.wind_gusts_10m) + ' km/h möglich!';
+            }
+        }
+
+        function updateSunTimes(data) {
+            var d = data.daily;
+            var sunrise = new Date(d.sunrise[0]);
+            var sunset = new Date(d.sunset[0]);
+
+            document.getElementById('sunrise').textContent = formatTime(sunrise);
+            document.getElementById('sunset').textContent = formatTime(sunset);
+
+            var lengthMs = sunset - sunrise;
+            var h = Math.floor(lengthMs / 3600000);
+            var m = Math.floor((lengthMs % 3600000) / 60000);
+            document.getElementById('dayLength').textContent = h + 'h ' + m + 'min';
+        }
+
+        function updateHourlyForecast(data) {
+            var container = document.getElementById('hourlyForecast');
+            var html = '';
+            var now = new Date();
+            var count = 0;
+
+            for (var i = 0; i < data.hourly.time.length && count < 48; i++) {
+                var time = new Date(data.hourly.time[i]);
+                if (time < now) continue;
+
+                var info = getWeatherInfo(data.hourly.weather_code[i]);
+                var precipProb = data.hourly.precipitation_probability[i];
+
+                html += '<div class="hourly-item">' +
+                    '<div class="hourly-time">' + formatTime(time) + '</div>' +
+                    '<div class="hourly-icon">' + info.icon + '</div>' +
+                    '<div class="hourly-temp">' + Math.round(data.hourly.temperature_2m[i]) + '°</div>' +
+                    (precipProb > 0 ? '<div class="hourly-precip">💧' + precipProb + '%</div>' : '') +
+                    '</div>';
+                count++;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function updateDailyForecast(data) {
+            var container = document.getElementById('dailyForecast');
+            var html = '';
+            var weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+            for (var i = 0; i < 7; i++) {
+                var date = new Date(data.daily.time[i]);
+                var info = getWeatherInfo(data.daily.weather_code[i]);
+                var isToday = i === 0;
+
+                html += '<div class="card forecast-day">' +
+                    '<div class="forecast-name">' + (isToday ? 'Heute' : weekdays[date.getDay()]) + '</div>' +
+                    '<div class="forecast-icon">' + info.icon + '</div>' +
+                    '<div class="forecast-temps">' +
+                    '<span class="temp-high">' + Math.round(data.daily.temperature_2m_max[i]) + '°</span>' +
+                    '<span class="temp-low">' + Math.round(data.daily.temperature_2m_min[i]) + '°</span>' +
+                    '</div>' +
+                    '<div class="forecast-precip">💧 ' + data.daily.precipitation_probability_max[i] + '%</div>' +
+                    '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function updateCharts(data) {
+            var labels = [], temps = [], feels = [], precip = [], clouds = [], wind = [], gusts = [], pressure = [];
+
+            for (var i = 0; i < 48 && i < data.hourly.time.length; i++) {
+                labels.push(formatTime(new Date(data.hourly.time[i])));
+                temps.push(data.hourly.temperature_2m[i]);
+                feels.push(data.hourly.apparent_temperature[i]);
+                precip.push(data.hourly.precipitation[i]);
+                clouds.push(data.hourly.cloud_cover[i]);
+                wind.push(data.hourly.wind_speed_10m[i]);
+                gusts.push(data.hourly.wind_gusts_10m[i]);
+                pressure.push(data.hourly.pressure_msl[i]);
+            }
+
+            tempChart.data.labels = labels;
+            tempChart.data.datasets[0].data = temps;
+            tempChart.data.datasets[1].data = feels;
+            tempChart.update();
+
+            precipChart.data.labels = labels;
+            precipChart.data.datasets[0].data = precip;
+            precipChart.data.datasets[1].data = clouds;
+            precipChart.update();
+
+            windChart.data.labels = labels;
+            windChart.data.datasets[0].data = wind;
+            windChart.data.datasets[1].data = gusts;
+            windChart.update();
+
+            pressureChart.data.labels = labels;
+            pressureChart.data.datasets[0].data = pressure;
+            pressureChart.update();
+
+            // Pressure trend
+            var diff = pressure[pressure.length - 1] - pressure[0];
+            document.getElementById('pressureTrend').textContent =
+                diff > 2 ? '↗ Steigend' : diff < -2 ? '↘ Fallend' : '→ Stabil';
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        async function init() {
+            // Init map
+            initRadarMap();
+
+            // Init charts
+            initCharts();
+
+            // Try Weather Underground first (primary source)
+            console.log('Fetching IROSTO113 data from Weather Underground...');
+            var wuCurrent = await fetchWUCurrentData();
+            var wuHistory = await fetchWUHistoryData();
+            var wuSuccess = updateFromWUData(wuCurrent);
+
+            // Fetch Open-Meteo for forecast data (always needed) and as fallback
+            var omData = await fetchWeatherData();
+
+            if (wuSuccess) {
+                console.log('Using Weather Underground IROSTO113 for current conditions');
+                // Use WU for current + charts, but Open-Meteo for forecasts
+                if (wuHistory) {
+                    updateChartsFromWUHistory(wuHistory);
+                }
+                // Still need Open-Meteo for forecasts and sun times
+                if (omData) {
+                    updateSunTimes(omData);
+                    updateHourlyForecast(omData);
+                    updateDailyForecast(omData);
+                    // Update precip chart from Open-Meteo (WU doesn't have forecast)
+                    var labels = [], precip = [], clouds = [];
+                    for (var i = 0; i < 48 && i < omData.hourly.time.length; i++) {
+                        labels.push(formatTime(new Date(omData.hourly.time[i])));
+                        precip.push(omData.hourly.precipitation[i]);
+                        clouds.push(omData.hourly.cloud_cover[i]);
+                    }
+                    precipChart.data.labels = labels;
+                    precipChart.data.datasets[0].data = precip;
+                    precipChart.data.datasets[0].label = 'Niederschlag (Prognose)';
+                    precipChart.data.datasets[1].data = clouds;
+                    precipChart.update();
+                }
+            } else {
+                // Fallback to Open-Meteo for everything
+                console.log('WU unavailable, using Open-Meteo (DWD) as fallback');
+                if (omData) {
+                    updateCurrentWeather(omData);
+                    updateSunTimes(omData);
+                    updateHourlyForecast(omData);
+                    updateDailyForecast(omData);
+                    updateCharts(omData);
+                } else {
+                    document.getElementById('stationStatus').classList.add('offline');
+                    document.getElementById('statusText').textContent = 'Keine Daten';
+                }
+            }
+
+            // Update WU iframe date
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById('wuGraphFrame').src =
+                'https://www.wunderground.com/dashboard/pws/IROSTO113/graph/' + today + '/' + today + '/daily';
+
+            // Refresh every 5 minutes
+            setInterval(async function() {
+                console.log('Refreshing data...');
+                var newWUCurrent = await fetchWUCurrentData();
+                var newWUHistory = await fetchWUHistoryData();
+                var newWUSuccess = updateFromWUData(newWUCurrent);
+
+                if (newWUSuccess && newWUHistory) {
+                    updateChartsFromWUHistory(newWUHistory);
+                }
+
+                var newOMData = await fetchWeatherData();
+                if (newOMData) {
+                    if (!newWUSuccess) {
+                        updateCurrentWeather(newOMData);
+                        updateCharts(newOMData);
+                    }
+                    updateHourlyForecast(newOMData);
+                }
+            }, 300000);
+
+            // Refresh radar every 5 minutes
+            setInterval(fetchRadarData, 300000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

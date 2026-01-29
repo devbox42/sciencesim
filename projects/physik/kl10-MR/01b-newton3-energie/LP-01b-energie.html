@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-01b: Mechanische Energie</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f0ff;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --heat: #888888;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .progress-bar {
+            background: var(--border);
+            height: 6px;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .step {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .step-title { font-size: 1.1em; font-weight: 600; color: var(--fach); }
+        .step-badge {
+            font-size: 0.75em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 8px;
+        }
+        h3 { font-size: 1em; font-weight: 600; margin: 15px 0 10px; color: var(--text); }
+        p { margin-bottom: 12px; }
+        .info-box {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .formel-box {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.3em;
+        }
+        .formel-box .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .hefter-hinweis {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .hefter-hinweis ul { margin: 8px 0 0 20px; }
+        .uebung {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .uebung-title {
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 10px;
+        }
+        input[type="number"], input[type="text"] {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            font-size: 1em;
+            width: 100px;
+            text-align: center;
+        }
+        input:focus { outline: 2px solid var(--fach); border-color: var(--fach); }
+        select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+        }
+        .feedback {
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+            font-size: 0.9em;
+        }
+        .feedback.correct { background: var(--success-bg); border: 1px solid var(--success); color: var(--success); display: block; }
+        .feedback.incorrect { background: var(--error-bg); border: 1px solid var(--error); color: var(--error); display: block; }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--fach);
+            border: 1px solid var(--fach);
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        /* Simulation */
+        .sim-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .sim-canvas-wrap {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+        canvas {
+            border: 1px solid var(--border);
+            background: #fafafa;
+            flex-shrink: 0;
+        }
+        .sim-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 180px;
+        }
+        .slider-group { margin-bottom: 10px; }
+        .slider-group label { display: block; font-size: 0.85em; margin-bottom: 3px; }
+        .slider-group input[type="range"] { width: 150px; }
+        .energy-bars {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .energy-bar {
+            width: 60px;
+            text-align: center;
+        }
+        .energy-bar-label { font-size: 0.75em; margin-bottom: 3px; }
+        .energy-bar-container {
+            height: 100px;
+            width: 40px;
+            margin: 0 auto;
+            background: #eee;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+        .energy-bar-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            transition: height 0.1s;
+        }
+        .bar-pot { background: var(--fach); }
+        .bar-kin { background: var(--positive); }
+        .bar-ges { background: var(--success); }
+        .bar-heat { background: var(--heat); }
+        .energy-bar-value { font-size: 0.7em; margin-top: 3px; }
+        .inline-input {
+            display: inline-block;
+            width: 80px;
+            text-align: center;
+        }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        th { background: var(--fach-light); }
+        .toggle-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+        .toggle-row label { font-size: 0.9em; }
+        .motivation-box {
+            background: linear-gradient(135deg, var(--fach-light) 0%, #fff 100%);
+            border: 2px solid var(--fach);
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .motivation-box h2 { color: var(--fach); font-size: 1.2em; margin-bottom: 10px; }
+        .example-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .example-card {
+            flex: 1 1 200px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            text-align: center;
+        }
+        .example-card .icon { font-size: 2em; margin-bottom: 8px; }
+        .example-card strong { color: var(--fach); }
+
+        /* Step Navigation */
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 20px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            margin: -20px -20px 20px;
+        }
+        .step-nav-item {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--border);
+            color: var(--text-muted);
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .step-nav-item:hover { background: var(--fach-light); }
+        .step-nav-item.active { background: var(--fach); color: white; }
+        .step-nav-item.done { background: var(--success); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Mechanische Energie</h1>
+            <p>Physik Klasse 10 MR | Lernpfad 01b | ca. 70 min</p>
+        </header>
+
+        <div class="step-nav" id="stepNav">
+            <div class="step-nav-item active" onclick="goToStep(1)" title="Einstieg">1</div>
+            <div class="step-nav-item" onclick="goToStep(2)" title="Was ist Energie?">2</div>
+            <div class="step-nav-item" onclick="goToStep(3)" title="Lageenergie">3</div>
+            <div class="step-nav-item" onclick="goToStep(4)" title="Simulation E_pot">4</div>
+            <div class="step-nav-item" onclick="goToStep(5)" title="Bewegungsenergie">5</div>
+            <div class="step-nav-item" onclick="goToStep(6)" title="Simulation E_kin">6</div>
+            <div class="step-nav-item" onclick="goToStep(7)" title="Energieerhaltung">7</div>
+            <div class="step-nav-item" onclick="goToStep(8)" title="Rampen-Simulation">8</div>
+            <div class="step-nav-item" onclick="goToStep(9)" title="Reales Verhalten">9</div>
+            <div class="step-nav-item" onclick="goToStep(10)" title="Knobelaufgaben">10</div>
+            <div class="step-nav-item" onclick="goToStep(11)" title="Zusammenfassung">11</div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 1: Was hat das mit mir zu tun? (MOTIVATION) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step active" id="step1">
+            <div class="step-header">
+                <span class="step-title">1. Was hat das mit mir zu tun?</span>
+                <span class="step-badge">Einstieg</span>
+            </div>
+
+            <div class="motivation-box">
+                <h2>Stell dir vor...</h2>
+                <p>Du fährst mit dem Fahrrad einen Berg hinunter. Ohne zu treten wirst du immer schneller!</p>
+                <p><strong>Woher kommt diese Geschwindigkeit?</strong></p>
+            </div>
+
+            <div class="example-cards">
+                <div class="example-card">
+                    <div class="icon">🚴</div>
+                    <strong>Fahrrad bergab</strong>
+                    <p>Je steiler, desto schneller. Warum?</p>
+                </div>
+                <div class="example-card">
+                    <div class="icon">🎢</div>
+                    <strong>Achterbahn</strong>
+                    <p>Oben langsam, unten rasend schnell!</p>
+                </div>
+                <div class="example-card">
+                    <div class="icon">⛷️</div>
+                    <strong>Skifahren</strong>
+                    <p>Der Berg "gibt" dir Geschwindigkeit</p>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Die Antwort:</strong> Du hast oben <strong>Energie gespeichert</strong>, allein durch deine Höhe! Diese Energie wandelt sich beim Hinunterfahren in Bewegung um. Das nennen wir <strong>Energieumwandlung</strong>.
+            </div>
+
+            <p>In dieser Stunde lernst du:</p>
+            <ul style="margin: 10px 0 15px 25px;">
+                <li>Was <strong>Energie</strong> ist und wie man sie berechnet</li>
+                <li>Wie sich <strong>Lageenergie</strong> und <strong>Bewegungsenergie</strong> ineinander umwandeln</li>
+                <li>Warum Energie niemals "verloren geht"</li>
+            </ul>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button class="btn" onclick="nextStep()">Los geht's!</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 2: Was ist Energie? -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step2">
+            <div class="step-header">
+                <span class="step-title">2. Was ist Energie?</span>
+                <span class="step-badge">Konzept</span>
+            </div>
+
+            <p>Energie ist einer der wichtigsten Begriffe in der Physik. Aber was genau ist Energie?</p>
+
+            <div class="info-box">
+                <strong>Energie</strong> ist die Fähigkeit eines Körpers oder Systems, <strong>Arbeit zu verrichten</strong> oder <strong>Wärme abzugeben</strong>.
+            </div>
+
+            <p>Ein paar Beispiele:</p>
+            <ul style="margin: 10px 0 15px 25px;">
+                <li>Ein <strong>hochgehobener Stein</strong> kann beim Fallen etwas zertrümmern</li>
+                <li>Ein <strong>fahrendes Auto</strong> kann einen anderen Körper anschieben</li>
+                <li>Eine <strong>gespannte Feder</strong> kann einen Gegenstand beschleunigen</li>
+            </ul>
+
+            <p>In all diesen Fällen besitzt der Körper <strong>Energie</strong>, weil er etwas bewirken kann.</p>
+
+            <h3>Energieformen</h3>
+            <p>Es gibt viele verschiedene Energieformen. Heute konzentrieren wir uns auf die <strong>mechanische Energie</strong>:</p>
+
+            <table>
+                <tr>
+                    <th>Energieform</th>
+                    <th>Formelzeichen</th>
+                    <th>Beispiel</th>
+                </tr>
+                <tr>
+                    <td><strong>Lageenergie</strong> (potenzielle Energie)</td>
+                    <td><span class="fz">E</span><sub>pot</sub></td>
+                    <td>Stein auf einem Berg</td>
+                </tr>
+                <tr>
+                    <td><strong>Bewegungsenergie</strong> (kinetische Energie)</td>
+                    <td><span class="fz">E</span><sub>kin</sub></td>
+                    <td>Fahrendes Auto</td>
+                </tr>
+            </table>
+
+            <div class="info-box">
+                <strong>Einheit der Energie:</strong> Joule (J)<br>
+                1 J = 1 Nm = 1 kg·m²/s²
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Schnellcheck: Energie erkennen</div>
+                <p>Welche Körper besitzen Energie? Kreuze an:</p>
+                <p>
+                    <label><input type="checkbox" id="check2a" onchange="checkStep2()"> Ein Stein auf einem Berg</label><br>
+                    <label><input type="checkbox" id="check2b" onchange="checkStep2()"> Ein Auto, das an der Ampel steht</label><br>
+                    <label><input type="checkbox" id="check2c" onchange="checkStep2()"> Ein fliegender Fußball</label><br>
+                    <label><input type="checkbox" id="check2d" onchange="checkStep2()"> Eine gespannte Feder</label>
+                </p>
+                <div class="feedback" id="fb_step2"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 1:</strong> Ergänze die Definition von Energie</li>
+                    <li><strong>Kasten 1:</strong> Trage die Einheit ein</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 3: Lageenergie E_pot -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step3">
+            <div class="step-header">
+                <span class="step-title">3. Lageenergie E<sub>pot</sub></span>
+                <span class="step-badge">Formel</span>
+            </div>
+
+            <p>Ein Körper, der sich in einer bestimmten <strong>Höhe</strong> befindet, besitzt <strong>Lageenergie</strong> (auch: potenzielle Energie).</p>
+
+            <p>Je <strong>höher</strong> der Körper und je <strong>schwerer</strong> er ist, desto mehr Energie hat er gespeichert.</p>
+
+            <div class="formel-box">
+                <span class="fz">E</span><sub>pot</sub> = <span class="fz">m</span> · <span class="fz">g</span> · <span class="fz">h</span>
+            </div>
+
+            <table>
+                <tr>
+                    <th>Größe</th>
+                    <th>Bedeutung</th>
+                    <th>Einheit</th>
+                </tr>
+                <tr>
+                    <td><span class="fz">E</span><sub>pot</sub></td>
+                    <td>Lageenergie</td>
+                    <td>J (Joule)</td>
+                </tr>
+                <tr>
+                    <td><span class="fz">m</span></td>
+                    <td>Masse</td>
+                    <td>kg</td>
+                </tr>
+                <tr>
+                    <td><span class="fz">g</span></td>
+                    <td>Ortsfaktor</td>
+                    <td>10 m/s²</td>
+                </tr>
+                <tr>
+                    <td><span class="fz">h</span></td>
+                    <td>Höhe</td>
+                    <td>m</td>
+                </tr>
+            </table>
+
+            <div class="info-box">
+                <strong>Wichtig:</strong> Wir rechnen immer mit <strong>g = 10 m/s²</strong> (kopfrechenbar!)
+            </div>
+
+            <h3>Beispielrechnung</h3>
+            <p>Ein Ball (m = 2 kg) liegt auf einem Tisch (h = 1,5 m). Wie groß ist seine Lageenergie?</p>
+            <div style="background:#f5f5f5;padding:10px;margin:10px 0;font-family:monospace;">
+                E<sub>pot</sub> = m · g · h<br>
+                E<sub>pot</sub> = 2 kg · 10 m/s² · 1,5 m<br>
+                E<sub>pot</sub> = <strong>30 J</strong>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Schnellcheck: Proportionalität verstehen</div>
+                <p>Was passiert mit E<sub>pot</sub>, wenn...</p>
+                <p style="margin-bottom:8px;">
+                    ...die <strong>Masse verdoppelt</strong> wird (bei gleicher Höhe)?<br>
+                    E<sub>pot</sub> wird
+                    <select id="prop3a" onchange="checkProp3()">
+                        <option value="">-- wähle --</option>
+                        <option value="halb">halb so groß</option>
+                        <option value="gleich">gleich groß</option>
+                        <option value="doppelt">doppelt so groß</option>
+                        <option value="vierfach">vierfach so groß</option>
+                    </select>
+                </p>
+                <p style="margin-bottom:8px;">
+                    ...die <strong>Höhe verdoppelt</strong> wird (bei gleicher Masse)?<br>
+                    E<sub>pot</sub> wird
+                    <select id="prop3b" onchange="checkProp3()">
+                        <option value="">-- wähle --</option>
+                        <option value="halb">halb so groß</option>
+                        <option value="gleich">gleich groß</option>
+                        <option value="doppelt">doppelt so groß</option>
+                        <option value="vierfach">vierfach so groß</option>
+                    </select>
+                </p>
+                <div class="feedback" id="fb_prop3"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 2:</strong> Übertrage die Formel für E<sub>pot</sub></li>
+                    <li><strong>Kasten 2:</strong> Ergänze die Größen und Einheiten</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 4: Simulation Lageenergie -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step4">
+            <div class="step-header">
+                <span class="step-title">4. Simulation: Lageenergie</span>
+                <span class="step-badge">Interaktiv</span>
+            </div>
+
+            <p>Verändere Masse und Höhe und beobachte, wie sich die Lageenergie ändert.</p>
+
+            <div class="sim-container">
+                <div class="sim-canvas-wrap">
+                    <canvas id="simPot" width="250" height="200" style="width:250px;height:200px;"></canvas>
+                    <div class="sim-controls">
+                        <div class="slider-group">
+                            <label>Masse m = <span id="potMassVal">5</span> kg</label>
+                            <input type="range" id="potMass" min="1" max="20" value="5" oninput="updatePotSim()">
+                        </div>
+                        <div class="slider-group">
+                            <label>Höhe h = <span id="potHeightVal">10</span> m</label>
+                            <input type="range" id="potHeight" min="0" max="20" value="10" oninput="updatePotSim()">
+                        </div>
+                        <div style="font-size:1.1em;font-weight:600;margin-top:10px;">
+                            E<sub>pot</sub> = <span id="potResult">500</span> J
+                        </div>
+                        <div class="energy-bars">
+                            <div class="energy-bar">
+                                <div class="energy-bar-label">E<sub>pot</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-pot" id="potBar" style="height:50%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Beobachtungsaufgabe: Experimentiere!</div>
+                <p>Nutze die Simulation oben und beantworte:</p>
+                <p style="margin-bottom:8px;">
+                    1. Stelle m = 5 kg und h = 10 m ein. E<sub>pot</sub> = <input type="number" id="beob4a" class="inline-input" style="width:70px;"> J
+                </p>
+                <p style="margin-bottom:8px;">
+                    2. Verdopple nur die Masse (m = 10 kg, h = 10 m). E<sub>pot</sub> = <input type="number" id="beob4b" class="inline-input" style="width:70px;"> J
+                </p>
+                <p style="margin-bottom:8px;">
+                    3. Zurück zu m = 5 kg, aber verdopple die Höhe (h = 20 m). E<sub>pot</sub> = <input type="number" id="beob4c" class="inline-input" style="width:70px;"> J
+                    <button class="btn" onclick="checkBeob4()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb_beob4"></div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Übung 1: Rechnung</div>
+                <p>Ein Wassereimer (m = 10 kg) steht auf einem Dach in h = 8 m Höhe.</p>
+                <p>Berechne die Lageenergie: E<sub>pot</sub> =
+                    <input type="number" id="ueb1" class="inline-input"> J
+                    <button class="btn" onclick="checkUeb1()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb1"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 1a:</strong> Bearbeite jetzt auf dem AB</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 5: Bewegungsenergie E_kin -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step5">
+            <div class="step-header">
+                <span class="step-title">5. Bewegungsenergie E<sub>kin</sub></span>
+                <span class="step-badge">Formel</span>
+            </div>
+
+            <p>Ein Körper, der sich <strong>bewegt</strong>, besitzt <strong>Bewegungsenergie</strong> (auch: kinetische Energie).</p>
+
+            <p>Je <strong>schneller</strong> der Körper und je <strong>schwerer</strong> er ist, desto mehr Energie hat er.</p>
+
+            <div class="formel-box">
+                <span class="fz">E</span><sub>kin</sub> = ½ · <span class="fz">m</span> · <span class="fz">v</span>²
+            </div>
+
+            <table>
+                <tr>
+                    <th>Größe</th>
+                    <th>Bedeutung</th>
+                    <th>Einheit</th>
+                </tr>
+                <tr>
+                    <td><span class="fz">E</span><sub>kin</sub></td>
+                    <td>Bewegungsenergie</td>
+                    <td>J (Joule)</td>
+                </tr>
+                <tr>
+                    <td><span class="fz">m</span></td>
+                    <td>Masse</td>
+                    <td>kg</td>
+                </tr>
+                <tr>
+                    <td><span class="fz">v</span></td>
+                    <td>Geschwindigkeit</td>
+                    <td>m/s</td>
+                </tr>
+            </table>
+
+            <div class="info-box">
+                <strong>Achtung:</strong> Die Geschwindigkeit wird <strong>quadriert</strong> (v²)!<br>
+                Doppelte Geschwindigkeit = <strong>vierfache</strong> Energie!
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Schnellcheck: v² verstehen</div>
+                <p>Ein Auto fährt mit v = 10 m/s. Wie groß ist v²?</p>
+                <p>v² = <input type="number" id="vsq5a" class="inline-input" style="width:80px;"> m²/s²</p>
+                <p>Das gleiche Auto fährt mit v = 20 m/s. Wie groß ist v² jetzt?</p>
+                <p>v² = <input type="number" id="vsq5b" class="inline-input" style="width:80px;"> m²/s²
+                    <button class="btn" onclick="checkVsq5()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb_vsq5"></div>
+                <p style="margin-top:10px;font-size:0.9em;color:var(--text-muted);">
+                    <strong>Fazit:</strong> Bei doppelter Geschwindigkeit ist v² <em>vierfach</em> so groß!<br>
+                    Deshalb ist auch E<sub>kin</sub> vierfach so groß. Das macht hohe Geschwindigkeiten so gefährlich!
+                </p>
+            </div>
+
+            <h3>Beispielrechnung</h3>
+            <p>Ein Auto (m = 1000 kg) fährt mit v = 10 m/s. Wie groß ist seine Bewegungsenergie?</p>
+            <div style="background:#f5f5f5;padding:10px;margin:10px 0;font-family:monospace;">
+                E<sub>kin</sub> = ½ · m · v²<br>
+                E<sub>kin</sub> = ½ · 1000 kg · (10 m/s)²<br>
+                E<sub>kin</sub> = ½ · 1000 kg · 100 m²/s²<br>
+                E<sub>kin</sub> = <strong>50 000 J = 50 kJ</strong>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 3:</strong> Übertrage die Formel für E<sub>kin</sub></li>
+                    <li><strong>Kasten 3:</strong> Ergänze die Größen und Einheiten</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 6: Simulation Bewegungsenergie -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step6">
+            <div class="step-header">
+                <span class="step-title">6. Simulation: Bewegungsenergie</span>
+                <span class="step-badge">Interaktiv</span>
+            </div>
+
+            <p>Verändere Masse und Geschwindigkeit und beobachte die Bewegungsenergie.</p>
+
+            <div class="sim-container">
+                <div class="sim-canvas-wrap">
+                    <canvas id="simKin" width="300" height="150" style="width:300px;height:150px;"></canvas>
+                    <div class="sim-controls">
+                        <div class="slider-group">
+                            <label>Masse m = <span id="kinMassVal">5</span> kg</label>
+                            <input type="range" id="kinMass" min="1" max="20" value="5" oninput="updateKinSim()">
+                        </div>
+                        <div class="slider-group">
+                            <label>Geschwindigkeit v = <span id="kinVelVal">10</span> m/s</label>
+                            <input type="range" id="kinVel" min="0" max="20" value="10" oninput="updateKinSim()">
+                        </div>
+                        <div style="font-size:1.1em;font-weight:600;margin-top:10px;">
+                            E<sub>kin</sub> = <span id="kinResult">250</span> J
+                        </div>
+                        <div class="energy-bars">
+                            <div class="energy-bar">
+                                <div class="energy-bar-label">E<sub>kin</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-kin" id="kinBar" style="height:12.5%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Beobachtungsaufgabe: v² in Aktion</div>
+                <p>Nutze die Simulation und vergleiche:</p>
+                <p style="margin-bottom:8px;">
+                    1. Stelle m = 5 kg und v = 5 m/s ein. E<sub>kin</sub> = <input type="number" id="beob6a" class="inline-input" style="width:70px;"> J
+                </p>
+                <p style="margin-bottom:8px;">
+                    2. Verdopple die Geschwindigkeit (v = 10 m/s). E<sub>kin</sub> = <input type="number" id="beob6b" class="inline-input" style="width:70px;"> J
+                </p>
+                <p style="margin-bottom:8px;">
+                    3. Um welchen Faktor hat sich E<sub>kin</sub> erhöht?
+                    <select id="beob6c" onchange="checkBeob6()">
+                        <option value="">-- wähle --</option>
+                        <option value="2">2-fach</option>
+                        <option value="3">3-fach</option>
+                        <option value="4">4-fach</option>
+                        <option value="8">8-fach</option>
+                    </select>
+                    <button class="btn" onclick="checkBeob6()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb_beob6"></div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Übung 2: Rechnung</div>
+                <p>Ein Ball (m = 0,5 kg) fliegt mit v = 20 m/s.</p>
+                <p>Berechne die Bewegungsenergie: E<sub>kin</sub> =
+                    <input type="number" id="ueb2" class="inline-input"> J
+                    <button class="btn" onclick="checkUeb2()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb2"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 1b:</strong> Bearbeite jetzt auf dem AB</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 7: Energieerhaltung -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step7">
+            <div class="step-header">
+                <span class="step-title">7. Energieerhaltungssatz</span>
+                <span class="step-badge">Konzept</span>
+            </div>
+
+            <p>Einer der wichtigsten Sätze der Physik ist der <strong>Energieerhaltungssatz</strong>:</p>
+
+            <div class="info-box">
+                <strong>Energieerhaltungssatz:</strong><br>
+                Energie kann nicht erzeugt oder vernichtet werden. Sie kann nur von einer Form in eine andere <strong>umgewandelt</strong> werden.<br><br>
+                Die <strong>Gesamtenergie</strong> bleibt dabei immer konstant.
+            </div>
+
+            <div class="formel-box">
+                <span class="fz">E</span><sub>ges</sub> = <span class="fz">E</span><sub>pot</sub> + <span class="fz">E</span><sub>kin</sub> = konstant
+            </div>
+
+            <h3>Beispiel: Fallender Ball</h3>
+            <p>Ein Ball fällt von einem Turm:</p>
+            <ul style="margin: 10px 0 15px 25px;">
+                <li><strong>Oben:</strong> maximale E<sub>pot</sub>, keine E<sub>kin</sub> (v = 0)</li>
+                <li><strong>Während des Fallens:</strong> E<sub>pot</sub> nimmt ab, E<sub>kin</sub> nimmt zu</li>
+                <li><strong>Unten:</strong> keine E<sub>pot</sub> (h = 0), maximale E<sub>kin</sub></li>
+            </ul>
+
+            <p>Die Lageenergie wird in Bewegungsenergie <strong>umgewandelt</strong>!</p>
+
+            <div class="uebung">
+                <div class="uebung-title">Verständnischeck: Energieerhaltung</div>
+                <p>Ein Ball (m = 2 kg) fällt aus h = 10 m Höhe. Vervollständige:</p>
+                <table style="width:auto;margin:10px 0;">
+                    <tr>
+                        <th style="width:80px;">Position</th>
+                        <th style="width:120px;">E<sub>pot</sub></th>
+                        <th style="width:120px;">E<sub>kin</sub></th>
+                        <th style="width:120px;">E<sub>ges</sub></th>
+                    </tr>
+                    <tr>
+                        <td>Oben (h=10m)</td>
+                        <td><input type="number" id="erh7a" class="inline-input" style="width:60px;"> J</td>
+                        <td><input type="number" id="erh7b" class="inline-input" style="width:60px;"> J</td>
+                        <td><input type="number" id="erh7c" class="inline-input" style="width:60px;"> J</td>
+                    </tr>
+                    <tr>
+                        <td>Mitte (h=5m)</td>
+                        <td><input type="number" id="erh7d" class="inline-input" style="width:60px;"> J</td>
+                        <td><input type="number" id="erh7e" class="inline-input" style="width:60px;"> J</td>
+                        <td><input type="number" id="erh7f" class="inline-input" style="width:60px;"> J</td>
+                    </tr>
+                    <tr>
+                        <td>Unten (h=0m)</td>
+                        <td><input type="number" id="erh7g" class="inline-input" style="width:60px;"> J</td>
+                        <td><input type="number" id="erh7h" class="inline-input" style="width:60px;"> J</td>
+                        <td><input type="number" id="erh7i" class="inline-input" style="width:60px;"> J</td>
+                    </tr>
+                </table>
+                <button class="btn" onclick="checkErh7()">Prüfen</button>
+                <div class="feedback" id="fb_erh7"></div>
+                <p style="margin-top:10px;font-size:0.9em;color:var(--text-muted);">
+                    <strong>Hinweis:</strong> E<sub>ges</sub> bleibt immer gleich! Das ist der Energieerhaltungssatz.
+                </p>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Kasten 4:</strong> Ergänze den Energieerhaltungssatz</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 8: Rampen-Simulation -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step8">
+            <div class="step-header">
+                <span class="step-title">8. Simulation: Ball auf der Rampe</span>
+                <span class="step-badge">Interaktiv</span>
+            </div>
+
+            <p>Beobachte, wie sich E<sub>pot</sub> und E<sub>kin</sub> beim Rollen einer Murmel auf der Rampe umwandeln.</p>
+
+            <div class="sim-container">
+                <div class="sim-canvas-wrap">
+                    <canvas id="simRamp" width="400" height="220" style="width:400px;height:220px;"></canvas>
+                    <div class="sim-controls">
+                        <div class="slider-group">
+                            <label>Masse m = <span id="rampMassVal">0.01</span> kg</label>
+                            <input type="range" id="rampMass" min="5" max="50" value="10" oninput="updateRampSim()">
+                        </div>
+                        <div class="slider-group">
+                            <label>Starthöhe h = <span id="rampHeightVal">1.0</span> m</label>
+                            <input type="range" id="rampHeight" min="2" max="20" value="10" step="1" oninput="resetRampSim()">
+                        </div>
+                        <div style="margin: 10px 0;">
+                            <label><input type="checkbox" id="rampRealMode" onchange="resetRampSim()"> Realistisch (mit Reibung)</label>
+                        </div>
+                        <button class="btn" onclick="startRampSim()" id="btnRamp">Start</button>
+                        <button class="btn btn-secondary" onclick="resetRampSim()">Reset</button>
+                        <div class="energy-bars" style="margin-top:15px;">
+                            <div class="energy-bar">
+                                <div class="energy-bar-label">E<sub>pot</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-pot" id="rampPotBar" style="height:100%"></div>
+                                </div>
+                                <div class="energy-bar-value" id="rampPotVal">200 J</div>
+                            </div>
+                            <div class="energy-bar">
+                                <div class="energy-bar-label">E<sub>kin</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-kin" id="rampKinBar" style="height:0%"></div>
+                                </div>
+                                <div class="energy-bar-value" id="rampKinVal">0 J</div>
+                            </div>
+                            <div class="energy-bar" id="rampHeatBarContainer" style="display:none;">
+                                <div class="energy-bar-label">E<sub>Wärme</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-heat" id="rampHeatBar" style="height:0%"></div>
+                                </div>
+                                <div class="energy-bar-value" id="rampHeatVal">0 J</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Beobachtungsaufgabe: Energieumwandlung live</div>
+                <p>Starte die Simulation (ohne Reibung) und beobachte genau:</p>
+                <p style="margin-bottom:8px;">
+                    1. <strong>Am Start</strong> (Ball links oben): Welche Energie ist maximal?
+                    <select id="beob8a">
+                        <option value="">-- wähle --</option>
+                        <option value="pot">E_pot</option>
+                        <option value="kin">E_kin</option>
+                        <option value="beide">beide gleich</option>
+                    </select>
+                </p>
+                <p style="margin-bottom:8px;">
+                    2. <strong>Am tiefsten Punkt</strong> (Mitte): Welche Energie ist maximal?
+                    <select id="beob8b">
+                        <option value="">-- wähle --</option>
+                        <option value="pot">E_pot</option>
+                        <option value="kin">E_kin</option>
+                        <option value="beide">beide gleich</option>
+                    </select>
+                </p>
+                <p style="margin-bottom:8px;">
+                    3. <strong>Rechts oben</strong> (Umkehrpunkt): Was passiert mit den Energiebalken?
+                    <select id="beob8c">
+                        <option value="">-- wähle --</option>
+                        <option value="pot_max">E_pot wieder maximal, E_kin ≈ 0</option>
+                        <option value="kin_max">E_kin maximal, E_pot = 0</option>
+                        <option value="beide">beide gleich groß</option>
+                    </select>
+                    <button class="btn" onclick="checkBeob8()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb_beob8"></div>
+            </div>
+
+            <div class="info-box">
+                <strong>Erkenntnis:</strong> Der Ball rollt die Rampe hinunter und auf der anderen Seite wieder hoch, fast bis zur gleichen Höhe! E<sub>pot</sub> wandelt sich in E<sub>kin</sub> und wieder zurück. Die <strong>Gesamtenergie bleibt konstant</strong>!
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Übung 3: Anwendung</div>
+                <p>Ein Stein (m = 5 kg) fällt aus h = 20 m Höhe.</p>
+                <p>a) Wie groß ist E<sub>pot</sub> oben?
+                    <input type="number" id="ueb3a" class="inline-input"> J
+                </p>
+                <p>b) Wie groß ist E<sub>kin</sub> unten (kurz vor dem Aufprall)?
+                    <input type="number" id="ueb3b" class="inline-input"> J
+                    <button class="btn" onclick="checkUeb3()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb3"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 2:</strong> Bearbeite jetzt auf dem AB</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 9: Reales Verhalten -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step9">
+            <div class="step-header">
+                <span class="step-title">9. Reales Verhalten: Reibung und Wärme</span>
+                <span class="step-badge">Vertiefung</span>
+            </div>
+
+            <h3>Beobachtungsexperiment</h3>
+            <p>Wenn du einen Ball fallen lässt, springt er nie ganz auf die Ausgangshöhe zurück. Warum?</p>
+
+            <div class="sim-container">
+                <div class="sim-canvas-wrap">
+                    <canvas id="simReal" width="350" height="250" style="width:350px;height:250px;"></canvas>
+                    <div class="sim-controls">
+                        <div class="slider-group">
+                            <label>Masse m = <span id="realMassVal">2</span> kg</label>
+                            <input type="range" id="realMass" min="1" max="10" value="2" oninput="updateRealSim()">
+                        </div>
+                        <div class="slider-group">
+                            <label>Starthöhe h = <span id="realHeightVal">15</span> m</label>
+                            <input type="range" id="realHeight" min="5" max="20" value="15" oninput="resetRealSim()">
+                        </div>
+                        <div class="toggle-row">
+                            <label><input type="checkbox" id="realMode" onchange="resetRealSim()"> Realistisch (mit Reibung)</label>
+                        </div>
+                        <button class="btn" onclick="startRealSim()" id="btnReal">Start</button>
+                        <button class="btn btn-secondary" onclick="resetRealSim()">Reset</button>
+                        <div class="energy-bars" style="margin-top:15px;">
+                            <div class="energy-bar">
+                                <div class="energy-bar-label">E<sub>pot</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-pot" id="realPotBar" style="height:100%"></div>
+                                </div>
+                                <div class="energy-bar-value" id="realPotVal">300 J</div>
+                            </div>
+                            <div class="energy-bar">
+                                <div class="energy-bar-label">E<sub>kin</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-kin" id="realKinBar" style="height:0%"></div>
+                                </div>
+                                <div class="energy-bar-value" id="realKinVal">0 J</div>
+                            </div>
+                            <div class="energy-bar" id="heatBarContainer" style="display:none;">
+                                <div class="energy-bar-label">E<sub>Wärme</sub></div>
+                                <div class="energy-bar-container">
+                                    <div class="energy-bar-fill bar-heat" id="realHeatBar" style="height:0%"></div>
+                                </div>
+                                <div class="energy-bar-value" id="realHeatVal">0 J</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Beobachtungsaufgabe: Ideal vs. Real</div>
+                <p>Starte die Simulation zuerst <strong>ohne</strong> Haken bei "Realistisch":</p>
+                <p style="margin-bottom:8px;">
+                    1. Wie oft springt der Ball im <strong>Ideal-Modus</strong>?
+                    <select id="beob9a">
+                        <option value="">-- wähle --</option>
+                        <option value="3">ca. 3-mal</option>
+                        <option value="10">ca. 10-mal</option>
+                        <option value="unendlich">unendlich (hört nicht auf)</option>
+                    </select>
+                </p>
+                <p>Jetzt aktiviere "Realistisch" und starte erneut:</p>
+                <p style="margin-bottom:8px;">
+                    2. Was passiert mit der <strong>Sprunghöhe</strong> nach jedem Aufprall?
+                    <select id="beob9b">
+                        <option value="">-- wähle --</option>
+                        <option value="gleich">bleibt gleich</option>
+                        <option value="niedriger">wird niedriger</option>
+                        <option value="hoeher">wird höher</option>
+                    </select>
+                </p>
+                <p style="margin-bottom:8px;">
+                    3. Was passiert mit dem <strong>Wärme-Balken</strong> (grau)?
+                    <select id="beob9c">
+                        <option value="">-- wähle --</option>
+                        <option value="sinkt">wird kleiner</option>
+                        <option value="steigt">wird immer größer</option>
+                        <option value="gleich">bleibt gleich</option>
+                    </select>
+                </p>
+                <p style="margin-bottom:8px;">
+                    4. Was passiert mit der <strong>Ballfarbe</strong> im realistischen Modus?
+                    <select id="beob9d">
+                        <option value="">-- wähle --</option>
+                        <option value="bleibt">bleibt blau</option>
+                        <option value="rot">wird rötlich (wärmer)</option>
+                        <option value="gruen">wird grün</option>
+                    </select>
+                    <button class="btn" onclick="checkBeob9()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb_beob9"></div>
+            </div>
+
+            <div class="info-box">
+                <strong>Erkenntnis:</strong> Ein Teil der mechanischen Energie wird durch <strong>Reibung</strong> in <strong>Wärme</strong> umgewandelt. Diese Wärmeenergie ist für die Bewegung "verloren", aber die <strong>Gesamtenergie</strong> (E<sub>pot</sub> + E<sub>kin</sub> + E<sub>Wärme</sub>) bleibt gleich!
+            </div>
+
+            <div class="uebung">
+                <div class="uebung-title">Verständnischeck: Energieerhaltung in der Realität</div>
+                <p>Ein Ball (E<sub>ges</sub> = 100 J) springt auf den Boden. Nach dem ersten Aufprall:</p>
+                <table style="width:auto;margin:10px 0;">
+                    <tr><th>Energie</th><th>Wert</th></tr>
+                    <tr>
+                        <td>E<sub>kin</sub> (nach Aufprall)</td>
+                        <td><input type="number" id="real9a" class="inline-input" style="width:60px;"> J</td>
+                    </tr>
+                    <tr>
+                        <td>E<sub>Wärme</sub> (durch Aufprall)</td>
+                        <td><input type="number" id="real9b" class="inline-input" style="width:60px;"> J</td>
+                    </tr>
+                    <tr style="background:#f5f5f5;">
+                        <td><strong>E<sub>ges</sub></strong></td>
+                        <td><input type="number" id="real9c" class="inline-input" style="width:60px;"> J</td>
+                    </tr>
+                </table>
+                <p style="font-size:0.9em;color:var(--text-muted);">Hinweis: Der Ball verliert beim Aufprall etwa 28% seiner kinetischen Energie als Wärme.</p>
+                <button class="btn" onclick="checkReal9()">Prüfen</button>
+                <div class="feedback" id="fb_real9"></div>
+            </div>
+
+            <h3>Energieflussdiagramm (realistisch)</h3>
+            <div style="background:#f5f5f5;padding:20px;margin:15px 0;text-align:center;">
+                <div style="display:inline-block;background:var(--fach);color:white;padding:10px 20px;margin:5px;">E<sub>pot</sub></div>
+                <span style="font-size:1.5em;margin:0 10px;">→</span>
+                <div style="display:inline-block;background:var(--positive);color:white;padding:10px 20px;margin:5px;">E<sub>kin</sub></div>
+                <span style="font-size:1.5em;margin:0 10px;">+</span>
+                <div style="display:inline-block;background:var(--heat);color:white;padding:10px 20px;margin:5px;">E<sub>Wärme</sub></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 3:</strong> Zeichne das Energieflussdiagramm auf dem AB</li>
+                    <li><strong>Aufgabe 3:</strong> Erkläre den Vorgang</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 10: Erweiterte Aufgaben -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step10">
+            <div class="step-header">
+                <span class="step-title">10. Knobelaufgaben</span>
+                <span class="step-badge">Transfer ★★★</span>
+            </div>
+
+            <p>Jetzt wird es spannend! Diese Aufgaben erfordern etwas Knobeln.</p>
+
+            <h3>Aufgabe A: Wie hoch kann das Auto rollen?</h3>
+            <p>Ein Auto (m = 1000 kg) fährt mit v = 10 m/s auf einen Berg zu. Der Motor ist aus.</p>
+            <p><strong>Wie hoch kommt das Auto?</strong></p>
+
+            <div class="info-box">
+                <strong>Tipp:</strong> Die gesamte E<sub>kin</sub> wird zu E<sub>pot</sub>. Berechne erst E<sub>kin</sub>, dann probiere verschiedene Höhen!
+            </div>
+
+            <div class="uebung">
+                <p>E<sub>kin</sub> = ½ · 1000 kg · (10 m/s)² = <input type="number" id="ueb4a1" class="inline-input" style="width:100px;"> J</p>
+                <p>Das Auto erreicht eine Höhe von h = <input type="number" id="ueb4a2" class="inline-input" style="width:60px;"> m
+                    <button class="btn" onclick="checkUeb4a()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb4a"></div>
+            </div>
+
+            <h3>Aufgabe B: Wie schnell vor dem Aufprall?</h3>
+            <p>Ein Stein (m = 2 kg) fällt aus h = 5 m Höhe.</p>
+            <p><strong>Wie schnell ist er kurz vor dem Aufprall?</strong></p>
+
+            <div class="info-box">
+                <strong>Tipp:</strong> Berechne E<sub>pot</sub> oben. Unten ist E<sub>kin</sub> = E<sub>pot</sub>. Welches v passt?
+            </div>
+
+            <div class="uebung">
+                <p>E<sub>pot</sub> oben = 2 kg · 10 m/s² · 5 m = <input type="number" id="ueb4b1" class="inline-input" style="width:100px;"> J</p>
+                <p>E<sub>kin</sub> unten = E<sub>pot</sub> oben = <input type="number" id="ueb4b2" class="inline-input" style="width:100px;"> J</p>
+                <p>Der Stein hat unten v = <input type="number" id="ueb4b3" class="inline-input" style="width:60px;"> m/s
+                    <button class="btn" onclick="checkUeb4b()">Prüfen</button>
+                </p>
+                <div class="feedback" id="fb4b"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 4:</strong> Bearbeite die Knobelaufgaben auf dem AB (★★★)</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 11: Zusammenfassung -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step11">
+            <div class="step-header">
+                <span class="step-title">11. Zusammenfassung</span>
+                <span class="step-badge">Abschluss</span>
+            </div>
+
+            <h3>Das hast du gelernt:</h3>
+
+            <div class="info-box">
+                <strong>1. Energie</strong> ist die Fähigkeit, Arbeit zu verrichten.<br>
+                Einheit: <strong>Joule (J)</strong>
+            </div>
+
+            <div class="formel-box" style="font-size:1.1em;">
+                <span class="fz">E</span><sub>pot</sub> = <span class="fz">m</span> · <span class="fz">g</span> · <span class="fz">h</span>
+                &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+                <span class="fz">E</span><sub>kin</sub> = ½ · <span class="fz">m</span> · <span class="fz">v</span>²
+            </div>
+
+            <div class="info-box">
+                <strong>Energieerhaltungssatz:</strong><br>
+                E<sub>ges</sub> = E<sub>pot</sub> + E<sub>kin</sub> = konstant<br><br>
+                <strong>Realität:</strong> Ein Teil wird zu Wärme (Reibung)
+            </div>
+
+            <h3>Wichtig:</h3>
+            <ul style="margin: 10px 0 15px 25px;">
+                <li>g = <strong>10 m/s²</strong> (immer!)</li>
+                <li>Einheiten nicht vergessen!</li>
+                <li>Bei E<sub>kin</sub>: v wird <strong>quadriert</strong></li>
+            </ul>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li>Prüfe, ob dein Arbeitsblatt vollständig ist</li>
+                    <li>Alle Kästen ausgefüllt?</li>
+                    <li>Alle Aufgaben bearbeitet?</li>
+                </ul>
+            </div>
+
+            <div style="background:var(--success-bg);border:2px solid var(--success);padding:15px;margin:20px 0;text-align:center;">
+                <strong style="font-size:1.1em;color:var(--success);">Geschafft! Du hast den Lernpfad abgeschlossen.</strong>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn" onclick="showStep(1)">Nochmal von vorne</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // NAVIGATION (ES5)
+    // ═══════════════════════════════════════════════════════════════
+    var currentStep = 1;
+    var totalSteps = 11;
+
+    function showStep(n) {
+        var steps = document.querySelectorAll('.step');
+        for (var i = 0; i < steps.length; i++) {
+            steps[i].classList.remove('active');
+        }
+        document.getElementById('step' + n).classList.add('active');
+        currentStep = n;
+        updateProgress();
+        updateStepNav();
+        window.scrollTo(0, 0);
+        localStorage.setItem('lp01b-step', n);
+    }
+
+    function goToStep(n) {
+        showStep(n);
+    }
+
+    function nextStep() {
+        if (currentStep < totalSteps) {
+            currentStep++;
+            showStep(currentStep);
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    }
+
+    function updateProgress() {
+        var percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+    }
+
+    function updateStepNav() {
+        var navItems = document.querySelectorAll('.step-nav-item');
+        for (var i = 0; i < navItems.length; i++) {
+            navItems[i].classList.remove('active', 'done');
+            if (i + 1 < currentStep) {
+                navItems[i].classList.add('done');
+            } else if (i + 1 === currentStep) {
+                navItems[i].classList.add('active');
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SIMULATIONEN (ES5)
+    // ═══════════════════════════════════════════════════════════════
+
+    // --- Lageenergie Simulation ---
+    function updatePotSim() {
+        var m = parseFloat(document.getElementById('potMass').value);
+        var h = parseFloat(document.getElementById('potHeight').value);
+        var g = 10;
+        var Epot = m * g * h;
+
+        document.getElementById('potMassVal').textContent = m;
+        document.getElementById('potHeightVal').textContent = h;
+        document.getElementById('potResult').textContent = Epot;
+
+        var maxE = 20 * 10 * 20;
+        var percent = (Epot / maxE) * 100;
+        document.getElementById('potBar').style.height = percent + '%';
+
+        drawPotCanvas(m, h);
+    }
+
+    function drawPotCanvas(m, h) {
+        var canvas = document.getElementById('simPot');
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Boden
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(0, 180, 250, 20);
+
+        // Höhenskala
+        ctx.strokeStyle = '#888';
+        ctx.beginPath();
+        ctx.moveTo(30, 20);
+        ctx.lineTo(30, 180);
+        ctx.stroke();
+
+        // Höhenmarken
+        ctx.fillStyle = '#888';
+        ctx.font = '10px sans-serif';
+        for (var i = 0; i <= 20; i += 5) {
+            var y = 180 - (i / 20) * 160;
+            ctx.fillText(i + 'm', 5, y + 3);
+            ctx.beginPath();
+            ctx.moveTo(25, y);
+            ctx.lineTo(35, y);
+            ctx.stroke();
+        }
+
+        // Ball (perfekter Kreis)
+        var ballY = 180 - (h / 20) * 160;
+        var ballRadius = 10 + m / 2;
+        ctx.fillStyle = '#2c5aa0';
+        ctx.beginPath();
+        ctx.arc(150, ballY, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Höhenlinie
+        ctx.strokeStyle = '#c62828';
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(50, ballY);
+        ctx.lineTo(200, ballY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#c62828';
+        ctx.fillText('h = ' + h + ' m', 160, ballY - 5);
+    }
+
+    // --- Bewegungsenergie Simulation ---
+    var kinAnimId = null;
+    var kinBallX = 50;
+
+    function updateKinSim() {
+        // WICHTIG: Vorherige Animation stoppen!
+        if (kinAnimId) {
+            cancelAnimationFrame(kinAnimId);
+            kinAnimId = null;
+        }
+        kinBallX = 50;
+
+        var m = parseFloat(document.getElementById('kinMass').value);
+        var v = parseFloat(document.getElementById('kinVel').value);
+        var Ekin = 0.5 * m * v * v;
+
+        document.getElementById('kinMassVal').textContent = m;
+        document.getElementById('kinVelVal').textContent = v;
+        document.getElementById('kinResult').textContent = Ekin;
+
+        var maxE = 0.5 * 20 * 20 * 20;
+        var percent = (Ekin / maxE) * 100;
+        document.getElementById('kinBar').style.height = percent + '%';
+
+        animateKin(m, v);
+    }
+
+    function animateKin(m, v) {
+        var canvas = document.getElementById('simKin');
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Boden
+        ctx.fillStyle = '#888';
+        ctx.fillRect(0, 120, 300, 30);
+
+        // Ball (perfekter Kreis)
+        var ballRadius = 15 + m / 2;
+        ctx.fillStyle = '#c62828';
+        ctx.beginPath();
+        ctx.arc(kinBallX, 100, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Geschwindigkeitspfeil
+        if (v > 0) {
+            var arrowLen = v * 3;
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(kinBallX + ballRadius + 5, 100);
+            ctx.lineTo(kinBallX + ballRadius + 5 + arrowLen, 100);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(kinBallX + ballRadius + 5 + arrowLen, 100);
+            ctx.lineTo(kinBallX + ballRadius - 5 + arrowLen, 95);
+            ctx.lineTo(kinBallX + ballRadius - 5 + arrowLen, 105);
+            ctx.closePath();
+            ctx.fillStyle = '#2c5aa0';
+            ctx.fill();
+            ctx.lineWidth = 1;
+        }
+
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('v = ' + v + ' m/s', kinBallX - 20, 70);
+
+        // Animation
+        kinBallX += v * 0.15;
+        if (kinBallX > 280) kinBallX = 50;
+
+        if (v > 0) {
+            kinAnimId = requestAnimationFrame(function() { animateKin(m, v); });
+        }
+    }
+
+    // --- Rampen-Simulation ---
+    var rampAnimId = null;
+    var rampX = 0;
+    var rampV = 0;
+    var rampRunning = false;
+    var rampDirection = 1;
+    var rampHeat = 0;
+    var rampEges0 = 0;
+    var rampLastTime = 0;
+    var rampStartTime = 0;
+    var rampElapsedTime = 0;
+
+    function updateRampSim() {
+        // Masse in Gramm (Slider 5-50) -> Anzeige in kg
+        var massGrams = parseFloat(document.getElementById('rampMass').value);
+        document.getElementById('rampMassVal').textContent = (massGrams / 1000).toFixed(3);
+        // Höhe in Dezimeter (Slider 2-20) -> Anzeige in m
+        var heightDm = parseFloat(document.getElementById('rampHeight').value);
+        document.getElementById('rampHeightVal').textContent = (heightDm / 10).toFixed(1);
+        var isReal = document.getElementById('rampRealMode').checked;
+        document.getElementById('rampHeatBarContainer').style.display = isReal ? 'block' : 'none';
+    }
+
+    function resetRampSim() {
+        if (rampAnimId) cancelAnimationFrame(rampAnimId);
+        rampRunning = false;
+        rampX = 20;
+        rampV = 0;
+        rampDirection = 1;
+        rampHeat = 0;
+        rampLastTime = 0;
+        rampStartTime = 0;
+        rampElapsedTime = 0;
+        document.getElementById('btnRamp').textContent = 'Start';
+        document.getElementById('rampHeightVal').textContent = document.getElementById('rampHeight').value;
+        updateRampSim();
+        drawRampCanvas();
+    }
+
+    function startRampSim() {
+        if (rampRunning) {
+            resetRampSim();
+            return;
+        }
+        rampRunning = true;
+        rampX = 20;
+        rampDirection = 1;
+        rampHeat = 0;
+        rampLastTime = 0;
+        rampStartTime = 0;
+        rampElapsedTime = 0;
+        // Slider-Werte in SI-Einheiten umrechnen
+        var h0 = parseFloat(document.getElementById('rampHeight').value) / 10; // dm -> m
+        var m = parseFloat(document.getElementById('rampMass').value) / 1000;  // g -> kg
+        // Gesamt-Energie basierend auf tatsächlicher Starthöhe bei x=20
+        var startH = getRampHeight(20, h0);
+        rampEges0 = m * 10 * startH;
+        rampV = 0;
+        document.getElementById('btnRamp').textContent = 'Reset';
+        rampAnimId = requestAnimationFrame(animateRamp);
+    }
+
+    function getRampHeight(x, h0) {
+        // Parabelförmige Rampe: h(x) = h0 * ((x - 200) / 200)^2
+        var midX = 200;
+        var normalized = (x - midX) / midX;
+        return h0 * normalized * normalized;
+    }
+
+    function getRampY(x, h0) {
+        // Canvas Y-Koordinate für Parabel
+        var h = getRampHeight(x, h0);
+        return 200 - (h / h0) * 150;
+    }
+
+    // Ableitung der Parabel für Beschleunigung entlang der Rampe
+    function getRampSlope(x, h0) {
+        // h(x) = h0 * ((x - 200) / 200)^2
+        // dh/dx = h0 * 2 * (x - 200) / 200^2 = h0 * (x - 200) / 20000
+        var midX = 200;
+        return h0 * (x - midX) / 20000;
+    }
+
+    function animateRamp(timestamp) {
+        if (!rampRunning) return;
+
+        // Zeitbasierte Physik
+        if (rampStartTime === 0) rampStartTime = timestamp;
+        if (rampLastTime === 0) rampLastTime = timestamp;
+        var dt = (timestamp - rampLastTime) / 1000; // Sekunden
+        rampLastTime = timestamp;
+        rampElapsedTime = (timestamp - rampStartTime) / 1000; // Gesamtzeit in Sekunden
+
+        // Begrenze dt für stabiles Verhalten
+        if (dt > 0.05) dt = 0.05;
+        if (dt <= 0) {
+            rampAnimId = requestAnimationFrame(animateRamp);
+            return;
+        }
+
+        // Slider-Werte in SI-Einheiten
+        var m = parseFloat(document.getElementById('rampMass').value) / 1000;  // g -> kg
+        var h0 = parseFloat(document.getElementById('rampHeight').value) / 10; // dm -> m
+        var isReal = document.getElementById('rampRealMode').checked;
+        var g = 10;
+
+        // Skalierung: Canvas 20-380 = 360px entspricht realer Rampenbreite
+        // Rampenbreite ~ 4 * h0 (geometrisch sinnvoll)
+        var rampWidthReal = 4 * h0; // Reale Breite in Metern
+        var pxPerMeter = 360 / rampWidthReal;
+
+        // Aktuelle Höhe und Steigung
+        var currentH = getRampHeight(rampX, h0);
+
+        // WICHTIG: getRampSlope gibt dh/dx in Canvas-Koordinaten (m/px)
+        // Für echte Steigung muss mit pxPerMeter multipliziert werden
+        var slopeCanvas = getRampSlope(rampX, h0); // m/px
+        var slope = slopeCanvas * pxPerMeter;       // dimensionslos (m/m)
+
+        // Beschleunigung entlang der Rampe: a = g * sin(theta)
+        // sin(theta) = slope / sqrt(1 + slope²)
+        // Für rollende Kugel: a = (5/7) * g * sin(theta) wegen Trägheitsmoment
+        var sinTheta = slope / Math.sqrt(1 + slope * slope);
+        var aReal = -g * sinTheta * (5 / 7); // Rollende Vollkugel, negativ weil bergab
+
+        // Rollreibung: μ_roll ≈ 0.01 für Glasmurmel auf Holz
+        var mu_roll = isReal ? 0.01 : 0;
+
+        // Geschwindigkeit aktualisieren (v in m/s)
+        rampV += aReal * dt;
+
+        // Rollreibungskraft: F_R = μ * m * g * cos(theta), wirkt entgegen der Bewegung
+        // cos(theta) = 1 / sqrt(1 + slope²)
+        if (isReal && Math.abs(rampV) > 0.001) {
+            var cosTheta = 1 / Math.sqrt(1 + slope * slope);
+            var frictionDecel = mu_roll * g * cosTheta;
+            var sign = rampV > 0 ? 1 : -1;
+            rampV -= sign * frictionDecel * dt;
+            // Wärmeverlust: W = F_R * s = μ * m * g * cos(θ) * |v| * dt
+            var energyLoss = mu_roll * m * g * cosTheta * Math.abs(rampV) * dt;
+            rampHeat += energyLoss;
+        }
+
+        // Position aktualisieren
+        // rampV ist Geschwindigkeit entlang der Rampe, horizontale Komponente ist v * cos(θ)
+        var cosTheta = 1 / Math.sqrt(1 + slope * slope);
+        rampX += rampV * cosTheta * pxPerMeter * dt;
+
+        // Ränder (Umkehrpunkte) - elastischer Stoß mit kleinem Verlust
+        if (rampX <= 20) {
+            rampX = 20;
+            if (isReal) {
+                // Stoßzahl e ≈ 0.85 für Glasmurmel auf Holz
+                var e = 0.85;
+                var Ekin_before = 0.7 * m * rampV * rampV; // Rollende Kugel
+                rampV = Math.abs(rampV) * e;
+                var Ekin_after = 0.7 * m * rampV * rampV;
+                rampHeat += Ekin_before - Ekin_after;
+            } else {
+                rampV = Math.abs(rampV);
+            }
+        }
+        if (rampX >= 380) {
+            rampX = 380;
+            if (isReal) {
+                var e = 0.85;
+                var Ekin_before = 0.7 * m * rampV * rampV;
+                rampV = -Math.abs(rampV) * e;
+                var Ekin_after = 0.7 * m * rampV * rampV;
+                rampHeat += Ekin_before - Ekin_after;
+            } else {
+                rampV = -Math.abs(rampV);
+            }
+        }
+
+        // Energieberechnung für Anzeige
+        // Rollende Vollkugel: E_kin = E_trans + E_rot = ½mv² + ½Iω² = ½mv² + (1/5)mv² = (7/10)mv²
+        currentH = getRampHeight(rampX, h0);
+        var Epot = m * g * currentH;
+        var Ekin = 0.7 * m * rampV * rampV; // (7/10) statt (1/2) für rollende Kugel
+
+        // Update bars
+        var total = rampEges0;
+        document.getElementById('rampPotBar').style.height = (Epot / total * 100) + '%';
+        document.getElementById('rampKinBar').style.height = (Ekin / total * 100) + '%';
+        document.getElementById('rampHeatBar').style.height = (rampHeat / total * 100) + '%';
+
+        // Energie in mJ anzeigen (für Murmel realistischer)
+        document.getElementById('rampPotVal').textContent = (Epot * 1000).toFixed(0) + ' mJ';
+        document.getElementById('rampKinVal').textContent = (Ekin * 1000).toFixed(0) + ' mJ';
+        document.getElementById('rampHeatVal').textContent = (rampHeat * 1000).toFixed(0) + ' mJ';
+
+        drawRampCanvasAnim(m, h0, rampX, currentH, rampV, rampElapsedTime);
+
+        // Simulation läuft endlos weiter (kein automatisches Stoppen)
+        rampAnimId = requestAnimationFrame(animateRamp);
+    }
+
+    function drawRampCanvas() {
+        var canvas = document.getElementById('simRamp');
+        var ctx = canvas.getContext('2d');
+        var m = parseFloat(document.getElementById('rampMass').value) / 1000;  // g -> kg
+        var h0 = parseFloat(document.getElementById('rampHeight').value) / 10; // dm -> m
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Parabel-Rampe zeichnen
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.moveTo(0, getRampY(0, h0));
+        for (var x = 0; x <= 400; x += 5) {
+            ctx.lineTo(x, getRampY(x, h0));
+        }
+        ctx.lineTo(400, 220);
+        ctx.lineTo(0, 220);
+        ctx.closePath();
+        ctx.fill();
+
+        // Murmel oben links (Radius ca. 8-12 px je nach Masse)
+        var ballRadius = 8 + m * 100; // m in kg, typisch 0.01-0.05 kg -> 9-13 px
+        var startY = getRampY(20, h0);
+        ctx.fillStyle = '#2c5aa0';
+        ctx.beginPath();
+        ctx.arc(20, startY - ballRadius, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Höhenanzeige
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('h = ' + h0.toFixed(1) + ' m', 30, 30);
+
+        // Energie initial
+        var Eges = m * 10 * h0;
+        document.getElementById('rampPotBar').style.height = '100%';
+        document.getElementById('rampKinBar').style.height = '0%';
+        document.getElementById('rampHeatBar').style.height = '0%';
+        document.getElementById('rampPotVal').textContent = (Eges * 1000).toFixed(0) + ' mJ';
+        document.getElementById('rampKinVal').textContent = '0 mJ';
+        document.getElementById('rampHeatVal').textContent = '0 mJ';
+    }
+
+    function drawRampCanvasAnim(m, h0, x, currentH, v, time) {
+        var canvas = document.getElementById('simRamp');
+        var ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Parabel-Rampe zeichnen
+        ctx.fillStyle = '#8B4513';
+        ctx.beginPath();
+        ctx.moveTo(0, getRampY(0, h0));
+        for (var px = 0; px <= 400; px += 5) {
+            ctx.lineTo(px, getRampY(px, h0));
+        }
+        ctx.lineTo(400, 220);
+        ctx.lineTo(0, 220);
+        ctx.closePath();
+        ctx.fill();
+
+        // Murmel Position auf der Parabel
+        var ballRadius = 8 + m * 100; // m in kg -> 9-13 px
+        var ballY = getRampY(x, h0) - ballRadius;
+        ctx.fillStyle = '#2c5aa0';
+        ctx.beginPath();
+        ctx.arc(x, ballY, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Infos
+        ctx.fillStyle = '#333';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('h = ' + currentH.toFixed(1) + ' m', 10, 20);
+        ctx.fillText('v = ' + Math.abs(v).toFixed(1) + ' m/s', 10, 35);
+        ctx.fillStyle = '#c62828';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('t = ' + time.toFixed(2) + ' s', 320, 20);
+    }
+
+    // --- Realistische Fall-Simulation ---
+    var realAnimId = null;
+    var realY = 0;
+    var realV = 0;
+    var realHeat = 0;
+    var realRunning = false;
+    var realBounces = 0;
+    var realLastTime = 0;
+    var realStartTime = 0;
+    var realElapsedTime = 0;
+    var realSquash = 0;      // Stauchungsfaktor (0 = normal, 0.4 = max. gestaucht)
+    var realEges0 = 0;       // Anfangsenergie für 99%-Check
+
+    function updateRealSim() {
+        document.getElementById('realMassVal').textContent = document.getElementById('realMass').value;
+        var isReal = document.getElementById('realMode').checked;
+        document.getElementById('heatBarContainer').style.display = isReal ? 'block' : 'none';
+    }
+
+    function resetRealSim() {
+        if (realAnimId) cancelAnimationFrame(realAnimId);
+        realRunning = false;
+        realY = 0;
+        realV = 0;
+        realHeat = 0;
+        realBounces = 0;
+        realLastTime = 0;
+        realStartTime = 0;
+        realElapsedTime = 0;
+        realSquash = 0;
+        realEges0 = 0;
+        document.getElementById('btnReal').textContent = 'Start';
+        document.getElementById('realHeightVal').textContent = document.getElementById('realHeight').value;
+        updateRealSim();
+        drawRealCanvas();
+    }
+
+    function startRealSim() {
+        if (realRunning) {
+            resetRealSim();
+            return;
+        }
+        realRunning = true;
+        realY = 0;
+        realV = 0;
+        realHeat = 0;
+        realSquash = 0;
+        realLastTime = 0;
+        realStartTime = 0;
+        realElapsedTime = 0;
+        // Anfangsenergie speichern für 99%-Check
+        var m = parseFloat(document.getElementById('realMass').value);
+        var h0 = parseFloat(document.getElementById('realHeight').value);
+        realEges0 = m * 10 * h0;
+        document.getElementById('btnReal').textContent = 'Reset';
+        realAnimId = requestAnimationFrame(animateReal);
+    }
+
+    function animateReal(timestamp) {
+        if (!realRunning) return;
+
+        // Zeitbasierte Physik
+        if (realStartTime === 0) realStartTime = timestamp;
+        if (realLastTime === 0) realLastTime = timestamp;
+        var dt = (timestamp - realLastTime) / 1000; // Sekunden
+        realLastTime = timestamp;
+        realElapsedTime = (timestamp - realStartTime) / 1000; // Gesamtzeit
+
+        // Begrenze dt für stabiles Verhalten
+        if (dt > 0.05) dt = 0.05;
+        if (dt <= 0) {
+            realAnimId = requestAnimationFrame(animateReal);
+            return;
+        }
+
+        var m = parseFloat(document.getElementById('realMass').value);
+        var h0 = parseFloat(document.getElementById('realHeight').value);
+        var isReal = document.getElementById('realMode').checked;
+        var g = 10;
+
+        // Stauchung klingt exponentiell ab
+        if (realSquash > 0.01) {
+            realSquash = realSquash * Math.exp(-dt * 15); // Schnelle Rückfederung
+        } else {
+            realSquash = 0;
+        }
+
+        // Physik: v += g * dt, y += v * dt (positive v = nach unten)
+        realV += g * dt;
+        realY += realV * dt;
+
+        var currentH = h0 - realY;
+
+        // Boden erreicht - abprallen
+        if (currentH <= 0) {
+            currentH = 0;
+            realY = h0; // Reset position
+            realBounces++;
+
+            if (isReal) {
+                // Stoßzahl e = 0.85 (typisch für einen Gummiball)
+                var e = 0.85;
+                // Energieverlust: E_verlust = (1 - e²) * E_kin
+                var Ekin_before = 0.5 * m * realV * realV;
+                var lostEnergy = (1 - e * e) * Ekin_before;
+                realHeat += lostEnergy;
+                // Stauchung proportional zur Aufprallenergie (max. 0.4)
+                realSquash = Math.min(0.4, 0.3 * Math.abs(realV) / 15);
+                realV = -realV * e; // Umkehren mit Dämpfung
+            } else {
+                realV = -realV; // Ideal: perfekte Reflexion
+            }
+        }
+
+        // Obergrenze (bei Aufwärtsbewegung)
+        if (currentH > h0) {
+            currentH = h0;
+            realY = 0;
+        }
+
+        var Epot = m * g * currentH;
+        var Ekin = 0.5 * m * realV * realV;
+
+        // Update bars - verwende gespeicherte Anfangsenergie
+        document.getElementById('realPotBar').style.height = (Epot / realEges0 * 100) + '%';
+        document.getElementById('realKinBar').style.height = (Ekin / realEges0 * 100) + '%';
+        document.getElementById('realHeatBar').style.height = (realHeat / realEges0 * 100) + '%';
+
+        document.getElementById('realPotVal').textContent = Math.round(Epot) + ' J';
+        document.getElementById('realKinVal').textContent = Math.round(Ekin) + ' J';
+        document.getElementById('realHeatVal').textContent = Math.round(realHeat) + ' J';
+
+        drawRealCanvasAnim(m, h0, currentH, realV, isReal, realElapsedTime, realSquash, realHeat / realEges0);
+
+        // Stoppen wenn 99% der Energie in Wärme umgewandelt (statt Bounce-Limit)
+        if (isReal && realHeat >= 0.99 * realEges0) {
+            realRunning = false;
+            document.getElementById('btnReal').textContent = 'Start';
+        }
+
+        if (realRunning) {
+            realAnimId = requestAnimationFrame(animateReal);
+        }
+    }
+
+    function drawRealCanvas() {
+        var canvas = document.getElementById('simReal');
+        var ctx = canvas.getContext('2d');
+        var m = parseFloat(document.getElementById('realMass').value);
+        var h = parseFloat(document.getElementById('realHeight').value);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Boden
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(0, 230, 350, 20);
+
+        // Ball oben
+        var ballRadius = 12 + m;
+        ctx.fillStyle = '#2c5aa0';
+        ctx.beginPath();
+        ctx.arc(175, 40, ballRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Höhenanzeige
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('h = ' + h + ' m', 200, 45);
+
+        // Energie initial
+        var Eges = m * 10 * h;
+        document.getElementById('realPotBar').style.height = '100%';
+        document.getElementById('realKinBar').style.height = '0%';
+        document.getElementById('realHeatBar').style.height = '0%';
+        document.getElementById('realPotVal').textContent = Eges + ' J';
+        document.getElementById('realKinVal').textContent = '0 J';
+        document.getElementById('realHeatVal').textContent = '0 J';
+    }
+
+    function drawRealCanvasAnim(m, h0, currentH, v, isReal, time, squash, heatRatio) {
+        var canvas = document.getElementById('simReal');
+        var ctx = canvas.getContext('2d');
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Boden
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(0, 230, 350, 20);
+
+        // Ball mit Stauchung und Wärmefarbe
+        var ballRadius = 12 + m;
+        var ballY = 40 + (h0 - currentH) / h0 * 180;
+
+        // Stauchung: Ball wird flacher und breiter
+        var squashFactor = squash || 0;
+        var radiusX = ballRadius * (1 + squashFactor * 0.8);  // breiter
+        var radiusY = ballRadius * (1 - squashFactor);        // flacher
+
+        // Ball am Boden positionieren (Mittelpunkt anpassen für Stauchung)
+        if (ballY > 230 - radiusY) ballY = 230 - radiusY;
+
+        // Wärmefarbe: von Blau (#2c5aa0) über Violett zu Rot (#c62828)
+        var hr = heatRatio || 0;
+        var r = Math.round(44 + hr * (198 - 44));   // 44 -> 198
+        var g = Math.round(90 - hr * 60);           // 90 -> 30
+        var b = Math.round(160 - hr * 120);         // 160 -> 40
+        var ballColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+
+        ctx.fillStyle = ballColor;
+        ctx.beginPath();
+        ctx.ellipse(175, ballY, radiusX, radiusY, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Infos
+        ctx.fillStyle = '#333';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('h = ' + currentH.toFixed(1) + ' m', 10, 20);
+        ctx.fillText('v = ' + Math.abs(v).toFixed(1) + ' m/s', 10, 35);
+
+        // Zeit rechts oben
+        ctx.fillStyle = '#c62828';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('t = ' + time.toFixed(2) + ' s', 270, 20);
+
+        if (isReal) {
+            ctx.fillStyle = '#888';
+            ctx.fillText('(mit Reibung)', 270, 35);
+        } else {
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText('(ideal)', 270, 35);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ÜBUNGEN (ES5)
+    // ═══════════════════════════════════════════════════════════════
+
+    function parseNumber(val) {
+        if (val === '' || val === null) return NaN;
+        return parseFloat(String(val).replace(',', '.'));
+    }
+
+    function checkUeb1() {
+        var answer = parseNumber(document.getElementById('ueb1').value);
+        var correct = 10 * 10 * 8;
+        var fb = document.getElementById('fb1');
+
+        if (Math.abs(answer - correct) < 1) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! E<sub>pot</sub> = 10 kg · 10 m/s² · 8 m = 800 J';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Nicht ganz. Nutze E<sub>pot</sub> = m · g · h mit g = 10 m/s².';
+        }
+    }
+
+    function checkUeb2() {
+        var answer = parseNumber(document.getElementById('ueb2').value);
+        var correct = 0.5 * 0.5 * 20 * 20;
+        var fb = document.getElementById('fb2');
+
+        if (Math.abs(answer - correct) < 1) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! E<sub>kin</sub> = ½ · 0,5 kg · (20 m/s)² = 100 J';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Nicht ganz. Nutze E<sub>kin</sub> = ½ · m · v². Vergiss nicht: v wird quadriert!';
+        }
+    }
+
+    function checkUeb3() {
+        var a = parseNumber(document.getElementById('ueb3a').value);
+        var b = parseNumber(document.getElementById('ueb3b').value);
+        var correct = 5 * 10 * 20;
+        var fb = document.getElementById('fb3');
+
+        var aOk = Math.abs(a - correct) < 1;
+        var bOk = Math.abs(b - correct) < 1;
+
+        if (aOk && bOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! E<sub>pot</sub> oben = E<sub>kin</sub> unten = 1000 J (Energieerhaltung!)';
+        } else if (aOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'a) ist richtig. Bei b) bedenke: Die gesamte E<sub>pot</sub> wird zu E<sub>kin</sub>.';
+        } else if (bOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'b) ist richtig. Bei a) rechne E<sub>pot</sub> = m · g · h.';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Beide nicht richtig. E<sub>pot</sub> = 5 kg · 10 m/s² · 20 m = ?';
+        }
+    }
+
+    function checkUeb4a() {
+        var e = parseNumber(document.getElementById('ueb4a1').value);
+        var h = parseNumber(document.getElementById('ueb4a2').value);
+        var fb = document.getElementById('fb4a');
+
+        var eOk = Math.abs(e - 50000) < 100;
+        var hOk = Math.abs(h - 5) < 0.5;
+
+        if (eOk && hOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! E<sub>kin</sub> = 50.000 J wird zu E<sub>pot</sub>. Mit h = E/(m·g) = 50.000/(1000·10) = 5 m';
+        } else if (eOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'E<sub>kin</sub> stimmt! Für h probiere: E<sub>pot</sub> = m·g·h = 1000·10·h. Welches h ergibt 50.000 J?';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'E<sub>kin</sub> = ½ · 1000 · 10² = ½ · 1000 · 100 = ?';
+        }
+    }
+
+    function checkUeb4b() {
+        var epot = parseNumber(document.getElementById('ueb4b1').value);
+        var ekin = parseNumber(document.getElementById('ueb4b2').value);
+        var v = parseNumber(document.getElementById('ueb4b3').value);
+        var fb = document.getElementById('fb4b');
+
+        var epotOk = Math.abs(epot - 100) < 1;
+        var ekinOk = Math.abs(ekin - 100) < 1;
+        var vOk = Math.abs(v - 10) < 0.5;
+
+        if (epotOk && ekinOk && vOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! E<sub>pot</sub> = 100 J = E<sub>kin</sub>. Mit 100 = ½·2·v² folgt v² = 100, also v = 10 m/s';
+        } else if (epotOk && ekinOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Energien stimmen! Für v: 100 = ½·2·v² → v² = 100 → v = ?';
+        } else if (epotOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'E<sub>pot</sub> stimmt! E<sub>kin</sub> unten = E<sub>pot</sub> oben (Energieerhaltung!)';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'E<sub>pot</sub> = 2 kg · 10 m/s² · 5 m = ?';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // NEUE ÜBUNGEN (Schnellchecks, Beobachtungen)
+    // ═══════════════════════════════════════════════════════════════
+
+    // Schritt 2: Energie erkennen (Checkboxen)
+    function checkStep2() {
+        var a = document.getElementById('check2a').checked; // Stein auf Berg - JA
+        var b = document.getElementById('check2b').checked; // Auto an Ampel - JA (Lageenergie)
+        var c = document.getElementById('check2c').checked; // Fußball - JA
+        var d = document.getElementById('check2d').checked; // Feder - JA
+        var fb = document.getElementById('fb_step2');
+
+        // Alle 4 haben Energie!
+        if (a && b && c && d) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! Alle besitzen Energie: Der Stein und das Auto haben Lageenergie (Höhe), der Fußball Bewegungsenergie, die Feder Spannenergie.';
+        } else if (a && c && d && !b) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Fast! Auch das stehende Auto hat Lageenergie (es steht ja nicht auf h = 0).';
+        } else if ((a || c || d) && !(a && c && d)) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Teilweise richtig. Überlege: Welche Körper können "etwas bewirken"?';
+        } else {
+            fb.className = 'feedback';
+            fb.style.display = 'none';
+        }
+    }
+
+    // Schritt 3: Proportionalität E_pot
+    function checkProp3() {
+        var a = document.getElementById('prop3a').value;
+        var b = document.getElementById('prop3b').value;
+        var fb = document.getElementById('fb_prop3');
+
+        if (a === '' || b === '') {
+            fb.className = 'feedback';
+            fb.style.display = 'none';
+            return;
+        }
+
+        if (a === 'doppelt' && b === 'doppelt') {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! E<sub>pot</sub> ist direkt proportional zu m und zu h. Verdopplung → doppelte Energie.';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Nicht ganz. E<sub>pot</sub> = m · g · h. Wenn m oder h doppelt so groß wird, was passiert mit E<sub>pot</sub>?';
+        }
+    }
+
+    // Schritt 4: Beobachtung E_pot Simulation
+    function checkBeob4() {
+        var a = parseNumber(document.getElementById('beob4a').value);
+        var b = parseNumber(document.getElementById('beob4b').value);
+        var c = parseNumber(document.getElementById('beob4c').value);
+        var fb = document.getElementById('fb_beob4');
+
+        var aOk = Math.abs(a - 500) < 1;
+        var bOk = Math.abs(b - 1000) < 1;
+        var cOk = Math.abs(c - 1000) < 1;
+
+        if (aOk && bOk && cOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! 500 J → 1000 J bei doppelter Masse, 500 J → 1000 J bei doppelter Höhe. Beides verdoppelt die Energie!';
+        } else if (aOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = '1. ist richtig (500 J). Lies die anderen Werte direkt aus der Simulation ab.';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Stelle die Regler ein und lies E<sub>pot</sub> ab. Bei m=5, h=10: E<sub>pot</sub> = 5·10·10 = 500 J.';
+        }
+    }
+
+    // Schritt 5: v² verstehen
+    function checkVsq5() {
+        var a = parseNumber(document.getElementById('vsq5a').value);
+        var b = parseNumber(document.getElementById('vsq5b').value);
+        var fb = document.getElementById('fb_vsq5');
+
+        var aOk = Math.abs(a - 100) < 1;
+        var bOk = Math.abs(b - 400) < 1;
+
+        if (aOk && bOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! 10² = 100, 20² = 400. Bei doppelter Geschwindigkeit ist v² <strong>vierfach</strong> so groß!';
+        } else if (aOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = '10² stimmt. Was ist 20²? (20 · 20 = ?)';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'v² bedeutet v · v. Also: 10² = 10 · 10 = ?';
+        }
+    }
+
+    // Schritt 6: Beobachtung E_kin (v² in Aktion)
+    function checkBeob6() {
+        var a = parseNumber(document.getElementById('beob6a').value);
+        var b = parseNumber(document.getElementById('beob6b').value);
+        var c = document.getElementById('beob6c').value;
+        var fb = document.getElementById('fb_beob6');
+
+        var aOk = Math.abs(a - 62.5) < 2;
+        var bOk = Math.abs(b - 250) < 2;
+        var cOk = (c === '4');
+
+        if (aOk && bOk && cOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! 62,5 J → 250 J = <strong>4-fache</strong> Energie bei doppelter Geschwindigkeit. Das ist die Wirkung von v²!';
+        } else if (aOk && bOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Werte stimmen! 250 / 62,5 = ?-fach größer?';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Lies die Werte aus der Simulation ab. E<sub>kin</sub> = ½·5·5² = 62,5 J für v=5.';
+        }
+    }
+
+    // Schritt 7: Energieerhaltung Tabelle
+    function checkErh7() {
+        var a = parseNumber(document.getElementById('erh7a').value);
+        var b = parseNumber(document.getElementById('erh7b').value);
+        var c = parseNumber(document.getElementById('erh7c').value);
+        var d = parseNumber(document.getElementById('erh7d').value);
+        var e = parseNumber(document.getElementById('erh7e').value);
+        var f = parseNumber(document.getElementById('erh7f').value);
+        var g = parseNumber(document.getElementById('erh7g').value);
+        var h = parseNumber(document.getElementById('erh7h').value);
+        var i = parseNumber(document.getElementById('erh7i').value);
+        var fb = document.getElementById('fb_erh7');
+
+        // Oben: 200, 0, 200 | Mitte: 100, 100, 200 | Unten: 0, 200, 200
+        var row1 = Math.abs(a - 200) < 1 && Math.abs(b - 0) < 1 && Math.abs(c - 200) < 1;
+        var row2 = Math.abs(d - 100) < 1 && Math.abs(e - 100) < 1 && Math.abs(f - 200) < 1;
+        var row3 = Math.abs(g - 0) < 1 && Math.abs(h - 200) < 1 && Math.abs(i - 200) < 1;
+
+        if (row1 && row2 && row3) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Perfekt! E<sub>ges</sub> = 200 J bleibt in allen Zeilen konstant. Das ist der Energieerhaltungssatz!';
+        } else if (row1) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Zeile 1 stimmt! Bei h=5m ist E<sub>pot</sub> = 2·10·5 = 100 J. Was ist dann E<sub>kin</sub>?';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Oben: E<sub>pot</sub> = 2·10·10 = 200 J, E<sub>kin</sub> = 0 (Ball ruht). E<sub>ges</sub> = ?';
+        }
+    }
+
+    // Schritt 8: Rampen-Beobachtung
+    function checkBeob8() {
+        var a = document.getElementById('beob8a').value;
+        var b = document.getElementById('beob8b').value;
+        var c = document.getElementById('beob8c').value;
+        var fb = document.getElementById('fb_beob8');
+
+        if (a === '' || b === '' || c === '') {
+            fb.className = 'feedback';
+            fb.style.display = 'none';
+            return;
+        }
+
+        var aOk = (a === 'pot');
+        var bOk = (b === 'kin');
+        var cOk = (c === 'pot_max');
+
+        if (aOk && bOk && cOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Perfekt! Am Start: E<sub>pot</sub> max. Am tiefsten Punkt: E<sub>kin</sub> max. Am Umkehrpunkt: E<sub>pot</sub> wieder max. Die Energie wandelt sich hin und her!';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Beobachte die Energiebalken genau. Wo ist der Ball am höchsten? Wo am schnellsten?';
+        }
+    }
+
+    // Schritt 9: Beobachtung Ideal vs. Real
+    function checkBeob9() {
+        var a = document.getElementById('beob9a').value;
+        var b = document.getElementById('beob9b').value;
+        var c = document.getElementById('beob9c').value;
+        var d = document.getElementById('beob9d').value;
+        var fb = document.getElementById('fb_beob9');
+
+        if (a === '' || b === '' || c === '' || d === '') {
+            fb.className = 'feedback';
+            fb.style.display = 'none';
+            return;
+        }
+
+        var aOk = (a === 'unendlich');
+        var bOk = (b === 'niedriger');
+        var cOk = (c === 'steigt');
+        var dOk = (d === 'rot');
+
+        if (aOk && bOk && cOk && dOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Perfekt! Im Ideal-Modus springt der Ball ewig. Im Real-Modus wird die Sprunghöhe kleiner, weil Energie in Wärme umgewandelt wird (Ball wird rötlich).';
+        } else if (aOk && bOk && cOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Fast alles richtig! Beobachte die Ballfarbe im realistischen Modus genau.';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Starte beide Modi und beobachte genau. Im Ideal-Modus hört der Ball nie auf. Im Real-Modus geht Energie "verloren" (wird zu Wärme).';
+        }
+    }
+
+    // Schritt 9: Energieerhaltung in der Realität
+    function checkReal9() {
+        var a = parseNumber(document.getElementById('real9a').value);
+        var b = parseNumber(document.getElementById('real9b').value);
+        var c = parseNumber(document.getElementById('real9c').value);
+        var fb = document.getElementById('fb_real9');
+
+        // 28% Verlust: E_kin_nach = 72 J, E_Wärme = 28 J, E_ges = 100 J
+        var aOk = Math.abs(a - 72) < 3;
+        var bOk = Math.abs(b - 28) < 3;
+        var cOk = Math.abs(c - 100) < 1;
+
+        if (aOk && bOk && cOk) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = 'Richtig! 28% von 100 J = 28 J werden zu Wärme. Es bleiben 72 J kinetische Energie. Die Gesamtenergie (72 + 28 = 100 J) bleibt erhalten!';
+        } else if (cOk) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'E<sub>ges</sub> stimmt! 28% von 100 J = 28 J werden zu Wärme. Was bleibt als E<sub>kin</sub>?';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = 'Die Gesamtenergie bleibt immer gleich! E<sub>kin</sub> + E<sub>Wärme</sub> = E<sub>ges</sub> = 100 J.';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var saved = localStorage.getItem('lp01b-step');
+        if (saved) {
+            currentStep = parseInt(saved);
+            showStep(currentStep);
+        }
+
+        updateProgress();
+        updateStepNav();
+        updatePotSim();
+        updateKinSim();
+        drawRampCanvas();
+        drawRealCanvas();
+        updateRealSim();
+    });
+    </script>
+</body>
+</html>

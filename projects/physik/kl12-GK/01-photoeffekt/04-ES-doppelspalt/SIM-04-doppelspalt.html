@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Doppelspalt</title>
+    <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    padding: 20px;
+    color: var(--text-primary);
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+    }
+}
+
+.canvas-container {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    background: #1a1a2e;
+}
+
+.controls {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+}
+
+.control-group select,
+.control-group input[type="range"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    font-size: 0.95em;
+}
+
+.control-group input[type="range"] {
+    padding: 0;
+    margin: 8px 0;
+}
+
+.value-display {
+    font-size: 0.85em;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 15px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95em;
+    margin: 3px 3px 3px 0;
+    width: 100%;
+}
+
+.btn:hover { background: #1e3d6b; }
+.btn-secondary { background: #666; }
+.btn-secondary:hover { background: #444; }
+
+.info-box {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 10px;
+    margin-top: 15px;
+    font-size: 0.85em;
+}
+
+.stats {
+    background: #f0f0f0;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 0.85em;
+    font-family: monospace;
+}
+
+.detector-toggle {
+    margin-top: 15px;
+    padding: 10px;
+    background: #fff3e0;
+    border: 1px solid #ff9800;
+}
+
+.detector-toggle label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.detector-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Doppelspalt-Experiment</h1>
+        </header>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="simCanvas" width="600" height="400"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Teilchentyp</label>
+                    <select id="particleType" onchange="updateParticle()">
+                        <option value="light">Licht (Photonen)</option>
+                        <option value="electron" selected>Elektronen</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Spalte</label>
+                    <select id="slitMode" onchange="updateSlitMode()">
+                        <option value="both" selected>Beide Spalte offen</option>
+                        <option value="slit1">Nur Spalt 1 (oben)</option>
+                        <option value="slit2">Nur Spalt 2 (unten)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Intensität</label>
+                    <input type="range" id="intensity" min="1" max="100" value="5" oninput="updateIntensity()">
+                    <div class="value-display" id="intensityValue">Mittel (50 Teilchen/s)</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Geschwindigkeit</label>
+                    <input type="range" id="speed" min="1" max="10" value="5" oninput="updateSpeed()">
+                    <div class="value-display" id="speedValue">Normal</div>
+                </div>
+
+                <button class="btn" onclick="toggleSimulation()" id="startBtn">Start</button>
+                <button class="btn btn-secondary" onclick="resetSimulation()">Zurücksetzen</button>
+                <button class="btn" onclick="toggleProbability()" id="probBtn" style="background:#2a7a4b;">Verteilung zeigen</button>
+
+                <div class="detector-toggle">
+                    <label>
+                        <input type="checkbox" id="detectorOn" onchange="toggleDetector()">
+                        <span>„Welcher Spalt?"-Detektor</span>
+                    </label>
+                    <div style="font-size: 0.8em; margin-top: 5px; color: #666;">
+                        Misst, durch welchen Spalt das Teilchen geht
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div>Teilchen: <span id="particleCount">0</span></div>
+                    <div>Spalt 1: <span id="slit1Count">0</span></div>
+                    <div>Spalt 2: <span id="slit2Count">0</span></div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Beobachte:</strong><br>
+                    Bei niedriger Intensität siehst du einzelne Punkte. Bei hoher Intensität entsteht ein Muster.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ════════════════════════════════════════════════════════════════
+    // DOPPELSPALT SIMULATION (ES5)
+    // ════════════════════════════════════════════════════════════════
+
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+
+    // State
+    var running = false;
+    var particleCount = 0;
+    var slit1Count = 0;
+    var slit2Count = 0;
+    var screenData = [];
+    var particles = [];
+    var detectorEnabled = false;
+    var showProbability = false;
+    var slitMode = 'both'; // 'both', 'slit1', 'slit2'
+
+    // Settings
+    var particleType = 'electron';
+    var intensity = 5;
+    var speed = 5;
+
+    // Geometry
+    var sourceX = 50;
+    var slitX = 200;
+    var screenX = 550;
+    var slit1Y = 170;
+    var slit2Y = 230;
+    var slitWidth = 20;
+
+    // Initialize screen data
+    for (var i = 0; i < canvas.height; i++) {
+        screenData[i] = 0;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // DRAWING
+    // ────────────────────────────────────────────────────────────────
+
+    function draw() {
+        // Background
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Source
+        ctx.fillStyle = particleType === 'light' ? '#ffeb3b' : '#2196f3';
+        ctx.beginPath();
+        ctx.arc(sourceX, canvas.height / 2, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(particleType === 'light' ? 'Licht' : 'e⁻', sourceX, canvas.height / 2 + 4);
+
+        // Barrier with slits
+        ctx.fillStyle = '#555';
+        ctx.fillRect(slitX, 0, 15, slit1Y - slitWidth / 2);
+        ctx.fillRect(slitX, slit1Y + slitWidth / 2, 15, slit2Y - slit1Y - slitWidth);
+        ctx.fillRect(slitX, slit2Y + slitWidth / 2, 15, canvas.height - slit2Y - slitWidth / 2);
+
+        // Geschlossene Spalte markieren
+        if (slitMode === 'slit2') {
+            // Spalt 1 geschlossen
+            ctx.fillStyle = '#c62828';
+            ctx.fillRect(slitX, slit1Y - slitWidth / 2, 15, slitWidth);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(slitX + 3, slit1Y - 5);
+            ctx.lineTo(slitX + 12, slit1Y + 5);
+            ctx.moveTo(slitX + 12, slit1Y - 5);
+            ctx.lineTo(slitX + 3, slit1Y + 5);
+            ctx.stroke();
+        }
+        if (slitMode === 'slit1') {
+            // Spalt 2 geschlossen
+            ctx.fillStyle = '#c62828';
+            ctx.fillRect(slitX, slit2Y - slitWidth / 2, 15, slitWidth);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(slitX + 3, slit2Y - 5);
+            ctx.lineTo(slitX + 12, slit2Y + 5);
+            ctx.moveTo(slitX + 12, slit2Y - 5);
+            ctx.lineTo(slitX + 3, slit2Y + 5);
+            ctx.stroke();
+        }
+
+        // Detector indicator
+        if (detectorEnabled) {
+            ctx.fillStyle = '#ff5722';
+            ctx.fillRect(slitX - 5, slit1Y - slitWidth / 2 - 10, 25, 8);
+            ctx.fillRect(slitX - 5, slit2Y + slitWidth / 2 + 2, 25, 8);
+            ctx.fillStyle = '#fff';
+            ctx.font = '8px sans-serif';
+            ctx.fillText('D', slitX + 7, slit1Y - slitWidth / 2 - 3);
+            ctx.fillText('D', slitX + 7, slit2Y + slitWidth / 2 + 9);
+        }
+
+        // Screen
+        ctx.fillStyle = '#333';
+        ctx.fillRect(screenX, 0, 30, canvas.height);
+
+        // Draw accumulated pattern
+        var maxVal = 1;
+        for (var i = 0; i < screenData.length; i++) {
+            if (screenData[i] > maxVal) maxVal = screenData[i];
+        }
+
+        for (var y = 0; y < screenData.length; y++) {
+            if (screenData[y] > 0) {
+                var brightness = Math.min(255, (screenData[y] / maxVal) * 255);
+                if (particleType === 'light') {
+                    ctx.fillStyle = 'rgba(255, 235, 59, ' + (brightness / 255) + ')';
+                } else {
+                    ctx.fillStyle = 'rgba(33, 150, 243, ' + (brightness / 255) + ')';
+                }
+                ctx.fillRect(screenX + 5, y, 20, 1);
+            }
+        }
+
+        // Wahrscheinlichkeitsverteilung anzeigen (baut sich aus Messdaten auf)
+        if (showProbability && particleCount > 0) {
+            // Glättung der Messdaten (gleitender Durchschnitt)
+            var smoothed = [];
+            var windowSize = 8;
+            for (var sy = 0; sy < canvas.height; sy++) {
+                var sum = 0;
+                var count = 0;
+                for (var w = -windowSize; w <= windowSize; w++) {
+                    var idx = sy + w;
+                    if (idx >= 0 && idx < canvas.height) {
+                        sum += screenData[idx];
+                        count++;
+                    }
+                }
+                smoothed[sy] = sum / count;
+            }
+
+            // Maximum finden für Normalisierung
+            var smoothMax = 0;
+            for (var i = 0; i < smoothed.length; i++) {
+                if (smoothed[i] > smoothMax) smoothMax = smoothed[i];
+            }
+
+            if (smoothMax > 0) {
+                ctx.strokeStyle = '#2a7a4b';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                for (var py = 0; py < canvas.height; py++) {
+                    var normalizedProb = smoothed[py] / smoothMax;
+                    var xPos = screenX - 10 - normalizedProb * 50;
+
+                    if (py === 0) {
+                        ctx.moveTo(xPos, py);
+                    } else {
+                        ctx.lineTo(xPos, py);
+                    }
+                }
+                ctx.stroke();
+
+                // Fläche füllen (halbtransparent)
+                ctx.fillStyle = 'rgba(42, 122, 75, 0.15)';
+                ctx.beginPath();
+                ctx.moveTo(screenX - 10, 0);
+                for (var py = 0; py < canvas.height; py++) {
+                    var normalizedProb = smoothed[py] / smoothMax;
+                    var xPos = screenX - 10 - normalizedProb * 50;
+                    ctx.lineTo(xPos, py);
+                }
+                ctx.lineTo(screenX - 10, canvas.height);
+                ctx.closePath();
+                ctx.fill();
+
+                // Legende
+                ctx.fillStyle = '#2a7a4b';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('P(y)', screenX - 55, 15);
+            }
+        }
+
+        // Draw particles in flight
+        for (var i = 0; i < particles.length; i++) {
+            var p = particles[i];
+            ctx.fillStyle = particleType === 'light' ? '#ffeb3b' : '#2196f3';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Labels
+        ctx.fillStyle = '#888';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Quelle', sourceX, canvas.height - 10);
+        ctx.fillText('Doppelspalt', slitX + 7, canvas.height - 10);
+        ctx.fillText('Schirm', screenX + 15, canvas.height - 10);
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // PHYSICS
+    // ────────────────────────────────────────────────────────────────
+
+    function createParticle() {
+        // Zielspalt basierend auf slitMode wählen
+        var targetSlit;
+        if (slitMode === 'slit1') {
+            targetSlit = 1;
+        } else if (slitMode === 'slit2') {
+            targetSlit = 2;
+        } else {
+            // Beide offen: zufällig wählen
+            targetSlit = Math.random() < 0.5 ? 1 : 2;
+        }
+        var targetY = targetSlit === 1 ? slit1Y : slit2Y;
+
+        // Startposition und Geschwindigkeit so berechnen, dass Partikel genau durch Spalt geht
+        var startY = canvas.height / 2 + (Math.random() - 0.5) * 20;
+        var vx = 3 + Math.random() * 2;
+
+        // vy berechnen, damit Partikel bei slitX genau bei targetY ankommt
+        var distToSlit = slitX - (sourceX + 20);
+        var timeToSlit = distToSlit / vx;
+        var vy = (targetY - startY) / timeToSlit;
+
+        return {
+            x: sourceX + 20,
+            y: startY,
+            vx: vx,
+            vy: vy,
+            passedSlit: false,
+            whichSlit: targetSlit,
+            targetSlitY: targetY
+        };
+    }
+
+    function calculateInterferenceY(detectorOn, whichSlit) {
+        // Calculate where particle lands based on interference pattern
+        var centerY = canvas.height / 2;
+
+        // Kein Interferenzmuster wenn: Detektor an ODER nur ein Spalt offen
+        if (detectorOn || slitMode !== 'both') {
+            // Keine Interferenz - Beugung am Einzelspalt
+            var slitY = whichSlit === 1 ? slit1Y : slit2Y;
+            // Gaußförmige Verteilung um den Spalt herum (Beugung)
+            var spread = 60;
+            var u1 = Math.random();
+            var u2 = Math.random();
+            var gaussian = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+            return slitY + gaussian * spread;
+        } else {
+            // Interferenzmuster - beide Spalte offen, kein Detektor
+            var numMaxima = 7;
+            var spacing = canvas.height / numMaxima;
+
+            // Generate y according to interference probability
+            var attempts = 0;
+            while (attempts < 100) {
+                var testY = Math.random() * canvas.height;
+                var distFromCenter = testY - centerY;
+                var phase = (distFromCenter / spacing) * Math.PI;
+                var probability = Math.pow(Math.cos(phase), 2);
+
+                // Add single-slit envelope
+                var envelope = Math.exp(-Math.pow(distFromCenter / 100, 2));
+                probability *= envelope;
+
+                if (Math.random() < probability) {
+                    return testY;
+                }
+                attempts++;
+            }
+            return centerY + (Math.random() - 0.5) * 100;
+        }
+    }
+
+    function updateParticles() {
+        var newParticles = [];
+
+        for (var i = 0; i < particles.length; i++) {
+            var p = particles[i];
+
+            // Move particle
+            p.x += p.vx * (speed / 5);
+            p.y += p.vy * (speed / 5);
+
+            // Check if passed through slit
+            if (!p.passedSlit && p.x > slitX + 15) {
+                p.passedSlit = true;
+
+                // Zähle welcher Spalt (wurde schon bei Erstellung festgelegt)
+                if (p.whichSlit === 1) {
+                    slit1Count++;
+                } else {
+                    slit2Count++;
+                }
+
+                // Calculate final y position based on interference
+                var finalY = calculateInterferenceY(detectorEnabled, p.whichSlit);
+                var remainingX = screenX - p.x;
+                p.vy = (finalY - p.y) / (remainingX / p.vx);
+            }
+
+            // Check if reached screen
+            if (p.x >= screenX) {
+                var screenY = Math.round(p.y);
+                if (screenY >= 0 && screenY < canvas.height) {
+                    screenData[screenY]++;
+                    // Spread to neighboring pixels
+                    if (screenY > 0) screenData[screenY - 1] += 0.5;
+                    if (screenY < canvas.height - 1) screenData[screenY + 1] += 0.5;
+                }
+                particleCount++;
+                updateStats();
+            } else {
+                newParticles.push(p);
+            }
+        }
+
+        particles = newParticles;
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // CONTROLS
+    // ────────────────────────────────────────────────────────────────
+
+    function updateParticle() {
+        particleType = document.getElementById('particleType').value;
+        resetSimulation();
+    }
+
+    function updateSlitMode() {
+        slitMode = document.getElementById('slitMode').value;
+        resetSimulation();
+    }
+
+    function toggleProbability() {
+        showProbability = !showProbability;
+        var btn = document.getElementById('probBtn');
+        btn.textContent = showProbability ? 'Verteilung ausblenden' : 'Verteilung zeigen';
+        btn.style.background = showProbability ? '#1e5a35' : '#2a7a4b';
+        draw();
+    }
+
+    function updateIntensity() {
+        intensity = parseInt(document.getElementById('intensity').value);
+        var label = 'Sehr gering (einzeln)';
+        if (intensity > 20) label = 'Gering';
+        if (intensity > 40) label = 'Mittel';
+        if (intensity > 60) label = 'Hoch';
+        if (intensity > 80) label = 'Sehr hoch';
+        document.getElementById('intensityValue').textContent = label + ' (' + intensity + ' Teilchen/s)';
+    }
+
+    function updateSpeed() {
+        speed = parseInt(document.getElementById('speed').value);
+        var labels = ['Sehr langsam', 'Langsam', 'Langsam', 'Normal', 'Normal', 'Normal', 'Schnell', 'Schnell', 'Sehr schnell', 'Sehr schnell'];
+        document.getElementById('speedValue').textContent = labels[speed - 1] || 'Normal';
+    }
+
+    function toggleDetector() {
+        detectorEnabled = document.getElementById('detectorOn').checked;
+        resetSimulation();
+    }
+
+    function updateStats() {
+        document.getElementById('particleCount').textContent = particleCount;
+        document.getElementById('slit1Count').textContent = slit1Count;
+        document.getElementById('slit2Count').textContent = slit2Count;
+    }
+
+    function toggleSimulation() {
+        running = !running;
+        document.getElementById('startBtn').textContent = running ? 'Pause' : 'Start';
+        if (running) {
+            gameLoop();
+        }
+    }
+
+    function resetSimulation() {
+        running = false;
+        document.getElementById('startBtn').textContent = 'Start';
+        particleCount = 0;
+        slit1Count = 0;
+        slit2Count = 0;
+        particles = [];
+        for (var i = 0; i < screenData.length; i++) {
+            screenData[i] = 0;
+        }
+        updateStats();
+        draw();
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // GAME LOOP
+    // ────────────────────────────────────────────────────────────────
+
+    var lastSpawn = 0;
+
+    function gameLoop() {
+        if (!running) return;
+
+        // Spawn new particles based on intensity
+        var spawnRate = intensity / 60; // particles per frame at 60fps
+        if (Math.random() < spawnRate) {
+            particles.push(createParticle());
+        }
+
+        updateParticles();
+        draw();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Initial draw
+    draw();
+    updateIntensity();
+    updateSpeed();
+    </script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physik 10MR – 2. HJ Stundenplan 2025/26</title>
+    <style>
+        :root {
+            --fach-color: #2c5aa0;
+            --theme-1: #1976d2;
+            --theme-1-bg: #e3f2fd;
+            --theme-2: #7b1fa2;
+            --theme-2-bg: #f3e5f5;
+            --theme-3: #388e3c;
+            --theme-3-bg: #e8f5e9;
+            --theme-4: #d84315;
+            --theme-4-bg: #fbe9e7;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --test-color: #b35c00;
+            --test-bg: #fff3e0;
+            --mtlp-color: #1565c0;
+            --mtlp-bg: #e3f2fd;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        h1 { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        h2 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin: 20px 0 10px;
+            border-bottom: 2px solid var(--fach-color);
+            padding-bottom: 5px;
+        }
+        h3 { font-size: 0.95em; font-weight: 600; margin: 15px 0 8px; }
+        .meta { color: var(--text-muted); font-size: 0.85em; margin-bottom: 20px; }
+        .rp-info {
+            background: #fff3e0;
+            border: 1px solid #ffcc80;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .month {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+        .month-title {
+            font-weight: 600;
+            text-align: center;
+            padding: 5px;
+            background: var(--fach-color);
+            color: var(--white);
+            margin: -10px -10px 10px;
+        }
+        .week-row {
+            display: grid;
+            grid-template-columns: 30px repeat(5, 1fr);
+            gap: 2px;
+            margin-bottom: 3px;
+            font-size: 0.8em;
+        }
+        .week-row.header { font-weight: 600; color: var(--text-muted); }
+        .kw { color: #888; font-size: 0.75em; }
+        .day {
+            text-align: center;
+            padding: 3px 2px;
+            border-radius: 2px;
+        }
+        .day.tag1 { background: #bbdefb; }
+        .day.tag2 { background: #e1bee7; }
+        .day.tag3 { background: #c8e6c9; }
+        .day.tag4 { background: #ffccbc; }
+        .day.ferien { background: #eee; color: #999; }
+        .day.mtlp { background: var(--mtlp-bg); border: 2px solid var(--mtlp-color); }
+        .day.test { background: var(--test-bg); border: 2px solid var(--test-color); }
+        .day.ausfall { background: #ffcdd2; color: #999; }
+        .day.notenstopp { border: 2px solid #c62828; }
+        .day.letzter { background: #222; color: #fff; }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+        }
+        .stunden-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+        .stunde {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+        .stunde-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .stunde-nr { font-weight: 600; font-size: 1.1em; }
+        .stunde-datum { font-size: 0.85em; color: var(--text-muted); }
+        .stunde-typ {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 2px;
+            background: #eee;
+        }
+        .stunde-typ.ds { background: #bbdefb; }
+        .stunde-typ.mtlp { background: var(--mtlp-bg); color: var(--mtlp-color); font-weight: 600; }
+        .stunde-typ.test { background: var(--test-bg); color: var(--test-color); font-weight: 600; }
+        .stunde-thema { font-weight: 600; margin-bottom: 5px; }
+        .stunde-fz { font-size: 0.85em; color: var(--text-muted); margin-bottom: 5px; }
+        .stunde-inhalt { font-size: 0.85em; color: #333; margin-bottom: 5px; }
+        .stunde-material { font-size: 0.8em; color: var(--fach-color); }
+        .theme-1 { border-left: 4px solid var(--theme-1); }
+        .theme-2 { border-left: 4px solid var(--theme-2); }
+        .theme-3 { border-left: 4px solid var(--theme-3); }
+        .theme-4 { border-left: 4px solid var(--theme-4); }
+        .bg-1 { background: var(--theme-1-bg); }
+        .bg-2 { background: var(--theme-2-bg); }
+        .bg-3 { background: var(--theme-3-bg); }
+        .bg-4 { background: var(--theme-4-bg); }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-box {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+        .note-badge {
+            display: inline-block;
+            background: var(--mtlp-color);
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 2px;
+            margin-left: 5px;
+        }
+        .note-badge.schriftlich {
+            background: var(--test-color);
+        }
+        @media print {
+            body { background: #fff; padding: 10px; font-size: 11px; }
+            .calendar-grid { grid-template-columns: repeat(3, 1fr); }
+            .stunden-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Physik 10MR – Stundenplan 2. Halbjahr</h1>
+        <p class="meta">2025/26 | Fr 1.+2. Std (DS) | RP: RS/GES 2021 | Notenstopp: 07.05.2026 | Letzter Tag: 08.05.2026</p>
+
+        <div class="rp-info">
+            <strong>Rahmenplan:</strong> RP_PHYS_SekI_RS_GES_2021 (Regionale Schule, 44 UE für Kl.10)<br>
+            <strong>Hinweis:</strong> Kein Impuls (p = m·v) – das ist nur im Gymnasium-RP!<br>
+            <strong>1. HJ:</strong> Newton 1, Freier Fall, Luftwiderstand (phänomenologisch) – ~6 UE<br>
+            <strong>2. HJ:</strong> Newton 2+3 (4) + Energiegewinnung (4) + Schwingungen/Wellen (4) + Radioaktivität (6) – 18 UE
+        </div>
+
+        <h2>Kalenderübersicht</h2>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-box" style="background:#bbdefb"></div> Newton</div>
+            <div class="legend-item"><div class="legend-box" style="background:#e1bee7"></div> Energie</div>
+            <div class="legend-item"><div class="legend-box" style="background:#c8e6c9"></div> Schwingungen</div>
+            <div class="legend-item"><div class="legend-box" style="background:#ffccbc"></div> Radioaktivität</div>
+            <div class="legend-item"><div class="legend-box" style="background:var(--mtlp-bg);border:2px solid var(--mtlp-color)"></div> MT+LP</div>
+            <div class="legend-item"><div class="legend-box" style="background:var(--test-bg);border:2px solid var(--test-color)"></div> Test</div>
+            <div class="legend-item"><div class="legend-box" style="background:#eee"></div> Ferien</div>
+            <div class="legend-item"><div class="legend-box" style="background:#ffcdd2"></div> Ausfall</div>
+        </div>
+
+        <div class="calendar-grid">
+            <!-- JANUAR 2026 -->
+            <div class="month">
+                <div class="month-title">Januar 2026</div>
+                <div class="week-row header">
+                    <span class="kw">KW</span>
+                    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">2</span>
+                    <span class="day">5</span>
+                    <span class="day">6</span>
+                    <span class="day">7</span>
+                    <span class="day">8</span>
+                    <span class="day mtlp" title="DS 1: Newton 2 + MT (S1) ✓">9</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">3</span>
+                    <span class="day">12</span>
+                    <span class="day">13</span>
+                    <span class="day">14</span>
+                    <span class="day">15</span>
+                    <span class="day tag1" title="DS 2: Newton 3 + Lageenergie">16</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">4</span>
+                    <span class="day">19</span>
+                    <span class="day">20</span>
+                    <span class="day">21</span>
+                    <span class="day">22</span>
+                    <span class="day tag2" title="DS 3: Bewegungsenergie">23</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">5</span>
+                    <span class="day">26</span>
+                    <span class="day">27</span>
+                    <span class="day">28</span>
+                    <span class="day">29</span>
+                    <span class="day tag2" title="DS 4: Energieumwandlung">30</span>
+                </div>
+            </div>
+
+            <!-- FEBRUAR 2026 -->
+            <div class="month">
+                <div class="month-title">Februar 2026</div>
+                <div class="week-row header">
+                    <span class="kw">KW</span>
+                    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">6</span>
+                    <span class="day">2</span>
+                    <span class="day">3</span>
+                    <span class="day">4</span>
+                    <span class="day">5</span>
+                    <span class="day mtlp" title="S2: MT+LP Mechanik komplett">6</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">7</span>
+                    <span class="day ferien">9</span>
+                    <span class="day ferien">10</span>
+                    <span class="day ferien">11</span>
+                    <span class="day ferien">12</span>
+                    <span class="day ferien">13</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">8</span>
+                    <span class="day ferien">16</span>
+                    <span class="day ferien">17</span>
+                    <span class="day ferien">18</span>
+                    <span class="day ferien">19</span>
+                    <span class="day ferien">20</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">9</span>
+                    <span class="day">23</span>
+                    <span class="day">24</span>
+                    <span class="day">25</span>
+                    <span class="day">26</span>
+                    <span class="day tag3" title="DS 6: Schwingungen">27</span>
+                </div>
+            </div>
+
+            <!-- MÄRZ 2026 -->
+            <div class="month">
+                <div class="month-title">März 2026</div>
+                <div class="week-row header">
+                    <span class="kw">KW</span>
+                    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">10</span>
+                    <span class="day">2</span>
+                    <span class="day">3</span>
+                    <span class="day">4</span>
+                    <span class="day">5</span>
+                    <span class="day tag3" title="DS 7: Wellen + Schall">6</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">11</span>
+                    <span class="day">9</span>
+                    <span class="day">10</span>
+                    <span class="day">11</span>
+                    <span class="day">12</span>
+                    <span class="day test" title="S3: Test Schwingungen + Wellen">13</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">12</span>
+                    <span class="day">16</span>
+                    <span class="day">17</span>
+                    <span class="day">18</span>
+                    <span class="day">19</span>
+                    <span class="day ausfall" title="Vorprüfung 10MR Englisch">20</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">13</span>
+                    <span class="day ferien">23</span>
+                    <span class="day ferien">24</span>
+                    <span class="day ferien">25</span>
+                    <span class="day ferien">26</span>
+                    <span class="day ferien">27</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">14</span>
+                    <span class="day ferien">30</span>
+                    <span class="day ferien">31</span>
+                    <span class="day"></span>
+                    <span class="day"></span>
+                    <span class="day"></span>
+                </div>
+            </div>
+
+            <!-- APRIL 2026 -->
+            <div class="month">
+                <div class="month-title">April 2026</div>
+                <div class="week-row header">
+                    <span class="kw">KW</span>
+                    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">14</span>
+                    <span class="day"></span>
+                    <span class="day"></span>
+                    <span class="day ferien">1</span>
+                    <span class="day ferien">2</span>
+                    <span class="day ferien">3</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">15</span>
+                    <span class="day ferien">6</span>
+                    <span class="day ferien">7</span>
+                    <span class="day ferien">8</span>
+                    <span class="day ferien">9</span>
+                    <span class="day ferien">10</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">16</span>
+                    <span class="day">13</span>
+                    <span class="day">14</span>
+                    <span class="day">15</span>
+                    <span class="day">16</span>
+                    <span class="day tag4" title="DS 9: Atomaufbau + Strahlung">17</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">17</span>
+                    <span class="day">20</span>
+                    <span class="day">21</span>
+                    <span class="day">22</span>
+                    <span class="day">23</span>
+                    <span class="day mtlp" title="S4: MT+LP Radioaktivität">24</span>
+                </div>
+            </div>
+
+            <!-- MAI 2026 -->
+            <div class="month">
+                <div class="month-title">Mai 2026</div>
+                <div class="week-row header">
+                    <span class="kw">KW</span>
+                    <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">18</span>
+                    <span class="day">27</span>
+                    <span class="day">28</span>
+                    <span class="day">29</span>
+                    <span class="day">30</span>
+                    <span class="day ausfall" title="Tag der Arbeit">1</span>
+                </div>
+                <div class="week-row">
+                    <span class="kw">19</span>
+                    <span class="day">4</span>
+                    <span class="day">5</span>
+                    <span class="day">6</span>
+                    <span class="day notenstopp">7</span>
+                    <span class="day letzter" title="Letzter Schultag 10MR">8</span>
+                </div>
+            </div>
+        </div>
+
+        <h2>Stundenübersicht</h2>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-box bg-1" style="border-left:4px solid var(--theme-1)"></div> Newton 2+3 (4 Ustd)</div>
+            <div class="legend-item"><div class="legend-box bg-2" style="border-left:4px solid var(--theme-2)"></div> Energie (4 Ustd)</div>
+            <div class="legend-item"><div class="legend-box bg-3" style="border-left:4px solid var(--theme-3)"></div> Schwingungen/Wellen (4 Ustd)</div>
+            <div class="legend-item"><div class="legend-box bg-4" style="border-left:4px solid var(--theme-4)"></div> Radioaktivität (6 Ustd)</div>
+        </div>
+
+        <!-- BLOCK 1: Newton -->
+        <h3>Block 1: Newton'sche Mechanik (4 Ustd)</h3>
+        <div class="stunden-grid">
+            <div class="stunde theme-1" style="background:var(--mtlp-bg);border:2px solid var(--mtlp-color)">
+                <div class="stunde-header">
+                    <span class="stunde-nr">1</span>
+                    <span class="stunde-datum">Fr 09.01.</span>
+                    <span class="stunde-typ mtlp">MT+LP</span>
+                </div>
+                <div class="stunde-thema">Newton 2 + MT <span class="note-badge">S1</span></div>
+                <div class="stunde-fz">F = m·a anwenden; Minitest Newton 1+2</div>
+                <div class="stunde-inhalt">Grundgesetz + Minitest (~15 BE); ✓ erledigt</div>
+                <div class="stunde-material">→ 01a-grundgesetz-mechanik/</div>
+            </div>
+
+            <div class="stunde theme-1 bg-1">
+                <div class="stunde-header">
+                    <span class="stunde-nr">2</span>
+                    <span class="stunde-datum">Fr 16.01.</span>
+                    <span class="stunde-typ ds">DS</span>
+                </div>
+                <div class="stunde-thema">Newton 3 + Lageenergie</div>
+                <div class="stunde-fz">Wechselwirkungsgesetz; E_pot = m·g·h</div>
+                <div class="stunde-inhalt">Actio = Reactio; Kräftepaare; Lageenergie berechnen</div>
+                <div class="stunde-material">→ 01b-newton3-energie/</div>
+            </div>
+        </div>
+
+        <!-- BLOCK 2: Energie + Bewegungsenergie -->
+        <h3>Block 2: Energiegewinnung (4 Ustd)</h3>
+        <p style="font-size:0.85em;color:#666;margin:-5px 0 10px">Freier Fall bereits im 1. HJ behandelt | Newton 3 + E_pot am 16.01.</p>
+        <div class="stunden-grid">
+            <div class="stunde theme-2 bg-2">
+                <div class="stunde-header">
+                    <span class="stunde-nr">3</span>
+                    <span class="stunde-datum">Fr 23.01.</span>
+                    <span class="stunde-typ ds">DS</span>
+                </div>
+                <div class="stunde-thema">Bewegungsenergie</div>
+                <div class="stunde-fz">E_kin = ½mv²; Energieerhaltung; Energieflussdiagramme</div>
+                <div class="stunde-inhalt">Kinetische Energie; Achterbahn, Pendel [BNE]</div>
+            </div>
+
+            <div class="stunde theme-2 bg-2">
+                <div class="stunde-header">
+                    <span class="stunde-nr">4</span>
+                    <span class="stunde-datum">Fr 30.01.</span>
+                    <span class="stunde-typ ds">DS</span>
+                </div>
+                <div class="stunde-thema">Energieumwandlung</div>
+                <div class="stunde-fz">Energieflussdiagramme; regenerative Energien</div>
+                <div class="stunde-inhalt">E_pot ↔ E_kin; Kraftwerke; Wirkungsgrad [BNE]</div>
+            </div>
+
+            <div class="stunde theme-2" style="background:var(--mtlp-bg);border:2px solid var(--mtlp-color)">
+                <div class="stunde-header">
+                    <span class="stunde-nr">5</span>
+                    <span class="stunde-datum">Fr 06.02.</span>
+                    <span class="stunde-typ mtlp">MT+LP</span>
+                </div>
+                <div class="stunde-thema">Mechanik komplett <span class="note-badge">S2</span></div>
+                <div class="stunde-fz">Newton 1-3 + Energie prüfen</div>
+                <div class="stunde-inhalt">Lernpfad + Test; ~25 BE digital</div>
+            </div>
+        </div>
+
+        <!-- BLOCK 3: Schwingungen und Wellen -->
+        <h3>Block 3: Schwingungen und Wellen (4 Ustd)</h3>
+        <p style="font-size:0.85em;color:#666;margin:-5px 0 10px">Winterferien 09.–20.02.2026</p>
+        <div class="stunden-grid">
+            <div class="stunde theme-3 bg-3">
+                <div class="stunde-header">
+                    <span class="stunde-nr">6</span>
+                    <span class="stunde-datum">Fr 27.02.</span>
+                    <span class="stunde-typ ds">DS</span>
+                </div>
+                <div class="stunde-thema">Schwingungen</div>
+                <div class="stunde-fz">Amplitude, Periode, Frequenz; y(t)-Diagramm</div>
+                <div class="stunde-inhalt">Fadenpendel (DE); Kenngrößen; Energieumwandlung</div>
+            </div>
+
+            <div class="stunde theme-3 bg-3">
+                <div class="stunde-header">
+                    <span class="stunde-nr">7</span>
+                    <span class="stunde-datum">Fr 06.03.</span>
+                    <span class="stunde-typ ds">DS</span>
+                </div>
+                <div class="stunde-thema">Wellen + Schall</div>
+                <div class="stunde-fz">Wellenlänge λ, v=λf; Schallwellen; Lärmschutz [PG]</div>
+                <div class="stunde-inhalt">y(t)-, y(s)-Diagramme; Schallgeschwindigkeit; Hören</div>
+            </div>
+
+            <div class="stunde theme-3" style="background:var(--test-bg);border:2px solid var(--test-color)">
+                <div class="stunde-header">
+                    <span class="stunde-nr">8</span>
+                    <span class="stunde-datum">Fr 13.03.</span>
+                    <span class="stunde-typ test">TEST</span>
+                </div>
+                <div class="stunde-thema">Schwingungen + Wellen <span class="note-badge schriftlich">S3</span></div>
+                <div class="stunde-fz">Schriftlicher Test, ~30 BE</div>
+                <div class="stunde-inhalt">Kenngrößen, Diagramme, Schall</div>
+            </div>
+        </div>
+
+        <!-- BLOCK 4: Radioaktivität -->
+        <h3>Block 4: Radioaktivität (6 Ustd)</h3>
+        <p style="font-size:0.85em;color:#666;margin:-5px 0 10px">20.03. Vorprüfung | 27.03. Projektwoche | 30.03.–10.04. Osterferien</p>
+        <div class="stunden-grid">
+            <div class="stunde theme-4 bg-4">
+                <div class="stunde-header">
+                    <span class="stunde-nr">9</span>
+                    <span class="stunde-datum">Fr 17.04.</span>
+                    <span class="stunde-typ ds">DS</span>
+                </div>
+                <div class="stunde-thema">Atomaufbau + Strahlung</div>
+                <div class="stunde-fz">Kern-Hülle, Nuklide, Isotope; α/β/γ unterscheiden</div>
+                <div class="stunde-inhalt">Symbolschreibweise; Strahlungsarten; Nachweisgeräte</div>
+                <div class="stunde-material">→ projects/physik/kl10/05-kernphysik/</div>
+            </div>
+
+            <div class="stunde theme-4" style="background:var(--mtlp-bg);border:2px solid var(--mtlp-color)">
+                <div class="stunde-header">
+                    <span class="stunde-nr">10</span>
+                    <span class="stunde-datum">Fr 24.04.</span>
+                    <span class="stunde-typ mtlp">MT+LP</span>
+                </div>
+                <div class="stunde-thema">Radioaktivität + HWZ <span class="note-badge">S4</span></div>
+                <div class="stunde-fz">Halbwertszeit; Kernspaltung/Fusion [BNE]; Strahlenschutz [PG]</div>
+                <div class="stunde-inhalt">Lernpfad + Test; ~30 BE digital</div>
+                <div class="stunde-material">→ projects/physik/kl10/05-kernphysik/</div>
+            </div>
+        </div>
+
+        <h2>Zusammenfassung</h2>
+        <div class="summary-grid">
+            <div class="summary-box">
+                <strong>Unterricht</strong><br>
+                10 DS (20 Ustd)<br>
+                <small>09.01. – 24.04.</small>
+            </div>
+            <div class="summary-box" style="background:var(--mtlp-bg);border-color:var(--mtlp-color)">
+                <strong>MT+LP</strong><br>
+                3× digital<br>
+                <small>S1, S2, S4</small>
+            </div>
+            <div class="summary-box" style="background:var(--test-bg);border-color:var(--test-color)">
+                <strong>Test schriftlich</strong><br>
+                1× Papier<br>
+                <small>S3 (13.03.)</small>
+            </div>
+            <div class="summary-box" style="background:#e8f5e9;border-color:#388e3c">
+                <strong>Noten gesamt</strong><br>
+                4 Noten<br>
+                <small>alle vor 07.05.</small>
+            </div>
+        </div>
+
+        <h2>Notenübersicht</h2>
+        <div class="summary-grid">
+            <div class="summary-box" style="border-left:4px solid var(--mtlp-color);background:#e8f5e9">
+                <strong>S1</strong> – Fr 09.01. ✓<br>
+                MT Newton 1+2<br>
+                <small>~15 BE digital – erledigt</small>
+            </div>
+            <div class="summary-box" style="border-left:4px solid var(--mtlp-color)">
+                <strong>S2</strong> – Fr 06.02.<br>
+                MT+LP Mechanik<br>
+                <small>~25 BE digital</small>
+            </div>
+            <div class="summary-box" style="border-left:4px solid var(--test-color)">
+                <strong>S3</strong> – Fr 13.03.<br>
+                Test Schw./Wellen<br>
+                <small>~30 BE schriftlich</small>
+            </div>
+            <div class="summary-box" style="border-left:4px solid var(--mtlp-color)">
+                <strong>S4</strong> – Fr 24.04.<br>
+                MT+LP Radioaktivität<br>
+                <small>~30 BE digital</small>
+            </div>
+        </div>
+
+        <h2>Rahmenplan-Abdeckung</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85em;margin-bottom:20px">
+            <tr style="background:#eee">
+                <th style="padding:8px;text-align:left;border:1px solid #ddd">Thema (RP RS/GES Kl.10)</th>
+                <th style="padding:8px;text-align:center;border:1px solid #ddd">RP-UE</th>
+                <th style="padding:8px;text-align:center;border:1px solid #ddd">1. HJ</th>
+                <th style="padding:8px;text-align:center;border:1px solid #ddd">2. HJ</th>
+                <th style="padding:8px;text-align:center;border:1px solid #ddd">Gesamt</th>
+            </tr>
+            <tr>
+                <td style="padding:8px;border:1px solid #ddd">Gleichmäßig beschleunigte Bewegung</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">14</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">~6</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">4</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">~10</td>
+            </tr>
+            <tr>
+                <td style="padding:8px;border:1px solid #ddd">Energiegewinnung</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">6</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">—</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">4</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">4</td>
+            </tr>
+            <tr>
+                <td style="padding:8px;border:1px solid #ddd">Mech. Schwingungen und Wellen</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">12</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">—</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">4</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">4</td>
+            </tr>
+            <tr>
+                <td style="padding:8px;border:1px solid #ddd">Radioaktivität</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">12</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">—</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">6</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">6</td>
+            </tr>
+            <tr style="background:#e3f2fd;font-weight:600">
+                <td style="padding:8px;border:1px solid #ddd">Gesamt</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">44</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">~6</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">18</td>
+                <td style="padding:8px;text-align:center;border:1px solid #ddd">~24 (55%)</td>
+            </tr>
+        </table>
+
+        <p style="margin-top:30px;font-size:0.8em;color:#888;text-align:center">
+            Stand: 13.01.2026 | Physik 10MR<br>
+            Rahmenplan: RP_PHYS_SekI_RS_GES_2021 | Notenstopp: 07.05.2026 | Letzter Tag: 08.05.2026
+        </p>
+    </div>
+</body>
+</html>

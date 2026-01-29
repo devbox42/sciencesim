@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photoeffekt – Gegenfeldmethode | Simulation</title>
+    <style>
+        :root {
+            --physik: #2c5aa0;
+            --physik-light: #e3f2fd;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-secondary: #555555;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --error: #c62828;
+            --positive: #c62828;
+            --negative: #1565c0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        header {
+            background: var(--physik);
+            color: white;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 15px;
+        }
+
+        .simulation-area {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .controls {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        h2 {
+            font-size: 1em;
+            color: var(--physik);
+            margin-bottom: 12px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--physik);
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .control-group .value {
+            font-family: monospace;
+            font-size: 1.1em;
+            color: var(--physik);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            border: 1px solid var(--border);
+            font-size: 1em;
+            text-align: center;
+        }
+
+        .material-select {
+            width: 100%;
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+        }
+
+        .canvas-container {
+            position: relative;
+            background: var(--white);
+            border: 1px solid var(--border);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+        }
+
+        .info-box {
+            background: var(--physik-light);
+            border-left: 3px solid var(--physik);
+            padding: 10px 12px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .reading {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .reading .label {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .reading .value {
+            font-family: monospace;
+            font-size: 1.4em;
+            font-weight: 600;
+        }
+
+        .reading.current .value {
+            color: var(--success);
+        }
+
+        .reading.voltage .value {
+            color: var(--physik);
+        }
+
+        .color-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #333;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background: var(--physik-light);
+            font-weight: 600;
+        }
+
+        .data-table input {
+            width: 50px;
+            text-align: center;
+            border: 1px solid var(--border);
+            padding: 3px;
+        }
+
+        button {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.secondary {
+            background: var(--text-secondary);
+        }
+
+        .status {
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        .status.photoeffekt {
+            background: #e8f5e9;
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .status.kein-photoeffekt {
+            background: #ffebee;
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .formel {
+            background: var(--physik-light);
+            border: 2px solid var(--physik);
+            padding: 10px;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 800px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <h1>Photoeffekt – Gegenfeldmethode</h1>
+    </div>
+</header>
+
+<div class="container">
+    <div class="main-grid">
+        <div class="simulation-area">
+            <h2>Photozelle mit Gegenfeld</h2>
+
+            <div class="canvas-container">
+                <canvas id="sim" width="600" height="420"></canvas>
+            </div>
+
+            <div id="status" class="status photoeffekt">
+                Photoeffekt aktiv – Elektronen werden ausgelöst
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="reading current">
+                    <div class="label">Photostrom</div>
+                    <div class="value" id="currentDisplay">0,00 nA</div>
+                </div>
+                <div class="reading voltage">
+                    <div class="label">Kinetische Energie</div>
+                    <div class="value" id="energyDisplay">0,00 eV</div>
+                </div>
+            </div>
+
+            <div class="formel">
+                <strong>Grenzspannung:</strong> Bei <em>U</em><sub>G</sub> ist <em>I</em> = 0 → <em>E</em><sub>kin,max</sub> = <em>e</em> · <em>U</em><sub>G</sub>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>Steuerung</h2>
+
+            <div class="control-group">
+                <label>Material</label>
+                <select id="material" class="material-select" onchange="updateMaterial()">
+                    <option value="natrium" selected>Natrium (W_A = 2,3 eV)</option>
+                    <option value="kalium">Kalium (W_A = 2,3 eV)</option>
+                    <option value="zink">Zink (W_A = 4,3 eV)</option>
+                    <option value="kupfer">Kupfer (W_A = 4,5 eV)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Wellenlänge λ</label>
+                <div class="value"><span id="wavelengthDisplay">500</span> nm <span id="colorBox" class="color-indicator"></span> <span id="spectrumRange" style="font-size: 0.8em; color: var(--text-secondary);"></span></div>
+                <input type="range" id="wavelength" min="350" max="700" value="500" oninput="updateWavelength()">
+                <div style="position: relative; height: 8px; margin: 4px 0; border-radius: 2px; background: linear-gradient(to right, #8B00FF, #4B0082, #0000FF, #00FF00, #FFFF00, #FF7F00, #FF0000);">
+                    <div style="position: absolute; left: 0; width: 8.6%; height: 100%; background: rgba(100,0,150,0.7); border-radius: 2px 0 0 2px;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.7em; color: var(--text-secondary);">
+                    <span>UV</span>
+                    <span>violett</span>
+                    <span>blau</span>
+                    <span>grün</span>
+                    <span>gelb</span>
+                    <span>rot</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Intensität</label>
+                <div class="value"><span id="intensityDisplay">50</span> %</div>
+                <input type="range" id="intensity" min="10" max="100" value="50" oninput="updateIntensity()">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75em; color: var(--text-secondary);">
+                    <span>schwach</span>
+                    <span>stark</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Frequenz <em>f</em></label>
+                <div class="value"><span id="frequencyDisplay">6,00</span> · 10<sup>14</sup> Hz</div>
+            </div>
+
+            <div class="control-group">
+                <label>Photonenenergie <em>E</em> = <em>h</em> · <em>f</em></label>
+                <div class="value"><span id="photonEnergyDisplay">2,48</span> eV</div>
+            </div>
+
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--border);">
+
+            <div class="control-group">
+                <label>Gegenspannung <em>U</em></label>
+                <div class="value"><span id="voltageDisplay">0,00</span> V</div>
+                <input type="range" id="voltage" min="0" max="3" step="0.01" value="0" oninput="updateVoltage()">
+                <div style="text-align: center; margin-top: 5px;">
+                    <input type="number" id="voltageInput" value="0" step="0.01" min="0" max="3" onchange="setVoltage(this.value)"> V
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Tipp:</strong> Erhöhe die Gegenspannung langsam, bis der Strom gerade Null wird. Das ist die Grenzspannung <em>U</em><sub>G</sub>.
+            </div>
+
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--border);">
+
+            <h2>Messwerte notieren</h2>
+
+            <table class="data-table">
+                <tr>
+                    <th>λ (nm)</th>
+                    <th><em>f</em> (·10<sup>14</sup>Hz)</th>
+                    <th><em>U</em><sub>G</sub> (V)</th>
+                </tr>
+                <tr>
+                    <td>400</td>
+                    <td>7,5</td>
+                    <td><input type="text" id="ug1"></td>
+                </tr>
+                <tr>
+                    <td>450</td>
+                    <td>6,7</td>
+                    <td><input type="text" id="ug2"></td>
+                </tr>
+                <tr>
+                    <td>500</td>
+                    <td>6,0</td>
+                    <td><input type="text" id="ug3"></td>
+                </tr>
+                <tr>
+                    <td>550</td>
+                    <td>5,5</td>
+                    <td><input type="text" id="ug4"></td>
+                </tr>
+                <tr>
+                    <td>600</td>
+                    <td>5,0</td>
+                    <td><input type="text" id="ug5"></td>
+                </tr>
+            </table>
+
+            <button onclick="fillCurrentValue()">Aktuellen Wert eintragen</button>
+            <button class="secondary" onclick="resetTable()">Tabelle leeren</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Konstanten
+    var H_EV = 4.136e-15;  // Plancksches Wirkungsquantum in eV·s
+    var C = 299792458;      // Lichtgeschwindigkeit in m/s
+
+    // Farben (aus CLAUDE.md)
+    var COL_POS = '#c62828';   // Rot für +
+    var COL_NEG = '#1565c0';   // Blau für -
+    var COL_WIRE = '#333333';  // Leitungen
+    var COL_ELECTRON = '#1565c0';  // Elektronen (blau wie -)
+
+    // Materialien: Austrittsarbeit in eV
+    var MATERIALS = {
+        'natrium': { name: 'Natrium', wa: 2.3 },
+        'kalium': { name: 'Kalium', wa: 2.3 },
+        'zink': { name: 'Zink', wa: 4.3 },
+        'kupfer': { name: 'Kupfer', wa: 4.5 }
+    };
+
+    // Zustand
+    var state = {
+        material: 'natrium',
+        wavelength: 500,        // nm
+        voltage: 0,             // V (Gegenspannung)
+        intensity: 50,          // Lichtintensität (0-100)
+        electrons: [],          // Animierte Elektronen
+        photons: []             // Animierte Photonen
+    };
+
+    // Canvas
+    var canvas = document.getElementById('sim');
+    var ctx = canvas.getContext('2d');
+
+    // Wellenlänge zu Farbe
+    function wavelengthToColor(wl) {
+        var r, g, b;
+        if (wl < 380) {
+            r = 0.5; g = 0; b = 1;
+        } else if (wl < 440) {
+            r = (440 - wl) / 60; g = 0; b = 1;
+        } else if (wl < 490) {
+            r = 0; g = (wl - 440) / 50; b = 1;
+        } else if (wl < 510) {
+            r = 0; g = 1; b = (510 - wl) / 20;
+        } else if (wl < 580) {
+            r = (wl - 510) / 70; g = 1; b = 0;
+        } else if (wl < 645) {
+            r = 1; g = (645 - wl) / 65; b = 0;
+        } else {
+            r = 1; g = 0; b = 0;
+        }
+        if (wl < 380) {
+            return 'rgb(100, 0, 150)';
+        }
+        return 'rgb(' + Math.round(r * 255) + ',' + Math.round(g * 255) + ',' + Math.round(b * 255) + ')';
+    }
+
+    // Physik berechnen
+    function calculatePhysics() {
+        var wl_m = state.wavelength * 1e-9;
+        var f = C / wl_m;
+        var E_photon = H_EV * f;
+        var wa = MATERIALS[state.material].wa;
+
+        var E_kin_max = E_photon - wa;
+        if (E_kin_max < 0) E_kin_max = 0;
+
+        var U_G = E_kin_max;
+
+        var current = 0;
+        if (E_kin_max > 0) {
+            if (state.voltage >= U_G) {
+                current = 0;
+            } else {
+                var ratio = 1 - (state.voltage / U_G);
+                // Strom proportional zu Intensität (mehr Photonen = mehr Elektronen)
+                current = ratio * ratio * state.intensity;
+            }
+        }
+
+        return {
+            frequency: f,
+            E_photon: E_photon,
+            E_kin_max: E_kin_max,
+            U_G: U_G,
+            current: current,
+            hasPhotoeffect: E_kin_max > 0
+        };
+    }
+
+    // Display aktualisieren
+    function updateDisplay() {
+        var phys = calculatePhysics();
+
+        document.getElementById('wavelengthDisplay').textContent = state.wavelength;
+        document.getElementById('colorBox').style.background = wavelengthToColor(state.wavelength);
+
+        // Spektralbereich anzeigen
+        var wl = state.wavelength;
+        var range = '';
+        if (wl < 380) {
+            range = '(UV)';
+        } else if (wl < 450) {
+            range = '(violett)';
+        } else if (wl < 495) {
+            range = '(blau)';
+        } else if (wl < 570) {
+            range = '(grün)';
+        } else if (wl < 590) {
+            range = '(gelb)';
+        } else if (wl < 620) {
+            range = '(orange)';
+        } else {
+            range = '(rot)';
+        }
+        document.getElementById('spectrumRange').textContent = range;
+        document.getElementById('frequencyDisplay').textContent = (phys.frequency / 1e14).toFixed(2);
+        document.getElementById('photonEnergyDisplay').textContent = phys.E_photon.toFixed(2);
+        document.getElementById('voltageDisplay').textContent = state.voltage.toFixed(2);
+        document.getElementById('voltageInput').value = state.voltage.toFixed(2);
+
+        document.getElementById('currentDisplay').textContent = phys.current.toFixed(2) + ' nA';
+        document.getElementById('energyDisplay').textContent = phys.E_kin_max.toFixed(2) + ' eV';
+
+        var status = document.getElementById('status');
+        if (phys.hasPhotoeffect) {
+            if (phys.current > 0) {
+                status.className = 'status photoeffekt';
+                status.innerHTML = 'Photoeffekt aktiv – Elektronen werden ausgelöst';
+            } else {
+                status.className = 'status photoeffekt';
+                status.innerHTML = '<strong>Grenzspannung erreicht!</strong> U<sub>G</sub> = ' + phys.U_G.toFixed(2) + ' V → E<sub>kin</sub> = ' + phys.U_G.toFixed(2) + ' eV';
+            }
+        } else {
+            status.className = 'status kein-photoeffekt';
+            status.innerHTML = '<strong>Kein Photoeffekt!</strong> Photonenenergie (' + phys.E_photon.toFixed(2) + ' eV) < Austrittsarbeit (' + MATERIALS[state.material].wa.toFixed(1) + ' eV)';
+        }
+    }
+
+    // Photonen-Animation (aus Glühbirne, aufgefächert auf gesamte Kathode)
+    function spawnPhoton() {
+        // Glühbirnenposition
+        var lampX = 425;
+        var lampY = 45;
+
+        // Zufälliger Zielpunkt auf Kathode (y: 92 bis 188)
+        var targetY = 92 + Math.random() * 96;
+
+        // Richtung zum Zielpunkt berechnen
+        var dx = 188 - lampX;
+        var dy = targetY - lampY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var speed = 3.0;
+
+        state.photons.push({
+            x: lampX,
+            y: lampY,
+            vx: (dx / dist) * speed,
+            vy: (dy / dist) * speed,
+            phase: Math.random() * Math.PI * 2
+        });
+    }
+
+    // Wellenpaket zeichnen (Photon als oszillierende Welle)
+    function drawPhoton(x, y, color, phase, vx, vy) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.atan2(vy, vx));  // Rotation in Bewegungsrichtung
+
+        // Wellenpaket: Sinuswelle mit Einhüllender
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var i = -12; i <= 12; i++) {
+            var envelope = Math.cos(i * Math.PI / 24);  // Gaußsche Einhüllende
+            var wave = Math.sin(i * 0.8 + phase) * 5 * envelope;
+            if (i === -12) {
+                ctx.moveTo(i, wave);
+            } else {
+                ctx.lineTo(i, wave);
+            }
+        }
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // Elektronen-Animation (wird jetzt durch Photonen-Absorption ausgelöst)
+    function spawnElectron(phys, y) {
+        // Nur bei Photoeffekt Elektronen erzeugen
+        if (!phys.hasPhotoeffect) return;
+
+        // Anfangsgeschwindigkeit proportional zur kinetischen Energie
+        var v_total = Math.sqrt(phys.E_kin_max) * 3.5;
+
+        // Zufällige Richtung in Halbkugel (weg von Kathode)
+        // Winkel zwischen -80° und +80° (nicht ganz senkrecht)
+        var angle = (Math.random() - 0.5) * Math.PI * 0.9;  // -80° bis +80°
+        var vx = Math.cos(angle) * v_total;
+        var vy = Math.sin(angle) * v_total;
+
+        // Verzögerung durch E-Feld (nur in x-Richtung)
+        var deceleration = state.voltage * 0.04;
+
+        state.electrons.push({
+            x: 188,
+            y: y || (140 + (Math.random() - 0.5) * 80),
+            vx: vx,
+            vy: vy,
+            ax: -deceleration  // Verzögerung durch Gegenfeld (x-Richtung)
+        });
+    }
+
+    // DIN-konforme regelbare Spannungsquelle zeichnen
+    // Schwarze Linien, farbige Beschriftung unterhalb
+    // Pfeil zeigt regelbare Spannung an
+    function drawBattery(x, y, voltage) {
+        // Lange Linie = + (schwarz) - links
+        ctx.strokeStyle = COL_WIRE;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x - 10, y - 15);
+        ctx.lineTo(x - 10, y + 15);
+        ctx.stroke();
+
+        // Kurze dicke Linie = - (schwarz) - rechts
+        ctx.strokeStyle = COL_WIRE;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(x + 10, y - 10);
+        ctx.lineTo(x + 10, y + 10);
+        ctx.stroke();
+
+        // Pfeil für regelbare Spannung (diagonal durch Symbol)
+        ctx.strokeStyle = COL_WIRE;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y + 12);
+        ctx.lineTo(x + 18, y - 12);
+        ctx.stroke();
+        // Pfeilspitze
+        ctx.beginPath();
+        ctx.moveTo(x + 18, y - 12);
+        ctx.lineTo(x + 12, y - 10);
+        ctx.moveTo(x + 18, y - 12);
+        ctx.lineTo(x + 14, y - 5);
+        ctx.stroke();
+
+        // + und - Beschriftung unterhalb (farbig)
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = COL_POS;
+        ctx.fillText('+', x - 14, y + 32);
+        ctx.fillStyle = COL_NEG;
+        ctx.fillText('−', x + 8, y + 32);
+
+        // Spannungswert
+        ctx.fillStyle = COL_WIRE;
+        ctx.font = '11px sans-serif';
+        ctx.fillText('U = ' + voltage.toFixed(2) + ' V', x - 22, y + 46);
+    }
+
+    // Amperemeter zeichnen (DIN: Kreis mit A)
+    function drawAmmeter(x, y, current) {
+        ctx.beginPath();
+        ctx.arc(x, y, 18, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.strokeStyle = COL_WIRE;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = COL_WIRE;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('A', x, y + 5);
+        ctx.textAlign = 'left';
+
+        // Stromwert darunter (2 Nachkommastellen für präzises Ablesen)
+        ctx.font = '10px sans-serif';
+        ctx.fillText(current.toFixed(2) + ' nA', x - 20, y + 35);
+    }
+
+    // Zeichnen
+    function draw() {
+        var phys = calculatePhysics();
+
+        // Weißer Hintergrund
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // === PHOTOZELLE ===
+        // Kathode (links, beleuchtet)
+        ctx.fillStyle = '#666';
+        ctx.fillRect(175, 90, 12, 100);
+        ctx.fillStyle = '#888';
+        ctx.fillRect(180, 90, 4, 100);
+
+        // Anode (rechts, Ringanode)
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(410, 90);
+        ctx.lineTo(410, 190);
+        ctx.stroke();
+
+        // === GLÜHBIRNE (Lichtquelle) ===
+        var lampX = 440;
+        var lampY = 45;
+        var lightColor = wavelengthToColor(state.wavelength);
+
+        // Glaskolben (Birnenform) - gefüllt mit Lichtfarbe
+        ctx.beginPath();
+        ctx.moveTo(lampX - 8, lampY + 15);
+        ctx.quadraticCurveTo(lampX - 18, lampY, lampX - 15, lampY - 15);
+        ctx.quadraticCurveTo(lampX - 10, lampY - 30, lampX, lampY - 32);
+        ctx.quadraticCurveTo(lampX + 10, lampY - 30, lampX + 15, lampY - 15);
+        ctx.quadraticCurveTo(lampX + 18, lampY, lampX + 8, lampY + 15);
+        ctx.closePath();
+        ctx.fillStyle = lightColor;
+        ctx.fill();
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Sockel (Schraubgewinde)
+        ctx.fillStyle = '#888';
+        ctx.fillRect(lampX - 8, lampY + 15, 16, 12);
+        ctx.strokeStyle = '#555';
+        ctx.strokeRect(lampX - 8, lampY + 15, 16, 12);
+        // Gewinde-Linien
+        ctx.beginPath();
+        ctx.moveTo(lampX - 8, lampY + 19);
+        ctx.lineTo(lampX + 8, lampY + 19);
+        ctx.moveTo(lampX - 8, lampY + 23);
+        ctx.lineTo(lampX + 8, lampY + 23);
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // === LICHTBÜNDEL (Dreiecksfläche, Intensität proportional) ===
+        ctx.save();
+        ctx.globalAlpha = state.intensity / 250;  // 0.04 bis 0.4
+        ctx.fillStyle = lightColor;
+        ctx.beginPath();
+        ctx.moveTo(lampX - 15, lampY);     // Aus der Glühbirne
+        ctx.lineTo(188, 90);               // Oberkante Kathode
+        ctx.lineTo(188, 190);              // Unterkante Kathode
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // === PHOTONEN als Wellenpakete ===
+        var phys = calculatePhysics();
+
+        // Neue Photonen erzeugen (abhängig von Intensität)
+        var spawnRate = state.intensity / 800;  // 0.0125 bis 0.125
+        var maxPhotons = Math.floor(state.intensity / 10) + 3;  // 4 bis 13
+        if (state.photons.length < maxPhotons && Math.random() < spawnRate) {
+            spawnPhoton();
+        }
+
+        // Photonen bewegen und zeichnen
+        for (var p = state.photons.length - 1; p >= 0; p--) {
+            var photon = state.photons[p];
+
+            // Bewegen
+            photon.x += photon.vx;
+            photon.y += photon.vy;
+            photon.phase += 0.3;  // Welle animieren
+
+            // Kathode erreicht? (x < 190 und y im Bereich 90-190)
+            if (photon.x < 190 && photon.y > 88 && photon.y < 192) {
+                // Photon wird absorbiert
+                state.photons.splice(p, 1);
+
+                // Bei Photoeffekt: Elektron auslösen
+                if (phys.hasPhotoeffect) {
+                    spawnElectron(phys, photon.y);
+                }
+                continue;
+            }
+
+            // Außerhalb des Canvas? Entfernen
+            if (photon.x < 50 || photon.y > 250) {
+                state.photons.splice(p, 1);
+                continue;
+            }
+
+            // Wellenpaket zeichnen (mit Richtung)
+            drawPhoton(photon.x, photon.y, lightColor, photon.phase, photon.vx, photon.vy);
+        }
+
+        // Licht-Label (unter der Glühbirne)
+        ctx.fillStyle = '#333';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('λ = ' + state.wavelength + ' nm', lampX - 30, lampY + 42);
+
+        // === ELEKTRONEN ===
+        for (var i = state.electrons.length - 1; i >= 0; i--) {
+            var e = state.electrons[i];
+
+            // Physik: v = v + a, x = x + v
+            e.vx += e.ax;
+            e.x += e.vx;
+            e.y += e.vy;
+
+            // Entfernen wenn Elektrode erreicht oder aus Bereich geflogen
+            if (e.x > 405 || e.x < 178 || e.y < 50 || e.y > 230) {
+                state.electrons.splice(i, 1);
+                continue;
+            }
+
+            // Elektron (blau)
+            ctx.fillStyle = COL_ELECTRON;
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // e⁻ Symbol
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 8px sans-serif';
+            ctx.fillText('−', e.x - 3, e.y + 3);
+        }
+
+        // Elektronen werden jetzt durch Photonen-Absorption erzeugt (siehe oben)
+
+        // === E-FELD (bei Gegenspannung) ===
+        if (state.voltage > 0.1) {
+            ctx.save();
+            ctx.globalAlpha = 0.25;
+            ctx.strokeStyle = COL_NEG;
+            ctx.lineWidth = 1;
+
+            // E-Feld zeigt von + nach - (bei Gegenfeld: Kathode +, Anode -)
+            // Aber für BREMSUNG der Elektronen: Anode negativ
+            // E-Feld zeigt von Kathode (+) zu Anode (-)
+            for (var fy = 100; fy <= 180; fy += 20) {
+                ctx.beginPath();
+                ctx.moveTo(200, fy);
+                ctx.lineTo(390, fy);
+                ctx.stroke();
+
+                // Pfeil nach rechts (zu Anode -)
+                ctx.beginPath();
+                ctx.moveTo(390, fy);
+                ctx.lineTo(380, fy - 4);
+                ctx.moveTo(390, fy);
+                ctx.lineTo(380, fy + 4);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            ctx.fillStyle = '#666';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('E-Feld (bremst e⁻)', 260, 210);
+        }
+
+        // === BESCHRIFTUNGEN ELEKTRODEN ===
+        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#333';
+        ctx.fillText('Kathode', 155, 210);
+        ctx.fillText('(' + MATERIALS[state.material].name + ')', 155, 222);
+        ctx.fillText('Anode', 395, 210);
+
+        // Polung bei Gegenfeld anzeigen
+        if (state.voltage > 0) {
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillStyle = COL_POS;
+            ctx.fillText('+', 160, 85);
+            ctx.fillStyle = COL_NEG;
+            ctx.fillText('−', 405, 85);
+        }
+
+        // === ELEKTRISCHER STROMKREIS ===
+        ctx.strokeStyle = COL_WIRE;
+        ctx.lineWidth = 2;
+
+        // Kathode nach unten
+        ctx.beginPath();
+        ctx.moveTo(181, 190);
+        ctx.lineTo(181, 280);
+        ctx.lineTo(181, 320);
+        ctx.stroke();
+
+        // Anode nach unten
+        ctx.beginPath();
+        ctx.moveTo(410, 190);
+        ctx.lineTo(410, 280);
+        ctx.lineTo(410, 320);
+        ctx.stroke();
+
+        // Spannungsquelle bei x=270: + bei 260, - bei 280
+        // Untere Leitung links zur Batterie (bündig an +)
+        ctx.beginPath();
+        ctx.moveTo(181, 320);
+        ctx.lineTo(260, 320);  // bis zur langen Linie (+) der Batterie
+        ctx.stroke();
+
+        // Spannungsquelle (DIN-konform) - Bei Gegenfeld: + an Kathode
+        drawBattery(270, 320, state.voltage);
+
+        // Untere Leitung rechts von Batterie zum Amperemeter (bündig ab -)
+        ctx.beginPath();
+        ctx.moveTo(280, 320);  // ab der kurzen Linie (-) der Batterie
+        ctx.lineTo(352, 320);
+        ctx.stroke();
+
+        // Vom Amperemeter zur Anode
+        ctx.beginPath();
+        ctx.moveTo(388, 320);
+        ctx.lineTo(410, 320);
+        ctx.stroke();
+
+        // Amperemeter
+        drawAmmeter(370, 320, phys.current);
+
+        // === TECHNISCHE STROMRICHTUNG ===
+        if (phys.current > 0.5) {
+            ctx.fillStyle = COL_POS;
+            ctx.font = '10px sans-serif';
+
+            // Pfeil für I (technisch: von + nach -)
+            ctx.beginPath();
+            ctx.moveTo(300, 290);
+            ctx.lineTo(320, 290);
+            ctx.lineTo(315, 285);
+            ctx.moveTo(320, 290);
+            ctx.lineTo(315, 295);
+            ctx.strokeStyle = COL_POS;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillText('I', 325, 293);
+        }
+
+        // === LEGENDE ===
+        ctx.fillStyle = '#555';
+        ctx.font = '10px sans-serif';
+        var legendY = 400;
+        ctx.fillText('Photonenenergie: E = h · f = ' + phys.E_photon.toFixed(2) + ' eV', 20, legendY);
+        ctx.fillText('Austrittsarbeit: W_A = ' + MATERIALS[state.material].wa.toFixed(1) + ' eV', 220, legendY);
+        ctx.fillText('Max. kin. Energie: E_kin = ' + phys.E_kin_max.toFixed(2) + ' eV', 420, legendY);
+
+        requestAnimationFrame(draw);
+    }
+
+    // Event Handler
+    function updateWavelength() {
+        state.wavelength = parseInt(document.getElementById('wavelength').value);
+        state.voltage = 0;
+        document.getElementById('voltage').value = 0;
+        updateDisplay();
+    }
+
+    function updateIntensity() {
+        state.intensity = parseInt(document.getElementById('intensity').value);
+        document.getElementById('intensityDisplay').textContent = state.intensity;
+    }
+
+    function updateVoltage() {
+        state.voltage = parseFloat(document.getElementById('voltage').value);
+        updateDisplay();
+    }
+
+    function setVoltage(val) {
+        state.voltage = parseFloat(val) || 0;
+        if (state.voltage < 0) state.voltage = 0;
+        if (state.voltage > 3) state.voltage = 3;
+        document.getElementById('voltage').value = state.voltage;
+        updateDisplay();
+    }
+
+    function updateMaterial() {
+        state.material = document.getElementById('material').value;
+        state.voltage = 0;
+        document.getElementById('voltage').value = 0;
+        updateDisplay();
+    }
+
+    function fillCurrentValue() {
+        var wl = state.wavelength;
+        var phys = calculatePhysics();
+
+        var wavelengths = [400, 450, 500, 550, 600];
+        var idx = -1;
+        for (var i = 0; i < wavelengths.length; i++) {
+            if (Math.abs(wl - wavelengths[i]) < 25) {
+                idx = i + 1;
+                break;
+            }
+        }
+
+        if (idx > 0) {
+            var input = document.getElementById('ug' + idx);
+            if (phys.hasPhotoeffect && phys.current < 1) {
+                input.value = state.voltage.toFixed(2);
+            } else if (!phys.hasPhotoeffect) {
+                input.value = '---';
+            } else {
+                alert('Erhöhe die Gegenspannung bis der Strom Null wird!');
+            }
+        } else {
+            alert('Stelle eine Wellenlänge aus der Tabelle ein (400, 450, 500, 550, 600 nm)');
+        }
+    }
+
+    function resetTable() {
+        for (var i = 1; i <= 5; i++) {
+            document.getElementById('ug' + i).value = '';
+        }
+    }
+
+    // Init
+    updateDisplay();
+    draw();
+</script>
+
+</body>
+</html>

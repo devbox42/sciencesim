@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SE: Elektronenbeugungsröhre</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   ELEKTRONENBEUGUNGSRÖHRE - Schülerexperiment (SE)
+   sciencesim Design System (ES5)
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --electron: #1565c0;
+    --glow: #4fc3f7;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 15px;
+}
+
+@media (max-width: 800px) {
+    .main-grid { grid-template-columns: 1fr; }
+}
+
+/* Simulation Canvas */
+.sim-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+}
+
+.canvas-container {
+    position: relative;
+    background: #1a1a2e;
+    border: 1px solid #333;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* Controls */
+.control-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+}
+
+.control-group {
+    margin-bottom: 20px;
+}
+
+.control-group label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85em;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+}
+
+.control-group input[type="range"] {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.value-display {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 1.3em;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.unit {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+/* Info Box */
+.info-box {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 10px 12px;
+    margin-top: 15px;
+    font-size: 0.85em;
+}
+
+.info-box strong {
+    color: var(--accent);
+}
+
+/* Formula */
+.formula {
+    font-family: "Times New Roman", serif;
+    font-style: italic;
+    font-size: 1em;
+    text-align: center;
+    padding: 10px;
+    background: var(--bg);
+    margin: 10px 0;
+}
+
+/* Measurement hint */
+.measurement-hint {
+    background: #fff3e0;
+    border: 1px solid #ff9800;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.measurement-hint strong {
+    color: #e65100;
+}
+
+/* Data section */
+.data-section {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 0.85em;
+}
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.data-value {
+    font-family: "SF Mono", Monaco, monospace;
+    font-weight: 600;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SE: Elektronenbeugungsröhre</h1>
+            <div class="meta">Bestimmung der de Broglie Wellenlänge | Physik 12 GK</div>
+        </header>
+
+        <div class="main-grid">
+            <!-- Simulation -->
+            <div class="sim-panel">
+                <div class="canvas-container">
+                    <canvas id="simCanvas" width="600" height="500"></canvas>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="control-panel">
+                <div class="control-group">
+                    <label>Beschleunigungsspannung U<sub>B</sub></label>
+                    <input type="range" id="voltageSlider" min="2000" max="10000" step="100" value="4000">
+                    <div class="value-display"><span id="voltageValue">4,0</span> <span class="unit">kV</span></div>
+                </div>
+
+                <div class="data-section">
+                    <strong>Geräte-Daten:</strong>
+                    <div class="data-row">
+                        <span>Netzebenenabstand d<sub>1</sub>:</span>
+                        <span class="data-value">213 pm</span>
+                    </div>
+                    <div class="data-row">
+                        <span>Abstand Folie-Schirm L:</span>
+                        <span class="data-value">13,5 cm</span>
+                    </div>
+                </div>
+
+                <div class="measurement-hint">
+                    <strong>Aufgabe:</strong><br>
+                    1. Berechne λ<sub>theo</sub> mit der de Broglie Formel (AB).<br>
+                    2. Lies den Radius r<sub>1</sub> des <strong>inneren Rings</strong> an der Skala ab.<br>
+                    3. Berechne λ<sub>exp</sub> mit der Auswertungsformel.<br>
+                    4. Vergleiche λ<sub>theo</sub> mit λ<sub>exp</sub>.
+                </div>
+
+                <div class="info-box">
+                    <strong>Formel (Kleinwinkelnäherung):</strong>
+                    <div class="formula">
+                        λ ≈ d · r / L
+                    </div>
+                    <span style="font-size: 0.9em;">mit d = 213 pm, L = 13,5 cm</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ELEKTRONENBEUGUNGSRÖHRE - Simulation (ES5)
+// Fokus: Visualisierung + Messskala (keine automatische Auswertung)
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    // Physikalische Konstanten
+    var h = 6.626e-34;      // Planck (J·s)
+    var me = 9.109e-31;     // Elektronenmasse (kg)
+    var e = 1.602e-19;      // Elementarladung (C)
+    var d1 = 213e-12;       // Netzebenenabstand Graphit (m) - innerer Ring
+    var d2 = 123e-12;       // Netzebenenabstand Graphit (m) - äußerer Ring
+    var L = 0.135;          // Abstand Folie-Schirm (m)
+
+    // Canvas Setup
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+
+    // Schirm-Geometrie (vergrößert für bessere Messung)
+    var screenCenterX = 300;
+    var screenCenterY = 250;
+    var screenRadius = 180;
+    var cmToPx = 40;  // 1 cm = 40 px (vergrößerte Skala)
+
+    // State
+    var voltage = 4000;
+    var ringRadius1_m = 0;
+    var ringRadius2_m = 0;
+
+    // DOM Elements
+    var voltageSlider = document.getElementById('voltageSlider');
+    var voltageValue = document.getElementById('voltageValue');
+
+    // ═══════════════════════════════════════════════════════════
+    // Physics
+    // ═══════════════════════════════════════════════════════════
+
+    function calculateDeBroglieWavelength(U) {
+        var p = Math.sqrt(2 * me * e * U);
+        return h / p;
+    }
+
+    function calculateRingRadius(lambda, d) {
+        var sinTheta = lambda / (2 * d);
+        if (sinTheta > 1) return 0;
+        var theta = Math.asin(sinTheta);
+        return L * Math.tan(2 * theta);
+    }
+
+    function updatePhysics() {
+        var lambda = calculateDeBroglieWavelength(voltage);
+        ringRadius1_m = calculateRingRadius(lambda, d1);
+        ringRadius2_m = calculateRingRadius(lambda, d2);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Drawing
+    // ═══════════════════════════════════════════════════════════
+
+    function draw() {
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawScreen();
+        drawScale();
+        drawRings();
+        drawLabels();
+    }
+
+    function drawScreen() {
+        // Leuchtschirm (Kreis)
+        ctx.fillStyle = '#0a0a15';
+        ctx.beginPath();
+        ctx.arc(screenCenterX, screenCenterY, screenRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Phosphor-Schimmer
+        var gradient = ctx.createRadialGradient(
+            screenCenterX, screenCenterY, 0,
+            screenCenterX, screenCenterY, screenRadius
+        );
+        gradient.addColorStop(0, 'rgba(100, 200, 100, 0.05)');
+        gradient.addColorStop(1, 'rgba(100, 200, 100, 0.02)');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+    }
+
+    function drawScale() {
+        // Messkreise (cm-Skala)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+
+        for (var r = 1; r <= 4; r++) {
+            var px = r * cmToPx;
+            ctx.beginPath();
+            ctx.arc(screenCenterX, screenCenterY, px, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Beschriftung
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(r + ' cm', screenCenterX + px - 12, screenCenterY - 5);
+        }
+
+        // Achsen
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.moveTo(screenCenterX - screenRadius, screenCenterY);
+        ctx.lineTo(screenCenterX + screenRadius, screenCenterY);
+        ctx.moveTo(screenCenterX, screenCenterY - screenRadius);
+        ctx.lineTo(screenCenterX, screenCenterY + screenRadius);
+        ctx.stroke();
+
+        // Mittelpunkt
+        ctx.fillStyle = '#666';
+        ctx.beginPath();
+        ctx.arc(screenCenterX, screenCenterY, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawRings() {
+        // Zentraler Fleck (Elektronenstrahl)
+        var gradient = ctx.createRadialGradient(
+            screenCenterX, screenCenterY, 0,
+            screenCenterX, screenCenterY, 20
+        );
+        gradient.addColorStop(0, 'rgba(79, 195, 247, 1)');
+        gradient.addColorStop(0.5, 'rgba(79, 195, 247, 0.5)');
+        gradient.addColorStop(1, 'rgba(79, 195, 247, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(screenCenterX, screenCenterY, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Innerer Ring (d1 = 213 pm)
+        var r1_cm = ringRadius1_m * 100;
+        var r1_px = r1_cm * cmToPx;
+
+        if (r1_px > 10 && r1_px < screenRadius - 10) {
+            // Haupt-Ring
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.9)';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.arc(screenCenterX, screenCenterY, r1_px, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Glow
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.3)';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.arc(screenCenterX, screenCenterY, r1_px, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Mess-Linie (vom Zentrum zum Ring)
+            ctx.strokeStyle = '#ff9800';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(screenCenterX, screenCenterY);
+            ctx.lineTo(screenCenterX + r1_px, screenCenterY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Radius-Anzeige
+            ctx.fillStyle = '#ff9800';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('r₁ = ' + r1_cm.toFixed(2).replace('.', ',') + ' cm',
+                         screenCenterX + r1_px/2, screenCenterY - 12);
+        }
+
+        // Äußerer Ring (d2 = 123 pm)
+        var r2_cm = ringRadius2_m * 100;
+        var r2_px = r2_cm * cmToPx;
+
+        if (r2_px > 10 && r2_px < screenRadius - 10) {
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.6)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(screenCenterX, screenCenterY, r2_px, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Glow
+            ctx.strokeStyle = 'rgba(79, 195, 247, 0.2)';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(screenCenterX, screenCenterY, r2_px, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    function drawLabels() {
+        // Titel
+        ctx.fillStyle = '#888';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Leuchtschirm (Draufsicht)', screenCenterX, 30);
+
+        // Ring-Legende
+        ctx.fillStyle = '#4fc3f7';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('● Innerer Ring (d₁ = 213 pm)', 20, canvas.height - 40);
+        ctx.fillStyle = 'rgba(79, 195, 247, 0.6)';
+        ctx.fillText('● Äußerer Ring (d₂ = 123 pm)', 20, canvas.height - 20);
+
+        // Spannungsanzeige
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('U_B = ' + (voltage / 1000).toFixed(1).replace('.', ',') + ' kV',
+                     canvas.width - 20, canvas.height - 20);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Event Handlers
+    // ═══════════════════════════════════════════════════════════
+
+    voltageSlider.oninput = function() {
+        voltage = parseInt(this.value);
+        voltageValue.textContent = (voltage / 1000).toFixed(1).replace('.', ',');
+        updatePhysics();
+        draw();
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    // Init
+    // ═══════════════════════════════════════════════════════════
+
+    updatePhysics();
+    draw();
+
+})();
+</script>
+</body>
+</html>

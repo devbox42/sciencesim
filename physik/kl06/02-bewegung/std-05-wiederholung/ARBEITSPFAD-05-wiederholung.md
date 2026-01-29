@@ -115,13 +115,13 @@
 | C1d: Ablesen | bei 80 m → 8 s | ganzzahlig ✅ |
 | C2c: v Läufer A | 80 m / 4 s | 20 m/s ✅ |
 | C2d: v Läufer B | 80 m / 8 s | 10 m/s ✅ |
-| D1: Reaktionsweg | 5 m/s · 1 s | 5 m ✅ |
+| D1: Anhalteweg | 5 m + 2,5 m | 7,5 m ✅ |
 | D2: Anhalteweg | 10 m + 10 m | 20 m ✅ |
-| D3: Anhalteweg | 8 m + 8 m | 16 m ✅ |
-| D4: Anhalteweg | 15 m + 15 m | 30 m ✅ |
-| D5: Anhalteweg | 12 m + 12 m | 24 m ✅ |
+| D3: Anhalteweg | 8 m + 6,4 m | 14,4 m ✅ |
+| D4: Anhalteweg | 15 m + 22,5 m | 37,5 m ✅ |
+| D5: Anhalteweg | 12 m + 14,4 m | 26,4 m ✅ |
 
-**Alle Werte kopfrechenbar:** ✅
+**Werte:** ✅ (Bremsweg = v²/10, physikalisch korrekt)
 
 ---
 
