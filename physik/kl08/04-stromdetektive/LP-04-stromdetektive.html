@@ -276,6 +276,17 @@
             transform: none;
             box-shadow: none;
         }
+        .ranking-item.touch-dragging {
+            opacity: 0.5;
+        }
+        .touch-clone {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.9;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
 
         /* Formel-Puzzle */
         .formula-slots {
@@ -1810,6 +1821,111 @@
 
                 this.appendChild(draggedRankingItem);
                 draggedRankingItem.classList.remove('in-slot');
+            });
+
+            // ═══════════════════════════════════════════════════════════════
+            // TOUCH SUPPORT für iPad/Mobile
+            // ═══════════════════════════════════════════════════════════════
+            var touchClone = null;
+            var touchItem = null;
+            var touchOffsetX = 0;
+            var touchOffsetY = 0;
+
+            document.querySelectorAll('.ranking-item').forEach(function(item) {
+                item.addEventListener('touchstart', function(e) {
+                    if (this.classList.contains('locked')) return;
+
+                    touchItem = this;
+                    var touch = e.touches[0];
+                    var rect = this.getBoundingClientRect();
+                    touchOffsetX = touch.clientX - rect.left;
+                    touchOffsetY = touch.clientY - rect.top;
+
+                    // Clone erstellen
+                    touchClone = this.cloneNode(true);
+                    touchClone.classList.add('touch-clone');
+                    touchClone.style.width = rect.width + 'px';
+                    touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+                    touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+                    document.body.appendChild(touchClone);
+
+                    this.classList.add('touch-dragging');
+                    e.preventDefault();
+                }, {passive: false});
+
+                item.addEventListener('touchmove', function(e) {
+                    if (!touchClone || !touchItem) return;
+
+                    var touch = e.touches[0];
+                    touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+                    touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+
+                    // Highlight drop target
+                    document.querySelectorAll('.drag-over').forEach(function(el) {
+                        el.classList.remove('drag-over');
+                    });
+                    var elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (elemBelow) {
+                        var slot = elemBelow.closest('.ranking-slot');
+                        var container = elemBelow.closest('.ranking-items');
+                        if (slot && !slot.classList.contains('locked')) {
+                            slot.classList.add('drag-over');
+                        } else if (container) {
+                            container.classList.add('drag-over');
+                        }
+                    }
+                    e.preventDefault();
+                }, {passive: false});
+
+                item.addEventListener('touchend', function(e) {
+                    if (!touchClone || !touchItem) return;
+
+                    var touch = e.changedTouches[0];
+                    var elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    document.querySelectorAll('.drag-over').forEach(function(el) {
+                        el.classList.remove('drag-over');
+                    });
+
+                    if (elemBelow) {
+                        var slot = elemBelow.closest('.ranking-slot');
+                        var container = elemBelow.closest('.ranking-items');
+
+                        if (slot && !slot.classList.contains('locked')) {
+                            // Drop in Slot
+                            var existingItem = slot.querySelector('.ranking-item');
+                            if (existingItem && !existingItem.classList.contains('locked')) {
+                                itemsContainer.appendChild(existingItem);
+                                existingItem.classList.remove('in-slot');
+                                slot.classList.remove('filled');
+                            }
+                            var label = slot.querySelector('.slot-label');
+                            if (label) label.style.display = 'none';
+                            slot.appendChild(touchItem);
+                            touchItem.classList.add('in-slot');
+                            slot.classList.add('filled');
+                        } else if (container) {
+                            // Zurück zum Pool
+                            var parentSlot = touchItem.closest('.ranking-slot');
+                            if (parentSlot) {
+                                parentSlot.classList.remove('filled');
+                                var label = parentSlot.querySelector('.slot-label');
+                                if (label) label.style.display = '';
+                            }
+                            itemsContainer.appendChild(touchItem);
+                            touchItem.classList.remove('in-slot');
+                        }
+                    }
+
+                    // Cleanup
+                    touchItem.classList.remove('touch-dragging');
+                    if (touchClone && touchClone.parentNode) {
+                        touchClone.parentNode.removeChild(touchClone);
+                    }
+                    touchClone = null;
+                    touchItem = null;
+                    e.preventDefault();
+                }, {passive: false});
             });
         }
 
