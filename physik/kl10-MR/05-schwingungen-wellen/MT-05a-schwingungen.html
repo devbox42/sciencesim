@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Schwingungen</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f0ff;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .platz-field select {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-width: 80px;
+        }
+        .aufgabe {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .aufgabe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .aufgabe-title { font-weight: 600; color: var(--fach); }
+        .aufgabe-punkte {
+            font-size: 0.85em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 10px;
+        }
+        .operator { font-weight: 600; color: var(--fach); }
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        p { margin-bottom: 10px; }
+        .mc-options { margin: 15px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .mc-option:hover { border-color: var(--fach); }
+        .mc-option.selected {
+            border-color: var(--fach);
+            background: var(--fach-light);
+        }
+        .mc-option.correct-answer {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+        .mc-option.wrong-answer {
+            border-color: var(--error);
+            background: var(--error-bg);
+        }
+        .mc-option input { margin-right: 10px; }
+        .matching-container { margin: 15px 0; }
+        .matching-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        .matching-left {
+            width: 180px;
+            font-weight: 600;
+        }
+        .matching-select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-width: 180px;
+        }
+        .matching-select.correct { border-color: var(--success); background: var(--success-bg); }
+        .matching-select.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .calc-input {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            font-size: 1em;
+            width: 100px;
+            text-align: center;
+        }
+        .calc-input:focus {
+            outline: 2px solid var(--fach);
+            border-color: var(--fach);
+        }
+        .calc-input.correct { border-color: var(--success); background: var(--success-bg); }
+        .calc-input.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .unit-select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+        }
+        .unit-select.correct { border-color: var(--success); background: var(--success-bg); }
+        .unit-select.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .feedback {
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .feedback.correct {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            color: var(--success);
+            display: block;
+        }
+        .feedback.partial {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            display: block;
+        }
+        .feedback.incorrect {
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            color: var(--error);
+            display: block;
+        }
+        .solution-box {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-left: 3px solid var(--fach);
+            font-size: 0.9em;
+            display: none;
+        }
+        .solution-box.visible { display: block; }
+        .solution-box strong { color: var(--fach); }
+        .results {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .results h2 { color: var(--fach); margin-bottom: 15px; }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .result-box {
+            text-align: center;
+            padding: 15px;
+            background: var(--fach-light);
+        }
+        .result-box .value { font-size: 1.8em; font-weight: 600; color: var(--fach); }
+        .result-box .label { font-size: 0.85em; color: var(--text-muted); }
+        .grade-display {
+            text-align: center;
+            padding: 20px;
+            background: var(--fach);
+            color: var(--white);
+        }
+        .grade-display .grade { font-size: 3em; font-weight: 700; }
+        .grade-display .label { font-size: 0.9em; opacity: 0.9; }
+        .grading-table {
+            margin-top: 15px;
+            font-size: 0.8em;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .grading-table th, .grading-table td {
+            border: 1px solid var(--border);
+            padding: 5px 8px;
+            text-align: center;
+        }
+        .grading-table th { background: var(--bg); }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--fach);
+            border: 1px solid var(--fach);
+        }
+        .btn-print { background: var(--text-muted); }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .hinweis {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        .hinweis-mini {
+            background: #f9f9f9;
+            border: 1px dashed var(--border);
+            padding: 6px 10px;
+            margin: 8px 0;
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+        .bruch {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .bruch .zaehler {
+            display: block;
+            border-bottom: 1px solid currentColor;
+            padding: 0 3px 2px;
+        }
+        .bruch .nenner {
+            display: block;
+            padding: 2px 3px 0;
+        }
+        .locked-notice {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .locked-notice.visible { display: block; }
+        .diagram-container {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .diagram-svg {
+            max-width: 100%;
+            height: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: center;
+        }
+        .data-table th {
+            background: var(--fach-light);
+            font-weight: 600;
+        }
+        .scenario-box {
+            background: var(--warning-bg);
+            border-left: 4px solid var(--warning);
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .scenario-box strong { color: var(--warning); }
+        @media print {
+            body { background: white; font-size: 11pt; }
+            .container { max-width: 100%; padding: 10px; }
+            .btn, .button-row { display: none !important; }
+            .aufgabe { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ccc; }
+            .results { border: 2px solid #333; }
+            .grade-display { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .locked-notice { display: none !important; }
+            header { background: #2c5aa0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Stundenleistung: Schwingungen</h1>
+            <p>Physik Klasse 10 MR | MT-05a | 25 Minuten | 25 BE</p>
+        </header>
+
+        <div class="locked-notice" id="lockedNotice">
+            <strong>Test bereits abgegeben!</strong> Ergebnisse werden unten angezeigt.
+        </div>
+
+        <div class="info-bar">
+            <div class="platz-field">
+                Platz: <select id="platzNummer">
+                    <option value="">-- wählen --</option>
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                    <option value="P3">P3</option>
+                    <option value="P4">P4</option>
+                    <option value="P5">P5</option>
+                    <option value="P6">P6</option>
+                    <option value="P7">P7</option>
+                    <option value="P8">P8</option>
+                    <option value="P9">P9</option>
+                    <option value="P10">P10</option>
+                    <option value="P11">P11</option>
+                    <option value="P12">P12</option>
+                    <option value="P13">P13</option>
+                    <option value="P14">P14</option>
+                    <option value="P15">P15</option>
+                    <option value="P16">P16</option>
+                    <option value="P17">P17</option>
+                    <option value="P18">P18</option>
+                    <option value="P19">P19</option>
+                    <option value="P20">P20</option>
+                    <option value="P21">P21</option>
+                    <option value="P22">P22</option>
+                    <option value="P23">P23</option>
+                    <option value="P24">P24</option>
+                </select>
+            </div>
+            <div>Datum: <span id="currentDate"></span></div>
+        </div>
+
+        <div class="hinweis">
+            <strong>Rechenhilfen:</strong> π ≈ 3 &nbsp;|&nbsp; √10 ≈ 3 &nbsp;|&nbsp; √2 ≈ 1,4 &nbsp;|&nbsp; g = 10 m/s²
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 1: Experimentdaten interpretieren (3 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe1">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 1</span>
+                <span class="aufgabe-punkte" id="punkte1">__/3 BE</span>
+            </div>
+            <p>Emma hat ein <strong>Fadenpendel</strong> untersucht. Hier sind ihre Messwerte:</p>
+
+            <table class="data-table">
+                <tr>
+                    <th>Messung</th>
+                    <th>Länge L</th>
+                    <th>Masse m</th>
+                    <th>Periodendauer T</th>
+                </tr>
+                <tr><td>1</td><td>100 cm</td><td>100 g</td><td>2,0 s</td></tr>
+                <tr><td>2</td><td>100 cm</td><td>200 g</td><td>2,0 s</td></tr>
+                <tr><td>3</td><td>100 cm</td><td>400 g</td><td>2,0 s</td></tr>
+                <tr><td>4</td><td>25 cm</td><td>200 g</td><td>1,0 s</td></tr>
+            </table>
+
+            <p><span class="operator">Wähle aus</span>: Welche Schlussfolgerung ist korrekt?</p>
+            <div class="mc-options" id="mc1-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc1" value="0">
+                    T hängt von der Masse ab: Mehr Masse → größeres T.
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc1" value="1">
+                    T ist unabhängig von der Masse, aber abhängig von der Länge.
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc1" value="2">
+                    T ist unabhängig von Masse und Länge.
+                </label>
+                <label class="mc-option" data-value="3">
+                    <input type="radio" name="mc1" value="3">
+                    Bei doppelter Länge halbiert sich T.
+                </label>
+            </div>
+            <div class="feedback" id="fb1"></div>
+            <div class="solution-box" id="sol1">
+                <strong>Lösung:</strong> T ist unabhängig von der Masse (Messungen 1-3: m ändert sich, T bleibt gleich), aber abhängig von der Länge (Messung 4: L viertel → T halb).
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 2: Vergleich Fadenpendel vs Federpendel (3 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe2">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 2</span>
+                <span class="aufgabe-punkte" id="punkte2">__/3 BE</span>
+            </div>
+            <p><span class="operator">Ordne zu</span>: Was beeinflusst die Periodendauer T?</p>
+
+            <div class="matching-container">
+                <div class="matching-row">
+                    <span class="matching-left">Fadenpendel: Masse m</span>
+                    <select class="matching-select" id="match1">
+                        <option value="">-- wählen --</option>
+                        <option value="ja">beeinflusst T</option>
+                        <option value="nein">beeinflusst T NICHT</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="matching-left">Federpendel: Masse m</span>
+                    <select class="matching-select" id="match2">
+                        <option value="">-- wählen --</option>
+                        <option value="ja">beeinflusst T</option>
+                        <option value="nein">beeinflusst T NICHT</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="matching-left">Beide: Amplitude A</span>
+                    <select class="matching-select" id="match3">
+                        <option value="">-- wählen --</option>
+                        <option value="ja">beeinflusst T</option>
+                        <option value="nein">beeinflusst T NICHT</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb2"></div>
+            <div class="solution-box" id="sol2">
+                <strong>Lösung:</strong> Fadenpendel-Masse → NICHT | Federpendel-Masse → JA | Amplitude → NICHT (bei kleinen Auslenkungen)
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 3: Diagramm mit Trick (3 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe3">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 3</span>
+                <span class="aufgabe-punkte" id="punkte3">__/3 BE</span>
+            </div>
+            <p><span class="operator">Analysiere</span> das y(t)-Diagramm:</p>
+
+            <div class="diagram-container">
+                <svg class="diagram-svg" width="440" height="200" viewBox="0 0 440 200">
+                    <!-- Hintergrund-Grid -->
+                    <defs>
+                        <pattern id="gridSmall" width="50" height="17.5" patternUnits="userSpaceOnUse">
+                            <path d="M 50 0 L 0 0 0 17.5" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+                        </pattern>
+                        <pattern id="gridLarge" width="50" height="35" patternUnits="userSpaceOnUse">
+                            <rect width="50" height="35" fill="url(#gridSmall)"/>
+                            <path d="M 50 0 L 0 0 0 35" fill="none" stroke="#ccc" stroke-width="1"/>
+                        </pattern>
+                    </defs>
+                    <!-- Grid-Bereich -->
+                    <rect x="40" y="30" width="360" height="140" fill="url(#gridLarge)"/>
+                    <!-- Horizontale Hilfslinien bei y = ±4, ±8 -->
+                    <line x1="40" y1="65" x2="400" y2="65" stroke="#ddd" stroke-width="0.5"/>
+                    <line x1="40" y1="135" x2="400" y2="135" stroke="#ddd" stroke-width="0.5"/>
+                    <line x1="40" y1="30" x2="400" y2="30" stroke="#bbb" stroke-width="1"/>
+                    <line x1="40" y1="170" x2="400" y2="170" stroke="#bbb" stroke-width="1"/>
+                    <!-- Achsen -->
+                    <line x1="40" y1="100" x2="410" y2="100" stroke="#333" stroke-width="1.5"/>
+                    <line x1="40" y1="20" x2="40" y2="180" stroke="#333" stroke-width="1.5"/>
+                    <!-- Achsenbeschriftung -->
+                    <text x="415" y="105" font-size="12" fill="#333">t (s)</text>
+                    <text x="20" y="15" font-size="12" fill="#333">y (cm)</text>
+                    <!-- y-Achse Werte: ±4, ±8 cm -->
+                    <text x="25" y="34" font-size="10" fill="#666">8</text>
+                    <line x1="36" y1="30" x2="44" y2="30" stroke="#333" stroke-width="1"/>
+                    <text x="25" y="69" font-size="10" fill="#666">4</text>
+                    <line x1="38" y1="65" x2="42" y2="65" stroke="#666"/>
+                    <text x="25" y="104" font-size="10" fill="#666">0</text>
+                    <text x="20" y="139" font-size="10" fill="#666">−4</text>
+                    <line x1="38" y1="135" x2="42" y2="135" stroke="#666"/>
+                    <text x="20" y="174" font-size="10" fill="#666">−8</text>
+                    <line x1="36" y1="170" x2="44" y2="170" stroke="#333" stroke-width="1"/>
+                    <!-- t-Achse: 0 bis 6s -->
+                    <text x="90" y="116" font-size="10" fill="#666">1</text>
+                    <line x1="90" y1="97" x2="90" y2="103" stroke="#333"/>
+                    <text x="140" y="116" font-size="10" fill="#666">2</text>
+                    <line x1="140" y1="97" x2="140" y2="103" stroke="#333"/>
+                    <text x="190" y="116" font-size="10" fill="#666">3</text>
+                    <line x1="190" y1="97" x2="190" y2="103" stroke="#333"/>
+                    <text x="240" y="116" font-size="10" fill="#666">4</text>
+                    <line x1="240" y1="97" x2="240" y2="103" stroke="#333"/>
+                    <text x="290" y="116" font-size="10" fill="#666">5</text>
+                    <line x1="290" y1="97" x2="290" y2="103" stroke="#333"/>
+                    <text x="340" y="116" font-size="10" fill="#666">6</text>
+                    <line x1="340" y1="97" x2="340" y2="103" stroke="#333"/>
+                    <!-- Sinuskurve: A=8cm, T=1.5s -->
+                    <path d="M40,100
+                             C58,30 95,30 115,100
+                             C135,170 172,170 190,100
+                             C208,30 245,30 265,100
+                             C285,170 322,170 340,100
+                             C358,30 395,30 415,100"
+                          fill="none" stroke="#2c5aa0" stroke-width="2.5"/>
+                </svg>
+            </div>
+
+            <div class="calc-row">
+                <span>Amplitude <span class="fz">A</span> = </span>
+                <input type="text" class="calc-input" id="calc3a" inputmode="decimal">
+                <span>cm</span>
+            </div>
+            <div class="calc-row">
+                <span>In 6 Sekunden: </span>
+                <input type="text" class="calc-input" id="calc3b" inputmode="decimal" style="width:60px;">
+                <span>vollständige Schwingungen</span>
+            </div>
+            <div class="calc-row">
+                <span>Periodendauer <span class="fz">T</span> = </span>
+                <input type="text" class="calc-input" id="calc3c" inputmode="decimal">
+                <span>s</span>
+            </div>
+            <div class="feedback" id="fb3"></div>
+            <div class="solution-box" id="sol3">
+                <strong>Lösung:</strong> A = 8 cm | 4 Schwingungen in 6 s | T = <span class="bruch"><span class="zaehler">6 s</span><span class="nenner">4</span></span> = 1,5 s
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 4: Umkehraufgabe Fadenpendel (3 BE) ★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe4">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 4</span>
+                <span class="aufgabe-punkte" id="punkte4">__/3 BE</span>
+            </div>
+
+            <div class="scenario-box">
+                <strong>Situation:</strong> Eine alte Standuhr hat ein Pendel mit T = 2 s (Sekundenpendel). Du sollst berechnen, wie lang das Pendel sein muss.
+            </div>
+
+            <p>Formel Fadenpendel: <span class="fz">T</span> = 2π · √<span class="bruch"><span class="zaehler"><span class="fz">L</span></span><span class="nenner"><span class="fz">g</span></span></span></p>
+            <div class="hinweis-mini">Nutze: π ≈ 3, g = 10 m/s², √10 ≈ 3</div>
+
+            <p><span class="operator">Berechne</span> die Pendellänge L:</p>
+
+            <div class="calc-row">
+                <span>Umgestellt: <span class="fz">L</span> = <span class="bruch"><span class="zaehler"><span class="fz">T</span>² · <span class="fz">g</span></span><span class="nenner">4π²</span></span> = </span>
+            </div>
+            <div class="calc-row">
+                <span><span class="fz">L</span> ≈ </span>
+                <input type="text" class="calc-input" id="calc4" inputmode="decimal">
+                <span>m</span>
+            </div>
+            <div class="feedback" id="fb4"></div>
+            <div class="solution-box" id="sol4">
+                <strong>Lösung:</strong> L = <span class="bruch"><span class="zaehler">T²·g</span><span class="nenner">4π²</span></span> = <span class="bruch"><span class="zaehler">4·10</span><span class="nenner">4·9</span></span> = <span class="bruch"><span class="zaehler">40</span><span class="nenner">36</span></span> ≈ <strong>1,1 m</strong> (exakt: 1,0 m mit π²≈10)
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 5: Frequenz-Periodendauer Zusammenhang (2 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe5">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 5</span>
+                <span class="aufgabe-punkte" id="punkte5">__/2 BE</span>
+            </div>
+            <p>Ein Metronom ist auf 120 Schläge pro Minute eingestellt.</p>
+            <p><span class="operator">Berechne</span> die Frequenz in Hz und die Periodendauer.</p>
+
+            <div class="hinweis-mini">1 Minute = 60 Sekunden</div>
+
+            <div class="calc-row">
+                <span><span class="fz">f</span> = </span>
+                <input type="text" class="calc-input" id="calc5a" inputmode="decimal">
+                <span>Hz</span>
+            </div>
+            <div class="calc-row">
+                <span><span class="fz">T</span> = </span>
+                <input type="text" class="calc-input" id="calc5b" inputmode="decimal">
+                <span>s</span>
+            </div>
+            <div class="feedback" id="fb5"></div>
+            <div class="solution-box" id="sol5">
+                <strong>Lösung:</strong> f = <span class="bruch"><span class="zaehler">120</span><span class="nenner">60</span></span> = <strong>2 Hz</strong> | T = <span class="bruch"><span class="zaehler">1</span><span class="nenner">2</span></span> = <strong>0,5 s</strong>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 6: Was passiert wenn... (2 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe6">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 6</span>
+                <span class="aufgabe-punkte" id="punkte6">__/2 BE</span>
+            </div>
+            <p>Ein Fadenpendel hat die Periodendauer T = 2 s.</p>
+            <p><span class="operator">Bestimme</span>: Was passiert mit T, wenn man die Pendellänge <strong>vervierfacht</strong>?</p>
+
+            <div class="hinweis-mini">Denke an: T ~ √L (T ist proportional zur Wurzel aus L)</div>
+
+            <div class="mc-options" id="mc6-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc6" value="0">
+                    T vervierfacht sich auf 8 s.
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc6" value="1">
+                    T verdoppelt sich auf 4 s.
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc6" value="2">
+                    T bleibt gleich bei 2 s.
+                </label>
+                <label class="mc-option" data-value="3">
+                    <input type="radio" name="mc6" value="3">
+                    T halbiert sich auf 1 s.
+                </label>
+            </div>
+            <div class="feedback" id="fb6"></div>
+            <div class="solution-box" id="sol6">
+                <strong>Lösung:</strong> T ~ √L, also: L × 4 → T × √4 = T × 2. Neues T = 2s × 2 = <strong>4 s</strong>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 7: Federpendel berechnen (3 BE) ★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe7">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 7</span>
+                <span class="aufgabe-punkte" id="punkte7">__/3 BE</span>
+            </div>
+
+            <p>Ein Federpendel hat eine Feder mit D = 40 N/m und eine Masse m = 0,1 kg.</p>
+            <p>Formel: <span class="fz">T</span> = 2π · √<span class="bruch"><span class="zaehler"><span class="fz">m</span></span><span class="nenner"><span class="fz">D</span></span></span></p>
+
+            <div class="hinweis-mini">Nutze: π ≈ 3, berechne zuerst <span class="bruch"><span class="zaehler"><span class="fz">m</span></span><span class="nenner"><span class="fz">D</span></span></span></div>
+
+            <p><span class="operator">Berechne</span> T und f:</p>
+
+            <div class="calc-row">
+                <span><span class="bruch"><span class="zaehler"><span class="fz">m</span></span><span class="nenner"><span class="fz">D</span></span></span> = <span class="bruch"><span class="zaehler">0,1</span><span class="nenner">40</span></span> = </span>
+                <input type="text" class="calc-input" id="calc7a" inputmode="decimal" style="width:120px;">
+            </div>
+            <div class="calc-row">
+                <span>√<span class="bruch"><span class="zaehler"><span class="fz">m</span></span><span class="nenner"><span class="fz">D</span></span></span> = √<span class="bruch"><span class="zaehler">1</span><span class="nenner">400</span></span> = </span>
+                <input type="text" class="calc-input" id="calc7b" inputmode="decimal" style="width:80px;">
+            </div>
+            <div class="calc-row">
+                <span><span class="fz">T</span> ≈ 2 · 3 · </span>
+                <input type="text" class="calc-input" id="calc7c" inputmode="decimal" style="width:80px;">
+                <span> = </span>
+                <input type="text" class="calc-input" id="calc7d" inputmode="decimal" style="width:80px;">
+                <span>s</span>
+            </div>
+            <div class="feedback" id="fb7"></div>
+            <div class="solution-box" id="sol7">
+                <strong>Lösung:</strong> <span class="bruch"><span class="zaehler"><span class="fz">m</span></span><span class="nenner"><span class="fz">D</span></span></span> = 0,0025 = <span class="bruch"><span class="zaehler">1</span><span class="nenner">400</span></span> | √<span class="bruch"><span class="zaehler">1</span><span class="nenner">400</span></span> = <span class="bruch"><span class="zaehler">1</span><span class="nenner">20</span></span> = 0,05 | T ≈ 6 · 0,05 = <strong>0,3 s</strong>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 8: Diagramm-Vergleich (2 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe8">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 8</span>
+                <span class="aufgabe-punkte" id="punkte8">__/2 BE</span>
+            </div>
+            <p>Zwei Schwingungen werden verglichen:</p>
+            <ul style="margin: 10px 0 10px 20px;">
+                <li>Schwingung A: A = 5 cm, f = 2 Hz</li>
+                <li>Schwingung B: A = 10 cm, f = 0,5 Hz</li>
+            </ul>
+            <p><span class="operator">Wähle</span> alle korrekten Aussagen:</p>
+
+            <div class="mc-options" id="mc8-options">
+                <label class="mc-option" data-value="a">
+                    <input type="checkbox" name="mc8" value="a">
+                    Schwingung B hat die größere Amplitude.
+                </label>
+                <label class="mc-option" data-value="b">
+                    <input type="checkbox" name="mc8" value="b">
+                    Schwingung A ist schneller (mehr Schwingungen pro Sekunde).
+                </label>
+                <label class="mc-option" data-value="c">
+                    <input type="checkbox" name="mc8" value="c">
+                    Schwingung B hat die kürzere Periodendauer.
+                </label>
+                <label class="mc-option" data-value="d">
+                    <input type="checkbox" name="mc8" value="d">
+                    Schwingung A hat T = 0,5 s.
+                </label>
+            </div>
+            <div class="feedback" id="fb8"></div>
+            <div class="solution-box" id="sol8">
+                <strong>Lösung:</strong> Richtig sind: B hat größere A (10 > 5) ✓ | A ist schneller (2 Hz > 0,5 Hz) ✓ | A hat T = <span class="bruch"><span class="zaehler">1</span><span class="nenner">2</span></span> = 0,5 s ✓ | B hat LÄNGERE T (T = 2 s)
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 9: Transfer Erdbeben (2 BE) ★★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe9">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 9</span>
+                <span class="aufgabe-punkte" id="punkte9">__/2 BE</span>
+            </div>
+
+            <div class="scenario-box">
+                <strong>Anwendung:</strong> Ein Seismograph registriert Erdbebenwellen. In 30 Sekunden werden 15 vollständige Wellenberge aufgezeichnet.
+            </div>
+
+            <p><span class="operator">Berechne</span> Periodendauer und Frequenz der Erdbebenwelle:</p>
+
+            <div class="calc-row">
+                <span><span class="fz">T</span> = </span>
+                <input type="text" class="calc-input" id="calc9a" inputmode="decimal">
+                <span>s</span>
+            </div>
+            <div class="calc-row">
+                <span><span class="fz">f</span> = </span>
+                <input type="text" class="calc-input" id="calc9b" inputmode="decimal">
+                <span>Hz</span>
+            </div>
+            <div class="feedback" id="fb9"></div>
+            <div class="solution-box" id="sol9">
+                <strong>Lösung:</strong> T = <span class="bruch"><span class="zaehler">30 s</span><span class="nenner">15</span></span> = <strong>2 s</strong> | f = <span class="bruch"><span class="zaehler">1</span><span class="nenner">2</span></span> = <strong>0,5 Hz</strong>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 10: Knobelaufgabe (2 BE) ★★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe10">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 10</span>
+                <span class="aufgabe-punkte" id="punkte10">__/2 BE</span>
+            </div>
+
+            <p>Ein Physiker baut zwei Pendel auf dem Mond (g<sub>Mond</sub> ≈ 1,6 m/s²):</p>
+            <ul style="margin: 10px 0 10px 20px;">
+                <li><strong>Pendel X:</strong> Fadenpendel mit L = 1 m</li>
+                <li><strong>Pendel Y:</strong> Federpendel mit D = 10 N/m und m = 1 kg</li>
+            </ul>
+
+            <p><span class="operator">Entscheide</span>: Welches Pendel schwingt auf dem Mond <strong>anders</strong> als auf der Erde?</p>
+
+            <div class="mc-options" id="mc10-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc10" value="0">
+                    Nur das Fadenpendel X (weil T von g abhängt).
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc10" value="1">
+                    Nur das Federpendel Y (weil T von m abhängt).
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc10" value="2">
+                    Beide Pendel schwingen anders.
+                </label>
+                <label class="mc-option" data-value="3">
+                    <input type="radio" name="mc10" value="3">
+                    Keines der Pendel schwingt anders.
+                </label>
+            </div>
+            <div class="feedback" id="fb10"></div>
+            <div class="solution-box" id="sol10">
+                <strong>Lösung:</strong> Nur das <strong>Fadenpendel</strong>! Fadenpendel: T = 2π√<span class="bruch"><span class="zaehler"><span class="fz">L</span></span><span class="nenner"><span class="fz">g</span></span></span> → g ändert sich → T ändert sich. Federpendel: T = 2π√<span class="bruch"><span class="zaehler"><span class="fz">m</span></span><span class="nenner"><span class="fz">D</span></span></span> → kein g in der Formel → T bleibt gleich!
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUSWERTUNG -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="button-row" id="submitButtons">
+            <button class="btn" id="btnSubmit" onclick="submitTest()">Abgeben</button>
+            <button class="btn btn-secondary" onclick="resetTest()">Zurücksetzen</button>
+        </div>
+
+        <div class="results" id="results">
+            <h2>Ergebnis</h2>
+            <div class="results-grid">
+                <div class="result-box">
+                    <div class="value" id="resPunkte">0</div>
+                    <div class="label">von 25 BE</div>
+                </div>
+                <div class="result-box">
+                    <div class="value" id="resProzent">0%</div>
+                    <div class="label">erreicht</div>
+                </div>
+                <div class="result-box">
+                    <div class="value" id="resRichtig">0</div>
+                    <div class="label">von 10 Aufgaben</div>
+                </div>
+            </div>
+            <div class="grade-display">
+                <div class="grade" id="resNote">–</div>
+                <div class="label">Note (MR Klasse 10)</div>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-print" onclick="window.print()">Drucken / PDF</button>
+            </div>
+            <table class="grading-table">
+                <tr>
+                    <th>Note</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>
+                </tr>
+                <tr>
+                    <th>ab %</th><td>≥96</td><td>≥80</td><td>≥60</td><td>≥40</td><td>≥20</td><td>&lt;20</td>
+                </tr>
+                <tr>
+                    <th>ab BE</th><td>≥24</td><td>≥20</td><td>≥15</td><td>≥10</td><td>≥5</td><td>&lt;5</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // MT-05a Schwingungen v2 | ES5 JavaScript | 25 BE | MR Klasse 10
+    // ANSPRUCHSVOLL + KREATIV
+    // ═══════════════════════════════════════════════════════════════
+
+    var TOTAL_POINTS = 25;
+    var QUIZ_ID = 'mt05a-schwingungen-v2';
+    var testSubmitted = false;
+
+    function getNote(percent) {
+        if (percent >= 96) return '1';
+        if (percent >= 80) return '2';
+        if (percent >= 60) return '3';
+        if (percent >= 40) return '4';
+        if (percent >= 20) return '5';
+        return '6';
+    }
+
+    function parseNumber(val) {
+        if (val === '' || val === null || val === undefined) return NaN;
+        return parseFloat(String(val).replace(',', '.'));
+    }
+
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('de-DE');
+
+    // MC-Optionen klickbar (Radio)
+    document.querySelectorAll('.mc-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            if (testSubmitted) return;
+            var input = this.querySelector('input');
+            if (input.type === 'radio') {
+                var name = input.name;
+                document.querySelectorAll('input[name="' + name + '"]').forEach(function(inp) {
+                    inp.closest('.mc-option').classList.remove('selected');
+                });
+                this.classList.add('selected');
+                input.checked = true;
+            } else if (input.type === 'checkbox') {
+                input.checked = !input.checked;
+                this.classList.toggle('selected', input.checked);
+            }
+            saveProgress();
+        });
+    });
+
+    document.querySelectorAll('input, select').forEach(function(el) {
+        el.addEventListener('change', function() { if (!testSubmitted) saveProgress(); });
+        el.addEventListener('input', function() { if (!testSubmitted) saveProgress(); });
+    });
+
+    function saveProgress() {
+        if (testSubmitted) return;
+        var data = {};
+        document.querySelectorAll('input[type="text"], select').forEach(function(el) {
+            if (el.id) data[el.id] = el.value;
+        });
+        document.querySelectorAll('input[type="radio"]:checked').forEach(function(el) {
+            data[el.name] = el.value;
+        });
+        var checkboxes = [];
+        document.querySelectorAll('input[type="checkbox"]:checked').forEach(function(el) {
+            checkboxes.push(el.value);
+        });
+        data['mc8_checked'] = checkboxes;
+        localStorage.setItem(QUIZ_ID, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(QUIZ_ID);
+        if (!saved) return;
+        try {
+            var data = JSON.parse(saved);
+            for (var key in data) {
+                if (key === 'mc8_checked') continue;
+                var el = document.getElementById(key);
+                if (el) el.value = data[key];
+                var radio = document.querySelector('input[name="' + key + '"][value="' + data[key] + '"]');
+                if (radio) {
+                    radio.checked = true;
+                    radio.closest('.mc-option').classList.add('selected');
+                }
+            }
+            if (data['mc8_checked']) {
+                data['mc8_checked'].forEach(function(val) {
+                    var cb = document.querySelector('input[name="mc8"][value="' + val + '"]');
+                    if (cb) {
+                        cb.checked = true;
+                        cb.closest('.mc-option').classList.add('selected');
+                    }
+                });
+            }
+        } catch (e) {}
+    }
+
+    function getRadio(name) {
+        var sel = document.querySelector('input[name="' + name + '"]:checked');
+        return sel ? sel.value : null;
+    }
+
+    function getCheckboxes(name) {
+        var checked = [];
+        document.querySelectorAll('input[name="' + name + '"]:checked').forEach(function(el) {
+            checked.push(el.value);
+        });
+        return checked;
+    }
+
+    function markMcCorrect(containerId, correctValue) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.querySelectorAll('.mc-option').forEach(function(opt) {
+            var val = opt.getAttribute('data-value');
+            if (val === correctValue) opt.classList.add('correct-answer');
+            var input = opt.querySelector('input');
+            if (input && input.checked && val !== correctValue) opt.classList.add('wrong-answer');
+        });
+    }
+
+    function markCheckboxCorrect(containerId, correctValues) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.querySelectorAll('.mc-option').forEach(function(opt) {
+            var val = opt.getAttribute('data-value');
+            var isCorrect = correctValues.indexOf(val) !== -1;
+            var input = opt.querySelector('input');
+            if (isCorrect) opt.classList.add('correct-answer');
+            if (input && input.checked && !isCorrect) opt.classList.add('wrong-answer');
+        });
+    }
+
+    function markInputCorrect(inputId, isCorrect) {
+        var el = document.getElementById(inputId);
+        if (el) el.classList.add(isCorrect ? 'correct' : 'incorrect');
+    }
+
+    function showSolutionBox(id) {
+        var box = document.getElementById(id);
+        if (box) box.classList.add('visible');
+    }
+
+    function disableAllInputs() {
+        document.querySelectorAll('input, select').forEach(function(el) {
+            if (el.id !== 'platzNummer') el.disabled = true;
+        });
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+        var platz = document.getElementById('platzNummer').value;
+        if (!platz) { alert('Bitte wähle zuerst deinen Platz aus!'); return; }
+
+        var total = 0;
+        var richtig = 0;
+
+        // Aufgabe 1: Experimentdaten (3 BE)
+        var mc1 = getRadio('mc1');
+        var p1 = mc1 === '1' ? 3 : 0;
+        var fb1 = document.getElementById('fb1');
+        fb1.className = 'feedback ' + (p1 === 3 ? 'correct' : 'incorrect');
+        fb1.textContent = p1 === 3 ? 'Richtig! (3/3 BE)' : 'Falsch. (0/3 BE)';
+        if (p1 === 3) richtig++;
+        markMcCorrect('mc1-options', '1');
+        showSolutionBox('sol1');
+        document.getElementById('punkte1').textContent = p1 + '/3 BE';
+        total += p1;
+
+        // Aufgabe 2: Vergleich (3 BE)
+        var correct2 = {match1: 'nein', match2: 'ja', match3: 'nein'};
+        var p2 = 0;
+        for (var k in correct2) {
+            var val = document.getElementById(k).value;
+            var isCorr = val === correct2[k];
+            if (isCorr) p2++;
+            markInputCorrect(k, isCorr);
+        }
+        var fb2 = document.getElementById('fb2');
+        fb2.className = 'feedback ' + (p2 === 3 ? 'correct' : (p2 > 0 ? 'partial' : 'incorrect'));
+        fb2.textContent = p2 === 3 ? 'Alle richtig! (3/3 BE)' : p2 + '/3 richtig.';
+        if (p2 === 3) richtig++;
+        showSolutionBox('sol2');
+        document.getElementById('punkte2').textContent = p2 + '/3 BE';
+        total += p2;
+
+        // Aufgabe 3: Diagramm (3 BE)
+        var v3a = parseNumber(document.getElementById('calc3a').value);
+        var v3b = parseNumber(document.getElementById('calc3b').value);
+        var v3c = parseNumber(document.getElementById('calc3c').value);
+        var p3 = 0;
+        var v3aCorr = Math.abs(v3a - 8) < 0.5;
+        var v3bCorr = Math.abs(v3b - 4) < 0.1;
+        var v3cCorr = Math.abs(v3c - 1.5) < 0.1;
+        if (v3aCorr) p3++;
+        if (v3bCorr) p3++;
+        if (v3cCorr) p3++;
+        markInputCorrect('calc3a', v3aCorr);
+        markInputCorrect('calc3b', v3bCorr);
+        markInputCorrect('calc3c', v3cCorr);
+        var fb3 = document.getElementById('fb3');
+        fb3.className = 'feedback ' + (p3 === 3 ? 'correct' : (p3 > 0 ? 'partial' : 'incorrect'));
+        fb3.textContent = p3 === 3 ? 'Richtig! (3/3 BE)' : p3 + '/3 richtig.';
+        if (p3 === 3) richtig++;
+        showSolutionBox('sol3');
+        document.getElementById('punkte3').textContent = p3 + '/3 BE';
+        total += p3;
+
+        // Aufgabe 4: Umkehraufgabe (3 BE)
+        var v4 = parseNumber(document.getElementById('calc4').value);
+        var p4 = 0;
+        // L = T²·g/(4π²) = 4·10/40 = 1.0 m (exakt) oder ≈1.1 m (mit π≈3)
+        var v4Corr = Math.abs(v4 - 1.0) < 0.2 || Math.abs(v4 - 1.1) < 0.2;
+        if (v4Corr) p4 = 3;
+        markInputCorrect('calc4', v4Corr);
+        var fb4 = document.getElementById('fb4');
+        fb4.className = 'feedback ' + (p4 === 3 ? 'correct' : 'incorrect');
+        fb4.textContent = p4 === 3 ? 'Richtig! (3/3 BE)' : 'Falsch. (0/3 BE)';
+        if (p4 === 3) richtig++;
+        showSolutionBox('sol4');
+        document.getElementById('punkte4').textContent = p4 + '/3 BE';
+        total += p4;
+
+        // Aufgabe 5: Metronom (2 BE)
+        var v5a = parseNumber(document.getElementById('calc5a').value);
+        var v5b = parseNumber(document.getElementById('calc5b').value);
+        var p5 = 0;
+        var v5aCorr = Math.abs(v5a - 2) < 0.1;
+        var v5bCorr = Math.abs(v5b - 0.5) < 0.05;
+        if (v5aCorr) p5++;
+        if (v5bCorr) p5++;
+        markInputCorrect('calc5a', v5aCorr);
+        markInputCorrect('calc5b', v5bCorr);
+        var fb5 = document.getElementById('fb5');
+        fb5.className = 'feedback ' + (p5 === 2 ? 'correct' : (p5 > 0 ? 'partial' : 'incorrect'));
+        fb5.textContent = p5 === 2 ? 'Richtig! (2/2 BE)' : p5 + '/2 richtig.';
+        if (p5 === 2) richtig++;
+        showSolutionBox('sol5');
+        document.getElementById('punkte5').textContent = p5 + '/2 BE';
+        total += p5;
+
+        // Aufgabe 6: Was passiert wenn (2 BE)
+        var mc6 = getRadio('mc6');
+        var p6 = mc6 === '1' ? 2 : 0;
+        var fb6 = document.getElementById('fb6');
+        fb6.className = 'feedback ' + (p6 === 2 ? 'correct' : 'incorrect');
+        fb6.textContent = p6 === 2 ? 'Richtig! (2/2 BE)' : 'Falsch. (0/2 BE)';
+        if (p6 === 2) richtig++;
+        markMcCorrect('mc6-options', '1');
+        showSolutionBox('sol6');
+        document.getElementById('punkte6').textContent = p6 + '/2 BE';
+        total += p6;
+
+        // Aufgabe 7: Federpendel (3 BE)
+        var v7a = parseNumber(document.getElementById('calc7a').value);
+        var v7b = parseNumber(document.getElementById('calc7b').value);
+        var v7c = parseNumber(document.getElementById('calc7c').value);
+        var v7d = parseNumber(document.getElementById('calc7d').value);
+        var p7 = 0;
+        // m/D = 0.0025, √= 0.05, T = 6*0.05 = 0.3
+        var v7aCorr = Math.abs(v7a - 0.0025) < 0.001 || Math.abs(v7a - 0.00250) < 0.001;
+        var v7bCorr = Math.abs(v7b - 0.05) < 0.01;
+        var v7dCorr = Math.abs(v7d - 0.3) < 0.05 || Math.abs(v7d - 0.31) < 0.05;
+        if (v7aCorr) p7++;
+        if (v7bCorr) p7++;
+        if (v7dCorr) p7++;
+        markInputCorrect('calc7a', v7aCorr);
+        markInputCorrect('calc7b', v7bCorr);
+        markInputCorrect('calc7d', v7dCorr);
+        var fb7 = document.getElementById('fb7');
+        fb7.className = 'feedback ' + (p7 === 3 ? 'correct' : (p7 > 0 ? 'partial' : 'incorrect'));
+        fb7.textContent = p7 === 3 ? 'Richtig! (3/3 BE)' : p7 + '/3 richtig.';
+        if (p7 === 3) richtig++;
+        showSolutionBox('sol7');
+        document.getElementById('punkte7').textContent = p7 + '/3 BE';
+        total += p7;
+
+        // Aufgabe 8: Checkbox (2 BE)
+        var mc8 = getCheckboxes('mc8');
+        var correct8 = ['a', 'b', 'd']; // B größere A, A schneller, A hat T=0.5s
+        var p8 = 0;
+        var allCorrect = true;
+        correct8.forEach(function(c) {
+            if (mc8.indexOf(c) !== -1) p8 += 0.5;
+            else allCorrect = false;
+        });
+        mc8.forEach(function(c) {
+            if (correct8.indexOf(c) === -1) { p8 -= 0.5; allCorrect = false; }
+        });
+        p8 = Math.max(0, Math.min(2, Math.round(p8)));
+        markCheckboxCorrect('mc8-options', correct8);
+        var fb8 = document.getElementById('fb8');
+        fb8.className = 'feedback ' + (p8 === 2 ? 'correct' : (p8 > 0 ? 'partial' : 'incorrect'));
+        fb8.textContent = p8 === 2 ? 'Richtig! (2/2 BE)' : p8 + '/2 BE';
+        if (p8 === 2) richtig++;
+        showSolutionBox('sol8');
+        document.getElementById('punkte8').textContent = p8 + '/2 BE';
+        total += p8;
+
+        // Aufgabe 9: Seismograph (2 BE)
+        var v9a = parseNumber(document.getElementById('calc9a').value);
+        var v9b = parseNumber(document.getElementById('calc9b').value);
+        var p9 = 0;
+        var v9aCorr = Math.abs(v9a - 2) < 0.1;
+        var v9bCorr = Math.abs(v9b - 0.5) < 0.05;
+        if (v9aCorr) p9++;
+        if (v9bCorr) p9++;
+        markInputCorrect('calc9a', v9aCorr);
+        markInputCorrect('calc9b', v9bCorr);
+        var fb9 = document.getElementById('fb9');
+        fb9.className = 'feedback ' + (p9 === 2 ? 'correct' : (p9 > 0 ? 'partial' : 'incorrect'));
+        fb9.textContent = p9 === 2 ? 'Richtig! (2/2 BE)' : p9 + '/2 richtig.';
+        if (p9 === 2) richtig++;
+        showSolutionBox('sol9');
+        document.getElementById('punkte9').textContent = p9 + '/2 BE';
+        total += p9;
+
+        // Aufgabe 10: Mond-Knobel (2 BE)
+        var mc10 = getRadio('mc10');
+        var p10 = mc10 === '0' ? 2 : 0;
+        var fb10 = document.getElementById('fb10');
+        fb10.className = 'feedback ' + (p10 === 2 ? 'correct' : 'incorrect');
+        fb10.textContent = p10 === 2 ? 'Richtig! (2/2 BE)' : 'Falsch. (0/2 BE)';
+        if (p10 === 2) richtig++;
+        markMcCorrect('mc10-options', '0');
+        showSolutionBox('sol10');
+        document.getElementById('punkte10').textContent = p10 + '/2 BE';
+        total += p10;
+
+        // Ergebnis
+        var prozent = Math.round((total / TOTAL_POINTS) * 100);
+        document.getElementById('resPunkte').textContent = total;
+        document.getElementById('resProzent').textContent = prozent + '%';
+        document.getElementById('resRichtig').textContent = richtig;
+        document.getElementById('resNote').textContent = getNote(prozent);
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('btnSubmit').disabled = true;
+        document.getElementById('lockedNotice').classList.add('visible');
+        testSubmitted = true;
+        disableAllInputs();
+
+        var resultData = {
+            platz: platz, total: total, percent: prozent, note: getNote(prozent),
+            richtig: richtig, submitted: true, timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(QUIZ_ID + '-result', JSON.stringify(resultData));
+        document.getElementById('results').scrollIntoView({behavior: 'smooth'});
+    }
+
+    function resetTest() {
+        if (!confirm('Alle Eingaben löschen?')) return;
+        localStorage.removeItem(QUIZ_ID);
+        localStorage.removeItem(QUIZ_ID + '-result');
+        location.reload();
+    }
+
+    function restoreSubmittedState() {
+        var resultSaved = localStorage.getItem(QUIZ_ID + '-result');
+        if (!resultSaved) return false;
+        try {
+            var result = JSON.parse(resultSaved);
+            if (result.submitted) {
+                loadProgress();
+                testSubmitted = false;
+                submitTest();
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!restoreSubmittedState()) loadProgress();
+    });
+    </script>
+</body>
+</html>
