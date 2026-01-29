@@ -345,7 +345,7 @@
         </div>
 
         <div class="info-bar">
-            <div class="platz-field">
+            <div class="platz-field" id="seatRow">
                 Platz: <select id="platzNummer">
                     <option value="">-- wählen --</option>
                     <option value="P1">P1</option>
@@ -373,6 +373,7 @@
                     <option value="P23">P23</option>
                     <option value="P24">P24</option>
                 </select>
+                <button onclick="confirmSeat()" style="margin-left:8px; padding:5px 12px; cursor:pointer;">OK</button>
             </div>
             <div>Datum: <span id="currentDate"></span></div>
         </div>
@@ -837,6 +838,7 @@
             </div>
             <div class="button-row">
                 <button class="btn btn-print" onclick="window.print()">Drucken / PDF</button>
+                <button onclick="teacherReset()" style="background:none; border:none; color:#999; font-size:0.75em; cursor:pointer; margin-left:20px;">⟳ Lehrer-Reset</button>
             </div>
             <table class="grading-table">
                 <tr>
@@ -861,6 +863,112 @@
     var TOTAL_POINTS = 25;
     var QUIZ_ID = 'mt05a-schwingungen-v2';
     var testSubmitted = false;
+
+    // ═══════════════════════════════════════════════════════════════
+    // ANTI-BETRUG: Tab-Wechsel-Protokoll
+    // ═══════════════════════════════════════════════════════════════
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(QUIZ_ID + '-tabswitches');
+        var savedSeconds = localStorage.getItem(QUIZ_ID + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(QUIZ_ID + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(QUIZ_ID + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ANTI-BETRUG: Platznummer-Sperrung
+    // ═══════════════════════════════════════════════════════════════
+    function confirmSeat() {
+        var select = document.getElementById('platzNummer');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer ' + num + ' bestätigen?\n\nDiese Auswahl kann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(QUIZ_ID + '-seat', num);
+        localStorage.setItem(QUIZ_ID + '-seat-locked', 'true');
+        showLockedSeat(num);
+    }
+
+    function showLockedSeat(num) {
+        var seatRow = document.getElementById('seatRow');
+        if (seatRow) {
+            seatRow.innerHTML = 'Platz: <strong style="color: var(--fach);">' + num + '</strong> (gesperrt)';
+        }
+    }
+
+    function checkSeatLocked() {
+        var saved = localStorage.getItem(QUIZ_ID + '-seat');
+        var locked = localStorage.getItem(QUIZ_ID + '-seat-locked');
+        if (saved && locked === 'true') {
+            showLockedSeat(saved);
+            return true;
+        }
+        return false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ANTI-BETRUG: Lehrer-Reset (Code: 2026)
+    // ═══════════════════════════════════════════════════════════════
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2026') {
+            if (confirm('Wirklich alle Daten für diesen Platz löschen?')) {
+                localStorage.removeItem(QUIZ_ID);
+                localStorage.removeItem(QUIZ_ID + '-result');
+                localStorage.removeItem(QUIZ_ID + '-seat');
+                localStorage.removeItem(QUIZ_ID + '-seat-locked');
+                localStorage.removeItem(QUIZ_ID + '-start');
+                localStorage.removeItem(QUIZ_ID + '-submit-time');
+                localStorage.removeItem(QUIZ_ID + '-tabswitches');
+                localStorage.removeItem(QUIZ_ID + '-tabseconds');
+                alert('Platz wurde zurückgesetzt. Seite wird neu geladen.');
+                location.reload();
+            }
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
 
     function getNote(percent) {
         if (percent >= 96) return '1';
@@ -1001,8 +1109,14 @@
 
     function submitTest() {
         if (testSubmitted) return;
-        var platz = document.getElementById('platzNummer').value;
-        if (!platz) { alert('Bitte wähle zuerst deinen Platz aus!'); return; }
+
+        // Anti-Betrug: Platznummer muss gesperrt sein
+        var seatLocked = localStorage.getItem(QUIZ_ID + '-seat-locked');
+        var platz = localStorage.getItem(QUIZ_ID + '-seat');
+        if (seatLocked !== 'true' || !platz) {
+            alert('Bitte bestätige zuerst deine Platznummer mit OK!');
+            return;
+        }
 
         var total = 0;
         var richtig = 0;
@@ -1191,11 +1305,29 @@
         testSubmitted = true;
         disableAllInputs();
 
+        // Anti-Betrug: Abgabezeit speichern
+        localStorage.setItem(QUIZ_ID + '-submit-time', Date.now());
+
         var resultData = {
             platz: platz, total: total, percent: prozent, note: getNote(prozent),
             richtig: richtig, submitted: true, timestamp: new Date().toISOString()
         };
         localStorage.setItem(QUIZ_ID + '-result', JSON.stringify(resultData));
+
+        // Anti-Betrug: Zeitstempel + Tab-Wechsel anzeigen
+        var startTS = localStorage.getItem(QUIZ_ID + '-start');
+        var submitTS = localStorage.getItem(QUIZ_ID + '-submit-time');
+        var switches = localStorage.getItem(QUIZ_ID + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(QUIZ_ID + '-tabseconds') || '0';
+
+        var timestampHtml = '<div style="margin-top:15px; padding:10px; background:#f5f5f5; border:1px solid #ddd; font-size:0.85em;">' +
+            '<div><strong>Start:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
         document.getElementById('results').scrollIntoView({behavior: 'smooth'});
     }
 
@@ -1203,6 +1335,12 @@
         if (!confirm('Alle Eingaben löschen?')) return;
         localStorage.removeItem(QUIZ_ID);
         localStorage.removeItem(QUIZ_ID + '-result');
+        localStorage.removeItem(QUIZ_ID + '-seat');
+        localStorage.removeItem(QUIZ_ID + '-seat-locked');
+        localStorage.removeItem(QUIZ_ID + '-start');
+        localStorage.removeItem(QUIZ_ID + '-submit-time');
+        localStorage.removeItem(QUIZ_ID + '-tabswitches');
+        localStorage.removeItem(QUIZ_ID + '-tabseconds');
         location.reload();
     }
 
@@ -1222,6 +1360,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Anti-Betrug: Startzeit beim ersten Aufruf speichern
+        var startTime = localStorage.getItem(QUIZ_ID + '-start');
+        if (!startTime) {
+            localStorage.setItem(QUIZ_ID + '-start', Date.now());
+        }
+
+        // Anti-Betrug: Tab-Wechsel-Tracking initialisieren
+        initTabSwitchTracking();
+
+        // Anti-Betrug: Platznummer-Sperre prüfen
+        checkSeatLocked();
+
         if (!restoreSubmittedState()) loadProgress();
     });
     </script>
