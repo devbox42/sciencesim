@@ -7,7 +7,7 @@ Interaktive Simulationen für den naturwissenschaftlichen Unterricht.
 Die Simulationen sind unter folgender Adresse erreichbar:
 
 ```
-https://devbox42-hub.github.io/sciencesim/
+https://devbox42.github.io/sciencesim/
 ```
 
 ## Struktur
