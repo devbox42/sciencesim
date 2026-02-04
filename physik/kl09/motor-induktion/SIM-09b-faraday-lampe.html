@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Simulation: Faraday-Taschenlampe</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 10px;
+            font-size: 14px;
+            color: #222;
+        }
+        .container { max-width: 700px; margin: 0 auto; }
+        h1 { color: #2c5aa0; font-size: 1.1em; margin-bottom: 10px; text-align: center; }
+        .sim-area {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+            touch-action: none;
+            border: 1px solid #ddd;
+            cursor: grab;
+            max-width: 100%;
+            height: auto;
+        }
+        canvas:active, canvas.dragging {
+            cursor: grabbing;
+        }
+        .instructions {
+            margin-top: 12px;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+        .meters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 12px;
+        }
+        .meter {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 8px 15px;
+            min-width: 90px;
+        }
+        .meter-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            font-family: "Courier New", monospace;
+            color: #2c5aa0;
+        }
+        .meter-label { font-size: 0.7em; color: #666; margin-top: 2px; }
+        .info {
+            background: #fff3e0;
+            border-left: 3px solid #b35c00;
+            padding: 10px 12px;
+            margin-top: 12px;
+            font-size: 0.8em;
+            border-radius: 0 8px 8px 0;
+            text-align: left;
+        }
+        .brightness-bar {
+            margin-top: 10px;
+            height: 8px;
+            background: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .brightness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #fff);
+            width: 0%;
+            transition: width 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Faraday-Taschenlampe (Schüttellampe)</h1>
+
+        <div class="sim-area">
+            <canvas id="lampCanvas" width="600" height="200"></canvas>
+
+            <div class="meters">
+                <div class="meter">
+                    <div class="meter-value" id="voltageDisplay">0,0 V</div>
+                    <div class="meter-label">Spannung</div>
+                </div>
+                <div class="meter">
+                    <div class="meter-value" id="speedDisplay">0</div>
+                    <div class="meter-label">Schüttel-v</div>
+                </div>
+                <div class="meter">
+                    <div class="meter-value" id="chargeDisplay">0%</div>
+                    <div class="meter-label">Kondensator</div>
+                </div>
+            </div>
+
+            <div class="brightness-bar">
+                <div class="brightness-fill" id="brightnessFill"></div>
+            </div>
+
+            <div class="instructions">
+                <strong>Schüttle das Gerät</strong> oder ziehe den Magneten links/rechts!
+                <button id="enableMotion" style="display:none; margin-top:8px; padding:10px 16px; min-height:44px; border:1px solid #2c5aa0; background:#fff; color:#2c5aa0; border-radius:6px; font-size:0.9em; cursor:pointer;">Schütteln aktivieren</button>
+            </div>
+        </div>
+
+        <div class="info">
+            <strong>Prinzip:</strong> Ein Magnet gleitet durch eine Spule. Bewegung → Induktion → Strom lädt Kondensator → LED leuchtet.
+        </div>
+    </div>
+
+    <script>
+        var canvas = document.getElementById('lampCanvas');
+        var ctx = canvas.getContext('2d');
+
+        var state = {
+            magnetX: 300,
+            lastX: 300,
+            velocity: 0,
+            charge: 0,
+            brightness: 0,
+            isDragging: false,
+            lastTime: Date.now(),
+            shakeHistory: []
+        };
+
+        var voltageDisplay = document.getElementById('voltageDisplay');
+        var speedDisplay = document.getElementById('speedDisplay');
+        var chargeDisplay = document.getElementById('chargeDisplay');
+        var brightnessFill = document.getElementById('brightnessFill');
+
+        // Touch/Mouse Events
+        canvas.addEventListener('mousedown', startDrag);
+        canvas.addEventListener('mousemove', drag);
+        canvas.addEventListener('mouseup', endDrag);
+        canvas.addEventListener('mouseleave', endDrag);
+
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            startDrag(e.touches[0]);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            drag(e.touches[0]);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', endDrag);
+
+        function startDrag(e) {
+            state.isDragging = true;
+            canvas.classList.add('dragging');
+            var rect = canvas.getBoundingClientRect();
+            var scaleX = canvas.width / rect.width;
+            state.lastX = (e.clientX - rect.left) * scaleX;
+        }
+
+        function drag(e) {
+            if (!state.isDragging) return;
+            var rect = canvas.getBoundingClientRect();
+            var scaleX = canvas.width / rect.width;
+            var x = (e.clientX - rect.left) * scaleX;
+
+            // Bewege den Magneten
+            var dx = x - state.lastX;
+            state.magnetX += dx;
+
+            // Begrenzen auf Spulenbereich
+            state.magnetX = Math.max(200, Math.min(400, state.magnetX));
+
+            state.lastX = x;
+        }
+
+        function endDrag() {
+            state.isDragging = false;
+            canvas.classList.remove('dragging');
+        }
+
+        // Device Motion (echtes Schütteln)
+        function handleMotion(e) {
+            var acc = e.accelerationIncludingGravity;
+            if (acc && acc.x) {
+                state.shakeHistory.push(acc.x);
+                if (state.shakeHistory.length > 10) state.shakeHistory.shift();
+
+                var shake = 0;
+                for (var i = 1; i < state.shakeHistory.length; i++) {
+                    shake += Math.abs(state.shakeHistory[i] - state.shakeHistory[i-1]);
+                }
+
+                if (shake > 5) {
+                    // Simuliere Magnetbewegung durch Schütteln
+                    state.magnetX += (Math.random() - 0.5) * shake * 5;
+                    state.magnetX = Math.max(200, Math.min(400, state.magnetX));
+                }
+            }
+        }
+
+        // iOS 13+ erfordert Permission-Request
+        var enableBtn = document.getElementById('enableMotion');
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            // iOS 13+
+            enableBtn.style.display = 'inline-block';
+            enableBtn.addEventListener('click', function() {
+                DeviceMotionEvent.requestPermission()
+                    .then(function(response) {
+                        if (response === 'granted') {
+                            window.addEventListener('devicemotion', handleMotion);
+                            enableBtn.style.display = 'none';
+                        }
+                    })
+                    .catch(console.error);
+            });
+        } else if (window.DeviceMotionEvent) {
+            // Nicht-iOS oder ältere iOS-Version
+            window.addEventListener('devicemotion', handleMotion);
+        }
+
+        function drawLamp() {
+            // Hintergrund
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            var cy = 100; // Mittelpunkt vertikal
+
+            // Lampengehäuse (horizontal)
+            ctx.fillStyle = '#e0e0e0';
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 3;
+
+            // Linker Teil (LED-Kopf)
+            ctx.beginPath();
+            ctx.arc(60, cy, 40, Math.PI * 0.5, Math.PI * 1.5);
+            ctx.fill();
+            ctx.stroke();
+
+            // Gehäuse-Körper (horizontal)
+            ctx.fillRect(60, cy - 35, 480, 70);
+            ctx.strokeRect(60, cy - 35, 480, 70);
+
+            // Rechter Abschluss
+            ctx.beginPath();
+            ctx.arc(540, cy, 35, Math.PI * 1.5, Math.PI * 0.5);
+            ctx.fill();
+            ctx.stroke();
+
+            // LED (links) - leuchtet je nach Helligkeit
+            var ledGlow = Math.min(1, state.brightness);
+            if (ledGlow > 0.05) {
+                // Lichtkegel
+                var gradient = ctx.createRadialGradient(50, cy, 5, 30, cy, 80);
+                gradient.addColorStop(0, 'rgba(255, 255, 200, ' + ledGlow + ')');
+                gradient.addColorStop(0.5, 'rgba(255, 255, 100, ' + (ledGlow * 0.5) + ')');
+                gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(40, cy, 60, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // LED selbst
+            ctx.fillStyle = ledGlow > 0.1 ?
+                'rgb(' + Math.round(255) + ',' + Math.round(200 + 55 * ledGlow) + ',0)' :
+                '#888';
+            ctx.beginPath();
+            ctx.arc(50, cy, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Spule (Kupferdraht) - horizontal
+            ctx.fillStyle = '#b35c00';
+            for (var i = 0; i < 12; i++) {
+                var x = 200 + i * 15;
+                ctx.fillRect(x, cy - 28, 10, 56);
+                ctx.strokeStyle = '#8b4513';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, cy - 28, 10, 56);
+            }
+
+            // Spulen-Innenraum (Röhre) - horizontal
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(195, cy - 18, 195, 36);
+
+            // Magnet (horizontal)
+            var magnetWidth = 50;
+            var magnetHeight = 30;
+
+            // Nordpol (rot) - links
+            ctx.fillStyle = '#c62828';
+            ctx.fillRect(state.magnetX - magnetWidth/2, cy - magnetHeight/2, magnetWidth/2, magnetHeight);
+
+            // Südpol (blau) - rechts
+            ctx.fillStyle = '#1565c0';
+            ctx.fillRect(state.magnetX, cy - magnetHeight/2, magnetWidth/2, magnetHeight);
+
+            // Magnet-Beschriftung
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('N', state.magnetX - 12, cy + 4);
+            ctx.fillText('S', state.magnetX + 12, cy + 4);
+
+            // Magnet-Rahmen
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(state.magnetX - magnetWidth/2, cy - magnetHeight/2, magnetWidth, magnetHeight);
+
+            // Kondensator-Symbol (rechts)
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(480, cy - 15, 50, 30);
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(485, cy - 10, state.charge * 40 / 100, 20);
+            ctx.strokeStyle = '#999';
+            ctx.strokeRect(480, cy - 15, 50, 30);
+
+            ctx.fillStyle = '#666';
+            ctx.font = '9px sans-serif';
+            ctx.fillText('Kond.', 505, cy + 35);
+
+            // Beschriftungen
+            ctx.fillStyle = '#666';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('LED', 50, cy + 50);
+            ctx.fillText('Spule', 300, cy + 50);
+        }
+
+        function update() {
+            var now = Date.now();
+            var dt = (now - state.lastTime) / 1000;
+            state.lastTime = now;
+
+            // Geschwindigkeit berechnen
+            var dx = state.magnetX - state.lastX;
+            state.velocity = state.velocity * 0.8 + dx * 0.2; // Glättung
+
+            // Spannung proportional zur Geschwindigkeit (wenn im Spulenbereich)
+            var inCoil = state.magnetX > 220 && state.magnetX < 380;
+            var voltage = inCoil ? Math.abs(state.velocity) * 0.3 : 0;
+            voltage = Math.min(3, voltage);
+
+            // Kondensator laden
+            if (voltage > 0.1) {
+                state.charge = Math.min(100, state.charge + voltage * dt * 20);
+            }
+
+            // Kondensator entladen (LED leuchtet)
+            if (state.charge > 5) {
+                state.brightness = state.charge / 100;
+                state.charge -= dt * 15; // Langsam entladen
+            } else {
+                state.brightness *= 0.95; // Langsam abdunkeln
+            }
+
+            state.charge = Math.max(0, state.charge);
+
+            // Displays aktualisieren
+            voltageDisplay.textContent = voltage.toFixed(1).replace('.', ',') + ' V';
+            speedDisplay.textContent = Math.round(Math.abs(state.velocity) * 10);
+            chargeDisplay.textContent = Math.round(state.charge) + '%';
+            brightnessFill.style.width = (state.brightness * 100) + '%';
+
+            state.lastX = state.magnetX;
+        }
+
+        function animate() {
+            update();
+            drawLamp();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

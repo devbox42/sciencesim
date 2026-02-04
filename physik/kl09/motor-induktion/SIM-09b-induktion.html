@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Simulation: Elektromagnetische Induktion</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,14 +25,19 @@
             border: 1px solid #ddd;
             padding: 15px;
             margin-bottom: 15px;
+            border-radius: 8px;
         }
         canvas {
             display: block;
             margin: 0 auto;
             border: 1px solid #ddd;
+            border-radius: 4px;
             cursor: grab;
+            touch-action: none;
+            max-width: 100%;
+            height: auto;
         }
-        canvas:active { cursor: grabbing; }
+        canvas:active, canvas.dragging { cursor: grabbing; }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -40,6 +45,7 @@
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #ddd;
+            justify-content: center;
         }
         .control-group {
             display: flex;
@@ -51,28 +57,33 @@
             color: #555;
         }
         button {
-            padding: 8px 16px;
+            padding: 10px 16px;
             border: 1px solid #2c5aa0;
             background: #fff;
             color: #2c5aa0;
             cursor: pointer;
             font-size: 0.85em;
+            border-radius: 6px;
+            min-height: 44px;
         }
         button:hover { background: #f0f4f8; }
         button.active {
             background: #2c5aa0;
             color: #fff;
         }
-        select, input[type="range"] {
-            padding: 5px;
+        select {
+            padding: 8px 12px;
             border: 1px solid #ddd;
-            font-size: 0.85em;
+            font-size: 0.9em;
+            border-radius: 6px;
+            min-height: 44px;
         }
         .info-box {
             background: #fff;
             border: 1px solid #ddd;
             padding: 12px 15px;
             margin-bottom: 15px;
+            border-radius: 8px;
         }
         .info-box h3 {
             color: #2c5aa0;
@@ -91,6 +102,7 @@
             background: #f9f9f9;
             border: 1px solid #ddd;
             min-width: 120px;
+            border-radius: 6px;
         }
         .meter-value {
             font-size: 1.5em;
@@ -105,17 +117,21 @@
         .positive { color: #c62828; }
         .negative { color: #1565c0; }
         .instructions {
-            font-size: 0.85em;
+            font-size: 0.9em;
             color: #555;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 12px;
+            padding: 10px;
+            background: #f0f4f8;
+            border-radius: 6px;
         }
         .legend {
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin-top: 10px;
+            margin-top: 12px;
             font-size: 0.8em;
+            flex-wrap: wrap;
         }
         .legend-item {
             display: flex;
@@ -126,6 +142,7 @@
             width: 20px;
             height: 12px;
             border: 1px solid #999;
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -136,12 +153,11 @@
         <div class="info-box">
             <h3>Was ist Induktion?</h3>
             <p>Bewegt man einen Magneten durch eine Spule, entsteht eine <strong>Induktionsspannung</strong>.
-            Je schneller die Bewegung, desto größer die Spannung. Die Richtung der Spannung hängt von der
-            Bewegungsrichtung ab.</p>
+            Je schneller die Bewegung, desto größer die Spannung.</p>
         </div>
 
         <div class="sim-area">
-            <canvas id="simCanvas" width="700" height="400"></canvas>
+            <canvas id="simCanvas" width="700" height="420"></canvas>
 
             <div class="meter-display">
                 <div class="meter">
@@ -154,7 +170,7 @@
                 </div>
             </div>
 
-            <p class="instructions">Ziehe den Magneten mit der Maus durch die Spule!</p>
+            <p class="instructions">Ziehe den Magneten mit dem Finger durch die Spule!</p>
 
             <div class="controls">
                 <div class="control-group">
@@ -167,12 +183,15 @@
                     </select>
                 </div>
                 <div class="control-group">
-                    <label>Magnetstärke:</label>
-                    <select id="magnetStrength">
-                        <option value="0.5">Schwach</option>
-                        <option value="1" selected>Normal</option>
-                        <option value="2">Stark</option>
+                    <label>Spulenfläche:</label>
+                    <select id="spulenflaeche">
+                        <option value="0.5">klein</option>
+                        <option value="1" selected>mittel</option>
+                        <option value="2">groß</option>
                     </select>
+                </div>
+                <div class="control-group">
+                    <button id="btnStrongMagnet">Starker Magnet</button>
                 </div>
                 <div class="control-group">
                     <button id="btnAutoMove">Auto-Bewegung</button>
@@ -181,7 +200,7 @@
                     <button id="btnFlipMagnet">Magnet umdrehen</button>
                 </div>
                 <div class="control-group">
-                    <button id="btnShowField" class="active">Feldlinien zeigen</button>
+                    <button id="btnShowField" class="active">Feldlinien</button>
                 </div>
             </div>
 
@@ -196,62 +215,71 @@
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background: #2e7d32;"></div>
-                    <span>Magnetfeldlinien</span>
+                    <span>Feldlinien</span>
                 </div>
             </div>
         </div>
 
         <div class="info-box">
-            <h3>Beobachtungen</h3>
-            <ul style="margin-left: 20px; line-height: 1.6;">
-                <li><strong>Schnellere Bewegung</strong> → größere Spannung</li>
-                <li><strong>Mehr Windungen</strong> → größere Spannung</li>
-                <li><strong>Stärkerer Magnet</strong> → größere Spannung</li>
-                <li><strong>Richtungswechsel</strong> → Spannungswechsel (+ ↔ −)</li>
-                <li><strong>Stillstand</strong> → keine Spannung!</li>
-            </ul>
+            <h3>Experimentierauftrag</h3>
+            <p>Führe die Experimente durch und notiere deine Beobachtungen im <strong>Arbeitsblatt</strong>!</p>
         </div>
     </div>
 
     <script>
-        // Canvas und Kontext
         var canvas = document.getElementById('simCanvas');
         var ctx = canvas.getContext('2d');
 
-        // Zustand
         var state = {
             magnetX: 150,
-            magnetY: 200,
+            magnetY: 210,
             magnetFlipped: false,
+            strongMagnet: false,
             lastX: 150,
             velocity: 0,
+            smoothVoltage: 0,
             isDragging: false,
             autoMove: false,
             autoPhase: 0,
             showField: true,
             windungen: 10,
-            magnetStrength: 1
+            coilArea: 1
         };
 
-        // Spulen-Position
+        // Spulen-Position (rechts im Bild)
         var coil = {
-            x: 350,
-            y: 200,
-            width: 120,
-            height: 100
+            x: 420,
+            y: 210,
+            width: 120
         };
 
-        // Magnet-Größe
-        var magnet = {
-            width: 80,
-            height: 40
-        };
+        // Spulenhöhe abhängig von Fläche
+        function getCoilHeight() {
+            if (state.coilArea <= 0.5) return 45;
+            if (state.coilArea >= 2) return 100;
+            return 70;
+        }
+
+        function getCoilAreaLabel() {
+            if (state.coilArea <= 0.5) return 'A = klein';
+            if (state.coilArea >= 2) return 'A = groß';
+            return 'A = mittel';
+        }
+
+        // Magnet-Größe (variabel je nach Stärke)
+        function getMagnetSize() {
+            return {
+                width: state.strongMagnet ? 100 : 80,
+                height: state.strongMagnet ? 42 : 32
+            };
+        }
 
         // UI-Elemente
         var voltageDisplay = document.getElementById('voltageDisplay');
         var speedDisplay = document.getElementById('speedDisplay');
         var windungenSelect = document.getElementById('windungen');
-        var magnetStrengthSelect = document.getElementById('magnetStrength');
+        var spulenflaecheSelect = document.getElementById('spulenflaeche');
+        var btnStrongMagnet = document.getElementById('btnStrongMagnet');
         var btnAutoMove = document.getElementById('btnAutoMove');
         var btnFlipMagnet = document.getElementById('btnFlipMagnet');
         var btnShowField = document.getElementById('btnShowField');
@@ -261,16 +289,20 @@
             state.windungen = parseInt(this.value);
         });
 
-        magnetStrengthSelect.addEventListener('change', function() {
-            state.magnetStrength = parseFloat(this.value);
+        spulenflaecheSelect.addEventListener('change', function() {
+            state.coilArea = parseFloat(this.value);
+        });
+
+        btnStrongMagnet.addEventListener('click', function() {
+            state.strongMagnet = !state.strongMagnet;
+            this.classList.toggle('active', state.strongMagnet);
+            this.textContent = state.strongMagnet ? 'Normaler Magnet' : 'Starker Magnet';
         });
 
         btnAutoMove.addEventListener('click', function() {
             state.autoMove = !state.autoMove;
             this.classList.toggle('active', state.autoMove);
-            if (state.autoMove) {
-                state.autoPhase = 0;
-            }
+            if (state.autoMove) state.autoPhase = 0;
         });
 
         btnFlipMagnet.addEventListener('click', function() {
@@ -287,10 +319,10 @@
             var rect = canvas.getBoundingClientRect();
             var mx = e.clientX - rect.left;
             var my = e.clientY - rect.top;
+            var mag = getMagnetSize();
 
-            // Prüfen ob Magnet getroffen
-            if (mx > state.magnetX - magnet.width/2 && mx < state.magnetX + magnet.width/2 &&
-                my > state.magnetY - magnet.height/2 && my < state.magnetY + magnet.height/2) {
+            if (mx > state.magnetX - mag.width/2 - 20 && mx < state.magnetX + mag.width/2 + 20 &&
+                my > state.magnetY - mag.height/2 - 20 && my < state.magnetY + mag.height/2 + 20) {
                 state.isDragging = true;
                 state.autoMove = false;
                 btnAutoMove.classList.remove('active');
@@ -300,153 +332,241 @@
         canvas.addEventListener('mousemove', function(e) {
             if (state.isDragging) {
                 var rect = canvas.getBoundingClientRect();
+                var mag = getMagnetSize();
                 state.magnetX = e.clientX - rect.left;
                 state.magnetY = e.clientY - rect.top;
-
-                // Begrenzen
-                state.magnetX = Math.max(magnet.width/2, Math.min(canvas.width - magnet.width/2, state.magnetX));
-                state.magnetY = Math.max(magnet.height/2, Math.min(canvas.height - magnet.height/2, state.magnetY));
+                state.magnetX = Math.max(mag.width/2 + 10, Math.min(canvas.width - mag.width/2 - 10, state.magnetX));
+                state.magnetY = Math.max(mag.height/2 + 60, Math.min(canvas.height - mag.height/2 - 30, state.magnetY));
             }
         });
 
-        canvas.addEventListener('mouseup', function() {
-            state.isDragging = false;
-        });
+        canvas.addEventListener('mouseup', function() { state.isDragging = false; });
+        canvas.addEventListener('mouseleave', function() { state.isDragging = false; });
 
-        canvas.addEventListener('mouseleave', function() {
-            state.isDragging = false;
-        });
-
-        // Touch-Events
+        // Touch-Events (mit CSS-Skalierungskorrektur)
         canvas.addEventListener('touchstart', function(e) {
             e.preventDefault();
             var rect = canvas.getBoundingClientRect();
+            var scaleX = canvas.width / rect.width;
+            var scaleY = canvas.height / rect.height;
             var touch = e.touches[0];
-            var mx = touch.clientX - rect.left;
-            var my = touch.clientY - rect.top;
+            var mx = (touch.clientX - rect.left) * scaleX;
+            var my = (touch.clientY - rect.top) * scaleY;
+            var mag = getMagnetSize();
 
-            if (mx > state.magnetX - magnet.width/2 - 20 && mx < state.magnetX + magnet.width/2 + 20 &&
-                my > state.magnetY - magnet.height/2 - 20 && my < state.magnetY + magnet.height/2 + 20) {
+            // Großzügiger Touch-Bereich (min 44px effective)
+            var touchPadding = Math.max(30, 22 * scaleX);
+            if (mx > state.magnetX - mag.width/2 - touchPadding && mx < state.magnetX + mag.width/2 + touchPadding &&
+                my > state.magnetY - mag.height/2 - touchPadding && my < state.magnetY + mag.height/2 + touchPadding) {
                 state.isDragging = true;
                 state.autoMove = false;
                 btnAutoMove.classList.remove('active');
             }
-        });
+        }, { passive: false });
 
         canvas.addEventListener('touchmove', function(e) {
             e.preventDefault();
             if (state.isDragging) {
                 var rect = canvas.getBoundingClientRect();
+                var scaleX = canvas.width / rect.width;
+                var scaleY = canvas.height / rect.height;
                 var touch = e.touches[0];
-                state.magnetX = touch.clientX - rect.left;
-                state.magnetY = touch.clientY - rect.top;
-
-                state.magnetX = Math.max(magnet.width/2, Math.min(canvas.width - magnet.width/2, state.magnetX));
-                state.magnetY = Math.max(magnet.height/2, Math.min(canvas.height - magnet.height/2, state.magnetY));
+                var mag = getMagnetSize();
+                state.magnetX = (touch.clientX - rect.left) * scaleX;
+                state.magnetY = (touch.clientY - rect.top) * scaleY;
+                state.magnetX = Math.max(mag.width/2 + 10, Math.min(canvas.width - mag.width/2 - 10, state.magnetX));
+                state.magnetY = Math.max(mag.height/2 + 60, Math.min(canvas.height - mag.height/2 - 30, state.magnetY));
             }
-        });
+        }, { passive: false });
 
-        canvas.addEventListener('touchend', function() {
-            state.isDragging = false;
-        });
+        canvas.addEventListener('touchend', function() { state.isDragging = false; });
 
-        // Zeichenfunktionen
+        // Spule zeichnen - lockere Windungen, kein Eisenkern
         function drawCoil() {
+            var cx = coil.x;
+            var cy = coil.y;
+            var w = coil.width;
+            var h = getCoilHeight();
             var n = state.windungen;
-            var spacing = coil.width / (n + 1);
 
-            // Spulenkörper (Rechteck)
-            ctx.fillStyle = '#e0e0e0';
-            ctx.fillRect(coil.x - coil.width/2, coil.y - coil.height/2, coil.width, coil.height);
-            ctx.strokeStyle = '#999';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(coil.x - coil.width/2, coil.y - coil.height/2, coil.width, coil.height);
+            // Windungsabstand berechnen
+            var spacing = w / (n + 1);
+            var wireWidth = Math.max(2, Math.min(4, 50 / n));
 
-            // Windungen zeichnen
-            ctx.strokeStyle = '#b35c00';
-            ctx.lineWidth = 2;
+            // Hintere Windungsteile (hinter dem Durchgang)
+            ctx.strokeStyle = 'rgba(180, 92, 0, 0.4)';
+            ctx.lineWidth = wireWidth;
 
             for (var i = 1; i <= n; i++) {
-                var x = coil.x - coil.width/2 + i * spacing;
-
-                // Obere Hälfte (vor dem Spulenkörper)
+                var x = cx - w/2 + i * spacing;
                 ctx.beginPath();
-                ctx.ellipse(x, coil.y, 8, coil.height/2 + 10, 0, Math.PI, 0);
+                ctx.moveTo(x, cy - h/2);
+                ctx.lineTo(x, cy + h/2);
                 ctx.stroke();
             }
 
-            // Anschlüsse
-            ctx.strokeStyle = '#b35c00';
+            // Durchgang (Luft - transparent)
+            ctx.fillStyle = 'rgba(200, 220, 255, 0.3)';
+            ctx.fillRect(cx - w/2 - 5, cy - 16, w + 10, 32);
+
+            // Vordere Windungsteile (Kupferdraht)
+            ctx.strokeStyle = '#b45c00';
+            ctx.lineWidth = wireWidth;
+
+            for (var i = 1; i <= n; i++) {
+                var x = cx - w/2 + i * spacing;
+
+                // Oberer Bogen
+                ctx.beginPath();
+                ctx.arc(x, cy - h/2, 8, Math.PI, 0);
+                ctx.stroke();
+
+                // Unterer Bogen
+                ctx.beginPath();
+                ctx.arc(x, cy + h/2, 8, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            // Anschlussdrähte zum Voltmeter
+            ctx.strokeStyle = '#b45c00';
             ctx.lineWidth = 3;
 
             // Linker Anschluss
+            var leftWireX = cx - w/2 + spacing;
             ctx.beginPath();
-            ctx.moveTo(coil.x - coil.width/2 - 20, coil.y - coil.height/2 - 10);
-            ctx.lineTo(coil.x - coil.width/2, coil.y - coil.height/2 - 10);
-            ctx.lineTo(coil.x - coil.width/2 + spacing, coil.y - coil.height/2 - 10);
+            ctx.moveTo(leftWireX, cy - h/2 - 8);
+            ctx.lineTo(leftWireX, cy - h/2 - 25);
+            ctx.lineTo(cx - 50, cy - h/2 - 25);
+            ctx.lineTo(cx - 50, 50);
             ctx.stroke();
 
             // Rechter Anschluss
+            var rightWireX = cx + w/2 - spacing;
             ctx.beginPath();
-            ctx.moveTo(coil.x + coil.width/2 + 20, coil.y - coil.height/2 - 10);
-            ctx.lineTo(coil.x + coil.width/2, coil.y - coil.height/2 - 10);
-            ctx.lineTo(coil.x + coil.width/2 - spacing, coil.y - coil.height/2 - 10);
+            ctx.moveTo(rightWireX, cy - h/2 - 8);
+            ctx.lineTo(rightWireX, cy - h/2 - 25);
+            ctx.lineTo(cx + 50, cy - h/2 - 25);
+            ctx.lineTo(cx + 50, 50);
             ctx.stroke();
 
-            // Voltmeter
+            // Windungszahl- und Flächen-Beschriftung
+            ctx.fillStyle = '#555';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('n = ' + n + ',  ' + getCoilAreaLabel(), cx, cy + h/2 + 30);
+        }
+
+        // Analoges Voltmeter
+        function drawVoltmeter(voltage) {
             var vmX = coil.x;
-            var vmY = coil.y - coil.height/2 - 50;
+            var vmY = 50;
+            var radius = 45;
 
-            // Leitungen zum Voltmeter
-            ctx.strokeStyle = '#b35c00';
-            ctx.lineWidth = 2;
+            // Gehäuse
+            ctx.fillStyle = '#fafaf5';
             ctx.beginPath();
-            ctx.moveTo(coil.x - coil.width/2 - 20, coil.y - coil.height/2 - 10);
-            ctx.lineTo(coil.x - coil.width/2 - 20, vmY);
-            ctx.lineTo(vmX - 20, vmY);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(coil.x + coil.width/2 + 20, coil.y - coil.height/2 - 10);
-            ctx.lineTo(coil.x + coil.width/2 + 20, vmY);
-            ctx.lineTo(vmX + 20, vmY);
-            ctx.stroke();
-
-            // Voltmeter Kreis
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.arc(vmX, vmY, 25, 0, Math.PI * 2);
+            ctx.arc(vmX, vmY, radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // V im Voltmeter
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 16px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('V', vmX, vmY);
+            // Skala
+            var startAngle = -Math.PI * 0.8;
+            var endAngle = -Math.PI * 0.2;
+            var scaleR = radius - 12;
 
-            // Windungszahl-Label
-            ctx.fillStyle = '#555';
-            ctx.font = '12px sans-serif';
-            ctx.fillText('n = ' + state.windungen, coil.x, coil.y + coil.height/2 + 20);
+            // Farbige Skalenbereiche
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#1565c0';
+            ctx.beginPath();
+            ctx.arc(vmX, vmY, scaleR - 6, startAngle, (startAngle + endAngle) / 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#c62828';
+            ctx.beginPath();
+            ctx.arc(vmX, vmY, scaleR - 6, (startAngle + endAngle) / 2, endAngle);
+            ctx.stroke();
+
+            // Skalenstriche
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1.5;
+            for (var i = 0; i <= 10; i++) {
+                var angle = startAngle + (endAngle - startAngle) * (i / 10);
+                var len = (i % 5 === 0) ? 10 : 5;
+                ctx.beginPath();
+                ctx.moveTo(vmX + Math.cos(angle) * (scaleR - len), vmY + Math.sin(angle) * (scaleR - len));
+                ctx.lineTo(vmX + Math.cos(angle) * scaleR, vmY + Math.sin(angle) * scaleR);
+                ctx.stroke();
+            }
+
+            // Beschriftungen
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#1565c0';
+            ctx.fillText('−', vmX + Math.cos(startAngle) * (scaleR - 20), vmY + Math.sin(startAngle) * (scaleR - 20) + 3);
+            ctx.fillStyle = '#333';
+            ctx.fillText('0', vmX + Math.cos((startAngle + endAngle) / 2) * (scaleR - 20), vmY + Math.sin((startAngle + endAngle) / 2) * (scaleR - 20) + 3);
+            ctx.fillStyle = '#c62828';
+            ctx.fillText('+', vmX + Math.cos(endAngle) * (scaleR - 20), vmY + Math.sin(endAngle) * (scaleR - 20) + 3);
+
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('V', vmX, vmY + 15);
+
+            // Zeiger
+            state.smoothVoltage = state.smoothVoltage * 0.7 + voltage * 0.3;
+            var needleV = Math.max(-5, Math.min(5, state.smoothVoltage));
+            var needleAngle = startAngle + (endAngle - startAngle) * ((needleV + 5) / 10);
+
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(vmX, vmY);
+            ctx.lineTo(vmX + Math.cos(needleAngle) * (scaleR + 3), vmY + Math.sin(needleAngle) * (scaleR + 3));
+            ctx.stroke();
+
+            // Drehpunkt
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(vmX, vmY, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Anschlussklemmen
+            ctx.fillStyle = '#c62828';
+            ctx.beginPath();
+            ctx.arc(coil.x - 50, vmY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 8px sans-serif';
+            ctx.fillText('+', coil.x - 50, vmY + 3);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.beginPath();
+            ctx.arc(coil.x + 50, vmY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.fillText('−', coil.x + 50, vmY + 3);
         }
 
+        // Magnet zeichnen
         function drawMagnet() {
             var x = state.magnetX;
             var y = state.magnetY;
-            var w = magnet.width;
-            var h = magnet.height;
+            var mag = getMagnetSize();
+            var w = mag.width;
+            var h = mag.height;
 
-            // Magnet-Hälften
             var leftColor = state.magnetFlipped ? '#1565c0' : '#c62828';
             var rightColor = state.magnetFlipped ? '#c62828' : '#1565c0';
             var leftLabel = state.magnetFlipped ? 'S' : 'N';
             var rightLabel = state.magnetFlipped ? 'N' : 'S';
 
-            // Linke Hälfte
+            // Schatten
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillRect(x - w/2 + 3, y - h/2 + 3, w, h);
+
+            // Linke Hälfte (N oder S)
             ctx.fillStyle = leftColor;
             ctx.fillRect(x - w/2, y - h/2, w/2, h);
 
@@ -455,7 +575,7 @@
             ctx.fillRect(x, y - h/2, w/2, h);
 
             // Rahmen
-            ctx.strokeStyle = '#333';
+            ctx.strokeStyle = '#222';
             ctx.lineWidth = 2;
             ctx.strokeRect(x - w/2, y - h/2, w, h);
 
@@ -467,194 +587,165 @@
 
             // Beschriftung
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 18px sans-serif';
+            ctx.font = state.strongMagnet ? 'bold 18px sans-serif' : 'bold 14px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(leftLabel, x - w/4, y);
             ctx.fillText(rightLabel, x + w/4, y);
+
+            // "Stark"-Indikator
+            if (state.strongMagnet) {
+                ctx.fillStyle = '#ffd700';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillText('STARK', x, y - h/2 - 8);
+            }
         }
 
+        // Feldlinien-SVG laden (mit Cache-Buster)
+        var fieldLinesImg = new Image();
+        fieldLinesImg.src = 'img/feldlinien-dipol.svg?v=' + Date.now();
+        var fieldLinesLoaded = false;
+        fieldLinesImg.onload = function() {
+            fieldLinesLoaded = true;
+        };
+
+        // Feldlinien zeichnen (SVG-basiert, physikalisch korrekt)
         function drawFieldLines() {
-            if (!state.showField) return;
+            if (!state.showField || !fieldLinesLoaded) return;
 
             var x = state.magnetX;
             var y = state.magnetY;
-            var strength = state.magnetStrength;
+            var mag = getMagnetSize();
 
-            ctx.strokeStyle = '#2e7d32';
-            ctx.lineWidth = 1;
-            ctx.globalAlpha = 0.6;
+            // Skalierung - Feldlinien müssen weit über den Magneten hinausragen
+            var scale = state.strongMagnet ? 5.5 : 4.5;
+            var imgWidth = mag.width * scale;
+            var imgHeight = imgWidth * 0.75; // Aspect ratio des SVG
 
-            // Feldlinien vom N-Pol zum S-Pol
-            var nPoleX = state.magnetFlipped ? x + magnet.width/4 : x - magnet.width/4;
-            var sPoleX = state.magnetFlipped ? x - magnet.width/4 : x + magnet.width/4;
+            ctx.save();
 
-            var lineCount = Math.floor(3 * strength);
+            // Zum Magnetmittelpunkt verschieben
+            ctx.translate(x, y);
 
-            for (var i = 0; i < lineCount; i++) {
-                var offset = (i - (lineCount-1)/2) * 15;
-
-                // Obere Feldlinie
-                ctx.beginPath();
-                ctx.moveTo(nPoleX - magnet.width/4, y + offset);
-                var cp1x = nPoleX - magnet.width/2 - 30;
-                var cp1y = y + offset - 40;
-                var cp2x = sPoleX + magnet.width/2 + 30;
-                var cp2y = y + offset - 40;
-                ctx.bezierCurveTo(cp1x, cp1y, cp1x, cp1y - 30, nPoleX - magnet.width/4, y - magnet.height/2 - 20 - Math.abs(offset));
-                ctx.stroke();
-
-                // Untere Feldlinie
-                ctx.beginPath();
-                ctx.moveTo(nPoleX - magnet.width/4, y + offset);
-                ctx.bezierCurveTo(cp1x, y + offset + 40, cp1x, y + offset + 70, nPoleX - magnet.width/4, y + magnet.height/2 + 20 + Math.abs(offset));
-                ctx.stroke();
-
-                // Rechte Seite
-                ctx.beginPath();
-                ctx.moveTo(sPoleX + magnet.width/4, y + offset);
-                ctx.bezierCurveTo(cp2x, cp2y, cp2x, cp2y - 30, sPoleX + magnet.width/4, y - magnet.height/2 - 20 - Math.abs(offset));
-                ctx.stroke();
-
-                ctx.beginPath();
-                ctx.moveTo(sPoleX + magnet.width/4, y + offset);
-                ctx.bezierCurveTo(cp2x, y + offset + 40, cp2x, y + offset + 70, sPoleX + magnet.width/4, y + magnet.height/2 + 20 + Math.abs(offset));
-                ctx.stroke();
+            // Bei umgedrehtem Magnet horizontal spiegeln
+            if (state.magnetFlipped) {
+                ctx.scale(-1, 1);
             }
 
-            // Horizontale Feldlinien durch die Mitte
-            for (var j = 0; j < lineCount; j++) {
-                var yOff = (j - (lineCount-1)/2) * 12;
-                ctx.beginPath();
-                ctx.moveTo(nPoleX - magnet.width/4 - 50, y + yOff);
-                ctx.lineTo(sPoleX + magnet.width/4 + 50, y + yOff);
-                ctx.stroke();
+            // SVG zeichnen, zentriert auf dem Magneten
+            ctx.globalAlpha = 0.85;
+            ctx.drawImage(
+                fieldLinesImg,
+                -imgWidth / 2,
+                -imgHeight / 2,
+                imgWidth,
+                imgHeight
+            );
 
-                // Pfeil
-                var arrowX = state.magnetFlipped ? nPoleX - magnet.width/4 - 30 : sPoleX + magnet.width/4 + 30;
-                var arrowDir = state.magnetFlipped ? -1 : 1;
-                ctx.beginPath();
-                ctx.moveTo(arrowX, y + yOff);
-                ctx.lineTo(arrowX - 8 * arrowDir, y + yOff - 4);
-                ctx.lineTo(arrowX - 8 * arrowDir, y + yOff + 4);
-                ctx.closePath();
-                ctx.fillStyle = '#2e7d32';
-                ctx.fill();
-            }
-
-            ctx.globalAlpha = 1;
+            ctx.restore();
         }
 
-        function calculateInducedVoltage() {
-            // Berechne Geschwindigkeit
+        // Stromrichtungspfeile
+        function drawCurrentArrows(voltage) {
+            if (Math.abs(voltage) < 0.3) return;
+
+            var cx = coil.x;
+            var h = getCoilHeight();
+
+            ctx.fillStyle = voltage > 0 ? '#c62828' : '#1565c0';
+            var size = Math.min(10, 5 + Math.abs(voltage));
+            var dir = voltage > 0 ? 1 : -1;
+
+            // Pfeil auf linkem Draht
+            var leftX = cx - 50;
+            var arrowY = coil.y - h/2 - 50;
+
+            ctx.beginPath();
+            ctx.moveTo(leftX, arrowY + size * dir);
+            ctx.lineTo(leftX - size/2, arrowY);
+            ctx.lineTo(leftX + size/2, arrowY);
+            ctx.closePath();
+            ctx.fill();
+
+            // Pfeil auf rechtem Draht
+            var rightX = cx + 50;
+
+            ctx.beginPath();
+            ctx.moveTo(rightX, arrowY - size * dir);
+            ctx.lineTo(rightX - size/2, arrowY);
+            ctx.lineTo(rightX + size/2, arrowY);
+            ctx.closePath();
+            ctx.fill();
+
+            // "I" Beschriftung
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('I', leftX - 12, arrowY + 4);
+        }
+
+        // Spannung berechnen
+        function calculateVoltage() {
             var velocity = state.magnetX - state.lastX;
-            state.velocity = velocity;
+            state.velocity = state.velocity * 0.6 + velocity * 0.4;
             state.lastX = state.magnetX;
 
-            // Ist der Magnet in der Nähe der Spule?
-            var distance = Math.abs(state.magnetX - coil.x);
-            var inCoilZone = distance < coil.width/2 + magnet.width/2 + 30;
+            var mag = getMagnetSize();
+            var h = getCoilHeight();
+            var inCoilX = Math.abs(state.magnetX - coil.x) < coil.width/2 + mag.width/2 + 20;
+            var inCoilY = Math.abs(state.magnetY - coil.y) < h/2;
 
-            // Induktionsspannung (qualitativ)
             var voltage = 0;
-            if (inCoilZone) {
-                // Spannung proportional zu: Geschwindigkeit, Windungszahl, Magnetstärke
-                voltage = velocity * state.windungen * state.magnetStrength * 0.02;
-
-                // Richtung umkehren wenn Magnet geflippt
-                if (state.magnetFlipped) {
-                    voltage = -voltage;
-                }
-
-                // Begrenzen
+            if (inCoilX && inCoilY) {
+                var magnetFactor = state.strongMagnet ? 2 : 1;
+                var areaFactor = state.coilArea;
+                voltage = state.velocity * state.windungen * magnetFactor * areaFactor * 0.018;
+                if (state.magnetFlipped) voltage = -voltage;
                 voltage = Math.max(-5, Math.min(5, voltage));
             }
 
             return voltage;
         }
 
+        // Anzeigen aktualisieren
         function updateDisplays(voltage) {
-            // Spannung
-            var absVoltage = Math.abs(voltage);
+            var absV = Math.abs(voltage);
             var sign = voltage >= 0 ? '+' : '−';
-            var voltageStr = absVoltage < 0.1 ? '0,0' : sign + absVoltage.toFixed(1).replace('.', ',');
-            voltageDisplay.textContent = voltageStr + ' V';
+            voltageDisplay.textContent = (absV < 0.05 ? '0,0' : sign + absV.toFixed(1).replace('.', ',')) + ' V';
 
-            if (voltage > 0.1) {
+            if (voltage > 0.05) {
                 voltageDisplay.className = 'meter-value positive';
-            } else if (voltage < -0.1) {
+            } else if (voltage < -0.05) {
                 voltageDisplay.className = 'meter-value negative';
             } else {
                 voltageDisplay.className = 'meter-value';
             }
 
-            // Geschwindigkeit
-            var speed = Math.abs(state.velocity * 5); // Skalieren für cm/s
-            speedDisplay.textContent = Math.round(speed) + ' cm/s';
+            speedDisplay.textContent = Math.round(Math.abs(state.velocity * 5)) + ' cm/s';
         }
 
-        function drawCurrentIndicator(voltage) {
-            if (Math.abs(voltage) < 0.1) return;
-
-            // Zeige Stromrichtung an den Anschlüssen
-            var arrowY = coil.y - coil.height/2 - 10;
-            var leftX = coil.x - coil.width/2 - 10;
-            var rightX = coil.x + coil.width/2 + 10;
-
-            ctx.fillStyle = voltage > 0 ? '#c62828' : '#1565c0';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.textAlign = 'center';
-
-            // Strompfeile
-            var arrowSize = Math.min(12, Math.abs(voltage) * 3 + 6);
-
-            if (voltage > 0) {
-                // Strom fließt von links nach rechts (konventionell)
-                ctx.beginPath();
-                ctx.moveTo(leftX - 15, arrowY);
-                ctx.lineTo(leftX - 15 - arrowSize, arrowY - arrowSize/2);
-                ctx.lineTo(leftX - 15 - arrowSize, arrowY + arrowSize/2);
-                ctx.closePath();
-                ctx.fill();
-            } else {
-                // Strom fließt von rechts nach links
-                ctx.beginPath();
-                ctx.moveTo(rightX + 15, arrowY);
-                ctx.lineTo(rightX + 15 + arrowSize, arrowY - arrowSize/2);
-                ctx.lineTo(rightX + 15 + arrowSize, arrowY + arrowSize/2);
-                ctx.closePath();
-                ctx.fill();
-            }
-        }
-
+        // Hauptschleife
         function draw() {
-            // Hintergrund
             ctx.fillStyle = '#fafafa';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Auto-Bewegung
             if (state.autoMove) {
-                state.autoPhase += 0.03;
-                state.magnetX = 350 + Math.sin(state.autoPhase) * 180;
-                state.magnetY = 200;
+                state.autoPhase += 0.025;
+                state.magnetX = coil.x + Math.sin(state.autoPhase) * 200;
+                state.magnetY = coil.y;
             }
 
-            // Berechne Spannung
-            var voltage = calculateInducedVoltage();
+            var voltage = calculateVoltage();
 
-            // Zeichne Elemente
             drawFieldLines();
             drawCoil();
+            drawCurrentArrows(voltage);
+            drawVoltmeter(voltage);
             drawMagnet();
-            drawCurrentIndicator(voltage);
-
-            // Aktualisiere Anzeigen
             updateDisplays(voltage);
 
             requestAnimationFrame(draw);
         }
 
-        // Start
         draw();
     </script>
 </body>
