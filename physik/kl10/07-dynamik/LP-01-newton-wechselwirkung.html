@@ -79,7 +79,8 @@
             transition: width 0.3s;
         }
 
-        .step-indicator {
+        /* Step Navigation */
+        .step-nav {
             display: flex;
             justify-content: center;
             gap: 8px;
@@ -90,17 +91,24 @@
         }
 
         .step-dot {
-            width: 12px;
-            height: 12px;
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--physik);
+            background: white;
+            color: var(--physik);
+            font-size: 0.8em;
+            font-weight: 600;
             border-radius: 50%;
-            background: #ddd;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s;
         }
 
-        .step-dot:hover { transform: scale(1.2); }
-        .step-dot.active { background: var(--physik); }
-        .step-dot.completed { background: var(--success); }
+        .step-dot:hover { background: var(--physik-light); }
+        .step-dot.active { background: var(--physik); color: white; }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
 
         /* ═══════════════════════════════════════════════════════════════════
            SCHRITTE
@@ -493,7 +501,7 @@
     <div class="progress-fill" id="progressFill"></div>
 </div>
 
-<div class="step-indicator" id="stepIndicator"></div>
+<div class="step-nav" id="stepNav"></div>
 
 <div class="container">
 
@@ -837,7 +845,7 @@
         </div>
 
         <div class="sim-container">
-            <h4>🚀 Raketenantrieb - Wechselwirkungspaare</h4>
+            <h4>🚀 Raketenstart</h4>
             <canvas id="raketeCanvas" width="600" height="400"></canvas>
             <div class="sim-controls">
                 <button id="raketeBtn" onclick="toggleRakete()">▶ Starten</button>
@@ -845,18 +853,10 @@
             </div>
         </div>
 
-        <h3>Identifiziere alle Wechselwirkungspaare:</h3>
-
-        <div class="info-box">
-            <strong>Denke nach:</strong>
-            <ul style="margin: 10px 0 0 20px;">
-                <li><strong>Wechselwirkungspaar 1:</strong> Rakete ↔ Abgase — In welche Richtung drückt die Rakete die Abgase? Und die Gegenkraft?</li>
-                <li><strong>Wechselwirkungspaar 2:</strong> Rakete ↔ Erde — Wer zieht wen an?</li>
-            </ul>
-        </div>
+        <h3>Deine Aufgabe:</h3>
 
         <div class="info-box" style="background: #e3f2fd; border-color: #1976d2;">
-            <strong>📋 Arbeitsblatt:</strong> Bearbeite <strong>Aufgabe A4</strong> auf deinem AB – zeichne die Rakete mit allen Wechselwirkungspaaren und erkläre den Antrieb im Vakuum.
+            <strong>📋 Arbeitsblatt:</strong> Bearbeite <strong>Aufgabe A4</strong> auf deinem AB – identifiziere alle Wechselwirkungspaare, zeichne sie ein und erkläre, warum die Rakete auch im Vakuum fliegen kann.
         </div>
 
         <div class="nav-buttons">
@@ -1213,13 +1213,14 @@ let currentStep = 1;
 
 function init() {
     // Schritt-Indikatoren erstellen
-    const indicator = document.getElementById('stepIndicator');
+    const nav = document.getElementById('stepNav');
     for (let i = 1; i <= TOTAL_STEPS; i++) {
         const dot = document.createElement('div');
         dot.className = 'step-dot' + (i === 1 ? ' active' : '');
         dot.setAttribute('data-step', i);
+        dot.textContent = i;
         dot.onclick = () => goToStep(i);
-        indicator.appendChild(dot);
+        nav.appendChild(dot);
     }
 
     // Gespeicherten Fortschritt laden
@@ -1352,32 +1353,6 @@ function drawAstronaut() {
     ctx.font = '12px sans-serif';
     ctx.fillText('Astronaut', astroX, astroY + 55);
 
-    // Kraftpfeile während des Stoßes
-    if (astroState === 'pushing' || (astroState === 'moving' && pushPhase < 15)) {
-        // Kraft Astronaut → ISS (rot, nach rechts)
-        drawArrow(ctx, astroX + 35, astroY - 40, astroX + 85, astroY - 40, '#f44336', 4);
-        ctx.fillStyle = '#f44336';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText('F→', astroX + 60, astroY - 48);
-        ctx.font = 'italic 10px sans-serif';
-        ctx.fillText('A→ISS', astroX + 60, astroY - 25);
-
-        // Kraft ISS → Astronaut (blau, nach links)
-        drawArrow(ctx, astroX + 35, astroY + 40, astroX - 15, astroY + 40, '#2196f3', 4);
-        ctx.fillStyle = '#2196f3';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText('F→', astroX + 10, astroY + 32);
-        ctx.font = 'italic 10px sans-serif';
-        ctx.fillText('ISS→A', astroX + 10, astroY + 55);
-
-        // Gleichheitszeichen
-        ctx.fillStyle = '#4caf50';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('| F | = | F |', w/2, 30);
-        ctx.font = '12px sans-serif';
-        ctx.fillText('Gleich große Kräfte!', w/2, 50);
-    }
-
     ctx.textAlign = 'left';
 }
 
@@ -1390,7 +1365,7 @@ function pushAstronaut() {
     setTimeout(() => {
         astroState = 'moving';
         astroVel = -3;      // Astronaut nach links (schnell)
-        issVel = 0.007;     // ISS nach rechts (sehr langsam, Massenverhältnis ~1:4000)
+        issVel = 0.08;      // ISS nach rechts (minimal aber erkennbar)
         animateAstronaut();
     }, 500);
 
@@ -1793,25 +1768,6 @@ function drawRakete() {
         raketeCtx.fill();
     }
 
-    // Kraftpfeile
-    // Schub (nach oben)
-    drawArrow(raketeCtx, rx + 50, ry, rx + 50, ry - 80, '#4caf50', 4);
-    raketeCtx.fillStyle = '#4caf50';
-    raketeCtx.font = 'italic 12px sans-serif';
-    raketeCtx.fillText('FSchub', rx + 55, ry - 40);
-
-    // Gewichtskraft (nach unten)
-    drawArrow(raketeCtx, rx - 50, ry, rx - 50, ry + 60, '#f44336', 4);
-    raketeCtx.fillStyle = '#f44336';
-    raketeCtx.font = 'italic 12px sans-serif';
-    raketeCtx.fillText('FG', rx - 70, ry + 30);
-
-    // Abgase (nach unten, gestrichelt)
-    raketeCtx.setLineDash([5, 5]);
-    drawArrow(raketeCtx, rx, ry + 90, rx, ry + 140, '#ff9800', 3);
-    raketeCtx.setLineDash([]);
-    raketeCtx.fillStyle = '#ff9800';
-    raketeCtx.fillText('Abgase', rx + 10, ry + 120);
 }
 
 function toggleRakete() {
