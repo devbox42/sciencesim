@@ -1,0 +1,1721 @@
+<!DOCTYPE html>
+<html lang="de">
+<!--
+╔══════════════════════════════════════════════════════════════════╗
+║  BLP-TEMPLATE — Bewerteter Lernpfad (Template)                  ║
+║                                                                  ║
+║  ANLEITUNG:                                                      ║
+║  1. Datei kopieren nach: fach/klXX/thema/BLP-XX-thema.html      ║
+║  2. Alle CONTENT-Blöcke ausfüllen (mit ══ CONTENT markiert)     ║
+║  3. TEMPLATE-Blöcke NICHT ändern (mit ── TEMPLATE markiert)     ║
+║                                                                  ║
+║  CONTENT-Blöcke:                                                 ║
+║  - Config (BLP_ID, LP_VERSION, TOTAL_BE, PHASE_CONFIG, etc.)    ║
+║  - Fragen-Pools (POOL_PHASE1, etc.)                             ║
+║  - HTML Phasen 1–6 (Lerninhalt, Übung, Bewertungszone)          ║
+║  - JS buildPhase1–6() (UI dynamisch aufbauen)                   ║
+║  - JS submitPhase1–6() (Scoring-Logik)                          ║
+║  - JS checkPractice*() (Übungs-Checks)                          ║
+║  - JS Canvas/Simulation (optional)                               ║
+║  - EW-Nav Labels (Phase-Namen)                                   ║
+║                                                                  ║
+║  Referenz: physik/kl10-MR/05-schwingungen-wellen/BLP-05b-wellen ║
+║  ES5-kompatibel | Touch 44x44px | iPad-ready                    ║
+╚══════════════════════════════════════════════════════════════════╝
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ══ CONTENT: Titel ══ -->
+    <title>Bewerteter Lernpfad: THEMA | Fach Klasse</title>
+    <style>
+/* ──────────────────────────────────────────────────────────────── */
+/* ── TEMPLATE: CSS Design-System (NICHT ÄNDERN) ──────────────── */
+/* ──────────────────────────────────────────────────────────────── */
+        :root {
+            /* ══ CONTENT: Fachfarbe anpassen ══ */
+            --fach: #2c5aa0;           /* Physik: #2c5aa0, Informatik: #b35c00 */
+            --fach-light: #e3f0ff;     /* Physik: #e3f0ff, Informatik: #fff3e0 */
+
+            /* TEMPLATE-Farben (nicht ändern) */
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+            --hypo: #6a1b9a;
+            --hypo-light: #f3e5f5;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 0;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; margin-bottom: 4px; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .bewertung-badge {
+            display: inline-block;
+            background: var(--error);
+            color: white;
+            padding: 3px 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 6px;
+        }
+
+        /* Erkenntnisweg-Leiste */
+        .ew-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 12px 10px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            margin: 0 -20px 15px;
+            flex-wrap: wrap;
+        }
+        .ew-step {
+            padding: 6px 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+            background: var(--border);
+            color: var(--text-muted);
+            text-align: center;
+            min-width: 44px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ew-step.active { background: var(--fach); color: white; }
+        .ew-step.done { background: var(--success); color: white; }
+        .ew-step.graded { border-bottom: 3px solid var(--error); }
+        .ew-arrow {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            padding: 0 2px;
+        }
+
+        .progress-bar {
+            background: var(--border);
+            height: 6px;
+            margin: 0 0 15px;
+        }
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Phasen/Steps */
+        .step {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .step-title { font-size: 1.1em; font-weight: 600; color: var(--fach); }
+        .step-badge {
+            font-size: 0.75em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 8px;
+        }
+        .be-badge {
+            font-size: 0.75em;
+            background: var(--error-bg);
+            color: var(--error);
+            padding: 3px 8px;
+            font-weight: 700;
+        }
+
+        /* Zonen */
+        .practice-zone {
+            border: 2px solid var(--fach);
+            border-style: dashed;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .practice-zone::before {
+            content: "UBUNG (unbewertet, beliebig oft)";
+            display: inline-block;
+            background: var(--fach);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            letter-spacing: 0.5px;
+        }
+        .assess-zone {
+            border: 2px solid var(--error);
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .assess-zone::before {
+            content: attr(data-label);
+            display: inline-block;
+            background: var(--error);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            letter-spacing: 0.5px;
+        }
+        .assess-zone.locked {
+            opacity: 0.85;
+            pointer-events: none;
+        }
+        .hypo-zone {
+            border: 2px solid var(--hypo);
+            padding: 15px;
+            margin: 15px 0;
+            background: var(--hypo-light);
+            position: relative;
+        }
+        .hypo-zone::before {
+            content: "HYPOTHESE (1 Versuch)";
+            display: inline-block;
+            background: var(--hypo);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+        }
+        .hypo-confrontation {
+            background: var(--hypo-light);
+            border: 2px solid var(--hypo);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .hypo-confrontation .correct { color: var(--success); font-weight: 700; }
+        .hypo-confrontation .wrong { color: var(--error); font-weight: 700; }
+
+        h3 { font-size: 1em; font-weight: 600; margin: 15px 0 10px; color: var(--text); }
+        p { margin-bottom: 12px; }
+        .info-box {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .formel-box {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.3em;
+        }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-assess {
+            background: var(--error);
+        }
+        .btn-small { padding: 6px 12px; font-size: 0.9em; margin: 3px; }
+        .nav-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Simulation */
+        .sim-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        canvas {
+            border: 1px solid var(--border);
+            background: #fafafa;
+            display: block;
+            max-width: 100%;
+        }
+        .slider-group { margin-bottom: 8px; }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .slider-group input[type="range"] { width: 100%; min-height: 44px; }
+        .value-display {
+            background: var(--fach-light);
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        /* Formularfelder */
+        input[type="number"], input[type="text"] {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            font-size: 1em;
+            width: 80px;
+            text-align: center;
+        }
+        select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-height: 44px;
+        }
+        .feedback {
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+            font-size: 0.9em;
+        }
+        .feedback.correct { background: var(--success-bg); border: 1px solid var(--success); color: var(--success); display: block; }
+        .feedback.incorrect { background: var(--error-bg); border: 1px solid var(--error); color: var(--error); display: block; }
+
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+
+        /* Tabellen */
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        th { background: var(--fach-light); }
+        .warning td { background: #fff8e1; }
+        .danger td { background: var(--error-bg); }
+
+        /* Mess-Tabelle */
+        .mess-table input {
+            width: 70px;
+            text-align: center;
+        }
+        .mess-table .locked-cell {
+            background: var(--fach-light);
+            font-weight: 600;
+        }
+
+        /* Ergebnis */
+        .results-grid {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .result-box {
+            flex: 1 1 120px;
+            text-align: center;
+            padding: 15px;
+            border: 1px solid var(--border);
+            background: var(--white);
+        }
+        .result-box .value { font-size: 2em; font-weight: 700; color: var(--fach); }
+        .result-box .label { font-size: 0.8em; color: var(--text-muted); margin-top: 5px; }
+        .grade-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .grade-display .grade {
+            font-size: 3em;
+            font-weight: 700;
+        }
+        .grade-display .grade.g1 { color: var(--success); }
+        .grade-display .grade.g2 { color: #4caf50; }
+        .grade-display .grade.g3 { color: var(--warning); }
+        .grade-display .grade.g4 { color: #e65100; }
+        .grade-display .grade.g5 { color: var(--error); }
+        .grade-display .grade.g6 { color: #b71c1c; }
+        .phase-breakdown { margin: 15px 0; }
+        .phase-breakdown td:first-child { text-align: left; }
+
+        /* Login */
+        .login-box {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 30px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .login-box input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .login-box .hint {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* MC-Optionen */
+        .mc-options { margin: 10px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .mc-option:hover { background: var(--fach-light); }
+        .mc-option.selected { background: var(--fach-light); border-color: var(--fach); font-weight: 600; }
+        .mc-option.correct-reveal { background: var(--success-bg); border-color: var(--success); }
+        .mc-option.wrong-reveal { background: var(--error-bg); border-color: var(--error); }
+        .mc-option.disabled { pointer-events: none; cursor: default; opacity: 0.85; }
+
+        .teacher-reset {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.7em;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        .teacher-reset:hover { opacity: 1; }
+
+        /* Tab-Warnung */
+        .tab-warning-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .tab-warning-overlay.visible { display: flex; }
+        .tab-warning-content {
+            background: var(--white);
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+        }
+        .tab-warning-icon { font-size: 3em; margin-bottom: 15px; }
+        .tab-warning-content h2 { color: var(--error); margin-bottom: 10px; }
+        .tab-count { color: var(--error); font-size: 0.9em; margin-top: 10px; }
+
+        /* Locked-Notice */
+        .locked-notice {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .locked-notice.visible { display: block; }
+
+        /* Frozen-Overlay */
+        .frozen-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(200,200,200,0.7);
+            z-index: 10;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--error);
+        }
+        .frozen-overlay.visible { display: flex; }
+
+        /* Timer */
+        .timer-display {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: 700;
+            padding: 8px;
+            margin: 10px 0;
+        }
+        .timer-display.urgent { color: var(--error); }
+
+        /* Hefter-Hint */
+        .hefter-hint {
+            background: #e8f5e9;
+            border-left: 3px solid var(--success);
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hint::before {
+            content: "\1F4D3 ";
+        }
+
+        @media print {
+            .btn, .nav-buttons, .ew-nav, .progress-bar, .teacher-reset { display: none !important; }
+            .step { display: block !important; page-break-inside: avoid; border: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- ══ CONTENT: Header ══ -->
+    <header>
+        <h1>THEMA</h1>
+        <p>Fach Klasse | Bewerteter Lernpfad | 25 BE</p>
+        <div class="bewertung-badge">Bewertet &ndash; Jede markierte Antwort z&auml;hlt!</div>
+    </header>
+
+    <!-- ── TEMPLATE: Locked-Notice ── -->
+    <div class="locked-notice" id="lockedNotice">
+        <strong>Lernpfad bereits abgeschlossen!</strong> Dein Ergebnis wird angezeigt.
+    </div>
+
+    <!-- ══ CONTENT: Erkenntnisweg-Navigation (Phase-Namen anpassen) ══ -->
+    <div class="ew-nav" id="ewNav">
+        <div class="ew-step graded" data-phase="1" id="ew1">Ph&auml;nomen</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="2" id="ew2">Hypothese</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="3" id="ew3">Experiment</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="4" id="ew4">Auswertung</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="5" id="ew5">Anwendung</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="6" id="ew6">Verallgem.</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step" data-phase="7" id="ew7">Ergebnis</div>
+    </div>
+
+    <!-- ── TEMPLATE: Progress-Bar ── -->
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <!-- ── TEMPLATE: Phase 0 Login ── -->
+    <div class="step active" id="step0">
+        <div class="login-box">
+            <h2 style="color: var(--fach); margin-bottom: 10px;">Bewerteter Lernpfad</h2>
+            <p id="loginPlatz" style="font-size: 1.5em; font-weight: 700; color: var(--fach); margin: 15px 0;"></p>
+            <p id="loginError" style="color: var(--error); display: none;">Kein Platz zugewiesen. Bitte scanne den QR-Code auf deiner Platzkarte.</p>
+            <button class="btn" id="btnStart" style="display: none;" onclick="startLP()">Lernpfad starten</button>
+            <p class="hint">Jede markierte Antwort wird bewertet (<span id="hintBE">25</span> BE).</p>
+        </div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║  CONTENT: Phase 1 (Phänomen)         ║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <div class="step" id="step1">
+        <div class="step-header">
+            <span class="step-title">Phase 1: Ph&auml;nomen &ndash; UNTERTITEL</span>
+            <span class="be-badge">X BE</span>
+        </div>
+
+        <!-- Lerninhalt hier -->
+
+        <!-- Übungszone (optional) -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>&Uuml;bung:</strong> ...</p>
+            <!-- Übungs-Elemente -->
+            <button class="btn btn-small" onclick="checkPractice1()">Pr&uuml;fen</button>
+            <div class="feedback" id="fb-practice1"></div>
+        </div>
+
+        <!-- Bewertungszone -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; X BE (1 Versuch)" id="assess1">
+            <p style="margin-top: 8px;"><strong>Aufgabe:</strong></p>
+            <div id="assess1-container"></div>
+            <button class="btn btn-assess btn-small" id="btn-assess1" onclick="submitPhase1()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess1"></div>
+        </div>
+
+        <div class="hefter-hint">Hefter-Hinweis hier.</div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next1" disabled onclick="goToPhase(2)">Weiter zur Hypothese &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║  CONTENT: Phase 2 (Hypothese)        ║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <div class="step" id="step2">
+        <div class="step-header">
+            <span class="step-title">Phase 2: Hypothese &ndash; UNTERTITEL</span>
+            <span class="be-badge">X BE</span>
+        </div>
+
+        <!-- Lerninhalt / Simulation hier -->
+
+        <!-- Hypothesen-Zone -->
+        <div class="hypo-zone" id="hypoZone">
+            <p style="margin-top: 8px;"><strong>Deine Vorhersage:</strong></p>
+            <!-- Hypothesen-Elemente hier -->
+            <button class="btn btn-assess btn-small" id="btn-hypo" onclick="submitHypothesis()" disabled>Hypothese abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-hypo"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next2" disabled onclick="goToPhase(3)">Weiter zum Experiment &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║  CONTENT: Phase 3 (Experiment)       ║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <div class="step" id="step3">
+        <div class="step-header">
+            <span class="step-title">Phase 3: Experiment &ndash; UNTERTITEL</span>
+            <span class="be-badge">X BE</span>
+        </div>
+
+        <!-- Timer (falls EXP_TIMER > 0) -->
+        <div class="timer-display" id="expTimerDisplay">3:00</div>
+
+        <!-- Simulation / Experiment hier -->
+
+        <!-- Übungszone (optional) -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>Probemessung:</strong> ...</p>
+            <!-- Übungs-Elemente -->
+            <button class="btn btn-small" onclick="checkPractice3()">Pr&uuml;fen</button>
+            <div class="feedback" id="fb-practice3"></div>
+        </div>
+
+        <!-- Bewertungszone -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; X BE (1 Versuch)" id="assess3">
+            <p style="margin-top: 8px;"><strong>Messreihe / Aufgabe:</strong></p>
+            <div id="assess3-container"></div>
+            <button class="btn btn-assess btn-small" id="btn-assess3" onclick="submitPhase3()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess3"></div>
+        </div>
+
+        <!-- Hypothesen-Konfrontation (optional) -->
+        <div class="hypo-confrontation" id="hypoConfront" style="display: none;">
+            <h3 style="color: var(--hypo);">Hypothesen-Check</h3>
+            <div id="hypoConfrontContent"></div>
+        </div>
+
+        <div class="hefter-hint">Hefter-Hinweis hier.</div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next3" disabled onclick="goToPhase(4)">Weiter zur Auswertung &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║  CONTENT: Phase 4 (Auswertung)       ║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <div class="step" id="step4">
+        <div class="step-header">
+            <span class="step-title">Phase 4: Auswertung &ndash; UNTERTITEL</span>
+            <span class="be-badge">X BE</span>
+        </div>
+
+        <!-- Lerninhalt hier -->
+
+        <!-- Übungszone (optional) -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>&Uuml;bung:</strong> ...</p>
+            <!-- Übungs-Elemente -->
+            <button class="btn btn-small" onclick="checkPractice4()">Pr&uuml;fen</button>
+            <div class="feedback" id="fb-practice4"></div>
+        </div>
+
+        <!-- Bewertungszone -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; X BE (1 Versuch)" id="assess4">
+            <div id="assess4-container"></div>
+            <button class="btn btn-assess btn-small" id="btn-assess4" onclick="submitPhase4()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess4"></div>
+        </div>
+
+        <div class="hefter-hint">Hefter-Hinweis hier.</div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next4" disabled onclick="goToPhase(5)">Weiter zur Anwendung &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║  CONTENT: Phase 5 (Anwendung)        ║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <div class="step" id="step5">
+        <div class="step-header">
+            <span class="step-title">Phase 5: Anwendung &ndash; UNTERTITEL</span>
+            <span class="be-badge">X BE</span>
+        </div>
+
+        <!-- Lerninhalt hier -->
+
+        <!-- Übungszone (optional) -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>&Uuml;bung:</strong> ...</p>
+            <!-- Übungs-Elemente -->
+            <button class="btn btn-small" onclick="checkPractice5()">Pr&uuml;fen</button>
+            <div class="feedback" id="fb-practice5"></div>
+        </div>
+
+        <!-- Bewertungszone -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; X BE (1 Versuch)" id="assess5">
+            <div id="assess5-container"></div>
+            <button class="btn btn-assess btn-small" id="btn-assess5" onclick="submitPhase5()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess5"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next5" disabled onclick="goToPhase(6)">Weiter zur Verallgemeinerung &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ╔══════════════════════════════════════╗ -->
+    <!-- ║  CONTENT: Phase 6 (Verallgemeinerung)║ -->
+    <!-- ╚══════════════════════════════════════╝ -->
+    <div class="step" id="step6">
+        <div class="step-header">
+            <span class="step-title">Phase 6: Verallgemeinerung</span>
+            <span class="be-badge">X BE</span>
+        </div>
+
+        <!-- Bewertungszone -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; X BE (1 Versuch)" id="assess6">
+            <div id="assess6-container"></div>
+            <button class="btn btn-assess btn-small" id="btn-assess6" onclick="submitPhase6()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess6"></div>
+        </div>
+
+        <div class="hefter-hint">Hefter-Hinweis hier.</div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next6" disabled onclick="showResults()">Ergebnis anzeigen &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ── TEMPLATE: Phase 7 Ergebnis (dynamisch aus PHASE_CONFIG) ── -->
+    <div class="step" id="step7">
+        <div class="step-header">
+            <span class="step-title">Ergebnis</span>
+            <span class="step-badge">Abschluss</span>
+        </div>
+
+        <p style="text-align: center; font-size: 1.1em; margin-bottom: 5px;" id="resultName"></p>
+
+        <div class="results-grid">
+            <div class="result-box">
+                <div class="value" id="resBE">0</div>
+                <div class="label" id="resTotalLabel">von 25 BE</div>
+            </div>
+            <div class="result-box">
+                <div class="value" id="resProzent">0%</div>
+                <div class="label">erreicht</div>
+            </div>
+        </div>
+
+        <div class="grade-display">
+            <div class="grade" id="resNote">&ndash;</div>
+            <div class="label" id="resGradeLabel">Note</div>
+        </div>
+
+        <h3>Phasen-Aufschl&uuml;sselung</h3>
+        <!-- Dynamisch generiert aus PHASE_CONFIG -->
+        <table class="phase-breakdown" id="resBreakdownTable"></table>
+
+        <h3>Notenspiegel</h3>
+        <!-- Dynamisch generiert aus GRADE_SCALE -->
+        <table id="resGradeTable"></table>
+
+        <!-- ══ CONTENT: Optionale Ergebnis-Extras (z.B. Hypothesen-Rückblick) ══ -->
+        <div class="hypo-confrontation" id="hypoFinalBox" style="margin-top: 20px; display: none;">
+            <h3 style="color: var(--hypo);">Dein Erkenntnisweg</h3>
+            <div id="hypoFinalContent"></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; padding: 15px; background: var(--fach-light);">
+            <p>Pr&uuml;fcode: <strong id="resCode">&ndash;</strong></p>
+            <p style="font-size:0.8em; color: var(--text-muted);" id="resTimestamp"></p>
+        </div>
+
+        <div id="resTabInfo" style="margin-top: 10px; font-size: 0.85em; color: var(--text-muted); text-align: center;"></div>
+    </div>
+</div>
+
+<!-- ── TEMPLATE: Tab Warning Overlay ── -->
+<div class="tab-warning-overlay" id="tabWarning">
+    <div class="tab-warning-content">
+        <div class="tab-warning-icon">&#9888;</div>
+        <h2>Tab-Wechsel erkannt!</h2>
+        <p>Du hast den Tab verlassen. Dies wird registriert.</p>
+        <p class="tab-count">Bisherige Wechsel: <strong id="tabWarnCount">0</strong></p>
+        <p class="tab-count">Gesamtzeit au&szlig;erhalb: <strong id="tabWarnTime">0s</strong></p>
+        <button class="btn" id="tabWarnDismiss" onclick="dismissTabWarning()" disabled>Bitte warten&hellip;</button>
+    </div>
+</div>
+
+<!-- ── TEMPLATE: Teacher-Reset ── -->
+<div class="teacher-reset" onclick="teacherReset()">Lehrer-Reset</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// BLP-TEMPLATE | ES5 | Erkenntnisweg-Bewertung
+// ═══════════════════════════════════════════════════════════════
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: Config                     ║ */
+/* ╚══════════════════════════════════════╝ */
+
+var BLP_ID = 'blp-XX-thema';       // ÄNDERN: localStorage-Prefix
+var LP_VERSION = '1.0';             // ÄNDERN: bei Struktur-Änderungen hochzählen
+var TOTAL_BE = 25;                  // ÄNDERN: Summe aller Phase-BE
+
+var PHASE_CONFIG = [
+    // ÄNDERN: Phase-Namen und max BE pro Phase
+    { name: 'Ph\u00e4nomen', maxBE: 3 },
+    { name: 'Hypothese', maxBE: 3 },
+    { name: 'Experiment', maxBE: 4 },
+    { name: 'Auswertung', maxBE: 5 },
+    { name: 'Anwendung', maxBE: 6 },
+    { name: 'Verallgemeinerung', maxBE: 4 }
+];
+
+var GRADE_SCALE = [
+    // ÄNDERN: Notenskala passend zu TOTAL_BE
+    { min: 23, grade: 1 },
+    { min: 20, grade: 2 },
+    { min: 15, grade: 3 },
+    { min: 12, grade: 4 },
+    { min: 7, grade: 5 },
+    { min: 0, grade: 6 }
+];
+
+var HYPO_TIMER = 60;    // Sekunden, 0 = kein Hypothesen-Timer
+var EXP_TIMER = 180;    // Sekunden, 0 = kein Experiment-Timer
+var TEACHER_CODE = '2026';  // Lehrer-Reset-Code
+// TAB_WARN_BEEPS = 5;  // Puls-Beeps bei Tab-Rückkehr (steht im Template-Block)
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: Fragen-Pools               ║ */
+/* ╚══════════════════════════════════════╝ */
+
+// Beispiel-Pool (durch eigene Pools ersetzen):
+// var POOL_PHASE1 = [
+//     { text: 'Frage', answer: 'antwort' },
+//     ...
+// ];
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: Personalisierte Aufgaben   ║ */
+/* ╚══════════════════════════════════════╝ */
+
+// Variablen für personalisierte Aufgaben (pro Phase)
+// var myPhase1Items = [];
+// var myPhase2Items = [];
+// ...
+
+function buildPersonalTasks() {
+    // ÄNDERN: Aus Pools mit RNG auswählen
+    // var rng1 = createRNG(state.seed + 100);
+    // myPhase1Items = shuffleWithRNG(POOL_PHASE1, rng1).slice(0, 4);
+    // ...
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: STATE (nicht ändern) ───────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+var TOTAL_PHASES = PHASE_CONFIG.length + 1; // +1 für Ergebnis-Phase
+
+// Storage-Prefix: BLP_ID + Platznummer (damit mehrere Plätze auf einem iPad funktionieren)
+function sKey(suffix) {
+    var p = window.location.search.match(/[?&]p=(\d+)/);
+    var platz = p ? '-p' + p[1] : '';
+    return BLP_ID + platz + '-' + suffix;
+}
+
+var state = {
+    name: '',
+    seed: 0,
+    version: LP_VERSION,
+    currentPhase: 0,
+    scores: {},
+    submitted: {},
+    hypotheses: {},
+    measurements: [],
+    completed: false,
+    startTime: null,
+    phaseTimestamps: {},
+    experimentTimeLeft: EXP_TIMER
+};
+
+// State-Objekte dynamisch initialisieren
+(function() {
+    for (var i = 0; i < PHASE_CONFIG.length; i++) {
+        state.scores['p' + (i + 1)] = 0;
+        state.submitted['p' + (i + 1)] = false;
+    }
+})();
+
+var tabSwitchCount = 0;
+var tabSwitchStart = 0;
+var tabSwitchSeconds = 0;
+
+// Audio
+var audioCtx = null;
+var alarmOsc = null;
+var alarmGain = null;
+var alarmActive = false;
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Seed-Funktionen (nicht ändern) ─────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function seedFromName(name) {
+    var hash = 0;
+    var str = name.trim().toLowerCase();
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash);
+}
+
+function createRNG(seed) {
+    var s = seed;
+    return {
+        next: function() {
+            s = (s * 9301 + 49297) % 233280;
+            return s / 233280;
+        },
+        nextInt: function(max) {
+            return Math.floor(this.next() * max);
+        }
+    };
+}
+
+function shuffleWithRNG(arr, rng) {
+    var result = arr.slice();
+    for (var i = result.length - 1; i > 0; i--) {
+        var j = rng.nextInt(i + 1);
+        var temp = result[i];
+        result[i] = result[j];
+        result[j] = temp;
+    }
+    return result;
+}
+
+function generateVerification(name, score, date) {
+    var str = name.toLowerCase().trim() + '-' + score + '-' + date;
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36).toUpperCase().substr(0, 6);
+}
+
+function parseNum(val) {
+    if (!val) return NaN;
+    return parseFloat(String(val).replace(',', '.'));
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Navigation (forward-only, nicht ändern) ────────
+// ═══════════════════════════════════════════════════════════════
+
+function goToPhase(n) {
+    var totalPhases = PHASE_CONFIG.length + 1; // +1 for result phase
+    if (n < 0 || n > totalPhases) return;
+    if (n < state.currentPhase && n !== 0) return;
+
+    var steps = document.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.remove('active');
+    }
+    document.getElementById('step' + n).classList.add('active');
+
+    for (var i = 1; i <= totalPhases; i++) {
+        var el = document.getElementById('ew' + i);
+        if (!el) continue;
+        el.classList.remove('active', 'done');
+        if (i < n) el.classList.add('done');
+        if (i === n) el.classList.add('active');
+    }
+
+    var numContent = PHASE_CONFIG.length;
+    var pct = n === 0 ? 0 : ((n - 1) / numContent) * 100;
+    document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
+
+    state.currentPhase = n;
+    state.phaseTimestamps['phase' + n] = new Date().toISOString();
+    saveState();
+    window.scrollTo(0, 0);
+}
+
+function lockZone(id) {
+    var zone = document.getElementById(id);
+    if (zone) {
+        var inputs = zone.querySelectorAll('input, select, button');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+        var mcOpts = zone.querySelectorAll('.mc-option');
+        for (var i = 0; i < mcOpts.length; i++) {
+            mcOpts[i].classList.add('disabled');
+        }
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Audio Alarm (nicht ändern) ─────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function initAudioContext() {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var buf = audioCtx.createBuffer(1, 1, 22050);
+    var src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+}
+
+function ensureAudio(callback) {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().then(function() { if (callback) callback(); });
+        return false; // not ready yet
+    }
+    return true; // ready
+}
+
+function startAlarm() {
+    if (!audioCtx || alarmActive) return;
+    alarmOsc = audioCtx.createOscillator();
+    alarmGain = audioCtx.createGain();
+    alarmOsc.connect(alarmGain);
+    alarmGain.connect(audioCtx.destination);
+    alarmOsc.frequency.value = 800;
+    alarmOsc.type = 'square';
+    alarmGain.gain.value = 0.15;
+    alarmOsc.start();
+    alarmActive = true;
+}
+
+function stopAlarm() {
+    if (alarmOsc) {
+        try { alarmOsc.stop(); } catch(e) {}
+        alarmOsc = null;
+    }
+    alarmActive = false;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Tab-Tracking (nicht ändern) ────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+var TAB_WARN_BEEPS = 5;    // Anzahl Puls-Beeps bei Rückkehr
+var pulseAlarmTimeout = null;
+
+function initTabTracking() {
+    var sc = localStorage.getItem(sKey('tabswitches'));
+    var ss = localStorage.getItem(sKey('tabseconds'));
+    if (sc) tabSwitchCount = parseInt(sc);
+    if (ss) tabSwitchSeconds = parseInt(ss);
+
+    document.addEventListener('visibilitychange', function() {
+        if (state.completed) return;
+        if (document.hidden) {
+            tabSwitchStart = Date.now();
+            tabSwitchCount++;
+            localStorage.setItem(sKey('tabswitches'), tabSwitchCount);
+        } else {
+            if (tabSwitchStart > 0) {
+                var dur = Math.round((Date.now() - tabSwitchStart) / 1000);
+                tabSwitchSeconds += dur;
+                localStorage.setItem(sKey('tabseconds'), tabSwitchSeconds);
+                tabSwitchStart = 0;
+            }
+            showTabWarningOverlay();
+            startPulseAlarm();
+        }
+    });
+}
+
+function startPulseAlarm() {
+    var btn = document.getElementById('tabWarnDismiss');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
+    var beepsDone = 0;
+
+    function doPulse() {
+        if (beepsDone >= TAB_WARN_BEEPS) {
+            stopAlarm();
+            if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
+            return;
+        }
+        startAlarm();
+        pulseAlarmTimeout = setTimeout(function() {
+            stopAlarm();
+            beepsDone++;
+            pulseAlarmTimeout = setTimeout(doPulse, 1000);
+        }, 1000);
+    }
+
+    // AudioContext erzwingen — resume() ist async, daher Callback
+    var ready = ensureAudio(function() {
+        // Context ist jetzt resumed → Pulse starten
+        doPulse();
+    });
+    // Falls Context schon bereit war, sofort starten
+    if (ready) doPulse();
+}
+
+function formatTabTime(sec) {
+    if (sec < 60) return sec + 's';
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s + ' min';
+}
+
+function showTabWarningOverlay() {
+    document.getElementById('tabWarnCount').textContent = tabSwitchCount;
+    document.getElementById('tabWarnTime').textContent = formatTabTime(tabSwitchSeconds);
+    document.getElementById('tabWarning').classList.add('visible');
+}
+
+function dismissTabWarning() {
+    if (document.getElementById('tabWarnDismiss').disabled) return;
+    document.getElementById('tabWarning').classList.remove('visible');
+    if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; }
+    stopAlarm();
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Timer (nicht ändern) ───────────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+var experimentTimer = EXP_TIMER;
+var experimentInterval = null;
+var hypoCountdown = HYPO_TIMER;
+var hypoTimerInterval = null;
+
+function startExperimentTimer() {
+    if (EXP_TIMER <= 0) return;
+    experimentTimer = state.experimentTimeLeft || EXP_TIMER;
+    updateTimerDisplay();
+    experimentInterval = setInterval(function() {
+        experimentTimer--;
+        state.experimentTimeLeft = experimentTimer;
+        updateTimerDisplay();
+        if (experimentTimer <= 30) {
+            document.getElementById('expTimerDisplay').classList.add('urgent');
+        }
+        if (experimentTimer <= 0) {
+            clearInterval(experimentInterval);
+            experimentInterval = null;
+            freezeExperiment();
+        }
+        saveState();
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    var el = document.getElementById('expTimerDisplay');
+    if (!el) return;
+    var min = Math.floor(experimentTimer / 60);
+    var sec = experimentTimer % 60;
+    el.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function startHypoTimer() {
+    if (HYPO_TIMER <= 0) return;
+    var timerEl = document.getElementById('hypoTimer');
+    var btnEl = document.getElementById('btn-hypo');
+    if (!timerEl || !btnEl) return;
+    hypoTimerInterval = setInterval(function() {
+        hypoCountdown--;
+        if (hypoCountdown <= 0) {
+            clearInterval(hypoTimerInterval);
+            timerEl.textContent = 'Zeit abgelaufen \u2013 gib jetzt deine Hypothese ab!';
+            timerEl.style.color = 'var(--success)';
+            btnEl.disabled = false;
+            // Optional: Simulation einfrieren
+            var frozenEl = document.getElementById('hypoFrozenOverlay');
+            if (frozenEl) frozenEl.classList.add('visible');
+        } else {
+            timerEl.textContent = 'Erkunde noch: ' + hypoCountdown + 's';
+        }
+    }, 1000);
+}
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: freezeExperiment           ║ */
+/* ╚══════════════════════════════════════╝ */
+
+function freezeExperiment() {
+    // ÄNDERN: Simulation stoppen, Slider deaktivieren
+    // Beispiel:
+    // waveRunning = false;
+    // document.getElementById('slider1').disabled = true;
+    var frozenEl = document.getElementById('expFrozenOverlay');
+    if (frozenEl) frozenEl.classList.add('visible');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Persistenz (nicht ändern) ──────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function saveState() {
+    var data = {
+        name: state.name,
+        seed: state.seed,
+        version: state.version,
+        currentPhase: state.currentPhase,
+        scores: state.scores,
+        submitted: state.submitted,
+        hypotheses: state.hypotheses,
+        measurements: state.measurements,
+        completed: state.completed,
+        startTime: state.startTime,
+        phaseTimestamps: state.phaseTimestamps,
+        experimentTimeLeft: state.experimentTimeLeft
+    };
+    localStorage.setItem(sKey('state'), JSON.stringify(data));
+}
+
+function saveInputSnapshot() {
+    var data = {};
+    var inputs = document.querySelectorAll('input[type="text"], input[type="number"], select');
+    for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].id) data[inputs[i].id] = inputs[i].value;
+    }
+    var selected = document.querySelectorAll('.mc-option.selected');
+    for (var i = 0; i < selected.length; i++) {
+        var parent = selected[i].parentNode;
+        if (parent.id) {
+            var idx = 0;
+            var siblings = parent.querySelectorAll('.mc-option');
+            for (var j = 0; j < siblings.length; j++) {
+                if (siblings[j] === selected[i]) { idx = j; break; }
+            }
+            data['mc-' + parent.id] = idx;
+        }
+    }
+    localStorage.setItem(sKey('inputs'), JSON.stringify(data));
+}
+
+function loadInputSnapshot() {
+    var saved = localStorage.getItem(sKey('inputs'));
+    if (!saved) return;
+    try {
+        var data = JSON.parse(saved);
+        for (var key in data) {
+            if (key.indexOf('mc-') === 0) {
+                var parentId = key.substr(3);
+                var parent = document.getElementById(parentId);
+                if (parent) {
+                    var opts = parent.querySelectorAll('.mc-option');
+                    var idx = parseInt(data[key]);
+                    if (opts[idx]) opts[idx].classList.add('selected');
+                }
+            } else {
+                var el = document.getElementById(key);
+                if (el) el.value = data[key];
+            }
+        }
+    } catch(e) {}
+}
+
+function loadState() {
+    var saved = localStorage.getItem(sKey('state'));
+    if (!saved) return false;
+    try {
+        var data = JSON.parse(saved);
+        if (!data.name || !data.seed) return false;
+        if (data.version !== LP_VERSION) {
+            localStorage.removeItem(sKey('state'));
+            localStorage.removeItem(sKey('inputs'));
+            return false;
+        }
+        state.name = data.name;
+        state.seed = data.seed;
+        state.version = data.version;
+        state.currentPhase = data.currentPhase || 0;
+        state.scores = data.scores || state.scores;
+        state.submitted = data.submitted || state.submitted;
+        state.hypotheses = data.hypotheses || state.hypotheses;
+        state.measurements = data.measurements || state.measurements;
+        state.completed = data.completed || false;
+        state.startTime = data.startTime;
+        state.phaseTimestamps = data.phaseTimestamps || {};
+        state.experimentTimeLeft = data.experimentTimeLeft || EXP_TIMER;
+        return true;
+    } catch (e) { return false; }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Ergebnis (dynamisch aus Config) ────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function showResults() {
+    var total = 0;
+    for (var i = 0; i < PHASE_CONFIG.length; i++) {
+        total += state.scores['p' + (i + 1)];
+    }
+    var pct = Math.round((total / TOTAL_BE) * 100);
+    var grade = getGrade(total);
+    var now = new Date();
+    var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
+
+    state.completed = true;
+    saveState();
+
+    // Result lock
+    localStorage.setItem(sKey('result'), JSON.stringify({
+        name: state.name, total: total, pct: pct, grade: grade,
+        code: code, timestamp: now.toISOString()
+    }));
+
+    document.getElementById('resultName').textContent = state.name;
+    document.getElementById('resBE').textContent = total;
+    document.getElementById('resTotalLabel').textContent = 'von ' + TOTAL_BE + ' BE';
+    document.getElementById('resProzent').textContent = pct + '%';
+
+    var gradeEl = document.getElementById('resNote');
+    gradeEl.textContent = 'Note: ' + grade;
+    gradeEl.className = 'grade g' + grade;
+
+    // Phasen-Aufschlüsselung dynamisch generieren
+    var breakdownHTML = '<tr><th>Phase</th><th>Thema</th><th>erreicht</th><th>max</th></tr>';
+    for (var i = 0; i < PHASE_CONFIG.length; i++) {
+        breakdownHTML += '<tr><td>' + (i + 1) + '</td>';
+        breakdownHTML += '<td>' + PHASE_CONFIG[i].name + '</td>';
+        breakdownHTML += '<td id="res-p' + (i + 1) + '">' + state.scores['p' + (i + 1)] + '</td>';
+        breakdownHTML += '<td>' + PHASE_CONFIG[i].maxBE + '</td></tr>';
+    }
+    breakdownHTML += '<tr style="font-weight:700;"><td></td><td>Gesamt</td>';
+    breakdownHTML += '<td id="res-total">' + total + '</td><td>' + TOTAL_BE + '</td></tr>';
+    document.getElementById('resBreakdownTable').innerHTML = breakdownHTML;
+
+    // Notenspiegel dynamisch generieren
+    var gradeHTML = '<tr><th>Note</th>';
+    for (var i = 0; i < GRADE_SCALE.length; i++) {
+        gradeHTML += '<th>' + GRADE_SCALE[i].grade + '</th>';
+    }
+    gradeHTML += '</tr><tr><td>ab BE</td>';
+    for (var i = 0; i < GRADE_SCALE.length; i++) {
+        gradeHTML += '<td>' + GRADE_SCALE[i].min + '</td>';
+    }
+    gradeHTML += '</tr><tr><td>ab %</td>';
+    for (var i = 0; i < GRADE_SCALE.length; i++) {
+        gradeHTML += '<td>' + Math.round((GRADE_SCALE[i].min / TOTAL_BE) * 100) + '</td>';
+    }
+    gradeHTML += '</tr>';
+    document.getElementById('resGradeTable').innerHTML = gradeHTML;
+
+    document.getElementById('resCode').textContent = code;
+    document.getElementById('resTimestamp').textContent =
+        'Abgabe: ' + now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE');
+
+    if (tabSwitchCount > 0) {
+        document.getElementById('resTabInfo').textContent =
+            'Tab-Wechsel: ' + tabSwitchCount + '\u00d7 (' + formatDuration(tabSwitchSeconds) + ')';
+    }
+
+    // ══ CONTENT: Optionale Ergebnis-Extras (z.B. Hypothesen-Rückblick) ══
+    // Hypothesen-Rückblick einblenden falls gewünscht:
+    // document.getElementById('hypoFinalBox').style.display = 'block';
+    // document.getElementById('hypoFinalContent').innerHTML = '...';
+
+    goToPhase(PHASE_CONFIG.length + 1);
+}
+
+function getGrade(be) {
+    for (var i = 0; i < GRADE_SCALE.length; i++) {
+        if (be >= GRADE_SCALE[i].min) return GRADE_SCALE[i].grade;
+    }
+    return GRADE_SCALE[GRADE_SCALE.length - 1].grade;
+}
+
+function formatDuration(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s + ' Min.';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Teacher-Reset (nicht ändern) ───────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function teacherReset() {
+    var code = prompt('Lehrer-Code eingeben:');
+    if (code === TEACHER_CODE) {
+        if (confirm('Wirklich alle Daten l\u00f6schen?')) {
+            localStorage.removeItem(sKey('state'));
+            localStorage.removeItem(sKey('inputs'));
+            localStorage.removeItem(sKey('result'));
+            localStorage.removeItem(sKey('tabswitches'));
+            localStorage.removeItem(sKey('tabseconds'));
+            alert('Zur\u00fcckgesetzt. Seite wird neu geladen.');
+            location.reload();
+        }
+    } else if (code !== null) {
+        alert('Falscher Code!');
+    }
+}
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: UI aufbauen (buildPhaseX)  ║ */
+/* ╚══════════════════════════════════════╝ */
+
+function buildPhase1() {
+    // ÄNDERN: Bewertungszone befüllen
+    // var container = document.getElementById('assess1-container');
+    // container.innerHTML = '';
+    // for (var i = 0; i < myPhase1Items.length; i++) { ... }
+}
+
+function buildPhase2() {
+    // ÄNDERN: Hypothesen-MC etc. befüllen
+}
+
+function buildPhase3() {
+    // ÄNDERN: Mess-Tabelle, Simulation etc. befüllen
+}
+
+function buildPhase4() {
+    // ÄNDERN: Auswertungs-Aufgaben befüllen
+}
+
+function buildPhase5() {
+    // ÄNDERN: Anwendungs-Aufgaben befüllen
+}
+
+function buildPhase6() {
+    // ÄNDERN: Verallgemeinerungs-Aufgaben befüllen
+}
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: Scoring (submitPhaseX)     ║ */
+/* ╚══════════════════════════════════════╝ */
+
+function submitPhase1() {
+    if (state.submitted.p1) return;
+    var score = 0;
+    // ÄNDERN: Scoring-Logik
+    state.scores.p1 = score;
+    state.submitted.p1 = true;
+    var fb = document.getElementById('fb-assess1');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/' + PHASE_CONFIG[0].maxBE + ' BE';
+    lockZone('assess1');
+    document.getElementById('btn-next1').disabled = false;
+    saveState();
+}
+
+function submitHypothesis() {
+    if (state.submitted.p2) return;
+    var score = 0;
+    // ÄNDERN: Hypothesen-Scoring
+    state.scores.p2 = score;
+    state.submitted.p2 = true;
+    var fb = document.getElementById('fb-hypo');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = 'Hypothese gespeichert (' + score + '/' + PHASE_CONFIG[1].maxBE + ' BE)';
+    document.getElementById('btn-next2').disabled = false;
+    saveState();
+}
+
+function submitPhase3() {
+    if (state.submitted.p3) return;
+    if (experimentInterval) { clearInterval(experimentInterval); experimentInterval = null; }
+    var score = 0;
+    // ÄNDERN: Experiment-Scoring
+    state.scores.p3 = score;
+    state.submitted.p3 = true;
+    var fb = document.getElementById('fb-assess3');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/' + PHASE_CONFIG[2].maxBE + ' BE';
+    lockZone('assess3');
+    document.getElementById('btn-next3').disabled = false;
+    saveState();
+}
+
+function submitPhase4() {
+    if (state.submitted.p4) return;
+    var score = 0;
+    // ÄNDERN: Auswertungs-Scoring
+    state.scores.p4 = score;
+    state.submitted.p4 = true;
+    var fb = document.getElementById('fb-assess4');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/' + PHASE_CONFIG[3].maxBE + ' BE';
+    lockZone('assess4');
+    document.getElementById('btn-next4').disabled = false;
+    saveState();
+}
+
+function submitPhase5() {
+    if (state.submitted.p5) return;
+    var score = 0;
+    // ÄNDERN: Anwendungs-Scoring
+    state.scores.p5 = score;
+    state.submitted.p5 = true;
+    var fb = document.getElementById('fb-assess5');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/' + PHASE_CONFIG[4].maxBE + ' BE';
+    lockZone('assess5');
+    document.getElementById('btn-next5').disabled = false;
+    saveState();
+}
+
+function submitPhase6() {
+    if (state.submitted.p6) return;
+    var score = 0;
+    // ÄNDERN: Verallgemeinerungs-Scoring
+    state.scores.p6 = score;
+    state.submitted.p6 = true;
+    var fb = document.getElementById('fb-assess6');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/' + PHASE_CONFIG[5].maxBE + ' BE';
+    lockZone('assess6');
+    document.getElementById('btn-next6').disabled = false;
+    saveState();
+}
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: Übungs-Checks              ║ */
+/* ╚══════════════════════════════════════╝ */
+
+function checkPractice1() {
+    // ÄNDERN: Übungs-Check Phase 1
+}
+
+function checkPractice3() {
+    // ÄNDERN: Übungs-Check Phase 3
+}
+
+function checkPractice4() {
+    // ÄNDERN: Übungs-Check Phase 4
+}
+
+function checkPractice5() {
+    // ÄNDERN: Übungs-Check Phase 5
+}
+
+
+/* ╔══════════════════════════════════════╗ */
+/* ║  CONTENT: Canvas/Simulation          ║ */
+/* ║  (optional, nur wenn benötigt)       ║ */
+/* ╚══════════════════════════════════════╝ */
+
+// Simulationsvariablen und Zeichenfunktionen hier einfügen
+// Beispiel: drawWave(), animateWave(), resetWave()
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Auto-Save (nicht ändern) ───────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+document.addEventListener('input', function(e) {
+    if (e.target.matches('input, select')) {
+        saveInputSnapshot();
+        saveState();
+    }
+});
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Start / Init (nicht ändern) ────────────────────
+// ═══════════════════════════════════════════════════════════════
+
+function getPlatzFromURL() {
+    var search = window.location.search || '';
+    var match = search.match(/[?&]p=(\d+)/);
+    return match ? parseInt(match[1]) : 0;
+}
+
+function startLP() {
+    var platz = getPlatzFromURL();
+    if (!platz) return;
+
+    state.name = 'Platz ' + platz;
+    state.seed = platz * 7919;  // Primzahl-basierter Seed aus Platznummer
+    state.startTime = new Date().toISOString();
+
+    // AudioContext init on user gesture
+    try { initAudioContext(); } catch(e) {}
+
+    buildPersonalTasks();
+    buildPhase1();
+    buildPhase2();
+    buildPhase3();
+    buildPhase4();
+    buildPhase5();
+    buildPhase6();
+
+    saveState();
+    goToPhase(1);
+}
+
+function restoreSession() {
+    buildPersonalTasks();
+    buildPhase1();
+    buildPhase2();
+    buildPhase3();
+    buildPhase4();
+    buildPhase5();
+    buildPhase6();
+
+    // Restore inputs
+    loadInputSnapshot();
+
+    // Restore submitted states
+    for (var i = 1; i <= PHASE_CONFIG.length; i++) {
+        if (state.submitted['p' + i]) {
+            if (i === 2) {
+                // Hypothese: spezielle Behandlung
+                var hypo1El = document.getElementById('hypo1');
+                var hypo2El = document.getElementById('hypo2');
+                var btnHypo = document.getElementById('btn-hypo');
+                if (hypo1El) hypo1El.disabled = true;
+                if (hypo2El) hypo2El.disabled = true;
+                if (btnHypo) btnHypo.disabled = true;
+                document.getElementById('btn-next2').disabled = false;
+            } else {
+                lockZone('assess' + i);
+                var nextBtn = document.getElementById('btn-next' + i);
+                if (nextBtn) nextBtn.disabled = false;
+            }
+        }
+    }
+
+    if (state.completed) {
+        document.getElementById('lockedNotice').classList.add('visible');
+        showResults();
+    } else {
+        goToPhase(state.currentPhase || 1);
+    }
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: window.onload (nicht ändern) ───────────────────
+// ═══════════════════════════════════════════════════════════════
+
+window.onload = function() {
+    // BE-Hinweis im Login aktualisieren
+    var hintBE = document.getElementById('hintBE');
+    if (hintBE) hintBE.textContent = TOTAL_BE;
+
+    // Platz aus URL lesen
+    var platz = getPlatzFromURL();
+    if (platz) {
+        document.getElementById('loginPlatz').textContent = 'Platz ' + platz;
+        document.getElementById('btnStart').style.display = '';
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
+
+    // Tab-Tracking
+    initTabTracking();
+
+    /* ╔══════════════════════════════════════╗ */
+    /* ║  CONTENT: Slider/Canvas-Init          ║ */
+    /* ║  (optional, nur wenn benötigt)        ║ */
+    /* ╚══════════════════════════════════════╝ */
+
+    // Beispiel: Slider-Event-Listener, Canvas-Animationen starten
+    // var slider = document.getElementById('mySlider');
+    // if (slider) { slider.addEventListener('input', function() { ... }); }
+    // requestAnimationFrame(drawMyAnimation);
+
+    // Session wiederherstellen?
+    if (loadState()) {
+        try { initAudioContext(); } catch(e) {}
+        restoreSession();
+    }
+
+    // goToPhase override for timer starts
+    var origGoToPhase = goToPhase;
+    goToPhase = function(n) {
+        origGoToPhase(n);
+        if (HYPO_TIMER > 0 && n === 2 && !state.submitted.p2 && !hypoTimerInterval) {
+            startHypoTimer();
+        }
+        if (EXP_TIMER > 0 && n === 3 && !state.submitted.p3 && !experimentInterval) {
+            startExperimentTimer();
+        }
+    };
+};
+</script>
+</body>
+</html>

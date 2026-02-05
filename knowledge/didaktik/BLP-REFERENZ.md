@@ -1,8 +1,9 @@
 # BLP-Referenz: Bewerteter Lernpfad
 
-> **Version:** 1.0
+> **Version:** 1.1
 > **Stand:** 05.02.2026
 > **Referenz-Implementierung:** `physik/kl10-MR/05-schwingungen-wellen/BLP-05b-wellen.html`
+> **Template:** `knowledge/didaktik/templates/BLP-TEMPLATE.html`
 
 ---
 
@@ -114,9 +115,14 @@ function shuffleWithRNG(arr, rng) {
 
 | Aktion | Was passiert |
 |--------|-------------|
-| Tab verlassen (hidden) | Alarm-Ton startet + Counter erhöht |
-| Tab zurückkehren (visible) | Alarm stoppt + Overlay erscheint |
-| Overlay schließen | Schüler klickt "Zurück zum Test" |
+| Tab verlassen (hidden) | Counter erhöht, Außenzeit läuft |
+| Tab zurückkehren (visible) | **Puls-Alarm:** 5× Beep (1s an, 1s aus) + Overlay |
+| Overlay während Alarm | "Zurück"-Button **deaktiviert** bis alle Beeps fertig |
+| Overlay nach Alarm | Schüler klickt "Zurück zum Test" |
+
+**Puls-Alarm statt Dauer-Ton:** Beim Zurückkehren ertönen 5 Beeps à 1 Sekunde (800Hz square).
+Der Dismiss-Button wird erst nach dem letzten Beep klickbar. Das Overlay zeigt die
+kumulierte Außenzeit und die Anzahl der Tab-Wechsel.
 
 ```javascript
 // Web Audio API (funktioniert auch bei stummgeschaltetem Media-Volume!)
@@ -459,14 +465,28 @@ BLP-05b-wellen.html (bewerteter Lernpfad, ~2500 Zeilen)
 7. Ergebnis-Seite mit Notenspiegel
 8. Neue Pools hinzufügen
 
-### 11.4 Template-Ansatz (Zukunft)
+### 11.4 Template-Ansatz (verfügbar!)
 
 ```
-knowledge/didaktik/templates/BLP-TEMPLATE.html
-    → CSS komplett (wiederverwendbar)
-    → JS-Gerüst (State, Seed, Persistenz, Tab-Tracking, Timer)
-    → Nur Phasen-Inhalte und Pools müssen eingefügt werden
+knowledge/didaktik/templates/BLP-TEMPLATE.html (~1680 Zeilen)
 ```
+
+**Workflow mit Template:**
+
+1. Template kopieren → `fach/klXX/thema/BLP-XX-thema.html`
+2. CONTENT-Blöcke ausfüllen (markiert mit `══ CONTENT`):
+   - Config: `BLP_ID`, `LP_VERSION`, `TOTAL_BE`, `PHASE_CONFIG`, `GRADE_SCALE`
+   - Fragen-Pools + `buildPersonalTasks()`
+   - HTML Phasen 1–6 (Lerninhalt, Übung, Bewertungszonen)
+   - `buildPhase1–6()`, `submitPhase1–6()`, `checkPractice*()`
+   - Canvas/Simulation (optional)
+3. TEMPLATE-Blöcke **nicht ändern** (markiert mit `── TEMPLATE`)
+
+**Config-Objekte** (statt Hardcoding):
+- `PHASE_CONFIG[]` — Phasen-Namen + maxBE → Ergebnis-Tabelle wird generiert
+- `GRADE_SCALE[]` — Notenskala → Notenspiegel wird generiert
+- `HYPO_TIMER`, `EXP_TIMER` — Timer konfigurierbar (0 = aus)
+- `TAB_WARN_BEEPS` — Anzahl Puls-Beeps bei Tab-Rückkehr
 
 **Vorteil:** Statt ~2500 Zeilen schreiben, nur ~800 Zeilen Fach-Content einfügen.
 

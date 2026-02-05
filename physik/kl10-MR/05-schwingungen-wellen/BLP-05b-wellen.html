@@ -531,11 +531,11 @@
     <!-- PHASE 0: Login -->
     <div class="step active" id="step0">
         <div class="login-box">
-            <h2 style="color: var(--fach); margin-bottom: 10px;">Anmeldung</h2>
-            <p>Gib deinen vollst&auml;ndigen Namen ein, um zu starten.</p>
-            <input type="text" id="nameInput" placeholder="Vorname Nachname" autocomplete="off">
-            <button class="btn" id="btnStart" disabled onclick="startLP()">Lernpfad starten</button>
-            <p class="hint">Dein Name erzeugt deine individuelle Aufgabenversion.<br>Jede markierte Antwort wird bewertet (25 BE).</p>
+            <h2 style="color: var(--fach); margin-bottom: 10px;">Bewerteter Lernpfad</h2>
+            <p id="loginPlatz" style="font-size: 1.5em; font-weight: 700; color: var(--fach); margin: 15px 0;"></p>
+            <p id="loginError" style="color: var(--error); display: none;">Kein Platz zugewiesen. Bitte scanne den QR-Code auf deiner Platzkarte.</p>
+            <button class="btn" id="btnStart" style="display: none;" onclick="startLP()">Lernpfad starten</button>
+            <p class="hint">Jede markierte Antwort wird bewertet (25 BE).</p>
         </div>
     </div>
 
@@ -1064,7 +1064,8 @@
         <h2>Tab-Wechsel erkannt!</h2>
         <p>Du hast den Tab verlassen. Dies wird registriert.</p>
         <p class="tab-count">Bisherige Wechsel: <strong id="tabWarnCount">0</strong></p>
-        <button class="btn" onclick="dismissTabWarning()">Zur&uuml;ck zum Test</button>
+        <p class="tab-count">Gesamtzeit au&szlig;erhalb: <strong id="tabWarnTime">0s</strong></p>
+        <button class="btn" id="tabWarnDismiss" onclick="dismissTabWarning()" disabled>Bitte warten&hellip;</button>
     </div>
 </div>
 
@@ -1077,9 +1078,21 @@
 // ═══════════════════════════════════════════════════════════════
 
 var BLP_ID = 'blp-05b-wellen';
-var LP_VERSION = '2.0';
+var LP_VERSION = '2.1';
 var TOTAL_BE = 25;
 var TOTAL_PHASES = 7;
+
+// Storage-Prefix: BLP_ID + Platznummer
+function sKey(suffix) {
+    var p = window.location.search.match(/[?&]p=(\d+)/);
+    var platz = p ? '-p' + p[1] : '';
+    return BLP_ID + platz + '-' + suffix;
+}
+
+function getPlatzFromURL() {
+    var match = (window.location.search || '').match(/[?&]p=(\d+)/);
+    return match ? parseInt(match[1]) : 0;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -1870,7 +1883,7 @@ function showResults() {
     saveState();
 
     // Result lock
-    localStorage.setItem(BLP_ID + '-result', JSON.stringify({
+    localStorage.setItem(sKey('result'), JSON.stringify({
         name: state.name, total: total, pct: pct, grade: grade,
         code: code, timestamp: now.toISOString()
     }));
@@ -2173,6 +2186,17 @@ function initAudioContext() {
     src.start(0);
 }
 
+function ensureAudio(callback) {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().then(function() { if (callback) callback(); });
+        return false;
+    }
+    return true;
+}
+
 function startAlarm() {
     if (!audioCtx || alarmActive) return;
     alarmOsc = audioCtx.createOscillator();
@@ -2195,12 +2219,15 @@ function stopAlarm() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TAB-TRACKING
+// TAB-TRACKING (Puls-Alarm bei Rückkehr)
 // ═══════════════════════════════════════════════════════════════
 
+var TAB_WARN_BEEPS = 5;
+var pulseAlarmTimeout = null;
+
 function initTabTracking() {
-    var sc = localStorage.getItem(BLP_ID + '-tabswitches');
-    var ss = localStorage.getItem(BLP_ID + '-tabseconds');
+    var sc = localStorage.getItem(sKey('tabswitches'));
+    var ss = localStorage.getItem(sKey('tabseconds'));
     if (sc) tabSwitchCount = parseInt(sc);
     if (ss) tabSwitchSeconds = parseInt(ss);
 
@@ -2209,28 +2236,61 @@ function initTabTracking() {
         if (document.hidden) {
             tabSwitchStart = Date.now();
             tabSwitchCount++;
-            localStorage.setItem(BLP_ID + '-tabswitches', tabSwitchCount);
-            startAlarm();
+            localStorage.setItem(sKey('tabswitches'), tabSwitchCount);
         } else {
             if (tabSwitchStart > 0) {
                 var dur = Math.round((Date.now() - tabSwitchStart) / 1000);
                 tabSwitchSeconds += dur;
-                localStorage.setItem(BLP_ID + '-tabseconds', tabSwitchSeconds);
+                localStorage.setItem(sKey('tabseconds'), tabSwitchSeconds);
                 tabSwitchStart = 0;
             }
-            stopAlarm();
             showTabWarningOverlay();
+            startPulseAlarm();
         }
     });
 }
 
+function startPulseAlarm() {
+    var btn = document.getElementById('tabWarnDismiss');
+    if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
+    var beepsDone = 0;
+
+    function doPulse() {
+        if (beepsDone >= TAB_WARN_BEEPS) {
+            stopAlarm();
+            if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
+            return;
+        }
+        startAlarm();
+        pulseAlarmTimeout = setTimeout(function() {
+            stopAlarm();
+            beepsDone++;
+            pulseAlarmTimeout = setTimeout(doPulse, 1000);
+        }, 1000);
+    }
+
+    var ready = ensureAudio(function() { doPulse(); });
+    if (ready) doPulse();
+}
+
+function formatTabTime(sec) {
+    if (sec < 60) return sec + 's';
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s + ' min';
+}
+
 function showTabWarningOverlay() {
     document.getElementById('tabWarnCount').textContent = tabSwitchCount;
+    document.getElementById('tabWarnTime').textContent = formatTabTime(tabSwitchSeconds);
     document.getElementById('tabWarning').classList.add('visible');
 }
 
 function dismissTabWarning() {
+    if (document.getElementById('tabWarnDismiss').disabled) return;
     document.getElementById('tabWarning').classList.remove('visible');
+    if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; }
+    stopAlarm();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2279,7 +2339,7 @@ function freezeExperiment() {
 // ═══════════════════════════════════════════════════════════════
 
 function saveState() {
-    localStorage.setItem(BLP_ID + '-state', JSON.stringify({
+    localStorage.setItem(sKey('state'), JSON.stringify({
         name: state.name,
         seed: state.seed,
         version: state.version,
@@ -2313,11 +2373,11 @@ function saveInputSnapshot() {
             data['mc-' + parent.id] = idx;
         }
     }
-    localStorage.setItem(BLP_ID + '-inputs', JSON.stringify(data));
+    localStorage.setItem(sKey('inputs'), JSON.stringify(data));
 }
 
 function loadInputSnapshot() {
-    var saved = localStorage.getItem(BLP_ID + '-inputs');
+    var saved = localStorage.getItem(sKey('inputs'));
     if (!saved) return;
     try {
         var data = JSON.parse(saved);
@@ -2339,14 +2399,14 @@ function loadInputSnapshot() {
 }
 
 function loadState() {
-    var saved = localStorage.getItem(BLP_ID + '-state');
+    var saved = localStorage.getItem(sKey('state'));
     if (!saved) return false;
     try {
         var data = JSON.parse(saved);
         if (!data.name || !data.seed) return false;
         if (data.version !== LP_VERSION) {
-            localStorage.removeItem(BLP_ID + '-state');
-            localStorage.removeItem(BLP_ID + '-inputs');
+            localStorage.removeItem(sKey('state'));
+            localStorage.removeItem(sKey('inputs'));
             return false;
         }
         state.name = data.name;
@@ -2369,11 +2429,11 @@ function teacherReset() {
     var code = prompt('Lehrer-Code eingeben:');
     if (code === '2026') {
         if (confirm('Wirklich alle Daten l\u00f6schen?')) {
-            localStorage.removeItem(BLP_ID + '-state');
-            localStorage.removeItem(BLP_ID + '-inputs');
-            localStorage.removeItem(BLP_ID + '-result');
-            localStorage.removeItem(BLP_ID + '-tabswitches');
-            localStorage.removeItem(BLP_ID + '-tabseconds');
+            localStorage.removeItem(sKey('state'));
+            localStorage.removeItem(sKey('inputs'));
+            localStorage.removeItem(sKey('result'));
+            localStorage.removeItem(sKey('tabswitches'));
+            localStorage.removeItem(sKey('tabseconds'));
             alert('Zur\u00fcckgesetzt. Seite wird neu geladen.');
             location.reload();
         }
@@ -2387,11 +2447,11 @@ function teacherReset() {
 // ═══════════════════════════════════════════════════════════════
 
 function startLP() {
-    var name = document.getElementById('nameInput').value.trim();
-    if (name.length < 3) { alert('Bitte vollst\u00e4ndigen Namen eingeben!'); return; }
+    var platz = getPlatzFromURL();
+    if (!platz) return;
 
-    state.name = name;
-    state.seed = seedFromName(name);
+    state.name = 'Platz ' + platz;
+    state.seed = platz * 7919;
     state.startTime = new Date().toISOString();
 
     // AudioContext init on user gesture
@@ -2493,10 +2553,14 @@ document.addEventListener('input', function(e) {
 });
 
 window.onload = function() {
-    var nameInput = document.getElementById('nameInput');
-    nameInput.addEventListener('input', function() {
-        document.getElementById('btnStart').disabled = this.value.trim().length < 3;
-    });
+    // Platz aus URL lesen
+    var platz = getPlatzFromURL();
+    if (platz) {
+        document.getElementById('loginPlatz').textContent = 'Platz ' + platz;
+        document.getElementById('btnStart').style.display = '';
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+    }
 
     // Hypothesen-Simulation Slider
     var hypoLS = document.getElementById('hypoLambdaSlider');
