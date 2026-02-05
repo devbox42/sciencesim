@@ -116,13 +116,19 @@ function shuffleWithRNG(arr, rng) {
 | Aktion | Was passiert |
 |--------|-------------|
 | Tab verlassen (hidden) | Counter erhöht, Außenzeit läuft |
-| Tab zurückkehren (visible) | **Puls-Alarm:** 5× Beep (1s an, 1s aus) + Overlay |
+| Tab zurückkehren (visible) | **Puls-Alarm:** 5× Beep (0,5s an, 0,5s aus = 5s) + Overlay |
 | Overlay während Alarm | "Zurück"-Button **deaktiviert** bis alle Beeps fertig |
 | Overlay nach Alarm | Schüler klickt "Zurück zum Test" |
 
-**Puls-Alarm statt Dauer-Ton:** Beim Zurückkehren ertönen 5 Beeps à 1 Sekunde (800Hz square).
+**Puls-Alarm statt Dauer-Ton:** Beim Zurückkehren ertönen 5 Beeps à 0,5 Sekunden (800Hz square, 0,5s an + 0,5s Pause = 5s gesamt).
 Der Dismiss-Button wird erst nach dem letzten Beep klickbar. Das Overlay zeigt die
 kumulierte Außenzeit und die Anzahl der Tab-Wechsel.
+
+**sessionReady-Flag:** Tab-Alarm wird erst aktiviert, nachdem `startLP()` oder `restoreSession()` abgeschlossen ist. Verhindert Fehl-Alarm bei Reload (Browser feuert `visibilitychange` beim Laden).
+
+**Audio-Fallback:** Falls `AudioContext.resume()` nach Reload fehlschlägt (iOS, keine User-Geste), wird der Dismiss-Button nach 2s automatisch freigegeben.
+
+**goToPhase-Override Reihenfolge:** In `window.onload` muss der `goToPhase`-Override (Timer-Starts) **vor** `loadState()`/`restoreSession()` stehen, damit bei Reload die Timer (Hypo-Timer, Experiment-Timer) korrekt neu starten. Andernfalls ruft `restoreSession()` → `goToPhase(2)` den alten `goToPhase` ohne Timer-Start auf → Button bleibt disabled.
 
 ```javascript
 // Web Audio API (funktioniert auch bei stummgeschaltetem Media-Volume!)
@@ -392,18 +398,80 @@ Position: Fixed, unten rechts, 50% Opacity. Code: `2026`.
 
 ---
 
-## 10. Hefter-Hinweise (AB-Integration)
+## 10. Hefter-Hinweise & AB-Integration
 
-An 4 Stellen im BLP erscheint ein grüner Hinweis:
+### 10.1 Hefter-Hints im BLP
 
-1. Nach Phase 1: "Übertrage die Wellentypen in dein AB (Aufgabe 1)"
-2. Nach Phase 3: "Trage deine Messwerte in die AB-Tabelle ein (Aufgabe 3)"
-3. Nach Phase 4: "Notiere die Formel v = λ·f in deinem Hefter"
-4. Nach Phase 6: "Schreibe den Merksatz ab (AB Aufgabe 6)"
+An definierten Stellen im BLP erscheint ein grüner Hinweis, der Schüler auffordert,
+Ergebnisse auf dem begleitenden AB (Arbeitsblatt) zu sichern:
 
 ```html
 <div class="hefter-hint">Text hier.</div>
 ```
+
+**Position:** Immer **nach** der Bewertungszone einer Phase, **vor** dem „Weiter"-Button.
+
+### 10.2 Grundprinzip: AB-Eintrag nach Assessment
+
+> **Regel:** Der AB-Eintrag für Phase N erfolgt **nach** dem Assessment von Phase N.
+> Er darf **keine** Antworten für das Assessment von Phase N+1 vorwegnehmen.
+
+**Warum?**
+- Das AB dient als **dauerhafte Dokumentation** der Feinziele im Hefter.
+- Würde der AB-Eintrag *vor* dem Assessment kommen, hätten Schüler einen Spickzettel.
+- Innerhalb einer Phase ist alles auf einer scrollbaren Seite sichtbar — Lerninhalte
+  **über** der Bewertungszone sind also einsehbar. Das ist gewollt (Lernphase → Test
+  auf gleicher Seite). Aber das AB muss nach der Abgabe ausgefüllt werden.
+
+**Ablauf pro Phase:**
+
+```
+┌─ Phase N (eine scrollbare Seite) ──────────┐
+│  1. Lerninhalt (Text, Animation, Tabelle)   │  ← Schüler liest/lernt
+│  2. Übungszone (unbewertet, beliebig oft)   │  ← Schüler übt
+│  3. Bewertungszone (1 Versuch, X BE)        │  ← Schüler wird bewertet
+│  4. Hefter-Hint: "Übertrage ins AB"         │  ← JETZT erst aufs AB
+│  5. [Weiter →]                              │
+└─────────────────────────────────────────────┘
+```
+
+### 10.3 Spoiler-Check (Pflicht bei BLP-Erstellung)
+
+Bei jeder BLP-Erstellung muss geprüft werden, ob der AB-Eintrag von Phase N
+die Antworten für Phase N+1 verrät.
+
+**Checkliste:**
+
+| Prüfung | Frage | Ergebnis |
+|---------|-------|----------|
+| Phase 1 → Phase 2 | Enthält der AB-Eintrag (Wellentypen) Antworten für die Hypothese? | ✅/❌ |
+| Phase 2 → Phase 3 | Enthält der AB-Eintrag (Hypothese) Messwerte für das Experiment? | ✅/❌ |
+| Phase 3 → Phase 4 | Enthält der AB-Eintrag (Messwerte) Berechnungsergebnisse? | ✅/❌ |
+| Phase 4 → Phase 5 | Enthält der AB-Eintrag (Formel) Antworten auf Anwendungsfragen? | ✅/❌ |
+| Phase 5 → Phase 6 | Enthält der AB-Eintrag (Anwendung) Antworten auf Transfer-Fragen? | ✅/❌ |
+
+**Bewertungskriterium:** Jede Zeile muss ✅ (= kein Spoiler) sein.
+Wenn ❌: AB-Eintrag umformulieren, sodass er Wissen sichert, aber nicht die
+spezifischen Assessment-Antworten der Folgephase enthält.
+
+**Typische sichere Muster:**
+
+| Phase N sichert... | Phase N+1 testet... | Spoiler? |
+|---------------------|---------------------|----------|
+| Definitionen & Beispiele | Hypothesen formulieren | Nein |
+| Hypothesen (qualitativ) | Messungen durchführen | Nein |
+| Messwerte (Rohdaten) | Berechnungen mit Formel | Nein |
+| Formel v = λ·f | Anwendung auf Schall (s = v·t) | Nein (andere Formel) |
+| Schall-Fakten (Hörbereich etc.) | Logisches Schlussfolgern (Claims) | Nein |
+
+### 10.4 AB-Design-Richtlinien
+
+1. **Lückentext statt fertiger Text:** Schüler füllen Schlüsselbegriffe selbst ein
+2. **Leere Tabellen:** Strukturvorgabe ja, Antworten nein
+3. **Formelrahmen:** Formel-Platzhalter mit Einheiten, nicht ausgefüllt
+4. **Keine Pool-Antworten:** Die Beispiel-Tabelle aus dem LP steht NICHT fertig auf dem AB
+5. **Feinziel-Vollständigkeit:** Jedes Feinziel muss auf dem AB einen Eintrag haben
+6. **Reihenfolge = Phasenfolge:** AB-Aufgaben 1–6 entsprechen Phase 1–6
 
 ---
 

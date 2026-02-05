@@ -1051,6 +1051,18 @@
             <span class="be-badge">4 BE</span>
         </div>
 
+        <div class="info-box" style="background: #f0f4f8; border-left: 4px solid var(--fach); padding: 12px 15px; margin-bottom: 15px; font-size: 0.92em;">
+            <strong>Wichtige Fakten zur Erinnerung:</strong>
+            <ul style="margin: 6px 0 0 0; padding-left: 18px;">
+                <li>Wellenformel: <strong>v = &lambda; &middot; f</strong></li>
+                <li>Schallgeschwindigkeit in Luft: ca. <strong>340 m/s</strong></li>
+                <li>Schall braucht ein <strong>Medium</strong> (Teilchen) &ndash; im Vakuum kein Schall</li>
+                <li>Schall in Festk&ouml;rpern schneller als in Luft (z.B. Stahl &asymp; 5900 m/s)</li>
+                <li>Wellen transportieren <strong>Energie</strong>, nicht Materie</li>
+                <li>Lichtgeschwindigkeit: ca. <strong>300 000 km/s</strong> (viel schneller als Schall)</li>
+            </ul>
+        </div>
+
         <div class="assess-zone" data-label="BEWERTET &ndash; 4 BE (1 Versuch)" id="assess6">
             <p style="margin-top: 8px;"><strong>1. Merksatz vervollst&auml;ndigen (1 BE):</strong></p>
             <p>Eine Welle transportiert
@@ -2625,6 +2637,7 @@ function stopAlarm() {
 
 var TAB_WARN_BEEPS = 5;
 var pulseAlarmTimeout = null;
+var sessionReady = false;
 
 function initTabTracking() {
     var sc = localStorage.getItem(sKey('tabswitches'));
@@ -2633,7 +2646,7 @@ function initTabTracking() {
     if (ss) tabSwitchSeconds = parseInt(ss);
 
     document.addEventListener('visibilitychange', function() {
-        if (state.completed) return;
+        if (!sessionReady || state.completed) return;
         if (document.hidden) {
             tabSwitchStart = Date.now();
             tabSwitchCount++;
@@ -2655,8 +2668,10 @@ function startPulseAlarm() {
     var btn = document.getElementById('tabWarnDismiss');
     if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
     var beepsDone = 0;
+    var alarmStarted = false;
 
     function doPulse() {
+        alarmStarted = true;
         if (beepsDone >= TAB_WARN_BEEPS) {
             stopAlarm();
             if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
@@ -2666,12 +2681,20 @@ function startPulseAlarm() {
         pulseAlarmTimeout = setTimeout(function() {
             stopAlarm();
             beepsDone++;
-            pulseAlarmTimeout = setTimeout(doPulse, 1000);
-        }, 1000);
+            pulseAlarmTimeout = setTimeout(doPulse, 500);
+        }, 500);
     }
 
     var ready = ensureAudio(function() { doPulse(); });
     if (ready) doPulse();
+
+    // Fallback: falls AudioContext nie resumed (z.B. iOS nach Reload ohne User-Geste)
+    setTimeout(function() {
+        if (!alarmStarted && btn) {
+            btn.disabled = false;
+            btn.textContent = 'Zur\u00fcck zum Test';
+        }
+    }, 2000);
 }
 
 function formatTabTime(sec) {
@@ -2878,6 +2901,7 @@ function startLP() {
 
     saveState();
     goToPhase(1);
+    sessionReady = true;
 }
 
 function restoreSession() {
@@ -2931,6 +2955,7 @@ function restoreSession() {
     } else {
         goToPhase(state.currentPhase || 1);
     }
+    sessionReady = true;
 }
 
 // Hypothesen-Timer
@@ -3047,22 +3072,13 @@ window.onload = function() {
         });
     }
 
-    // Tab-Tracking
-    initTabTracking();
-
     // Animationen starten
     requestAnimationFrame(drawCompareWaves);
     requestAnimationFrame(drawHypoWave);
     drawMainWave();
     updateWaveDisplay();
 
-    // Session wiederherstellen?
-    if (loadState()) {
-        try { initAudioContext(); } catch(e) {}
-        restoreSession();
-    }
-
-    // goToPhase override for timer starts
+    // goToPhase override for timer starts — VOR restoreSession, damit Timer bei Reload greifen
     var origGoToPhase = goToPhase;
     goToPhase = function(n) {
         origGoToPhase(n);
@@ -3073,6 +3089,15 @@ window.onload = function() {
             startExperimentTimer();
         }
     };
+
+    // Session wiederherstellen?
+    if (loadState()) {
+        try { initAudioContext(); } catch(e) {}
+        restoreSession();
+    }
+
+    // Tab-Tracking NACH Session-Wiederherstellung (verhindert Fehl-Alarm bei Reload)
+    initTabTracking();
 };
 </script>
 </body>

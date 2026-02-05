@@ -14,7 +14,7 @@
 ║  - Fragen-Pools (POOL_PHASE1, etc.)                             ║
 ║  - HTML Phasen 1–6 (Lerninhalt, Übung, Bewertungszone)          ║
 ║  - JS buildPhase1–6() (UI dynamisch aufbauen)                   ║
-║  - JS submitPhase1–6() (Scoring-Logik)                          ║
+║  - JS submitPhase1–6() (Scoring-Logik + Beleg-Items sammeln)     ║
 ║  - JS checkPractice*() (Übungs-Checks)                          ║
 ║  - JS Canvas/Simulation (optional)                               ║
 ║  - EW-Nav Labels (Phase-Namen)                                   ║
@@ -387,6 +387,25 @@
         .phase-breakdown { margin: 15px 0; }
         .phase-breakdown td:first-child { text-align: left; }
 
+        /* Beleg (Detailnachweis) */
+        .beleg { max-width: 700px; margin: 20px auto; }
+        .beleg-header { text-align: center; border-bottom: 2px solid var(--fach); padding-bottom: 10px; margin-bottom: 15px; }
+        .beleg-header h2 { font-size: 1.1em; margin-bottom: 4px; }
+        .beleg-phase { margin-bottom: 20px; }
+        .beleg-phase h3 { background: var(--fach-light); padding: 8px 12px; margin: 0 0 10px; font-size: 0.95em; }
+        .beleg-item { padding: 10px; border-left: 3px solid #ccc; margin-bottom: 10px; background: #fafafa; }
+        .beleg-item.beleg-correct { border-left-color: var(--success); }
+        .beleg-item.beleg-wrong { border-left-color: #c0392b; }
+        .beleg-q { font-weight: 600; margin-bottom: 5px; font-size: 0.95em; }
+        .beleg-options { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
+        .beleg-opt { padding: 3px 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em; }
+        .beleg-opt-correct { border-color: var(--success); background: #e8f5e9; font-weight: 600; }
+        .beleg-opt-given { outline: 2px solid var(--fach); }
+        .beleg-opt-correct.beleg-opt-given { outline-color: var(--success); }
+        .beleg-nums { font-size: 0.9em; margin: 5px 0; }
+        .beleg-points { font-size: 0.85em; font-weight: 600; color: var(--text-muted); }
+        .beleg-explain { font-size: 0.85em; color: #555; font-style: italic; margin-top: 3px; }
+
         /* Login */
         .login-box {
             max-width: 400px;
@@ -506,8 +525,15 @@
         }
 
         @media print {
-            .btn, .nav-buttons, .ew-nav, .progress-bar, .teacher-reset { display: none !important; }
-            .step { display: block !important; page-break-inside: avoid; border: none; }
+            .ew-nav, .step-badge, .btn, .tab-warning-overlay,
+            #btnBeleg, .hefter-hint, .nav-buttons, .teacher-reset,
+            .bewertung-badge, .progress-bar { display: none !important; }
+            .step { display: none !important; }
+            #step7 { display: block !important; }
+            #belegContainer { display: block !important; }
+            .beleg-item { break-inside: avoid; }
+            body { font-size: 11pt; }
+            header { background: none !important; color: var(--text) !important; border-bottom: 2px solid var(--fach); }
         }
     </style>
 </head>
@@ -732,6 +758,12 @@
             <span class="be-badge">X BE</span>
         </div>
 
+        <!-- HINWEIS: Falls Phase 6 Transfer-Fragen enthält, die auf Wissen aus
+             früheren Phasen aufbauen, hier eine kompakte Referenzbox einfügen
+             (Forward-only → Schüler können nicht zurückblättern!).
+             Beispiel: <div class="info-box" style="background:#f0f4f8; border-left:4px solid var(--fach); padding:12px 15px; margin-bottom:15px; font-size:0.92em;">
+                <strong>Wichtige Fakten zur Erinnerung:</strong><ul>...</ul></div> -->
+
         <!-- Bewertungszone -->
         <div class="assess-zone" data-label="BEWERTET &ndash; X BE (1 Versuch)" id="assess6">
             <div id="assess6-container"></div>
@@ -791,6 +823,12 @@
         </div>
 
         <div id="resTabInfo" style="margin-top: 10px; font-size: 0.85em; color: var(--text-muted); text-align: center;"></div>
+
+        <!-- ── TEMPLATE: Beleg-Button + Container ── -->
+        <div style="text-align:center; margin-top:20px;">
+            <button class="btn" id="btnBeleg" onclick="showBeleg()" style="background:var(--fach);">Detailbeleg anzeigen</button>
+        </div>
+        <div id="belegContainer" style="display:none;"></div>
     </div>
 </div>
 
@@ -902,7 +940,8 @@ var state = {
     completed: false,
     startTime: null,
     phaseTimestamps: {},
-    experimentTimeLeft: EXP_TIMER
+    experimentTimeLeft: EXP_TIMER,
+    beleg: []
 };
 
 // State-Objekte dynamisch initialisieren
@@ -1078,6 +1117,7 @@ function stopAlarm() {
 
 var TAB_WARN_BEEPS = 5;    // Anzahl Puls-Beeps bei Rückkehr
 var pulseAlarmTimeout = null;
+var sessionReady = false;
 
 function initTabTracking() {
     var sc = localStorage.getItem(sKey('tabswitches'));
@@ -1086,7 +1126,7 @@ function initTabTracking() {
     if (ss) tabSwitchSeconds = parseInt(ss);
 
     document.addEventListener('visibilitychange', function() {
-        if (state.completed) return;
+        if (!sessionReady || state.completed) return;
         if (document.hidden) {
             tabSwitchStart = Date.now();
             tabSwitchCount++;
@@ -1108,8 +1148,10 @@ function startPulseAlarm() {
     var btn = document.getElementById('tabWarnDismiss');
     if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
     var beepsDone = 0;
+    var alarmStarted = false;
 
     function doPulse() {
+        alarmStarted = true;
         if (beepsDone >= TAB_WARN_BEEPS) {
             stopAlarm();
             if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
@@ -1119,8 +1161,8 @@ function startPulseAlarm() {
         pulseAlarmTimeout = setTimeout(function() {
             stopAlarm();
             beepsDone++;
-            pulseAlarmTimeout = setTimeout(doPulse, 1000);
-        }, 1000);
+            pulseAlarmTimeout = setTimeout(doPulse, 500);
+        }, 500);
     }
 
     // AudioContext erzwingen — resume() ist async, daher Callback
@@ -1130,6 +1172,14 @@ function startPulseAlarm() {
     });
     // Falls Context schon bereit war, sofort starten
     if (ready) doPulse();
+
+    // Fallback: falls AudioContext nie resumed (z.B. iOS nach Reload ohne User-Geste)
+    setTimeout(function() {
+        if (!alarmStarted && btn) {
+            btn.disabled = false;
+            btn.textContent = 'Zur\u00fcck zum Test';
+        }
+    }, 2000);
 }
 
 function formatTabTime(sec) {
@@ -1243,7 +1293,8 @@ function saveState() {
         completed: state.completed,
         startTime: state.startTime,
         phaseTimestamps: state.phaseTimestamps,
-        experimentTimeLeft: state.experimentTimeLeft
+        experimentTimeLeft: state.experimentTimeLeft,
+        beleg: state.beleg
     };
     localStorage.setItem(sKey('state'), JSON.stringify(data));
 }
@@ -1314,6 +1365,7 @@ function loadState() {
         state.startTime = data.startTime;
         state.phaseTimestamps = data.phaseTimestamps || {};
         state.experimentTimeLeft = data.experimentTimeLeft || EXP_TIMER;
+        state.beleg = data.beleg || [];
         return true;
     } catch (e) { return false; }
 }
@@ -1411,6 +1463,82 @@ function formatDuration(sec) {
 
 
 // ═══════════════════════════════════════════════════════════════
+// ── TEMPLATE: Beleg (Detailnachweis, nicht ändern) ───────────
+// ═══════════════════════════════════════════════════════════════
+
+function showBeleg() {
+    var container = document.getElementById('belegContainer');
+    if (container.style.display !== 'none') {
+        container.style.display = 'none';
+        document.getElementById('btnBeleg').textContent = 'Detailbeleg anzeigen';
+        return;
+    }
+
+    var belegData = state.beleg || [];
+    if (belegData.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Keine Beleg-Daten vorhanden.</p>';
+        container.style.display = 'block';
+        document.getElementById('btnBeleg').textContent = 'Beleg ausblenden';
+        return;
+    }
+
+    var total = 0;
+    for (var t = 0; t < PHASE_CONFIG.length; t++) {
+        total += state.scores['p' + (t + 1)];
+    }
+
+    var html = '<div class="beleg">';
+    html += '<div class="beleg-header">';
+    html += '<h2>Detailbeleg: ' + state.name + '</h2>';
+    html += '<p>' + BLP_ID + ' | ' + total + '/' + TOTAL_BE + ' BE | ' + new Date().toLocaleDateString('de-DE') + '</p>';
+    html += '</div>';
+
+    for (var p = 0; p < belegData.length; p++) {
+        var phase = belegData[p];
+        html += '<div class="beleg-phase">';
+        html += '<h3>Phase ' + phase.phase + ': ' + phase.phaseName +
+                ' (' + phase.phBE + '/' + phase.phMaxBE + ' BE)</h3>';
+
+        for (var i = 0; i < phase.items.length; i++) {
+            var item = phase.items[i];
+            var itemClass = item.be >= item.maxBE ? 'beleg-correct' : 'beleg-wrong';
+            html += '<div class="beleg-item ' + itemClass + '">';
+            html += '<div class="beleg-q">' + item.q + '</div>';
+
+            if (item.options && item.options.length > 0) {
+                html += '<div class="beleg-options">';
+                for (var j = 0; j < item.options.length; j++) {
+                    var optClass = '';
+                    var optText = item.options[j];
+                    if (optText === item.correct) optClass += ' beleg-opt-correct';
+                    if (optText === item.given) optClass += ' beleg-opt-given';
+                    html += '<span class="beleg-opt' + optClass + '">' + optText + '</span>';
+                }
+                html += '</div>';
+            }
+
+            if (item.givenNum !== undefined) {
+                html += '<div class="beleg-nums">';
+                html += 'Deine Antwort: <strong>' + item.givenNum + '</strong>';
+                html += ' | Erwartet: <strong>' + item.correctNum + '</strong>';
+                html += '</div>';
+            }
+
+            html += '<div class="beleg-points">' + item.be + '/' + item.maxBE + ' BE</div>';
+            html += '<div class="beleg-explain">' + item.explain + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+    }
+
+    html += '</div>';
+    container.innerHTML = html;
+    container.style.display = 'block';
+    document.getElementById('btnBeleg').textContent = 'Beleg ausblenden';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
 // ── TEMPLATE: Teacher-Reset (nicht ändern) ───────────────────
 // ═══════════════════════════════════════════════════════════════
 
@@ -1471,9 +1599,12 @@ function buildPhase6() {
 function submitPhase1() {
     if (state.submitted.p1) return;
     var score = 0;
-    // ÄNDERN: Scoring-Logik
+    var belegItems = [];
+    // ÄNDERN: Scoring-Logik + belegItems sammeln
+    // belegItems.push({ q: 'Fragetext', options: ['A','B','C'], correct: 'A', given: givenVal, be: X, maxBE: Y, explain: 'Erklaerung' });
     state.scores.p1 = score;
     state.submitted.p1 = true;
+    state.beleg.push({ phase: 1, phaseName: PHASE_CONFIG[0].name, items: belegItems, phBE: state.scores.p1, phMaxBE: PHASE_CONFIG[0].maxBE });
     var fb = document.getElementById('fb-assess1');
     fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
     fb.textContent = score + '/' + PHASE_CONFIG[0].maxBE + ' BE';
@@ -1485,9 +1616,11 @@ function submitPhase1() {
 function submitHypothesis() {
     if (state.submitted.p2) return;
     var score = 0;
-    // ÄNDERN: Hypothesen-Scoring
+    var belegItems = [];
+    // ÄNDERN: Hypothesen-Scoring + belegItems sammeln
     state.scores.p2 = score;
     state.submitted.p2 = true;
+    state.beleg.push({ phase: 2, phaseName: PHASE_CONFIG[1].name, items: belegItems, phBE: state.scores.p2, phMaxBE: PHASE_CONFIG[1].maxBE });
     var fb = document.getElementById('fb-hypo');
     fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
     fb.textContent = 'Hypothese gespeichert (' + score + '/' + PHASE_CONFIG[1].maxBE + ' BE)';
@@ -1499,9 +1632,12 @@ function submitPhase3() {
     if (state.submitted.p3) return;
     if (experimentInterval) { clearInterval(experimentInterval); experimentInterval = null; }
     var score = 0;
-    // ÄNDERN: Experiment-Scoring
+    var belegItems = [];
+    // ÄNDERN: Experiment-Scoring + belegItems sammeln
+    // Für numerische Eingaben: { q:'...', options:[], correct:'X', given:'Y', givenNum:Y, correctNum:X, be:0, maxBE:1, explain:'...' }
     state.scores.p3 = score;
     state.submitted.p3 = true;
+    state.beleg.push({ phase: 3, phaseName: PHASE_CONFIG[2].name, items: belegItems, phBE: state.scores.p3, phMaxBE: PHASE_CONFIG[2].maxBE });
     var fb = document.getElementById('fb-assess3');
     fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
     fb.textContent = score + '/' + PHASE_CONFIG[2].maxBE + ' BE';
@@ -1513,9 +1649,11 @@ function submitPhase3() {
 function submitPhase4() {
     if (state.submitted.p4) return;
     var score = 0;
-    // ÄNDERN: Auswertungs-Scoring
+    var belegItems = [];
+    // ÄNDERN: Auswertungs-Scoring + belegItems sammeln
     state.scores.p4 = score;
     state.submitted.p4 = true;
+    state.beleg.push({ phase: 4, phaseName: PHASE_CONFIG[3].name, items: belegItems, phBE: state.scores.p4, phMaxBE: PHASE_CONFIG[3].maxBE });
     var fb = document.getElementById('fb-assess4');
     fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
     fb.textContent = score + '/' + PHASE_CONFIG[3].maxBE + ' BE';
@@ -1527,9 +1665,11 @@ function submitPhase4() {
 function submitPhase5() {
     if (state.submitted.p5) return;
     var score = 0;
-    // ÄNDERN: Anwendungs-Scoring
+    var belegItems = [];
+    // ÄNDERN: Anwendungs-Scoring + belegItems sammeln
     state.scores.p5 = score;
     state.submitted.p5 = true;
+    state.beleg.push({ phase: 5, phaseName: PHASE_CONFIG[4].name, items: belegItems, phBE: state.scores.p5, phMaxBE: PHASE_CONFIG[4].maxBE });
     var fb = document.getElementById('fb-assess5');
     fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
     fb.textContent = score + '/' + PHASE_CONFIG[4].maxBE + ' BE';
@@ -1541,9 +1681,11 @@ function submitPhase5() {
 function submitPhase6() {
     if (state.submitted.p6) return;
     var score = 0;
-    // ÄNDERN: Verallgemeinerungs-Scoring
+    var belegItems = [];
+    // ÄNDERN: Verallgemeinerungs-Scoring + belegItems sammeln
     state.scores.p6 = score;
     state.submitted.p6 = true;
+    state.beleg.push({ phase: 6, phaseName: PHASE_CONFIG[5].name, items: belegItems, phBE: state.scores.p6, phMaxBE: PHASE_CONFIG[5].maxBE });
     var fb = document.getElementById('fb-assess6');
     fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
     fb.textContent = score + '/' + PHASE_CONFIG[5].maxBE + ' BE';
@@ -1634,6 +1776,7 @@ function startLP() {
 
     saveState();
     goToPhase(1);
+    sessionReady = true;
 }
 
 function restoreSession() {
@@ -1674,6 +1817,7 @@ function restoreSession() {
     } else {
         goToPhase(state.currentPhase || 1);
     }
+    sessionReady = true;
 }
 
 
@@ -1700,9 +1844,6 @@ window.onload = function() {
         sel.value = urlPlatz;
     }
 
-    // Tab-Tracking
-    initTabTracking();
-
     /* ╔══════════════════════════════════════╗ */
     /* ║  CONTENT: Slider/Canvas-Init          ║ */
     /* ║  (optional, nur wenn benötigt)        ║ */
@@ -1713,13 +1854,7 @@ window.onload = function() {
     // if (slider) { slider.addEventListener('input', function() { ... }); }
     // requestAnimationFrame(drawMyAnimation);
 
-    // Session wiederherstellen?
-    if (loadState()) {
-        try { initAudioContext(); } catch(e) {}
-        restoreSession();
-    }
-
-    // goToPhase override for timer starts
+    // goToPhase override for timer starts — VOR restoreSession, damit Timer bei Reload greifen
     var origGoToPhase = goToPhase;
     goToPhase = function(n) {
         origGoToPhase(n);
@@ -1730,6 +1865,15 @@ window.onload = function() {
             startExperimentTimer();
         }
     };
+
+    // Session wiederherstellen?
+    if (loadState()) {
+        try { initAudioContext(); } catch(e) {}
+        restoreSession();
+    }
+
+    // Tab-Tracking NACH Session-Wiederherstellung (verhindert Fehl-Alarm bei Reload)
+    initTabTracking();
 };
 </script>
 </body>
