@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewerteter Lernpfad: Passwörter & Brute Force | Informatik 10MR</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #222;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        :root {
+            --fach: #b35c00;
+            --fach-light: #fff3e0;
+            --success: #2a7a4b;
+            --success-light: #e8f5e9;
+            --warning: #b35c00;
+            --warning-light: #fff3e0;
+            --error: #c62828;
+            --error-light: #ffebee;
+            --gray: #666;
+            --border: #ddd;
+        }
+
+        header {
+            background: var(--fach);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 { font-size: 1.5em; font-weight: 600; margin-bottom: 5px; }
+        header .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .bewertung-badge {
+            display: inline-block;
+            background: #c62828;
+            color: white;
+            padding: 3px 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 8px;
+        }
+
+        .progress-bar { background: #ddd; height: 8px; width: 100%; }
+        .progress-fill { background: var(--fach); height: 100%; width: 0%; transition: width 0.3s; }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75em; font-weight: 600;
+            border: 2px solid var(--border);
+            background: white; color: #666;
+            transition: all 0.15s;
+        }
+
+        .step-dot.active { background: var(--fach); border-color: var(--fach); color: white; }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
+        .step-dot.graded { border-style: dashed; border-color: var(--error); }
+        .step-dot.graded.completed { border-style: solid; }
+
+        .step { display: none; background: white; padding: 25px; margin: 20px 0; border: 1px solid var(--border); }
+        .step.active { display: block; }
+        .step h2 { color: var(--fach); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--fach-light); }
+        .step h3 { font-size: 1.1em; margin: 20px 0 10px 0; color: #333; }
+
+        .info-box { background: var(--fach-light); border-left: 4px solid var(--fach); padding: 15px; margin: 15px 0; }
+        .merksatz { background: var(--success-light); border-left: 4px solid var(--success); padding: 15px; margin: 15px 0; font-weight: 500; }
+        .warning-box { background: #ffebee; border-left: 4px solid #c62828; padding: 15px; margin: 15px 0; }
+
+        .score-inline { display: inline-block; background: var(--fach-light); color: var(--fach); padding: 2px 8px; font-size: 0.8em; font-weight: 700; }
+        .input-badge { display: inline-block; background: #e3f2fd; color: #1565c0; padding: 2px 8px; font-size: 0.8em; font-weight: 700; }
+
+        /* Name Entry */
+        .name-entry { max-width: 500px; margin: 30px auto; text-align: center; }
+        .name-entry input { width: 100%; padding: 15px; font-size: 1.2em; border: 2px solid var(--border); text-align: center; margin: 15px 0; }
+        .name-entry input:focus { outline: none; border-color: var(--fach); }
+
+        /* MC Questions */
+        .mc-question { background: #fafafa; border: 1px solid var(--border); padding: 20px; margin: 15px 0; }
+        .mc-question.locked { opacity: 0.85; }
+        .mc-question .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .mc-question .q-number { background: var(--fach); color: white; padding: 2px 10px; font-size: 0.85em; font-weight: 600; }
+        .mc-question .q-points { font-size: 0.8em; color: var(--gray); font-weight: 600; }
+        .mc-question .q-text { font-weight: 500; margin-bottom: 12px; font-size: 1.05em; }
+        .mc-options { display: flex; flex-direction: column; gap: 8px; }
+
+        .mc-option {
+            display: flex; align-items: center;
+            padding: 12px 15px; background: white;
+            border: 2px solid var(--border);
+            cursor: pointer; transition: all 0.15s;
+            min-height: 48px; touch-action: manipulation;
+        }
+
+        .mc-option:hover { background: var(--fach-light); border-color: var(--fach); }
+        .mc-option.selected { border-color: var(--fach); background: var(--fach-light); }
+        .mc-option.correct { border-color: var(--success); background: var(--success-light); }
+        .mc-option.wrong { border-color: var(--error); background: var(--error-light); }
+        .mc-option.disabled { pointer-events: none; cursor: default; }
+        .mc-option.disabled:hover { background: white; border-color: var(--border); }
+        .mc-option .letter {
+            width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--border);
+            margin-right: 12px; font-weight: 700; font-size: 0.85em; flex-shrink: 0;
+        }
+        .mc-option.correct .letter { border-color: var(--success); color: var(--success); }
+        .mc-option.wrong .letter { border-color: var(--error); color: var(--error); }
+
+        .mc-feedback { margin-top: 10px; padding: 10px 12px; font-size: 0.9em; display: none; }
+        .mc-feedback.visible { display: block; }
+        .mc-feedback.fb-correct { background: var(--success-light); border-left: 3px solid var(--success); }
+        .mc-feedback.fb-wrong { background: var(--error-light); border-left: 3px solid var(--error); }
+
+        /* Password Strength Meter */
+        .pw-input-wrap { position: relative; margin: 15px 0; }
+        .pw-input-wrap input { width: 100%; padding: 12px; font-size: 1.1em; font-family: monospace; border: 2px solid var(--border); }
+        .pw-input-wrap input:focus { outline: none; border-color: var(--fach); }
+        .strength-bar { height: 10px; background: #eee; margin: 8px 0; overflow: hidden; }
+        .strength-fill { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; }
+        .strength-fill.s1 { width: 20%; background: #c62828; }
+        .strength-fill.s2 { width: 40%; background: #e65100; }
+        .strength-fill.s3 { width: 60%; background: #f9a825; }
+        .strength-fill.s4 { width: 80%; background: #558b2f; }
+        .strength-fill.s5 { width: 100%; background: #2e7d32; }
+
+        .pw-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; font-size: 0.9em; }
+        .pw-detail-item { padding: 6px 10px; background: #f5f5f5; border-left: 3px solid var(--border); }
+        .pw-detail-item.active { border-left-color: var(--success); background: var(--success-light); }
+
+        /* Challenge Box */
+        .challenge-box {
+            background: #fff8e1; border: 2px dashed #f9a825;
+            padding: 15px; margin: 20px 0; text-align: center;
+        }
+        .challenge-box h3 { color: #e65100; margin-bottom: 8px; }
+        .challenge-status { font-weight: 600; margin-top: 10px; font-size: 1.05em; }
+        .challenge-success {
+            background: var(--success-light); border: 2px solid var(--success);
+            color: var(--success); padding: 12px; margin-top: 10px; font-weight: 700;
+            display: none;
+        }
+
+        /* Brute Force Calculator */
+        .bf-calculator { background: #1a1a2e; color: #0f0; padding: 20px; font-family: monospace; margin: 15px 0; }
+        .bf-calculator select, .bf-calculator input[type="range"] { width: 100%; padding: 8px; margin: 5px 0 15px 0; font-family: monospace; font-size: 1em; }
+        .bf-calculator label { color: #aaa; font-size: 0.9em; }
+        .bf-calculator .bf-result { font-size: 1.1em; padding: 15px; margin-top: 10px; border: 1px solid #0f0; text-align: center; }
+        .bf-demo { font-size: 0.85em; color: #0f0; padding: 10px; height: 60px; overflow: hidden; border-top: 1px solid #333; margin-top: 10px; }
+
+        /* Potenz-Rechner */
+        .potenz-rechner { background: #1a1a2e; color: #0f0; padding: 20px; font-family: monospace; margin: 15px 0; }
+        .potenz-rechner label { color: #aaa; font-size: 0.9em; display: block; margin-bottom: 8px; }
+        .potenz-inputs { display: flex; align-items: center; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+        .potenz-inputs input[type="number"] {
+            width: 100px; padding: 10px; font-size: 1.2em; font-family: monospace;
+            text-align: center; border: 2px solid #0f0; background: #0a0a1e; color: #0f0;
+            -moz-appearance: textfield;
+        }
+        .potenz-inputs input[type="number"]::-webkit-inner-spin-button,
+        .potenz-inputs input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .potenz-inputs .op { color: #0f0; font-size: 1.3em; font-weight: 700; }
+        .potenz-btn {
+            padding: 10px 20px; background: #0f0; color: #1a1a2e; border: none;
+            font-family: monospace; font-weight: 700; font-size: 1em; cursor: pointer;
+            min-height: 44px; touch-action: manipulation;
+        }
+        .potenz-result { margin-top: 12px; padding: 10px; border: 1px solid #0f0; font-size: 1.1em; text-align: center; }
+        .potenz-expand { color: #aaa; font-size: 0.85em; margin-top: 5px; text-align: center; }
+
+        /* Rechenübungen */
+        .exercise-item { background: #fafafa; border: 2px solid var(--border); padding: 15px; margin: 10px 0; }
+        .exercise-item.done { border-color: var(--success); }
+        .exercise-item .ex-label { font-weight: 700; color: var(--fach); font-size: 0.85em; margin-bottom: 4px; }
+        .exercise-item .ex-question { font-weight: 600; margin-bottom: 10px; font-size: 1.05em; }
+        .exercise-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .exercise-row input {
+            flex: 1; padding: 10px; font-size: 1.1em; font-family: monospace;
+            border: 2px solid var(--border); max-width: 200px; min-width: 120px;
+        }
+        .exercise-row input:focus { outline: none; border-color: var(--fach); }
+        .exercise-row button {
+            padding: 10px 20px; background: var(--fach); color: white; border: none;
+            font-weight: 600; cursor: pointer; min-height: 44px; touch-action: manipulation; font-size: 1em;
+        }
+        .exercise-fb { margin-top: 8px; padding: 8px 12px; font-size: 0.9em; display: none; }
+        .exercise-fb.visible { display: block; }
+        .exercise-fb.correct { background: var(--success-light); border-left: 3px solid var(--success); }
+        .exercise-fb.wrong { background: var(--error-light); border-left: 3px solid var(--error); }
+        .exercise-item.done input, .exercise-item.done button { pointer-events: none; opacity: 0.7; }
+
+        /* Story Box (Step 3) */
+        .story-box {
+            background: #1a1a2e; color: #eee;
+            padding: 20px; margin: 15px 0;
+            font-size: 0.95em; line-height: 1.7;
+        }
+        .story-title { color: #ff6b6b; font-weight: 700; font-size: 1.15em; margin-bottom: 15px; }
+        .story-event { padding: 8px 0 8px 15px; border-left: 3px solid #444; margin: 10px 0; }
+        .story-event.bad { border-left-color: #ff6b6b; }
+        .story-event code { background: #333; padding: 2px 6px; color: #0f0; font-size: 0.95em; }
+        .lesson-card { background: white; border: 2px solid var(--border); padding: 15px; margin: 10px 0; }
+        .lesson-card h4 { color: var(--fach); margin-bottom: 8px; font-size: 1.05em; }
+        .lesson-card .lesson-num { display: inline-block; background: var(--fach); color: white; width: 24px; height: 24px; text-align: center; font-size: 0.8em; font-weight: 700; line-height: 24px; margin-right: 6px; }
+
+        /* Password Rating Cards (Two-Step) */
+        .pw-card { background: white; border: 2px solid var(--border); padding: 15px; margin: 12px 0; }
+        .pw-card.answered { opacity: 0.85; }
+        .pw-card .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .pw-card .q-number { background: var(--fach); color: white; padding: 2px 10px; font-size: 0.85em; font-weight: 600; }
+        .pw-card .q-points { font-size: 0.8em; color: var(--gray); font-weight: 600; }
+        .pw-card .pw-display { font-family: monospace; font-size: 1.3em; font-weight: 700; padding: 10px; background: #f5f5f5; text-align: center; margin-bottom: 12px; letter-spacing: 2px; }
+        .pw-card .pw-buttons { display: flex; gap: 10px; justify-content: center; }
+        .pw-card .pw-btn {
+            padding: 10px 25px; font-size: 1em; cursor: pointer;
+            border: 2px solid var(--border); background: white;
+            min-width: 120px; min-height: 48px; touch-action: manipulation;
+        }
+        .pw-card .pw-btn:hover { border-color: var(--fach); }
+        .pw-card .pw-btn.selected { border-color: var(--fach); background: var(--fach-light); font-weight: 600; }
+        .pw-card .pw-btn.chosen-correct { background: var(--success-light); border-color: var(--success); color: var(--success); font-weight: 600; }
+        .pw-card .pw-btn.chosen-wrong { background: var(--error-light); border-color: var(--error); color: var(--error); font-weight: 600; }
+        .pw-card .pw-btn.disabled { pointer-events: none; opacity: 0.6; }
+
+        .pw-reasons { display: flex; flex-direction: column; gap: 8px; }
+        .pw-reason-btn {
+            display: flex; align-items: center;
+            padding: 10px 15px; border: 2px solid var(--border);
+            background: white; cursor: pointer; text-align: left;
+            font-size: 0.95em; min-height: 48px; touch-action: manipulation;
+        }
+        .pw-reason-btn:hover { border-color: var(--fach); background: var(--fach-light); }
+        .pw-reason-btn .letter {
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            border: 2px solid var(--border); margin-right: 12px;
+            font-weight: 700; font-size: 0.85em; flex-shrink: 0;
+        }
+        .pw-reason-btn.selected { border-color: var(--fach); background: var(--fach-light); }
+        .pw-reason-btn.chosen-correct { border-color: var(--success); background: var(--success-light); color: #1b5e20; }
+        .pw-reason-btn.chosen-correct .letter { border-color: var(--success); color: var(--success); }
+        .pw-reason-btn.chosen-wrong { border-color: var(--error); background: var(--error-light); color: #b71c1c; }
+        .pw-reason-btn.chosen-wrong .letter { border-color: var(--error); color: var(--error); }
+        .pw-reason-btn.show-correct { border-color: var(--success); background: var(--success-light); color: #1b5e20; }
+        .pw-reason-btn.show-correct .letter { border-color: var(--success); color: var(--success); }
+        .pw-reason-btn.disabled { pointer-events: none; color: #222; }
+        .pw-submit { padding: 10px 20px; font-size: 1em; cursor: pointer; border: none; background: var(--fach); color: white; min-height: 48px; touch-action: manipulation; }
+        .pw-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .pw-card .pw-feedback { margin-top: 10px; padding: 8px 12px; font-size: 0.9em; display: none; }
+        .pw-card .pw-feedback.visible { display: block; }
+
+        /* Result */
+        .result-box { text-align: center; padding: 30px; border: 3px solid var(--fach); margin: 20px 0; }
+        .result-score { font-size: 3em; font-weight: 700; color: var(--fach); }
+        .result-grade { font-size: 2em; margin: 10px 0; padding: 10px 30px; display: inline-block; font-weight: 700; }
+        .result-grade.g1 { background: #e8f5e9; color: #2e7d32; }
+        .result-grade.g2 { background: #e8f5e9; color: #388e3c; }
+        .result-grade.g3 { background: #fff3e0; color: #e65100; }
+        .result-grade.g4 { background: #fff3e0; color: #bf360c; }
+        .result-grade.g5 { background: #ffebee; color: #c62828; }
+        .result-grade.g6 { background: #ffebee; color: #b71c1c; }
+        .result-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; text-align: center; }
+        .result-part { padding: 15px; background: #f5f5f5; }
+        .result-part .part-score { font-size: 1.5em; font-weight: 700; color: var(--fach); }
+        .result-part .part-label { font-size: 0.85em; color: var(--gray); }
+        .result-meta { font-size: 0.85em; color: var(--gray); margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .result-code { font-family: monospace; font-size: 1.2em; font-weight: 700; letter-spacing: 3px; color: var(--fach); }
+
+        /* Buttons */
+        button { padding: 10px 20px; font-size: 1em; cursor: pointer; border: none; background: var(--fach); color: white; min-height: 48px; touch-action: manipulation; }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-success { background: var(--success); }
+        .btn-start { font-size: 1.2em; padding: 15px 40px; }
+        .nav-buttons { display: flex; justify-content: flex-end; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .section-score { text-align: right; padding: 10px; background: var(--fach-light); margin-top: 15px; font-weight: 600; }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .step { padding: 15px; }
+            .pw-details { grid-template-columns: 1fr; }
+            .result-breakdown { grid-template-columns: 1fr; }
+            .pw-card .pw-buttons { flex-direction: column; }
+            .pw-card .pw-btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Passwörter & Brute Force</h1>
+    <div class="meta">Informatik 10MR | Einzelstunde | 35 Minuten</div>
+    <div class="bewertung-badge">Bewertet - Jede Antwort zählt!</div>
+</header>
+
+<div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<div class="step-indicator" id="stepIndicator"></div>
+
+<div class="container">
+
+    <!-- STEP 0: ANMELDUNG -->
+    <div class="step active" id="step0">
+        <div class="name-entry">
+            <h2 style="color: var(--fach); margin-bottom: 10px;">Anmeldung</h2>
+
+            <div class="warning-box" style="text-align: left; margin-bottom: 20px;">
+                <strong>Wichtig:</strong>
+                <ul style="margin: 8px 0 0 20px;">
+                    <li>Dieser Lernpfad ist <strong>bewertet</strong> (25 BE = 1 Note)</li>
+                    <li>Zuerst lernst du die Inhalte (Schritte 1-3)</li>
+                    <li>Dann wirst du getestet (Schritte 4-5)</li>
+                    <li>Jede Antwort im Test wird sofort gespeichert</li>
+                    <li>Du kannst <strong>nicht</strong> zurück zu beantworteten Fragen</li>
+                    <li>Arbeite alleine - die Aufgaben sind individuell!</li>
+                </ul>
+            </div>
+
+            <label for="nameInput" style="font-weight: 600; font-size: 1.1em;">Dein vollständiger Name:</label>
+            <input type="text" id="nameInput" placeholder="Vorname Nachname" autocomplete="off">
+            <p style="font-size: 0.85em; color: var(--gray); margin-bottom: 20px;">
+                Dein Name wird für die Bewertung und zur Individualisierung der Aufgaben verwendet.
+            </p>
+            <button class="btn-start" id="startBtn" onclick="startLP()" disabled>Lernpfad starten</button>
+        </div>
+    </div>
+
+    <!-- STEP 1: INPUT - Passwort-Stärke -->
+    <div class="step" id="step1">
+        <h2>1. Passwort-Stärke <span class="input-badge">Lernphase</span></h2>
+        <p>Warum sind manche Passwörter sicher und andere nicht? Hier lernst du die Grundlagen.</p>
+
+        <div class="info-box">
+            <strong>Zeichensätze und ihre Größe:</strong>
+            <p style="margin-top: 8px;">Ein Passwort besteht aus Zeichen. Je mehr <strong>verschiedene Zeichen</strong> möglich sind, desto schwerer ist es zu knacken:</p>
+            <ul style="margin: 8px 0 0 20px;">
+                <li><strong>Nur Zahlen (0-9):</strong> 10 Zeichen</li>
+                <li><strong>Kleinbuchstaben (a-z):</strong> 26 Zeichen</li>
+                <li><strong>+ Großbuchstaben (A-Z):</strong> 52 Zeichen</li>
+                <li><strong>+ Zahlen:</strong> 62 Zeichen</li>
+                <li><strong>+ Sonderzeichen (!@#$...):</strong> 94 Zeichen</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>Was macht ein Passwort schwach?</strong>
+            <ul style="margin: 8px 0 0 20px;">
+                <li><strong>Wörterbuch-Wörter:</strong> "passwort", "hallo", "sommer" - stehen in jeder Angriffsliste</li>
+                <li><strong>Tastaturmuster:</strong> "qwertz", "asdfgh" - leicht zu erraten</li>
+                <li><strong>Persönliche Daten:</strong> Name, Geburtsdatum, Haustier - über Social Media findbar</li>
+                <li><strong>Einfache Zahlenfolgen:</strong> "123456", "2025" - werden zuerst probiert</li>
+            </ul>
+        </div>
+
+        <h3>Probiere es aus: Passwort-Tester</h3>
+        <p style="margin-bottom: 10px;">Gib ein <strong>Test-Passwort</strong> ein (nicht dein echtes!) und beobachte die Analyse:</p>
+
+        <div class="pw-input-wrap">
+            <input type="text" id="pwTestInput" placeholder="Test-Passwort eingeben..." oninput="analyzePW()" autocomplete="off">
+        </div>
+
+        <div class="strength-bar">
+            <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <div id="strengthLabel" style="text-align: center; font-weight: 600; margin-bottom: 10px;">-</div>
+
+        <div class="pw-details" id="pwDetails">
+            <div class="pw-detail-item" id="pd-length">Länge: -</div>
+            <div class="pw-detail-item" id="pd-charset">Zeichensatz: -</div>
+            <div class="pw-detail-item" id="pd-combos">Kombinationen: -</div>
+            <div class="pw-detail-item" id="pd-time">Knackzeit: -</div>
+        </div>
+
+        <div class="challenge-box">
+            <h3>Challenge: Knacke die Million!</h3>
+            <p>Erstelle oben im Passwort-Tester ein Passwort, das <strong>länger als 1 Million Jahre</strong> zum Knacken braucht!</p>
+            <p style="font-size: 0.9em; color: var(--gray); margin-top: 5px;">Tipp: Achte auf <strong>Länge</strong> und <strong>Zeichenvielfalt</strong>.</p>
+            <div class="challenge-status" id="challengeStatus" style="color: var(--gray);">Knackzeit: noch kein Passwort eingegeben</div>
+            <div class="challenge-success" id="challengeSuccess">Geschafft! Dein Passwort würde über 1 Million Jahre brauchen!</div>
+        </div>
+
+        <div class="merksatz" style="margin-top: 20px;">
+            <strong>Merke:</strong> Die Stärke eines Passworts hängt von zwei Faktoren ab:
+            <ol style="margin: 8px 0 0 20px;">
+                <li><strong>Länge</strong> - jedes zusätzliche Zeichen vervielfacht die Kombinationen</li>
+                <li><strong>Zeichenvielfalt</strong> - mehr verschiedene Zeichenarten = größerer Suchraum</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <button onclick="goToStep(2)">Weiter</button>
+        </div>
+    </div>
+
+    <!-- STEP 2: INPUT - Brute-Force-Angriff -->
+    <div class="step" id="step2">
+        <h2>2. Brute-Force-Angriff <span class="input-badge">Lernphase</span></h2>
+
+        <div class="info-box">
+            <strong>Was ist Brute Force?</strong>
+            <p style="margin-top: 8px;">
+                Bei einem Brute-Force-Angriff probiert ein Computer <strong>alle möglichen Kombinationen</strong> durch,
+                bis das richtige Passwort gefunden ist. Moderne Computer schaffen über
+                <strong>1 Milliarde Versuche pro Sekunde</strong>.
+            </p>
+        </div>
+
+        <div class="info-box">
+            <strong>Die Formel:</strong>
+            <p style="margin-top: 8px; font-size: 1.1em; text-align: center;">
+                <strong>Kombinationen = Zeichensatzgröße <sup>Passwortlänge</sup></strong>
+            </p>
+            <p style="margin-top: 8px;">
+                Beispiel: Ein 4-stelliger Zahlen-PIN hat 10<sup>4</sup> = <strong>10.000</strong> Kombinationen.
+                Bei 1 Milliarde Versuchen pro Sekunde ist das in <strong>0,00001 Sekunden</strong> geknackt!
+            </p>
+            <p style="margin-top: 8px;">
+                Jedes zusätzliche Zeichen <strong>multipliziert</strong> die Kombinationen mit der Zeichensatzgröße.
+                Das ist <strong>exponentielles Wachstum</strong> - die Dauer steigt extrem schnell!
+            </p>
+        </div>
+
+        <h3>Potenz-Rechner</h3>
+        <p style="margin-bottom: 10px;">Nutze diesen Rechner für die Übungen. Gib Basis und Exponent ein:</p>
+
+        <div class="potenz-rechner">
+            <div class="potenz-inputs">
+                <input type="number" id="potBasis" placeholder="Basis" min="1" max="999" oninput="calcPotenz()">
+                <span class="op">hoch</span>
+                <input type="number" id="potExponent" placeholder="Exp." min="1" max="20" oninput="calcPotenz()">
+                <button class="potenz-btn" onclick="calcPotenz()">=</button>
+            </div>
+            <div class="potenz-result" id="potResult">Ergebnis: –</div>
+            <div class="potenz-expand" id="potExpand"></div>
+        </div>
+
+        <h3>Übung: Selbst rechnen!</h3>
+        <p style="margin-bottom: 5px;">Berechne die Kombinationen mit dem Potenz-Rechner oben und trage dein Ergebnis ein:</p>
+
+        <div class="exercise-item" id="exItem1">
+            <div class="ex-label">Aufgabe 1</div>
+            <div class="ex-question">Ein 4-stelliger Zahlen-PIN (0-9). Wie viele Kombinationen?<br>
+                <span style="color: var(--gray); font-weight: 400; font-size: 0.9em;">Tipp: 10<sup>4</sup> = ?</span>
+            </div>
+            <div class="exercise-row">
+                <input type="number" id="ex1" placeholder="Dein Ergebnis">
+                <button onclick="checkExercise(1)">Prüfen</button>
+            </div>
+            <div class="exercise-fb" id="ex1-fb"></div>
+        </div>
+
+        <div class="exercise-item" id="exItem2">
+            <div class="ex-label">Aufgabe 2</div>
+            <div class="ex-question">Ein 4-Zeichen-Passwort aus Kleinbuchstaben (a-z). Wie viele Kombinationen?<br>
+                <span style="color: var(--gray); font-weight: 400; font-size: 0.9em;">Tipp: 26<sup>4</sup> = ?</span>
+            </div>
+            <div class="exercise-row">
+                <input type="number" id="ex2" placeholder="Dein Ergebnis">
+                <button onclick="checkExercise(2)">Prüfen</button>
+            </div>
+            <div class="exercise-fb" id="ex2-fb"></div>
+        </div>
+
+        <div class="exercise-item" id="exItem3">
+            <div class="ex-label">Aufgabe 3</div>
+            <div class="ex-question">Ein 6-Zeichen-Passwort aus Kleinbuchstaben (a-z). Wie viele Kombinationen?<br>
+                <span style="color: var(--gray); font-weight: 400; font-size: 0.9em;">Tipp: 26<sup>6</sup> = ?</span>
+            </div>
+            <div class="exercise-row">
+                <input type="number" id="ex3" placeholder="Dein Ergebnis">
+                <button onclick="checkExercise(3)">Prüfen</button>
+            </div>
+            <div class="exercise-fb" id="ex3-fb"></div>
+        </div>
+
+        <h3>Brute-Force-Rechner</h3>
+        <p style="margin-bottom: 10px;">Spiele mit Zeichensatz und Länge und beobachte die Knackzeit:</p>
+        <div class="bf-calculator">
+            <label>Zeichensatz:</label>
+            <select id="bfCharset" onchange="calculateBF()">
+                <option value="10">Nur Zahlen (0-9) = 10 Zeichen</option>
+                <option value="26">Kleinbuchstaben (a-z) = 26 Zeichen</option>
+                <option value="52">Klein + Groß (a-z, A-Z) = 52 Zeichen</option>
+                <option value="62" selected>Buchstaben + Zahlen = 62 Zeichen</option>
+                <option value="94">Alles inkl. Sonderzeichen = 94 Zeichen</option>
+            </select>
+
+            <label>Passwortlänge: <strong id="bfLengthDisplay">8</strong> Zeichen</label>
+            <input type="range" id="bfLength" min="4" max="16" value="8" oninput="calculateBF()">
+
+            <div class="bf-result" id="bfResult">
+                Wähle Zeichensatz und Länge...
+            </div>
+
+            <div class="bf-demo" id="bfDemo">
+                <span style="color: #aaa;">Klicke "Demo starten" um den Angriff zu simulieren</span>
+            </div>
+            <div style="text-align: center; margin-top: 10px;">
+                <button onclick="startBFDemo()" style="background: #0f0; color: #1a1a2e; font-family: monospace;">Demo starten</button>
+            </div>
+        </div>
+
+        <div class="merksatz" style="margin-top: 20px;">
+            <strong>Erkenntnis:</strong>
+            <ul style="margin: 8px 0 0 20px;">
+                <li>Kurze Passwörter (&lt; 8 Zeichen) werden in <strong>Sekunden</strong> geknackt</li>
+                <li>Jedes zusätzliche Zeichen macht es <strong>exponentiell</strong> schwerer</li>
+                <li>Ein Passwort mit <strong>12+ Zeichen</strong> und allen Zeichenarten ist praktisch unknackbar</li>
+            </ul>
+        </div>
+
+        <div class="nav-buttons">
+            <button onclick="goToStep(3)">Weiter</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: INPUT - Schutzmaßnahmen (Max' Geschichte) -->
+    <div class="step" id="step3">
+        <h2>3. Schutzmaßnahmen <span class="input-badge">Lernphase</span></h2>
+        <p>Du weißt jetzt, wie Passwörter geknackt werden. Was passiert, wenn man sich <strong>nicht schützt</strong>?</p>
+
+        <div class="story-box">
+            <div class="story-title">Max' digitaler Albtraum</div>
+
+            <div class="story-event">
+                <strong>Max (16)</strong> nutzt für alles dasselbe Passwort: <code>Sommer2025!</code><br>
+                Instagram, E-Mail, Steam, Spotify, und den Onlineshop CoolStuff24.
+            </div>
+
+            <div class="story-event bad">
+                <strong>April 2025:</strong> CoolStuff24 wird gehackt. Die Datenbank mit 2 Millionen Nutzerdaten
+                (E-Mail + Passwort) landet im Internet. Das nennt man ein <strong>Datenleck</strong>.
+            </div>
+
+            <div class="story-event bad">
+                <strong>Tag 1:</strong> Unbekannte finden Max' E-Mail und Passwort in der Liste.
+                Sie probieren es bei Instagram - <strong>es funktioniert</strong>.
+                Peinliche Posts, Nachrichten an seine Freunde.
+            </div>
+
+            <div class="story-event bad">
+                <strong>Tag 2:</strong> Die Angreifer loggen sich in Max' E-Mail ein.
+                Von dort setzen sie Passwörter bei anderen Diensten zurück.
+            </div>
+
+            <div class="story-event bad">
+                <strong>Tag 3:</strong> Steam-Account (3 Jahre Spielfortschritt),
+                Spotify-Premium, sogar sein PayPal-Konto - <strong>alles übernommen</strong>.
+            </div>
+
+            <div class="story-event" style="border-left-color: #f9a825; color: #f9a825;">
+                <strong>Warum?</strong> Max hat <strong>ein schwaches Passwort</strong> (Wörterbuch-Wort + Jahreszahl)
+                <strong>überall gleich</strong> verwendet und <strong>keine 2FA</strong> aktiviert.
+            </div>
+        </div>
+
+        <h3>Lehren aus Max' Geschichte - 4 Schutzmaßnahmen</h3>
+
+        <div class="lesson-card">
+            <h4><span class="lesson-num">1</span> Starke Passwörter erstellen</h4>
+            <p>Max' <code>Sommer2025!</code> war ein Wörterbuch-Wort mit vorhersagbarem Muster.
+            Besser: mindestens <strong>12 Zeichen</strong>, alle Zeichenarten (Groß, Klein, Zahlen, Sonderzeichen),
+            <strong>keine Wörter, keine Muster, keine persönlichen Daten</strong>.</p>
+        </div>
+
+        <div class="lesson-card">
+            <h4><span class="lesson-num">2</span> Für jeden Dienst ein eigenes Passwort</h4>
+            <p>Weil Max überall dasselbe Passwort nutzte, konnten die Angreifer von CoolStuff24 aus
+            <strong>alle seine Konten übernehmen</strong>. Mit verschiedenen Passwörtern wäre
+            nur der Shop-Account betroffen gewesen.</p>
+        </div>
+
+        <div class="lesson-card">
+            <h4><span class="lesson-num">3</span> Passwort-Manager nutzen</h4>
+            <p>Ein <strong>Passwort-Manager</strong> (z.B. Bitwarden, KeePass) speichert alle Passwörter
+            <strong>verschlüsselt</strong>. Man merkt sich nur <strong>ein einziges Master-Passwort</strong> -
+            der Manager erzeugt und speichert alle anderen. So kann man für jeden Dienst ein anderes,
+            sicheres Passwort haben, ohne sich alles merken zu müssen.</p>
+        </div>
+
+        <div class="lesson-card">
+            <h4><span class="lesson-num">4</span> Zwei-Faktor-Authentifizierung (2FA)</h4>
+            <p><strong>2FA</strong> bedeutet: <strong>Zwei verschiedene Nachweise</strong> beim Login.</p>
+            <ul style="margin: 8px 0 0 20px;">
+                <li><strong>Faktor 1 - Wissen:</strong> Dein Passwort (etwas, das du <em>weißt</em>)</li>
+                <li><strong>Faktor 2 - Besitz:</strong> Dein Smartphone (etwas, das du <em>hast</em>)</li>
+            </ul>
+            <p style="margin-top: 8px;">Selbst wenn Angreifer Max' Passwort aus dem Datenleck hätten -
+            ohne seinen Handy-Code (SMS oder Authenticator-App) kämen sie <strong>nicht rein</strong>.</p>
+        </div>
+
+        <div class="info-box" style="margin-top: 20px;">
+            <strong>Tipp: Die Passphrasen-Technik</strong>
+            <p style="margin-top: 8px;">Kombiniere <strong>mehrere zufällige Wörter</strong> zu einem langen Passwort:</p>
+            <p style="margin-top: 8px; font-family: monospace; font-size: 1.1em; text-align: center; background: #f5f5f5; padding: 10px; color: #222;">
+                KatzeRegenBuch42!
+            </p>
+            <p style="margin-top: 8px;">
+                Lang, enthält alle Zeichenarten, aber <strong>leichter zu merken</strong> als "xK9!mQ2p".
+                Wichtig: Die Wörter müssen <strong>zufällig</strong> sein - kein Satz wie "IchLiebeDich".
+            </p>
+        </div>
+
+        <div class="merksatz">
+            <strong>Zusammenfassung - So schützt du dich:</strong>
+            <ol style="margin: 8px 0 0 20px;">
+                <li>Starke Passwörter (12+ Zeichen, alle Zeichenarten, keine Muster)</li>
+                <li>Für jeden Dienst ein eigenes Passwort</li>
+                <li>Passwort-Manager nutzen (nur 1 Master-Passwort merken)</li>
+                <li>2FA aktivieren (Passwort + Handy-Code)</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <button onclick="goToStep(4)" style="background: var(--error); font-weight: 700;">Weiter zum Test</button>
+        </div>
+    </div>
+
+    <!-- STEP 4: TEST - Passwörter bewerten (5 BE) -->
+    <div class="step" id="step4">
+        <h2>4. Passwörter bewerten <span class="score-inline">5 BE</span></h2>
+        <p>Bewerte die folgenden Passwörter und <strong>begründe</strong> deine Einschätzung.
+        <br>Beide Schritte müssen stimmen für den vollen Punkt!</p>
+        <div id="bewertung-container"></div>
+        <div class="section-score" id="bewertung-score" style="display:none;">
+            Bewertung: <span id="bewertung-points">0</span> / 5 BE
+        </div>
+        <div class="nav-buttons" id="nav-step4" style="display:none;">
+            <button onclick="goToStep(5)">Weiter zum Abschlusstest</button>
+        </div>
+    </div>
+
+    <!-- STEP 5: TEST - Abschlusstest (20 BE) -->
+    <div class="step" id="step5">
+        <h2>5. Abschlusstest <span class="score-inline">20 BE</span></h2>
+        <p>Zeige, was du in den Lernphasen gelernt hast. <strong>Jede Frage zählt!</strong></p>
+        <div id="test-container"></div>
+        <div class="section-score" id="test-score" style="display:none;">
+            Abschlusstest: <span id="test-points">0</span> / 20 BE
+        </div>
+        <div class="nav-buttons" id="nav-step5" style="display:none;">
+            <button class="btn-success" onclick="showResults()">Ergebnis anzeigen</button>
+        </div>
+    </div>
+
+    <!-- STEP 6: ERGEBNIS -->
+    <div class="step" id="step6">
+        <h2>Dein Ergebnis</h2>
+        <div class="result-box" id="resultBox">
+            <div id="resultName" style="font-size: 1.1em; margin-bottom: 10px;"></div>
+            <div class="result-score" id="resultScore">0 / 25</div>
+            <div style="font-size: 1em; color: var(--gray);">Bewertungseinheiten</div>
+            <div class="result-grade" id="resultGrade">-</div>
+
+            <div class="result-breakdown">
+                <div class="result-part">
+                    <div class="part-score" id="rp-bewertung">0/5</div>
+                    <div class="part-label">Passwörter bewerten</div>
+                </div>
+                <div class="result-part">
+                    <div class="part-score" id="rp-test">0/20</div>
+                    <div class="part-label">Abschlusstest</div>
+                </div>
+            </div>
+
+            <div class="result-meta">
+                <p>Abgeschlossen: <span id="resultTime">-</span></p>
+                <p style="margin-top: 5px;">Prüfcode: <span class="result-code" id="resultCode">-</span></p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// =============================================
+// === KONFIGURATION ===
+// =============================================
+var LP_ID = 'lp-info-10mr-02-passwort';
+var LP_VERSION = 2;
+var TOTAL_STEPS = 7;
+var TOTAL_BE = 25;
+
+// =============================================
+// === ZUSTAND ===
+// =============================================
+var state = {
+    name: '',
+    seed: 0,
+    rng: null,
+    currentStep: 0,
+    scores: { bewertung: 0, test: 0 },
+    bewertungAnswered: 0,
+    testAnswered: 0,
+    answers: [],
+    pwStep1: {},
+    completed: false,
+    startTime: null,
+    version: LP_VERSION
+};
+
+// UI-State (nicht gespeichert)
+var pwReasonSelections = {};
+
+// =============================================
+// === SEED-FUNKTIONEN ===
+// =============================================
+function seedFromName(name) {
+    var hash = 0;
+    var str = name.trim().toLowerCase();
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash);
+}
+
+function createRNG(seed) {
+    var s = seed;
+    return {
+        next: function() {
+            s = (s * 9301 + 49297) % 233280;
+            return s / 233280;
+        },
+        nextInt: function(max) {
+            return Math.floor(this.next() * max);
+        }
+    };
+}
+
+function shuffleWithRNG(arr, rng) {
+    var result = arr.slice();
+    for (var i = result.length - 1; i > 0; i--) {
+        var j = rng.nextInt(i + 1);
+        var temp = result[i];
+        result[i] = result[j];
+        result[j] = temp;
+    }
+    return result;
+}
+
+// =============================================
+// === PASSWORT-BEWERTUNGS-POOL (Two-Step) ===
+// =============================================
+// correctReason = Index der richtigen Begründung (vor Shuffle)
+
+var PW_WEAK = [
+    {
+        pw: 'hallo123',
+        secure: false,
+        correctReason: 0,
+        reasons: [
+            'Enthält das häufige Wort "hallo" und die einfache Zahlenfolge "123"',
+            'Hat weniger als 6 Zeichen und ist damit zu kurz',
+            'Ist ein Tastaturmuster wie "qwertz"',
+            'Enthält zu viele verschiedene Sonderzeichen'
+        ]
+    },
+    {
+        pw: '12345678',
+        secure: false,
+        correctReason: 0,
+        reasons: [
+            'Besteht nur aus aufeinanderfolgenden Zahlen - wird sofort erraten',
+            'Enthält ein häufiges Wörterbuch-Wort',
+            'Verwendet zu viele verschiedene Sonderzeichen',
+            'Hat eine zufällige Zeichenfolge ohne erkennbares Muster'
+        ]
+    },
+    {
+        pw: 'qwertzuiop',
+        secure: false,
+        correctReason: 0,
+        reasons: [
+            'Ist ein Tastaturmuster - steht auf jeder Brute-Force-Liste',
+            'Hat weniger als 8 Zeichen',
+            'Enthält persoenliche Daten wie einen Namen',
+            'Verwendet nur Sonderzeichen und Zahlen'
+        ]
+    },
+    {
+        pw: 'passwort',
+        secure: false,
+        correctReason: 0,
+        reasons: [
+            'Ist eines der häufigsten deutschen Passwörter überhaupt',
+            'Enthält zu viele Zahlen hintereinander',
+            'Verwendet nur Großbuchstaben',
+            'Ist ein kompliziertes Tastaturmuster'
+        ]
+    },
+    {
+        pw: 'Sommer2025!',
+        secure: false,
+        correctReason: 0,
+        reasons: [
+            'Kombiniert ein Wörterbuch-Wort mit einer vorhersagbaren Jahreszahl',
+            'Hat weniger als 8 Zeichen',
+            'Verwendet keine Großbuchstaben',
+            'Besteht nur aus Sonderzeichen und Zahlen'
+        ]
+    }
+];
+
+var PW_STRONG = [
+    {
+        pw: 'K@tz3!Bm#7xQ',
+        secure: true,
+        correctReason: 0,
+        reasons: [
+            '12 Zeichen mit allen Zeichenarten und keinem erkennbaren Muster',
+            'Enthält ein bekanntes Wort rückwärts geschrieben',
+            'Verwendet nur zwei verschiedene Zeichenarten',
+            'Ist ein häufiges Tastaturmuster'
+        ]
+    },
+    {
+        pw: 'Mn7$kR!9xQ2p',
+        secure: true,
+        correctReason: 0,
+        reasons: [
+            'Zufällige Zeichenfolge ohne erkennbare Wörter oder Muster',
+            'Enthält eine vorhersagbare Jahreszahl',
+            'Besteht nur aus Buchstaben und Zahlen ohne Sonderzeichen',
+            'Ist kürzer als 8 Zeichen'
+        ]
+    },
+    {
+        pw: 'X#9pL!mK4wzR',
+        secure: true,
+        correctReason: 0,
+        reasons: [
+            'Maximale Zeichenvielfalt und kein Zusammenhang zwischen den Zeichen',
+            'Enthält den Namen einer bekannten Person',
+            'Verwendet nur Kleinbuchstaben und Zahlen',
+            'Hat ein vorhersagbares Muster am Ende'
+        ]
+    },
+    {
+        pw: 'jF8!kWz#2mNp',
+        secure: true,
+        correctReason: 0,
+        reasons: [
+            'Alle vier Zeichenarten, keine Wörter und keine Muster',
+            'Beginnt mit einem häufigen deutschen Vornamen',
+            'Enthält nur Zahlen und Sonderzeichen',
+            'Ist ein bekannter Tastaturlauf auf QWERTZ'
+        ]
+    },
+    {
+        pw: 'Tr0ub4d&r!3x',
+        secure: true,
+        correctReason: 0,
+        reasons: [
+            'Gemischte Zeichenarten mit kreativen Ersetzungen - kein einfaches Muster',
+            'Verwendet nur Großbuchstaben und Zahlen',
+            'Hat weniger als 8 Zeichen',
+            'Enthält eine einfache aufsteigende Zahlenfolge'
+        ]
+    }
+];
+
+// =============================================
+// === MC-FRAGENPOOL (24 Fragen: 8xAFB-I, 8xAFB-II, 8xAFB-III) ===
+// =============================================
+// ALLE Fragen beziehen sich auf Inhalte aus Steps 1-3
+
+var TEST_POOL = [
+    // ===== AFB I: Wiedergabe (8 Fragen) =====
+    {
+        text: 'Wie viele Zeichen umfasst der Zeichensatz "Kleinbuchstaben (a-z)"?',
+        options: ['10', '26', '52', '94'],
+        correct: 1,
+        fb: 'Das Alphabet a-z enthält genau 26 Buchstaben.'
+    },
+    {
+        text: 'Was ist ein Brute-Force-Angriff?',
+        options: [
+            'Ein besonders starkes Passwort',
+            'Alle möglichen Kombinationen systematisch durchprobieren',
+            'Ein Computervirus',
+            'Eine Verschlüsselungsmethode'
+        ],
+        correct: 1,
+        fb: 'Bei Brute Force werden alle Kombinationen getestet, bis das richtige Passwort gefunden ist.'
+    },
+    {
+        text: 'Wie berechnet man die Anzahl möglicher Kombinationen eines Passworts?',
+        options: [
+            'Zeichensatz + Länge',
+            'Zeichensatz mal Länge',
+            'Zeichensatzgröße hoch Passwortlänge',
+            'Länge hoch Zeichensatzgröße'
+        ],
+        correct: 2,
+        fb: 'Die Formel lautet: Kombinationen = Zeichensatzgröße hoch Passwortlänge (exponentiell!).'
+    },
+    {
+        text: 'Wie viele Versuche pro Sekunde schafft ein moderner Computer bei Brute Force?',
+        options: ['Ca. 1.000', 'Ca. 1 Million', 'Ca. 1 Milliarde', 'Ca. 1 Billion'],
+        correct: 2,
+        fb: 'Moderne Hardware schafft über 1 Milliarde Versuche pro Sekunde.'
+    },
+    {
+        text: 'Was ist ein Passwort-Manager?',
+        options: [
+            'Ein Programm, das Passwörter verschlüsselt speichert und verwaltet',
+            'Eine Person in der IT-Abteilung',
+            'Eine Website zum Passwort-Testen',
+            'Ein spezieller Browser'
+        ],
+        correct: 0,
+        fb: 'Passwort-Manager speichern alle Passwörter verschlüsselt. Man braucht nur ein Master-Passwort.'
+    },
+    {
+        text: 'Was bedeutet Zwei-Faktor-Authentifizierung (2FA)?',
+        options: [
+            'Zwei Passwörter nacheinander eingeben',
+            'Zusätzlich zum Passwort einen zweiten Nachweis (z.B. Handy-Code)',
+            'Das Passwort zweimal eingeben',
+            'Zwei Personen kennen das Passwort'
+        ],
+        correct: 1,
+        fb: '2FA nutzt zwei verschiedene Faktoren: Wissen (Passwort) + Besitz (Handy/App).'
+    },
+    {
+        text: 'Was ist ein Datenleck?',
+        options: [
+            'Ein kaputtes Netzwerkkabel',
+            'Wenn Hacker die Datenbank eines Dienstes stehlen und Passwörter veröffentlicht werden',
+            'Eine langsame Internetverbindung',
+            'Ein Virus auf dem Handy'
+        ],
+        correct: 1,
+        fb: 'Bei Datenlecks werden gespeicherte Nutzerdaten (inkl. Passwörter) gestohlen und oft veröffentlicht.'
+    },
+    {
+        text: 'Wie groß ist der volle Zeichensatz (Groß-/Kleinbuchstaben + Zahlen + Sonderzeichen)?',
+        options: ['52 Zeichen', '62 Zeichen', '72 Zeichen', '94 Zeichen'],
+        correct: 3,
+        fb: '26 + 26 + 10 + 32 = 94 verschiedene Zeichen.'
+    },
+
+    // ===== AFB II: Anwendung/Transfer (8 Fragen) =====
+    {
+        text: 'Welches Passwort ist am sichersten?',
+        options: ['sommer2024', 'M@x!7kP#9wL', 'qwerty123', '123456789'],
+        correct: 1,
+        fb: 'Zufällige Kombinationen mit allen Zeichenarten sind am schwersten zu knacken.'
+    },
+    {
+        text: 'Was passiert, wenn die Passwortlänge um 1 Zeichen steigt?',
+        options: [
+            'Es dauert genau doppelt so lang',
+            'Es macht keinen Unterschied',
+            'Es dauert 1 Sekunde länger',
+            'Die Kombinationen vervielfachen sich um die Zeichensatzgröße'
+        ],
+        correct: 3,
+        fb: 'Jedes zusätzliche Zeichen multipliziert die Kombinationen mit der Zeichensatzgröße - exponentielles Wachstum!'
+    },
+    {
+        text: 'Wie schnell wird ein 4-stelliger Zahlen-PIN (0-9) per Brute Force geknackt?',
+        options: [
+            'In Minuten',
+            'In Stunden',
+            'In Tagen',
+            'Sofort (unter 1 Sekunde)'
+        ],
+        correct: 3,
+        fb: '10 hoch 4 = 10.000 Kombinationen - bei 1 Mrd. Versuchen/Sek in unter 0,001 Sekunden geknackt!'
+    },
+    {
+        text: 'Warum ist "Sommer2025!" ein schwaches Passwort?',
+        options: [
+            'Es ist zu kurz',
+            'Es hat zu viele Sonderzeichen',
+            'Es enthält ein Wörterbuch-Wort und ein vorhersagbares Muster',
+            'Es enthält keine Zahlen'
+        ],
+        correct: 2,
+        fb: '"Sommer" ist ein Wörterbuch-Wort, "2025" eine Jahreszahl, "!" ein vorhersagbares Sonderzeichen.'
+    },
+    {
+        text: 'Was bewirkt das Hinzufügen von Sonderzeichen zu einem Passwort?',
+        options: [
+            'Das Passwort wird langsamer beim Einloggen',
+            'Sonderzeichen helfen nicht',
+            'Der Zeichensatz wächst und die Kombinationen steigen',
+            'Das Passwort wird automatisch kürzer'
+        ],
+        correct: 2,
+        fb: 'Sonderzeichen erweitern den Zeichensatz von 62 auf 94 Zeichen - viel mehr Kombinationen!'
+    },
+    {
+        text: 'Warum sollte man NICHT überall dasselbe Passwort verwenden?',
+        options: [
+            'Man vergisst es sonst',
+            'Es ist gesetzlich verboten',
+            'Computer werden dadurch langsamer',
+            'Wird ein Dienst gehackt, sind alle Konten gefährdet'
+        ],
+        correct: 3,
+        fb: 'Bei einem Datenleck können Angreifer mit dem geleakten Passwort alle anderen Konten übernehmen.'
+    },
+    {
+        text: 'Was braucht man, um einen Passwort-Manager zu nutzen?',
+        options: [
+            'Ein einziges starkes Master-Passwort',
+            'Für jeden Dienst ein Passwort merken',
+            'Einen teuren Computer',
+            'Eine spezielle SIM-Karte'
+        ],
+        correct: 0,
+        fb: 'Das Master-Passwort öffnet den verschlüsselten Tresor - alle anderen Passwörter werden dort gespeichert.'
+    },
+    {
+        text: 'Welches dieser Passwörter enthält ein häufiges Muster?',
+        options: ['xK9!mQ2p', '7Rm#kWz9', 'Hallo123!', 'Qp!4xNm8'],
+        correct: 2,
+        fb: '"Hallo" ist ein häufiges Wort und "123" eine einfache Zahlenfolge.'
+    },
+
+    // ===== AFB III: Bewertung/Beurteilung (8 Fragen) =====
+    {
+        text: 'Szenario: Lisa nutzt das Passwort "L!sa2025" für Instagram, E-Mail und einen Onlineshop. Der Onlineshop wird gehackt und die Nutzerdaten veröffentlicht. Was muss Lisa SOFORT tun?',
+        options: [
+            'Nur das Shop-Passwort ändern, die anderen sind nicht betroffen',
+            'Abwarten - vielleicht wurden ihre Daten nicht gestohlen',
+            'Den Onlineshop verklagen und nichts weiter tun',
+            'Alle drei Passwörter ändern und überall 2FA aktivieren'
+        ],
+        correct: 3,
+        fb: 'Da Lisa überall dasselbe Passwort nutzt, müssen ALLE Passwörter sofort geändert werden. 2FA verhindert zukünftige Angriffe.'
+    },
+    {
+        text: 'Welche Aussage über Passwort-Sicherheit ist FALSCH?',
+        options: [
+            'Längere Passwörter sind grundsätzlich sicherer als kürzere',
+            '8 Zeichen mit Sonderzeichen sind genauso sicher wie 12 Zeichen ohne',
+            'Sonderzeichen vergrößern den Zeichensatz und damit die Kombinationen',
+            'Ein Passwort-Manager kann sichere Passwörter automatisch erzeugen'
+        ],
+        correct: 1,
+        fb: 'FALSCH! 8 Zeichen mit Sonderzeichen (94^8) sind VIEL schwächer als 12 Zeichen ohne (62^12). Länge schlägt Zeichenvielfalt!'
+    },
+    {
+        text: 'Rechenaufgabe: Ein Passwort hat 6 Zeichen und besteht nur aus Kleinbuchstaben (26). Wie viele Kombinationen gibt es und wie schnell ist es geknackt?',
+        options: [
+            '156 Kombinationen (26 x 6) - sofort geknackt',
+            'Ca. 309 Millionen (26 hoch 6) - in unter 1 Sekunde geknackt',
+            'Ca. 12 Milliarden - in mehreren Minuten geknackt',
+            'Ca. 1 Billion - praktisch unknackbar'
+        ],
+        correct: 1,
+        fb: '26^6 = 308.915.776 - ca. 309 Millionen. Bei 1 Mrd. Versuchen/Sek. in 0,3 Sekunden geknackt!'
+    },
+    {
+        text: 'Tim behauptet: "Mein Passwort \'aaaaaaaaaaaa\' ist unknackbar, weil es 12 Zeichen hat." Hat Tim recht?',
+        options: [
+            'Ja, 12 Zeichen sind immer unknackbar',
+            'Ja, die Länge ist der einzige wichtige Faktor',
+            'Nein, weil es keine Zahlen enthält',
+            'Nein, wiederholte Zeichen werden von Angriffsprogrammen sofort getestet'
+        ],
+        correct: 3,
+        fb: 'Brute-Force-Programme testen Muster wie wiederholte Zeichen zuerst. "aaaaaaaaaaaa" wäre in Sekunden gefunden.'
+    },
+    {
+        text: 'Eine Firma verlangt: "Passwörter müssen mindestens 8 Zeichen lang sein und eine Zahl enthalten." Beurteile diese Richtlinie.',
+        options: [
+            'Ausreichend sicher für den Arbeitsplatz',
+            'Perfekt, 8 Zeichen sind der internationale Standard',
+            'Unzureichend - 8 Zeichen sind zu kurz und es fehlen Vorgaben für Sonderzeichen und Großbuchstaben',
+            'Gut, weil die Zahl-Pflicht es sicher macht'
+        ],
+        correct: 2,
+        fb: '8 Zeichen sind per Brute Force in Stunden knackbar. Moderne Empfehlungen: mindestens 12 Zeichen mit allen Zeichenarten.'
+    },
+    {
+        text: 'Max hat 20 verschiedene sichere Passwörter und notiert sie alle auf einem Zettel an seinem Monitor. Beurteile diese Strategie.',
+        options: [
+            'Gut - verschiedene Passwörter sind das Wichtigste',
+            'Sicher - die Passwörter sind ja komplex',
+            'Optimal - Aufschreiben ist besser als ein Passwort-Manager',
+            'Unsicher - jeder am Arbeitsplatz kann die Passwörter lesen; ein Passwort-Manager wäre besser'
+        ],
+        correct: 3,
+        fb: 'Zettel am Monitor = physisch unsicher. Ein Passwort-Manager speichert alle Passwörter verschlüsselt und geschützt durch ein Master-Passwort.'
+    },
+    {
+        text: 'Welche Aussage über Zwei-Faktor-Authentifizierung (2FA) ist FALSCH?',
+        options: [
+            '2FA ist überflüssig, wenn man ein starkes Passwort verwendet',
+            '2FA kombiniert Wissen (Passwort) und Besitz (z.B. Smartphone)',
+            '2FA schützt auch dann, wenn das Passwort bei einem Datenleck veröffentlicht wird',
+            'Eine Authenticator-App gilt als sicherer als SMS-Codes'
+        ],
+        correct: 0,
+        fb: 'FALSCH! Auch ein starkes Passwort kann bei einem Datenleck veröffentlicht werden. 2FA bietet eine zusätzliche Schutzschicht.'
+    },
+    {
+        text: 'Vergleiche: Passwort A hat 10 Zeichen, nur Zahlen (0-9). Passwort B hat 6 Zeichen, alle Zeichenarten (94). Welches ist sicherer?',
+        options: [
+            'A ist sicherer, weil es länger ist',
+            'Beide sind gleich sicher',
+            'A ist sicherer, weil Zahlen schwerer zu erraten sind',
+            'B ist sicherer, weil 94 hoch 6 (ca. 690 Mrd.) größer ist als 10 hoch 10 (10 Mrd.)'
+        ],
+        correct: 3,
+        fb: '10^10 = 10 Milliarden, aber 94^6 ca. 690 Milliarden - fast 70-mal mehr Kombinationen! Zeichenvielfalt kann Kürze ausgleichen.'
+    }
+];
+
+// =============================================
+// === INITIALISIERUNG ===
+// =============================================
+function init() {
+    var indicator = document.getElementById('stepIndicator');
+    var labels = ['Start', '1', '2', '3', '4', '5', 'Ende'];
+    var graded = [false, false, false, false, true, true, false];
+
+    for (var i = 0; i < TOTAL_STEPS; i++) {
+        var dot = document.createElement('div');
+        dot.className = 'step-dot' + (graded[i] ? ' graded' : '');
+        if (i === 0) dot.classList.add('active');
+        dot.textContent = labels[i];
+        dot.setAttribute('data-step', i);
+        indicator.appendChild(dot);
+    }
+
+    var nameInput = document.getElementById('nameInput');
+    nameInput.addEventListener('input', function() {
+        document.getElementById('startBtn').disabled = this.value.trim().length < 3;
+    });
+    nameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && this.value.trim().length >= 3) startLP();
+    });
+
+    // Gespeicherten Zustand laden
+    var savedState = localStorage.getItem(LP_ID + '-state');
+    if (savedState) {
+        try {
+            var loaded = JSON.parse(savedState);
+
+            // Version prüfen - alte Daten invalidieren
+            if (loaded.version !== LP_VERSION) {
+                localStorage.removeItem(LP_ID + '-state');
+                calculateBF();
+                return;
+            }
+
+            state.name = loaded.name || '';
+            state.seed = loaded.seed || 0;
+            state.scores = loaded.scores || { bewertung: 0, test: 0 };
+            state.bewertungAnswered = loaded.bewertungAnswered || 0;
+            state.testAnswered = loaded.testAnswered || 0;
+            state.answers = loaded.answers || [];
+            state.pwStep1 = loaded.pwStep1 || {};
+            state.completed = loaded.completed || false;
+            state.startTime = loaded.startTime || null;
+            state.currentStep = loaded.currentStep || 0;
+            state.version = LP_VERSION;
+
+            if (state.name && state.seed) {
+                state.rng = createRNG(state.seed);
+                buildAllSections();
+
+                if (state.completed) {
+                    goToStep(6);
+                } else {
+                    goToStep(state.currentStep);
+                }
+                return;
+            }
+        } catch(e) { /* ignore corrupt state */ }
+    }
+
+    calculateBF();
+}
+
+function startLP() {
+    var name = document.getElementById('nameInput').value.trim();
+    if (name.length < 3) return;
+
+    state.name = name;
+    state.seed = seedFromName(name);
+    state.startTime = new Date().toISOString();
+    state.rng = createRNG(state.seed);
+
+    buildAllSections();
+    saveState();
+    goToStep(1);
+}
+
+function buildAllSections() {
+    buildPasswordCards(createRNG(state.seed + 1000));
+    buildMCSection('test-container', TEST_POOL, createRNG(state.seed + 2000), 'test', 20);
+}
+
+// =============================================
+// === PASSWORT-BEWERTUNG (Two-Step) ===
+// =============================================
+function buildPasswordCards(rng) {
+    var container = document.getElementById('bewertung-container');
+    container.innerHTML = '';
+
+    // 3 schwache + 2 starke auswählen
+    var weakShuffled = shuffleWithRNG(PW_WEAK.slice(), rng);
+    var strongShuffled = shuffleWithRNG(PW_STRONG.slice(), rng);
+
+    var selected = [weakShuffled[0], weakShuffled[1], weakShuffled[2], strongShuffled[0], strongShuffled[1]];
+    selected = shuffleWithRNG(selected, rng);
+
+    for (var i = 0; i < selected.length; i++) {
+        var pw = selected[i];
+        var cardRNG = createRNG(state.seed + 5000 + i * 100);
+
+        // Gründe mischen
+        var reasonIndices = [0, 1, 2, 3];
+        var shuffledRI = shuffleWithRNG(reasonIndices, cardRNG);
+
+        // Neuen Index der richtigen Begründung finden
+        var correctReasonShuffled = -1;
+        for (var ri = 0; ri < shuffledRI.length; ri++) {
+            if (shuffledRI[ri] === pw.correctReason) {
+                correctReasonShuffled = ri;
+                break;
+            }
+        }
+
+        var card = document.createElement('div');
+        card.className = 'pw-card';
+        card.id = 'pw-card-' + i;
+        card.setAttribute('data-secure', pw.secure ? '1' : '0');
+        card.setAttribute('data-correct-reason', correctReasonShuffled);
+
+        var letters = ['A', 'B', 'C', 'D'];
+        var reasonsHTML = '';
+        for (var r = 0; r < shuffledRI.length; r++) {
+            reasonsHTML += '<button class="pw-reason-btn" onclick="selectPWReason(' + i + ',' + r + ')">';
+            reasonsHTML += '<span class="letter">' + letters[r] + '</span>';
+            reasonsHTML += '<span>' + escapeHTML(pw.reasons[shuffledRI[r]]) + '</span>';
+            reasonsHTML += '</button>';
+        }
+
+        card.innerHTML =
+            '<div class="q-header">' +
+            '  <span class="q-number">Passwort ' + (i + 1) + '</span>' +
+            '  <span class="q-points">1 BE</span>' +
+            '</div>' +
+            '<div class="pw-display">' + escapeHTML(pw.pw) + '</div>' +
+            '<div class="pw-step1" id="pw-step1-' + i + '">' +
+            '  <p style="font-weight:600;margin-bottom:8px;">Schritt 1: Ist dieses Passwort sicher oder unsicher?</p>' +
+            '  <div class="pw-buttons">' +
+            '    <button class="pw-btn" onclick="selectPWRating(' + i + ',true)">Sicher</button>' +
+            '    <button class="pw-btn" onclick="selectPWRating(' + i + ',false)">Unsicher</button>' +
+            '  </div>' +
+            '</div>' +
+            '<div class="pw-step2" id="pw-step2-' + i + '" style="display:none;">' +
+            '  <p style="font-weight:600;margin:12px 0 8px 0;">Schritt 2: Begründe deine Einschätzung:</p>' +
+            '  <div class="pw-reasons" id="pw-reasons-' + i + '">' + reasonsHTML + '</div>' +
+            '  <div style="text-align:center;margin-top:12px;">' +
+            '    <button class="pw-submit" id="pw-submit-' + i + '" onclick="submitPW(' + i + ')" disabled>Antwort abgeben</button>' +
+            '  </div>' +
+            '</div>' +
+            '<div class="pw-feedback" id="pw-fb-' + i + '"></div>';
+
+        container.appendChild(card);
+    }
+
+    restorePWAnswers();
+}
+
+function selectPWRating(cardIdx, isSecure) {
+    var card = document.getElementById('pw-card-' + cardIdx);
+    if (card.classList.contains('answered')) return;
+
+    // Pruefen ob Step1 schon gesperrt
+    if (state.pwStep1[cardIdx] !== undefined) return;
+
+    // Step1 sperren
+    state.pwStep1[cardIdx] = isSecure;
+
+    var step1 = document.getElementById('pw-step1-' + cardIdx);
+    var buttons = step1.querySelectorAll('.pw-btn');
+    for (var i = 0; i < buttons.length; i++) {
+        buttons[i].classList.add('disabled');
+    }
+    var btnIdx = isSecure ? 0 : 1;
+    buttons[btnIdx].classList.add('selected');
+
+    // Step2 anzeigen
+    document.getElementById('pw-step2-' + cardIdx).style.display = 'block';
+
+    saveState();
+}
+
+function selectPWReason(cardIdx, reasonIdx) {
+    var card = document.getElementById('pw-card-' + cardIdx);
+    if (card.classList.contains('answered')) return;
+
+    // Ausgewählten Grund markieren
+    var reasons = document.getElementById('pw-reasons-' + cardIdx).querySelectorAll('.pw-reason-btn');
+    for (var i = 0; i < reasons.length; i++) {
+        reasons[i].classList.remove('selected');
+    }
+    reasons[reasonIdx].classList.add('selected');
+
+    pwReasonSelections[cardIdx] = reasonIdx;
+
+    // Submit aktivieren
+    document.getElementById('pw-submit-' + cardIdx).disabled = false;
+}
+
+function submitPW(cardIdx) {
+    var card = document.getElementById('pw-card-' + cardIdx);
+    if (card.classList.contains('answered')) return;
+    if (state.pwStep1[cardIdx] === undefined) return;
+    if (pwReasonSelections[cardIdx] === undefined) return;
+
+    var isActuallySecure = card.getAttribute('data-secure') === '1';
+    var correctReasonIdx = parseInt(card.getAttribute('data-correct-reason'));
+    var selectedSecure = state.pwStep1[cardIdx];
+    var selectedReason = pwReasonSelections[cardIdx];
+
+    var step1Correct = (selectedSecure === isActuallySecure);
+    var step2Correct = (selectedReason === correctReasonIdx);
+    var bothCorrect = step1Correct && step2Correct;
+
+    // Alles sperren
+    card.classList.add('answered');
+    var reasons = document.getElementById('pw-reasons-' + cardIdx).querySelectorAll('.pw-reason-btn');
+    for (var i = 0; i < reasons.length; i++) {
+        reasons[i].classList.add('disabled');
+    }
+    document.getElementById('pw-submit-' + cardIdx).disabled = true;
+
+    // Step1 Ergebnis anzeigen
+    var step1Buttons = document.getElementById('pw-step1-' + cardIdx).querySelectorAll('.pw-btn');
+    var ratingBtnIdx = selectedSecure ? 0 : 1;
+    step1Buttons[ratingBtnIdx].classList.remove('selected');
+    step1Buttons[ratingBtnIdx].classList.add(step1Correct ? 'chosen-correct' : 'chosen-wrong');
+
+    // Step2 Ergebnis anzeigen
+    reasons[selectedReason].classList.remove('selected');
+    reasons[selectedReason].classList.add(step2Correct ? 'chosen-correct' : 'chosen-wrong');
+    if (!step2Correct) {
+        reasons[correctReasonIdx].classList.add('show-correct');
+    }
+
+    // Punkte
+    if (bothCorrect) state.scores.bewertung++;
+
+    // Feedback
+    var fb = document.getElementById('pw-fb-' + cardIdx);
+    fb.className = 'pw-feedback visible';
+    if (bothCorrect) {
+        fb.style.background = 'var(--success-light)';
+        fb.style.borderLeft = '3px solid var(--success)';
+        fb.innerHTML = '<strong>1 BE</strong> - Bewertung und Begründung richtig!';
+    } else {
+        fb.style.background = 'var(--error-light)';
+        fb.style.borderLeft = '3px solid var(--error)';
+        var msg = '<strong>0 BE</strong> - ';
+        if (!step1Correct && !step2Correct) {
+            msg += 'Bewertung und Begründung falsch.';
+        } else if (!step1Correct) {
+            msg += 'Bewertung falsch (das Passwort ist ' + (isActuallySecure ? 'sicher' : 'unsicher') + ').';
+        } else {
+            msg += 'Begründung falsch.';
+        }
+        fb.innerHTML = msg;
+    }
+
+    // Speichern
+    state.bewertungAnswered++;
+    delete state.pwStep1[cardIdx];
+
+    state.answers.push({
+        section: 'bewertung',
+        qindex: cardIdx,
+        selectedSecure: selectedSecure,
+        selectedReason: selectedReason,
+        step1Correct: step1Correct,
+        step2Correct: step2Correct,
+        correct: bothCorrect,
+        timestamp: new Date().toISOString()
+    });
+
+    if (state.bewertungAnswered >= 5) {
+        document.getElementById('bewertung-score').style.display = 'block';
+        document.getElementById('bewertung-points').textContent = state.scores.bewertung;
+        document.getElementById('nav-step4').style.display = 'flex';
+    }
+
+    saveState();
+}
+
+function restorePWAnswers() {
+    // Vollständig beantwortete Karten wiederherstellen
+    for (var i = 0; i < state.answers.length; i++) {
+        var ans = state.answers[i];
+        if (ans.section !== 'bewertung') continue;
+
+        var card = document.getElementById('pw-card-' + ans.qindex);
+        if (!card) continue;
+
+        card.classList.add('answered');
+
+        // Step1 sperren
+        var step1Buttons = card.querySelector('#pw-step1-' + ans.qindex).querySelectorAll('.pw-btn');
+        for (var j = 0; j < step1Buttons.length; j++) {
+            step1Buttons[j].classList.add('disabled');
+        }
+        var ratingBtnIdx = ans.selectedSecure ? 0 : 1;
+        step1Buttons[ratingBtnIdx].classList.add(ans.step1Correct ? 'chosen-correct' : 'chosen-wrong');
+
+        // Step2 anzeigen und sperren
+        var step2 = document.getElementById('pw-step2-' + ans.qindex);
+        step2.style.display = 'block';
+        var reasons = step2.querySelectorAll('.pw-reason-btn');
+        for (var k = 0; k < reasons.length; k++) {
+            reasons[k].classList.add('disabled');
+        }
+        reasons[ans.selectedReason].classList.add(ans.step2Correct ? 'chosen-correct' : 'chosen-wrong');
+        if (!ans.step2Correct) {
+            var correctReasonIdx = parseInt(card.getAttribute('data-correct-reason'));
+            reasons[correctReasonIdx].classList.add('show-correct');
+        }
+        document.getElementById('pw-submit-' + ans.qindex).disabled = true;
+
+        // Feedback
+        var fb = document.getElementById('pw-fb-' + ans.qindex);
+        fb.className = 'pw-feedback visible';
+        if (ans.correct) {
+            fb.style.background = 'var(--success-light)';
+            fb.style.borderLeft = '3px solid var(--success)';
+            fb.innerHTML = '<strong>1 BE</strong> - Bewertung und Begründung richtig!';
+        } else {
+            fb.style.background = 'var(--error-light)';
+            fb.style.borderLeft = '3px solid var(--error)';
+            fb.innerHTML = '<strong>0 BE</strong>';
+        }
+    }
+
+    // Teilweise beantwortete Karten (Step1 gemacht, Step2 offen)
+    for (var idx in state.pwStep1) {
+        if (!state.pwStep1.hasOwnProperty(idx)) continue;
+        var cardIdx = parseInt(idx);
+        var card2 = document.getElementById('pw-card-' + cardIdx);
+        if (!card2 || card2.classList.contains('answered')) continue;
+
+        var isSecure = state.pwStep1[idx];
+        var step1Btns = card2.querySelector('#pw-step1-' + cardIdx).querySelectorAll('.pw-btn');
+        for (var m = 0; m < step1Btns.length; m++) {
+            step1Btns[m].classList.add('disabled');
+        }
+        var btnI = isSecure ? 0 : 1;
+        step1Btns[btnI].classList.add('selected');
+
+        document.getElementById('pw-step2-' + cardIdx).style.display = 'block';
+    }
+
+    // Navigation anzeigen wenn fertig
+    if (state.bewertungAnswered >= 5) {
+        document.getElementById('bewertung-score').style.display = 'block';
+        document.getElementById('bewertung-points').textContent = state.scores.bewertung;
+        document.getElementById('nav-step4').style.display = 'flex';
+    }
+}
+
+// =============================================
+// === MC-FRAGEN RENDERN ===
+// =============================================
+function buildMCSection(containerId, pool, rng, sectionId, count) {
+    var container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    var indices = [];
+    for (var i = 0; i < pool.length; i++) indices.push(i);
+    var shuffledIndices = shuffleWithRNG(indices, rng);
+
+    var selectedIndices = shuffledIndices.slice(0, count);
+
+    for (var q = 0; q < selectedIndices.length; q++) {
+        var question = pool[selectedIndices[q]];
+        var questionRNG = createRNG(state.seed + selectedIndices[q] * 100 + q);
+
+        var optIndices = [];
+        for (var oi = 0; oi < question.options.length; oi++) optIndices.push(oi);
+        var shuffledOpts = shuffleWithRNG(optIndices, questionRNG);
+
+        var correctShuffled = -1;
+        for (var ci = 0; ci < shuffledOpts.length; ci++) {
+            if (shuffledOpts[ci] === question.correct) {
+                correctShuffled = ci;
+                break;
+            }
+        }
+
+        var qDiv = document.createElement('div');
+        qDiv.className = 'mc-question';
+        qDiv.setAttribute('data-section', sectionId);
+        qDiv.setAttribute('data-qindex', q);
+        qDiv.setAttribute('data-correct', correctShuffled);
+        qDiv.setAttribute('data-feedback', question.fb);
+        qDiv.id = sectionId + '-q' + q;
+
+        var letters = ['A', 'B', 'C', 'D'];
+        var optionsHTML = '';
+        for (var o = 0; o < shuffledOpts.length; o++) {
+            optionsHTML += '<div class="mc-option" data-opt="' + o + '" onclick="selectMC(\'' + sectionId + '\',' + q + ',' + o + ')">';
+            optionsHTML += '<span class="letter">' + letters[o] + '</span>';
+            optionsHTML += '<span>' + escapeHTML(question.options[shuffledOpts[o]]) + '</span>';
+            optionsHTML += '</div>';
+        }
+
+        qDiv.innerHTML =
+            '<div class="q-header">' +
+            '  <span class="q-number">Frage ' + (q + 1) + '</span>' +
+            '  <span class="q-points">1 BE</span>' +
+            '</div>' +
+            '<div class="q-text">' + escapeHTML(question.text) + '</div>' +
+            '<div class="mc-options">' + optionsHTML + '</div>' +
+            '<div class="mc-feedback" id="' + sectionId + '-fb' + q + '"></div>';
+
+        container.appendChild(qDiv);
+    }
+
+    restoreMCAnswers(sectionId, count);
+}
+
+function restoreMCAnswers(sectionId, count) {
+    for (var i = 0; i < state.answers.length; i++) {
+        var ans = state.answers[i];
+        if (ans.section !== sectionId) continue;
+
+        var qDiv = document.getElementById(sectionId + '-q' + ans.qindex);
+        if (!qDiv) continue;
+
+        var options = qDiv.querySelectorAll('.mc-option');
+        var correctIdx = parseInt(qDiv.getAttribute('data-correct'));
+
+        for (var j = 0; j < options.length; j++) {
+            options[j].classList.add('disabled');
+        }
+
+        if (ans.correct) {
+            options[ans.selected].classList.add('correct');
+        } else {
+            options[ans.selected].classList.add('wrong');
+            options[correctIdx].classList.add('correct');
+        }
+
+        var fb = document.getElementById(sectionId + '-fb' + ans.qindex);
+        fb.className = 'mc-feedback visible ' + (ans.correct ? 'fb-correct' : 'fb-wrong');
+        fb.textContent = ans.correct ? 'Richtig! ' + ans.feedback : 'Falsch. ' + ans.feedback;
+        qDiv.classList.add('locked');
+    }
+
+    var answeredCount = 0;
+    for (var k = 0; k < state.answers.length; k++) {
+        if (state.answers[k].section === sectionId) answeredCount++;
+    }
+
+    if (answeredCount >= count) {
+        var scoreEl = document.getElementById(sectionId + '-score');
+        var pointsEl = document.getElementById(sectionId + '-points');
+        var navEl = document.getElementById('nav-step5');
+        if (scoreEl) scoreEl.style.display = 'block';
+        if (pointsEl) pointsEl.textContent = state.scores[sectionId];
+        if (navEl) navEl.style.display = 'flex';
+    }
+}
+
+function selectMC(sectionId, qindex, optIndex) {
+    var qDiv = document.getElementById(sectionId + '-q' + qindex);
+    if (qDiv.classList.contains('locked')) return;
+
+    var correctIdx = parseInt(qDiv.getAttribute('data-correct'));
+    var isCorrect = (optIndex === correctIdx);
+    var options = qDiv.querySelectorAll('.mc-option');
+
+    for (var i = 0; i < options.length; i++) {
+        options[i].classList.add('disabled');
+    }
+
+    if (isCorrect) {
+        options[optIndex].classList.add('correct');
+        state.scores[sectionId]++;
+    } else {
+        options[optIndex].classList.add('wrong');
+        options[correctIdx].classList.add('correct');
+    }
+
+    var feedbackText = qDiv.getAttribute('data-feedback') || '';
+
+    var fb = document.getElementById(sectionId + '-fb' + qindex);
+    fb.className = 'mc-feedback visible ' + (isCorrect ? 'fb-correct' : 'fb-wrong');
+    fb.textContent = isCorrect ? 'Richtig!' : 'Falsch.';
+    if (feedbackText) fb.textContent += ' ' + feedbackText;
+
+    qDiv.classList.add('locked');
+    state.testAnswered++;
+
+    state.answers.push({
+        section: sectionId,
+        qindex: qindex,
+        selected: optIndex,
+        correct: isCorrect,
+        feedback: feedbackText,
+        timestamp: new Date().toISOString()
+    });
+
+    var answeredInSection = 0;
+    for (var j = 0; j < state.answers.length; j++) {
+        if (state.answers[j].section === sectionId) answeredInSection++;
+    }
+
+    if (answeredInSection >= 20) {
+        var scoreEl = document.getElementById(sectionId + '-score');
+        var pointsEl = document.getElementById(sectionId + '-points');
+        var navEl = document.getElementById('nav-step5');
+
+        if (scoreEl) scoreEl.style.display = 'block';
+        if (pointsEl) pointsEl.textContent = state.scores[sectionId];
+        if (navEl) navEl.style.display = 'flex';
+    }
+
+    saveState();
+}
+
+// =============================================
+// === PASSWORT-ANALYSE + Challenge ===
+// =============================================
+function analyzePW() {
+    var pw = document.getElementById('pwTestInput').value;
+    var fill = document.getElementById('strengthFill');
+    var label = document.getElementById('strengthLabel');
+
+    if (pw.length === 0) {
+        fill.className = 'strength-fill';
+        label.textContent = '-';
+        document.getElementById('pd-length').textContent = 'Länge: -';
+        document.getElementById('pd-length').className = 'pw-detail-item';
+        document.getElementById('pd-charset').textContent = 'Zeichensatz: -';
+        document.getElementById('pd-charset').className = 'pw-detail-item';
+        document.getElementById('pd-combos').textContent = 'Kombinationen: -';
+        document.getElementById('pd-combos').className = 'pw-detail-item';
+        document.getElementById('pd-time').textContent = 'Knackzeit: -';
+        document.getElementById('pd-time').className = 'pw-detail-item';
+        updateChallenge(0);
+        return;
+    }
+
+    var hasLower = /[a-z]/.test(pw);
+    var hasUpper = /[A-Z]/.test(pw);
+    var hasNumber = /[0-9]/.test(pw);
+    var hasSpecial = /[^a-zA-Z0-9]/.test(pw);
+
+    var charsetSize = 0;
+    if (hasLower) charsetSize += 26;
+    if (hasUpper) charsetSize += 26;
+    if (hasNumber) charsetSize += 10;
+    if (hasSpecial) charsetSize += 32;
+    if (charsetSize === 0) charsetSize = 26;
+
+    var strength = 0;
+    if (pw.length >= 6) strength++;
+    if (pw.length >= 8) strength++;
+    if (pw.length >= 12) strength++;
+    if (hasLower && hasUpper) strength++;
+    if (hasNumber) strength++;
+    if (hasSpecial) strength++;
+
+    var common = ['passwort', 'password', '123456', 'qwerty', 'qwertz', 'hallo', 'sommer', 'winter'];
+    for (var i = 0; i < common.length; i++) {
+        if (pw.toLowerCase().indexOf(common[i]) > -1) {
+            strength = Math.max(0, strength - 3);
+            break;
+        }
+    }
+
+    strength = Math.min(5, Math.max(1, strength));
+
+    fill.className = 'strength-fill s' + strength;
+
+    var labels = ['', 'Sehr schwach', 'Schwach', 'Mittel', 'Stark', 'Sehr stark'];
+    var colors = ['', '#c62828', '#e65100', '#f9a825', '#558b2f', '#2e7d32'];
+    label.textContent = labels[strength];
+    label.style.color = colors[strength];
+
+    document.getElementById('pd-length').textContent = 'Länge: ' + pw.length + ' Zeichen';
+    document.getElementById('pd-length').className = 'pw-detail-item' + (pw.length >= 8 ? ' active' : '');
+
+    var types = [];
+    if (hasLower) types.push('a-z');
+    if (hasUpper) types.push('A-Z');
+    if (hasNumber) types.push('0-9');
+    if (hasSpecial) types.push('Sonderz.');
+    document.getElementById('pd-charset').textContent = 'Zeichensatz: ' + charsetSize + ' (' + types.join(', ') + ')';
+    document.getElementById('pd-charset').className = 'pw-detail-item' + (types.length >= 3 ? ' active' : '');
+
+    var combos = Math.pow(charsetSize, pw.length);
+    document.getElementById('pd-combos').textContent = 'Kombinationen: ' + formatNumber(combos);
+    document.getElementById('pd-combos').className = 'pw-detail-item' + (combos > 1e15 ? ' active' : '');
+
+    var seconds = combos / 1e9;
+    document.getElementById('pd-time').textContent = 'Knackzeit: ' + formatTime(seconds);
+    document.getElementById('pd-time').className = 'pw-detail-item' + (seconds > 31536000 ? ' active' : '');
+
+    updateChallenge(seconds);
+}
+
+function updateChallenge(seconds) {
+    var statusEl = document.getElementById('challengeStatus');
+    var successEl = document.getElementById('challengeSuccess');
+    if (!statusEl) return;
+
+    var years = seconds / 31536000;
+
+    if (seconds === 0) {
+        statusEl.textContent = 'Knackzeit: noch kein Passwort eingegeben';
+        statusEl.style.color = 'var(--gray)';
+        successEl.style.display = 'none';
+    } else if (years > 1000000) {
+        statusEl.textContent = 'Knackzeit: ' + formatTime(seconds);
+        statusEl.style.color = 'var(--success)';
+        successEl.style.display = 'block';
+    } else {
+        statusEl.textContent = 'Knackzeit: ' + formatTime(seconds) + ' - noch nicht genug!';
+        statusEl.style.color = 'var(--error)';
+        successEl.style.display = 'none';
+    }
+}
+
+// =============================================
+// === POTENZ-RECHNER ===
+// =============================================
+function calcPotenz() {
+    var basis = parseInt(document.getElementById('potBasis').value);
+    var exponent = parseInt(document.getElementById('potExponent').value);
+    var resultEl = document.getElementById('potResult');
+    var expandEl = document.getElementById('potExpand');
+
+    if (isNaN(basis) || isNaN(exponent) || basis < 1 || exponent < 1) {
+        resultEl.textContent = 'Ergebnis: –';
+        expandEl.textContent = '';
+        return;
+    }
+
+    if (exponent > 20) {
+        resultEl.textContent = 'Exponent zu groß (max. 20)';
+        expandEl.textContent = '';
+        return;
+    }
+
+    var result = Math.pow(basis, exponent);
+    resultEl.innerHTML = basis + '<sup>' + exponent + '</sup> = <strong>' + formatNumber(result) + '</strong>';
+
+    // Ausgeschriebene Multiplikation zeigen
+    if (exponent <= 8) {
+        var parts = [];
+        for (var i = 0; i < exponent; i++) parts.push(basis);
+        expandEl.textContent = parts.join(' × ') + ' = ' + result.toLocaleString('de-DE');
+    } else {
+        expandEl.textContent = result.toLocaleString('de-DE');
+    }
+}
+
+// =============================================
+// === RECHENÜBUNGEN ===
+// =============================================
+var EXERCISES = [
+    { id: 1, answer: 10000, hint: '10 hoch 4' },
+    { id: 2, answer: 456976, hint: '26 hoch 4' },
+    { id: 3, answer: 308915776, hint: '26 hoch 6' }
+];
+
+function checkExercise(num) {
+    var ex = EXERCISES[num - 1];
+    var input = document.getElementById('ex' + num);
+    var fb = document.getElementById('ex' + num + '-fb');
+    var item = document.getElementById('exItem' + num);
+
+    var userAnswer = parseInt(input.value);
+    if (isNaN(userAnswer)) {
+        fb.className = 'exercise-fb visible wrong';
+        fb.textContent = 'Bitte gib eine Zahl ein.';
+        return;
+    }
+
+    if (userAnswer === ex.answer) {
+        fb.className = 'exercise-fb visible correct';
+        fb.innerHTML = '<strong>Richtig!</strong> ' + ex.hint + ' = ' + ex.answer.toLocaleString('de-DE');
+        item.classList.add('done');
+    } else {
+        // Toleranz: ±1% für Tippfehler
+        var tolerance = ex.answer * 0.01;
+        if (Math.abs(userAnswer - ex.answer) <= tolerance) {
+            fb.className = 'exercise-fb visible correct';
+            fb.innerHTML = '<strong>Fast!</strong> Die exakte Antwort ist ' + ex.answer.toLocaleString('de-DE') + ' – das zählt!';
+            item.classList.add('done');
+        } else {
+            fb.className = 'exercise-fb visible wrong';
+            fb.innerHTML = '<strong>Nicht ganz.</strong> Tipp: Nutze den Potenz-Rechner oben. Gib ' + ex.hint.replace('hoch', 'und') + ' ein.';
+        }
+    }
+}
+
+// =============================================
+// === BRUTE-FORCE RECHNER ===
+// =============================================
+function calculateBF() {
+    var charset = parseInt(document.getElementById('bfCharset').value);
+    var length = parseInt(document.getElementById('bfLength').value);
+    document.getElementById('bfLengthDisplay').textContent = length;
+
+    var combos = Math.pow(charset, length);
+    var seconds = combos / 1e9;
+
+    var html = '<div style="margin-bottom: 8px; color: #aaa;">Zeichensatz: ' + charset + ' | Länge: ' + length + '</div>';
+    html += '<div style="margin-bottom: 8px;">Kombinationen: <strong>' + formatNumber(combos) + '</strong></div>';
+    html += '<div>Dauer bei 1 Mrd. Versuchen/Sek:</div>';
+    html += '<div style="font-size: 1.4em; margin-top: 5px;"><strong>' + formatTime(seconds) + '</strong></div>';
+
+    document.getElementById('bfResult').innerHTML = html;
+}
+
+var bfInterval = null;
+function startBFDemo() {
+    if (bfInterval) {
+        clearInterval(bfInterval);
+        bfInterval = null;
+    }
+
+    var demo = document.getElementById('bfDemo');
+    var charset = document.getElementById('bfCharset').value;
+    var length = parseInt(document.getElementById('bfLength').value);
+
+    var chars = '0123456789';
+    if (charset >= 26) chars += 'abcdefghijklmnopqrstuvwxyz';
+    if (charset >= 52) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    if (charset >= 94) chars += '!@#$%^&*()_+-=';
+
+    var attempts = 0;
+    var lines = [];
+
+    bfInterval = setInterval(function() {
+        var pw = '';
+        for (var i = 0; i < length; i++) {
+            pw += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        attempts++;
+        lines.push('Versuch ' + attempts + ': ' + pw);
+        if (lines.length > 3) lines.shift();
+        demo.innerHTML = lines.join('<br>');
+    }, 40);
+
+    setTimeout(function() {
+        clearInterval(bfInterval);
+        bfInterval = null;
+        demo.innerHTML += '<br><span style="color: #ff0;">Gestoppt nach ' + attempts + ' Versuchen in 5 Sekunden.</span>';
+        demo.innerHTML += '<br><span style="color: #ff0;">Ein echter Angriff schafft 1.000.000.000 pro Sekunde!</span>';
+    }, 5000);
+}
+
+// =============================================
+// === HILFSFUNKTIONEN ===
+// =============================================
+function formatNumber(n) {
+    if (n < 1e3) return n.toString();
+    if (n < 1e6) return Math.round(n / 1e3) + ' Tausend';
+    if (n < 1e9) return Math.round(n / 1e6) + ' Millionen';
+    if (n < 1e12) return Math.round(n / 1e9) + ' Milliarden';
+    if (n < 1e15) return Math.round(n / 1e12) + ' Billionen';
+    if (n < 1e18) return Math.round(n / 1e15) + ' Billiarden';
+    return n.toExponential(1);
+}
+
+function formatTime(seconds) {
+    if (seconds < 0.001) return 'sofort (< 0,001 Sek)';
+    if (seconds < 1) return 'unter 1 Sekunde';
+    if (seconds < 60) return Math.round(seconds) + ' Sekunden';
+    if (seconds < 3600) return Math.round(seconds / 60) + ' Minuten';
+    if (seconds < 86400) return Math.round(seconds / 3600) + ' Stunden';
+    if (seconds < 31536000) return Math.round(seconds / 86400) + ' Tage';
+    var years = seconds / 31536000;
+    if (years < 1000) return Math.round(years) + ' Jahre';
+    if (years < 1e6) return Math.round(years / 1000) + ' Tausend Jahre';
+    if (years < 1e9) return Math.round(years / 1e6) + ' Millionen Jahre';
+    return Math.round(years / 1e9) + ' Milliarden Jahre';
+}
+
+function escapeHTML(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function generateVerification(name, score, date) {
+    var str = name.toLowerCase().trim() + '-' + score + '-' + date;
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36).toUpperCase().substr(0, 6);
+}
+
+// =============================================
+// === NAVIGATION ===
+// =============================================
+function goToStep(step) {
+    if (step < 0 || step >= TOTAL_STEPS) return;
+
+    var steps = document.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.remove('active');
+    }
+
+    document.getElementById('step' + step).classList.add('active');
+
+    var dots = document.querySelectorAll('.step-dot');
+    for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.remove('active');
+        if (i < step) dots[i].classList.add('completed');
+        if (i === step) dots[i].classList.add('active');
+    }
+
+    var progress = (step / (TOTAL_STEPS - 1)) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    state.currentStep = step;
+    saveState();
+    window.scrollTo(0, 0);
+
+    if (step === 2) calculateBF();
+}
+
+// =============================================
+// === ERGEBNIS ===
+// =============================================
+function showResults() {
+    var total = state.scores.bewertung + state.scores.test;
+    var grade = getGrade(total);
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE');
+    var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
+
+    state.completed = true;
+    saveState();
+
+    document.getElementById('resultName').textContent = state.name;
+    document.getElementById('resultScore').textContent = total + ' / ' + TOTAL_BE;
+    document.getElementById('rp-bewertung').textContent = state.scores.bewertung + '/5';
+    document.getElementById('rp-test').textContent = state.scores.test + '/20';
+    document.getElementById('resultTime').textContent = dateStr;
+    document.getElementById('resultCode').textContent = code;
+
+    var gradeEl = document.getElementById('resultGrade');
+    gradeEl.textContent = 'Note: ' + grade;
+    gradeEl.className = 'result-grade g' + grade;
+
+    goToStep(6);
+}
+
+// Notenskala 25 BE (6-Noten, MR)
+function getGrade(score) {
+    if (score >= 23) return 1;
+    if (score >= 20) return 2;
+    if (score >= 15) return 3;
+    if (score >= 12) return 4;
+    if (score >= 7) return 5;
+    return 6;
+}
+
+// =============================================
+// === SPEICHERN ===
+// =============================================
+function saveState() {
+    localStorage.setItem(LP_ID + '-state', JSON.stringify({
+        version: LP_VERSION,
+        name: state.name,
+        seed: state.seed,
+        scores: state.scores,
+        bewertungAnswered: state.bewertungAnswered,
+        testAnswered: state.testAnswered,
+        answers: state.answers,
+        pwStep1: state.pwStep1,
+        completed: state.completed,
+        startTime: state.startTime,
+        currentStep: state.currentStep
+    }));
+}
+
+// =============================================
+// === START ===
+// =============================================
+window.onload = function() { init(); };
+</script>
+
+</body>
+</html>
