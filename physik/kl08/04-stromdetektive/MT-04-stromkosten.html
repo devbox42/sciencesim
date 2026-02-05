@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT-04: Stromkosten & Energie</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e4080 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        header .meta {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* Timer */
+        .timer-bar {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .timer {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #2c5aa0;
+            font-family: monospace;
+        }
+
+        .timer.warning {
+            color: #ff9800;
+        }
+
+        .timer.danger {
+            color: #c62828;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Aufgaben */
+        .aufgabe {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .aufgabe.locked {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .aufgabe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+
+        .aufgabe-nummer {
+            background: #2c5aa0;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .aufgabe-punkte {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .aufgabe h3 {
+            color: #2c5aa0;
+            font-size: 1em;
+            margin-bottom: 12px;
+        }
+
+        .aufgabe p {
+            margin-bottom: 10px;
+        }
+
+        /* Multiple Choice */
+        .mc-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mc-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 48px;
+        }
+
+        .mc-option:hover {
+            border-color: #2c5aa0;
+            background: #f0f5ff;
+        }
+
+        .mc-option.selected {
+            border-color: #2c5aa0;
+            background: #e8f0fa;
+        }
+
+        .mc-option.correct {
+            border-color: #2a7a4b;
+            background: #e8f5e9;
+        }
+
+        .mc-option.incorrect {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+
+        .mc-option input {
+            width: 20px;
+            height: 20px;
+            accent-color: #2c5aa0;
+        }
+
+        .mc-option label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        /* Input Felder */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .input-field {
+            padding: 10px 15px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 120px;
+            text-align: center;
+        }
+
+        .input-field:focus {
+            border-color: #2c5aa0;
+            outline: none;
+        }
+
+        .input-field.correct {
+            border-color: #2a7a4b;
+            background: #e8f5e9;
+        }
+
+        .input-field.incorrect {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+
+        .input-unit {
+            font-weight: 600;
+            color: #555;
+        }
+
+        /* Zuordnung */
+        .zuordnung-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 600px) {
+            .zuordnung-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .zuordnung-spalte h4 {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .zuordnung-item {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zuordnung-item:hover {
+            border-color: #2c5aa0;
+        }
+
+        .zuordnung-item.selected {
+            border-color: #2c5aa0;
+            background: #e8f0fa;
+        }
+
+        .zuordnung-item.matched {
+            border-color: #2a7a4b;
+            background: #e8f5e9;
+        }
+
+        .zuordnung-item.wrong {
+            border-color: #c62828;
+            background: #ffebee;
+            animation: shake 0.3s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Rechenweg */
+        .rechenweg {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .rechenweg-schritt {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .rechenweg-label {
+            min-width: 80px;
+            font-weight: 600;
+        }
+
+        /* Formel-Box */
+        .formel-box {
+            background: #e8f0fa;
+            border: 2px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .formel-box .formel {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        /* Feedback */
+        .feedback {
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #e8f5e9;
+            border: 1px solid #2a7a4b;
+            color: #1b5e20;
+        }
+
+        .feedback.incorrect {
+            background: #ffebee;
+            border: 1px solid #c62828;
+            color: #c62828;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            min-height: 48px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e4080;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: #2a7a4b;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e5a38;
+        }
+
+        /* Ergebnis */
+        .ergebnis-box {
+            background: white;
+            border: 2px solid #2c5aa0;
+            padding: 25px;
+            text-align: center;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .ergebnis-box.show {
+            display: block;
+        }
+
+        .ergebnis-punkte {
+            font-size: 3em;
+            font-weight: 700;
+            color: #2c5aa0;
+        }
+
+        .ergebnis-note {
+            font-size: 1.5em;
+            margin: 15px 0;
+        }
+
+        .ergebnis-details {
+            text-align: left;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        .ergebnis-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Hilfsmittel */
+        .hinweis-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        /* Name Input */
+        .name-input-container {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .name-input {
+            padding: 12px 20px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+        }
+
+        .name-input:focus {
+            border-color: #2c5aa0;
+            outline: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .aufgabe { padding: 15px; }
+            .input-field { width: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Minitest: Stromkosten & Energie</h1>
+        <div class="meta">Physik Klasse 8 | 25 Minuten | 20 Punkte</div>
+    </header>
+
+    <div class="container">
+        <!-- Name eingeben -->
+        <div class="name-input-container" id="nameContainer">
+            <h3>Bitte trage deinen Namen ein:</h3>
+            <input type="text" class="name-input" id="nameInput" placeholder="Vorname Nachname">
+            <br>
+            <button class="btn btn-primary" onclick="startTest()">Test starten</button>
+        </div>
+
+        <!-- Timer Bar -->
+        <div class="timer-bar" id="timerBar" style="display: none;">
+            <div class="progress-info">
+                <span id="aufgabenStatus">Aufgabe 1 von 6</span>
+            </div>
+            <div class="timer" id="timer">25:00</div>
+        </div>
+
+        <!-- AUFGABE 1: Multiple Choice - Formeln -->
+        <div class="aufgabe" id="aufgabe1" style="display: none;">
+            <div class="aufgabe-header">
+                <span class="aufgabe-nummer">Aufgabe 1</span>
+                <span class="aufgabe-punkte">3 Punkte</span>
+            </div>
+
+            <h3>Welche Formeln sind korrekt?</h3>
+            <p>Kreuze alle richtigen Aussagen an:</p>
+
+            <div class="mc-options" id="mc1">
+                <div class="mc-option" onclick="toggleMC(this, 'mc1')">
+                    <input type="checkbox" id="mc1a">
+                    <label for="mc1a">Die elektrische Leistung berechnet man mit <em>P</em> = <em>U</em> · <em>I</em></label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc1')">
+                    <input type="checkbox" id="mc1b">
+                    <label for="mc1b">Die elektrische Energie berechnet man mit <em>E</em> = <em>P</em> · <em>t</em></label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc1')">
+                    <input type="checkbox" id="mc1c">
+                    <label for="mc1c">Die Einheit der elektrischen Energie ist Watt (W)</label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc1')">
+                    <input type="checkbox" id="mc1d">
+                    <label for="mc1d">Auf der Stromrechnung wird die Energie in Kilowattstunden (kWh) angegeben</label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc1')">
+                    <input type="checkbox" id="mc1e">
+                    <label for="mc1e">1 kWh = 1000 Wh</label>
+                </div>
+            </div>
+
+            <div class="feedback" id="feedback1"></div>
+        </div>
+
+        <!-- AUFGABE 2: Zuordnung Geräte - Leistung -->
+        <div class="aufgabe" id="aufgabe2" style="display: none;">
+            <div class="aufgabe-header">
+                <span class="aufgabe-nummer">Aufgabe 2</span>
+                <span class="aufgabe-punkte">4 Punkte</span>
+            </div>
+
+            <h3>Ordne die Geräte ihrer typischen Leistung zu</h3>
+            <p>Klicke zuerst auf ein Gerät, dann auf die passende Leistung.</p>
+
+            <div class="zuordnung-container">
+                <div class="zuordnung-spalte">
+                    <h4>Gerät</h4>
+                    <div class="zuordnung-item" data-pair="A" onclick="selectZuordnung(this, 'left')">Wasserkocher</div>
+                    <div class="zuordnung-item" data-pair="B" onclick="selectZuordnung(this, 'left')">LED-Lampe</div>
+                    <div class="zuordnung-item" data-pair="C" onclick="selectZuordnung(this, 'left')">Smartphone-Ladegerät</div>
+                    <div class="zuordnung-item" data-pair="D" onclick="selectZuordnung(this, 'left')">Haartrockner</div>
+                </div>
+                <div class="zuordnung-spalte">
+                    <h4>Leistung</h4>
+                    <div class="zuordnung-item" data-pair="B" onclick="selectZuordnung(this, 'right')">10 W</div>
+                    <div class="zuordnung-item" data-pair="D" onclick="selectZuordnung(this, 'right')">1800 W</div>
+                    <div class="zuordnung-item" data-pair="C" onclick="selectZuordnung(this, 'right')">20 W</div>
+                    <div class="zuordnung-item" data-pair="A" onclick="selectZuordnung(this, 'right')">2000 W</div>
+                </div>
+            </div>
+
+            <div class="feedback" id="feedback2"></div>
+        </div>
+
+        <!-- AUFGABE 3: Berechnung Energie -->
+        <div class="aufgabe" id="aufgabe3" style="display: none;">
+            <div class="aufgabe-header">
+                <span class="aufgabe-nummer">Aufgabe 3</span>
+                <span class="aufgabe-punkte">4 Punkte</span>
+            </div>
+
+            <h3>Energieberechnung</h3>
+            <p>Ein Fernseher hat eine Leistung von <strong>100 W</strong>. Er läuft <strong>4 Stunden</strong> pro Tag.</p>
+
+            <div class="formel-box">
+                <div class="formel"><em>E</em> = <em>P</em> · <em>t</em></div>
+            </div>
+
+            <div class="rechenweg">
+                <p><strong>a)</strong> Berechne die verbrauchte Energie in Wattstunden (Wh):</p>
+                <div class="input-group">
+                    <span><em>E</em> =</span>
+                    <input type="number" class="input-field" id="a3a" placeholder="?">
+                    <span class="input-unit">Wh</span>
+                </div>
+
+                <p style="margin-top: 20px;"><strong>b)</strong> Rechne in Kilowattstunden (kWh) um:</p>
+                <div class="input-group">
+                    <span><em>E</em> =</span>
+                    <input type="number" class="input-field" id="a3b" step="0.1" placeholder="?">
+                    <span class="input-unit">kWh</span>
+                </div>
+
+                <p style="margin-top: 20px;"><strong>c)</strong> Wie viel Energie verbraucht der Fernseher in einem Monat (30 Tage)?</p>
+                <div class="input-group">
+                    <span><em>E</em> =</span>
+                    <input type="number" class="input-field" id="a3c" placeholder="?">
+                    <span class="input-unit">kWh</span>
+                </div>
+            </div>
+
+            <div class="feedback" id="feedback3"></div>
+        </div>
+
+        <!-- AUFGABE 4: Stromkosten berechnen -->
+        <div class="aufgabe" id="aufgabe4" style="display: none;">
+            <div class="aufgabe-header">
+                <span class="aufgabe-nummer">Aufgabe 4</span>
+                <span class="aufgabe-punkte">4 Punkte</span>
+            </div>
+
+            <h3>Stromkosten berechnen</h3>
+            <p>Der Strompreis beträgt <strong>0,40 Euro pro kWh</strong>.</p>
+
+            <div class="hinweis-box">
+                <strong>Formel:</strong> Kosten = Energie · Strompreis
+            </div>
+
+            <p><strong>a)</strong> Was kostet der Fernseher aus Aufgabe 3 pro Monat (12 kWh)?</p>
+            <div class="input-group">
+                <span>Kosten =</span>
+                <input type="number" class="input-field" id="a4a" step="0.01" placeholder="?">
+                <span class="input-unit">Euro</span>
+            </div>
+
+            <p style="margin-top: 20px;"><strong>b)</strong> Ein Gaming-PC verbraucht 250 W und läuft 3 Stunden täglich. Was kostet er pro Monat?</p>
+            <div class="rechenweg">
+                <div class="rechenweg-schritt">
+                    <span class="rechenweg-label">Energie/Tag:</span>
+                    <input type="number" class="input-field" id="a4b1" placeholder="?">
+                    <span class="input-unit">Wh</span>
+                </div>
+                <div class="rechenweg-schritt">
+                    <span class="rechenweg-label">Energie/Monat:</span>
+                    <input type="number" class="input-field" id="a4b2" step="0.1" placeholder="?">
+                    <span class="input-unit">kWh</span>
+                </div>
+                <div class="rechenweg-schritt">
+                    <span class="rechenweg-label">Kosten:</span>
+                    <input type="number" class="input-field" id="a4b3" step="0.01" placeholder="?">
+                    <span class="input-unit">Euro</span>
+                </div>
+            </div>
+
+            <div class="feedback" id="feedback4"></div>
+        </div>
+
+        <!-- AUFGABE 5: Stromrechnung lesen -->
+        <div class="aufgabe" id="aufgabe5" style="display: none;">
+            <div class="aufgabe-header">
+                <span class="aufgabe-nummer">Aufgabe 5</span>
+                <span class="aufgabe-punkte">3 Punkte</span>
+            </div>
+
+            <h3>Stromrechnung verstehen</h3>
+            <p>Auf einer Stromrechnung stehen folgende Angaben:</p>
+
+            <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; border-radius: 4px; font-family: monospace;">
+                <strong>Jahresverbrauch:</strong> 3200 kWh<br>
+                <strong>Arbeitspreis:</strong> 0,38 Euro/kWh<br>
+                <strong>Grundpreis:</strong> 120 Euro/Jahr
+            </div>
+
+            <p><strong>a)</strong> Was kosten die verbrauchten 3200 kWh (ohne Grundpreis)?</p>
+            <div class="input-group">
+                <input type="number" class="input-field" id="a5a" step="0.01" placeholder="?">
+                <span class="input-unit">Euro</span>
+            </div>
+
+            <p style="margin-top: 20px;"><strong>b)</strong> Wie hoch sind die Gesamtkosten pro Jahr (mit Grundpreis)?</p>
+            <div class="input-group">
+                <input type="number" class="input-field" id="a5b" step="0.01" placeholder="?">
+                <span class="input-unit">Euro</span>
+            </div>
+
+            <p style="margin-top: 20px;"><strong>c)</strong> Wie viel zahlt diese Familie durchschnittlich pro Monat?</p>
+            <div class="input-group">
+                <input type="number" class="input-field" id="a5c" step="0.01" placeholder="?">
+                <span class="input-unit">Euro</span>
+            </div>
+
+            <div class="feedback" id="feedback5"></div>
+        </div>
+
+        <!-- AUFGABE 6: Energiesparen -->
+        <div class="aufgabe" id="aufgabe6" style="display: none;">
+            <div class="aufgabe-header">
+                <span class="aufgabe-nummer">Aufgabe 6</span>
+                <span class="aufgabe-punkte">2 Punkte</span>
+            </div>
+
+            <h3>Energiesparen</h3>
+            <p>Welche Aussagen zum Energiesparen sind richtig?</p>
+
+            <div class="mc-options" id="mc6">
+                <div class="mc-option" onclick="toggleMC(this, 'mc6')">
+                    <input type="checkbox" id="mc6a">
+                    <label for="mc6a">LED-Lampen verbrauchen weniger Energie als Glühlampen bei gleicher Helligkeit</label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc6')">
+                    <input type="checkbox" id="mc6b">
+                    <label for="mc6b">Geräte im Standby-Modus verbrauchen keinen Strom</label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc6')">
+                    <input type="checkbox" id="mc6c">
+                    <label for="mc6c">Ein Kühlschrank der Effizienzklasse A+++ verbraucht weniger als einer mit Klasse D</label>
+                </div>
+                <div class="mc-option" onclick="toggleMC(this, 'mc6')">
+                    <input type="checkbox" id="mc6d">
+                    <label for="mc6d">Die Leistung eines Gerätes kann man nicht ändern</label>
+                </div>
+            </div>
+
+            <div class="feedback" id="feedback6"></div>
+        </div>
+
+        <!-- Abgabe Button -->
+        <div id="abgabeContainer" style="display: none; text-align: center; margin: 20px 0;">
+            <button class="btn btn-success" onclick="abgeben()" style="font-size: 1.2em; padding: 15px 40px;">
+                Test abgeben
+            </button>
+        </div>
+
+        <!-- Ergebnis -->
+        <div class="ergebnis-box" id="ergebnisBox">
+            <h2>Testergebnis</h2>
+            <div class="ergebnis-punkte" id="ergebnisPunkte">0/20</div>
+            <div class="ergebnis-note" id="ergebnisNote"></div>
+
+            <div class="ergebnis-details" id="ergebnisDetails">
+                <div class="ergebnis-row">
+                    <span>Aufgabe 1 (Formeln)</span>
+                    <span id="punkte1">-/3</span>
+                </div>
+                <div class="ergebnis-row">
+                    <span>Aufgabe 2 (Zuordnung)</span>
+                    <span id="punkte2">-/4</span>
+                </div>
+                <div class="ergebnis-row">
+                    <span>Aufgabe 3 (Energie)</span>
+                    <span id="punkte3">-/4</span>
+                </div>
+                <div class="ergebnis-row">
+                    <span>Aufgabe 4 (Kosten)</span>
+                    <span id="punkte4">-/4</span>
+                </div>
+                <div class="ergebnis-row">
+                    <span>Aufgabe 5 (Stromrechnung)</span>
+                    <span id="punkte5">-/3</span>
+                </div>
+                <div class="ergebnis-row">
+                    <span>Aufgabe 6 (Energiesparen)</span>
+                    <span id="punkte6">-/2</span>
+                </div>
+            </div>
+
+            <p style="margin-top: 20px; color: #666; font-size: 0.9em;">
+                Name: <span id="ergebnisName"></span><br>
+                Abgegeben: <span id="ergebnisZeit"></span>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Konfiguration
+        const TESTZEIT = 25 * 60; // 25 Minuten in Sekunden
+        let zeitVerbleibend = TESTZEIT;
+        let timerInterval = null;
+        let testGestartet = false;
+        let testBeendet = false;
+        let schuelerName = '';
+
+        // Zuordnung State
+        let selectedLeft = null;
+        let matchedPairs = [];
+
+        // Lösungen
+        const loesungen = {
+            mc1: ['mc1a', 'mc1b', 'mc1d', 'mc1e'], // Richtig: P=UI, E=Pt, kWh auf Rechnung, 1kWh=1000Wh
+            zuordnung: { 'A': 'A', 'B': 'B', 'C': 'C', 'D': 'D' },
+            a3a: 400,    // 100W * 4h = 400 Wh
+            a3b: 0.4,    // 400 Wh = 0.4 kWh
+            a3c: 12,     // 0.4 kWh * 30 = 12 kWh
+            a4a: 4.80,   // 12 kWh * 0.40 = 4.80 Euro
+            a4b1: 750,   // 250W * 3h = 750 Wh
+            a4b2: 22.5,  // 750 Wh * 30 = 22500 Wh = 22.5 kWh
+            a4b3: 9.00,  // 22.5 kWh * 0.40 = 9 Euro
+            a5a: 1216,   // 3200 * 0.38 = 1216 Euro
+            a5b: 1336,   // 1216 + 120 = 1336 Euro
+            a5c: 111.33, // 1336 / 12 = 111.33 Euro
+            mc6: ['mc6a', 'mc6c'] // LED besser, A+++ besser
+        };
+
+        function startTest() {
+            schuelerName = document.getElementById('nameInput').value.trim();
+            if (!schuelerName) {
+                alert('Bitte gib deinen Namen ein!');
+                return;
+            }
+
+            document.getElementById('nameContainer').style.display = 'none';
+            document.getElementById('timerBar').style.display = 'flex';
+
+            // Alle Aufgaben anzeigen
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById('aufgabe' + i).style.display = 'block';
+            }
+            document.getElementById('abgabeContainer').style.display = 'block';
+
+            testGestartet = true;
+            startTimer();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                zeitVerbleibend--;
+
+                const minuten = Math.floor(zeitVerbleibend / 60);
+                const sekunden = zeitVerbleibend % 60;
+                const timerEl = document.getElementById('timer');
+                timerEl.textContent = `${minuten}:${sekunden.toString().padStart(2, '0')}`;
+
+                // Warnung bei wenig Zeit
+                if (zeitVerbleibend <= 300 && zeitVerbleibend > 60) {
+                    timerEl.classList.add('warning');
+                    timerEl.classList.remove('danger');
+                } else if (zeitVerbleibend <= 60) {
+                    timerEl.classList.remove('warning');
+                    timerEl.classList.add('danger');
+                }
+
+                if (zeitVerbleibend <= 0) {
+                    clearInterval(timerInterval);
+                    abgeben();
+                }
+            }, 1000);
+        }
+
+        function toggleMC(element, groupId) {
+            if (testBeendet) return;
+            element.classList.toggle('selected');
+            const checkbox = element.querySelector('input');
+            checkbox.checked = !checkbox.checked;
+        }
+
+        function selectZuordnung(element, side) {
+            if (testBeendet) return;
+            if (element.classList.contains('matched')) return;
+
+            if (side === 'left') {
+                // Deselect previous
+                document.querySelectorAll('.zuordnung-spalte:first-child .zuordnung-item').forEach(el => {
+                    if (!el.classList.contains('matched')) el.classList.remove('selected');
+                });
+                element.classList.add('selected');
+                selectedLeft = element;
+            } else if (selectedLeft) {
+                // Check match
+                const leftPair = selectedLeft.dataset.pair;
+                const rightPair = element.dataset.pair;
+
+                if (leftPair === rightPair) {
+                    selectedLeft.classList.remove('selected');
+                    selectedLeft.classList.add('matched');
+                    element.classList.add('matched');
+                    matchedPairs.push(leftPair);
+                } else {
+                    element.classList.add('wrong');
+                    setTimeout(() => element.classList.remove('wrong'), 300);
+                }
+                selectedLeft = null;
+            }
+        }
+
+        function checkInputTolerance(input, correct, tolerance = 0.05) {
+            const value = parseFloat(input);
+            if (isNaN(value)) return false;
+            return Math.abs(value - correct) <= Math.abs(correct * tolerance) + 0.01;
+        }
+
+        function abgeben() {
+            if (testBeendet) return;
+            // Bei manuellem Klick Bestätigung verlangen (nicht bei Zeitablauf)
+            if (zeitVerbleibend > 0 && !confirm('Test wirklich abgeben? Du kannst danach nichts mehr ändern.')) return;
+            testBeendet = true;
+            clearInterval(timerInterval);
+
+            // Alle Eingabefelder deaktivieren
+            document.querySelectorAll('.input-field').forEach(el => el.disabled = true);
+            document.querySelectorAll('.mc-option').forEach(el => el.style.pointerEvents = 'none');
+            document.querySelectorAll('.zuordnung-item').forEach(el => el.style.pointerEvents = 'none');
+
+            let gesamtPunkte = 0;
+            const maxPunkte = 20;
+
+            // Aufgabe 1: MC Formeln (3 Punkte)
+            let punkte1 = 0;
+            const mc1Selected = [];
+            document.querySelectorAll('#mc1 .mc-option.selected').forEach(el => {
+                const id = el.querySelector('input').id;
+                mc1Selected.push(id);
+            });
+
+            // Richtige angekreuzt: 3 Punkte / 4 richtige = 0.75 pro Treffer
+            loesungen.mc1.forEach(correct => {
+                if (mc1Selected.includes(correct)) punkte1 += 0.75;
+            });
+            // Falsche angekreuzt (Abzug)
+            mc1Selected.forEach(selected => {
+                if (!loesungen.mc1.includes(selected)) punkte1 -= 0.75;
+            });
+            punkte1 = Math.max(0, Math.min(3, Math.round(punkte1 * 10) / 10));
+
+            // Feedback MC1
+            document.querySelectorAll('#mc1 .mc-option').forEach(el => {
+                const id = el.querySelector('input').id;
+                if (loesungen.mc1.includes(id)) {
+                    el.classList.add('correct');
+                } else if (el.classList.contains('selected')) {
+                    el.classList.add('incorrect');
+                }
+            });
+
+            // Aufgabe 2: Zuordnung (4 Punkte)
+            let punkte2 = matchedPairs.length; // 1 Punkt pro richtige Zuordnung
+
+            // Aufgabe 3: Energie (4 Punkte)
+            let punkte3 = 0;
+            const a3aInput = document.getElementById('a3a');
+            const a3bInput = document.getElementById('a3b');
+            const a3cInput = document.getElementById('a3c');
+
+            if (checkInputTolerance(a3aInput.value, loesungen.a3a)) {
+                punkte3 += 1; a3aInput.classList.add('correct');
+            } else { a3aInput.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a3bInput.value, loesungen.a3b, 0.1)) {
+                punkte3 += 1; a3bInput.classList.add('correct');
+            } else { a3bInput.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a3cInput.value, loesungen.a3c)) {
+                punkte3 += 2; a3cInput.classList.add('correct');
+            } else { a3cInput.classList.add('incorrect'); }
+
+            // Aufgabe 4: Kosten (4 Punkte)
+            let punkte4 = 0;
+            const a4aInput = document.getElementById('a4a');
+            const a4b1Input = document.getElementById('a4b1');
+            const a4b2Input = document.getElementById('a4b2');
+            const a4b3Input = document.getElementById('a4b3');
+
+            if (checkInputTolerance(a4aInput.value, loesungen.a4a, 0.1)) {
+                punkte4 += 1; a4aInput.classList.add('correct');
+            } else { a4aInput.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a4b1Input.value, loesungen.a4b1)) {
+                punkte4 += 1; a4b1Input.classList.add('correct');
+            } else { a4b1Input.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a4b2Input.value, loesungen.a4b2, 0.1)) {
+                punkte4 += 1; a4b2Input.classList.add('correct');
+            } else { a4b2Input.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a4b3Input.value, loesungen.a4b3, 0.1)) {
+                punkte4 += 1; a4b3Input.classList.add('correct');
+            } else { a4b3Input.classList.add('incorrect'); }
+
+            // Aufgabe 5: Stromrechnung (3 Punkte)
+            let punkte5 = 0;
+            const a5aInput = document.getElementById('a5a');
+            const a5bInput = document.getElementById('a5b');
+            const a5cInput = document.getElementById('a5c');
+
+            if (checkInputTolerance(a5aInput.value, loesungen.a5a, 0.02)) {
+                punkte5 += 1; a5aInput.classList.add('correct');
+            } else { a5aInput.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a5bInput.value, loesungen.a5b, 0.02)) {
+                punkte5 += 1; a5bInput.classList.add('correct');
+            } else { a5bInput.classList.add('incorrect'); }
+
+            if (checkInputTolerance(a5cInput.value, loesungen.a5c, 0.05)) {
+                punkte5 += 1; a5cInput.classList.add('correct');
+            } else { a5cInput.classList.add('incorrect'); }
+
+            // Aufgabe 6: MC Energiesparen (2 Punkte)
+            let punkte6 = 0;
+            const mc6Selected = [];
+            document.querySelectorAll('#mc6 .mc-option.selected').forEach(el => {
+                mc6Selected.push(el.querySelector('input').id);
+            });
+
+            // 2 Punkte / 2 richtige = 1.0 pro Treffer
+            loesungen.mc6.forEach(correct => {
+                if (mc6Selected.includes(correct)) punkte6 += 1.0;
+            });
+            mc6Selected.forEach(selected => {
+                if (!loesungen.mc6.includes(selected)) punkte6 -= 1.0;
+            });
+            punkte6 = Math.max(0, Math.min(2, Math.round(punkte6 * 10) / 10));
+
+            document.querySelectorAll('#mc6 .mc-option').forEach(el => {
+                const id = el.querySelector('input').id;
+                if (loesungen.mc6.includes(id)) {
+                    el.classList.add('correct');
+                } else if (el.classList.contains('selected')) {
+                    el.classList.add('incorrect');
+                }
+            });
+
+            // Gesamt
+            gesamtPunkte = punkte1 + punkte2 + punkte3 + punkte4 + punkte5 + punkte6;
+            gesamtPunkte = Math.round(gesamtPunkte * 10) / 10;
+
+            // Note berechnen (6-Noten-System)
+            let note;
+            const prozent = (gesamtPunkte / maxPunkte) * 100;
+            if (prozent >= 92) note = '1 (sehr gut)';
+            else if (prozent >= 81) note = '2 (gut)';
+            else if (prozent >= 67) note = '3 (befriedigend)';
+            else if (prozent >= 50) note = '4 (ausreichend)';
+            else if (prozent >= 30) note = '5 (mangelhaft)';
+            else note = '6 (ungenügend)';
+
+            // Ergebnis anzeigen
+            document.getElementById('ergebnisPunkte').textContent = `${gesamtPunkte}/${maxPunkte}`;
+            document.getElementById('ergebnisNote').textContent = note;
+            document.getElementById('punkte1').textContent = `${punkte1}/3`;
+            document.getElementById('punkte2').textContent = `${punkte2}/4`;
+            document.getElementById('punkte3').textContent = `${punkte3}/4`;
+            document.getElementById('punkte4').textContent = `${punkte4}/4`;
+            document.getElementById('punkte5').textContent = `${punkte5}/3`;
+            document.getElementById('punkte6').textContent = `${punkte6}/2`;
+            document.getElementById('ergebnisName').textContent = schuelerName;
+            document.getElementById('ergebnisZeit').textContent = new Date().toLocaleString('de-DE');
+
+            document.getElementById('abgabeContainer').style.display = 'none';
+            document.getElementById('ergebnisBox').classList.add('show');
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Ergebnis speichern (localStorage)
+            const ergebnis = {
+                name: schuelerName,
+                punkte: gesamtPunkte,
+                maxPunkte: maxPunkte,
+                note: note,
+                zeit: new Date().toISOString(),
+                details: { punkte1, punkte2, punkte3, punkte4, punkte5, punkte6 }
+            };
+            localStorage.setItem('mt04-stromkosten-' + schuelerName, JSON.stringify(ergebnis));
+        }
+    </script>
+</body>
+</html>
