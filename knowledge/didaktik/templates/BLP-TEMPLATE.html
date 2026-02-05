@@ -549,10 +549,12 @@
     <div class="step active" id="step0">
         <div class="login-box">
             <h2 style="color: var(--fach); margin-bottom: 10px;">Bewerteter Lernpfad</h2>
-            <p id="loginPlatz" style="font-size: 1.5em; font-weight: 700; color: var(--fach); margin: 15px 0;"></p>
-            <p id="loginError" style="color: var(--error); display: none;">Kein Platz zugewiesen. Bitte scanne den QR-Code auf deiner Platzkarte.</p>
-            <button class="btn" id="btnStart" style="display: none;" onclick="startLP()">Lernpfad starten</button>
-            <p class="hint">Jede markierte Antwort wird bewertet (<span id="hintBE">25</span> BE).</p>
+            <label for="platzSelect" style="font-size: 1.1em; font-weight: 600; display: block; margin: 15px 0 8px;">Platzkarten-Nummer:</label>
+            <select id="platzSelect" style="font-size: 1.3em; padding: 10px 16px; border: 2px solid var(--fach); border-radius: 4px; min-width: 140px; min-height: 44px; background: #fff;">
+                <option value="0">-- w&auml;hlen --</option>
+            </select>
+            <button class="btn" id="btnStart" style="margin-top: 15px;" onclick="startLP()">Lernpfad starten</button>
+            <p class="hint">W&auml;hle die Nummer deiner Platzkarte und best&auml;tige. (<span id="hintBE">25</span> BE)</p>
         </div>
     </div>
 
@@ -1604,8 +1606,16 @@ function getPlatzFromURL() {
 }
 
 function startLP() {
-    var platz = getPlatzFromURL();
-    if (!platz) return;
+    var sel = document.getElementById('platzSelect');
+    var platz = parseInt(sel.value);
+    if (!platz || platz < 1) {
+        alert('Bitte w\u00e4hle deine Platzkarten-Nummer!');
+        return;
+    }
+    // URL aktualisieren, damit sKey() auf Reload funktioniert
+    if (!getPlatzFromURL()) {
+        history.replaceState(null, '', window.location.pathname + '?p=' + platz);
+    }
 
     state.name = 'Platz ' + platz;
     state.seed = platz * 7919;  // Primzahl-basierter Seed aus Platznummer
@@ -1676,13 +1686,18 @@ window.onload = function() {
     var hintBE = document.getElementById('hintBE');
     if (hintBE) hintBE.textContent = TOTAL_BE;
 
-    // Platz aus URL lesen
-    var platz = getPlatzFromURL();
-    if (platz) {
-        document.getElementById('loginPlatz').textContent = 'Platz ' + platz;
-        document.getElementById('btnStart').style.display = '';
-    } else {
-        document.getElementById('loginError').style.display = 'block';
+    // Dropdown mit P1-P30 befüllen
+    var sel = document.getElementById('platzSelect');
+    for (var i = 1; i <= 30; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = 'P' + i;
+        sel.appendChild(opt);
+    }
+    // Vorauswahl aus URL (QR-Code)
+    var urlPlatz = getPlatzFromURL();
+    if (urlPlatz >= 1 && urlPlatz <= 30) {
+        sel.value = urlPlatz;
     }
 
     // Tab-Tracking
