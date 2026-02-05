@@ -2008,6 +2008,8 @@
         const stateCtx = stateCanvas.getContext('2d');
         let stateParticles = [];
         let currentState = 'fest';
+        // Sliding physics for solid block
+        let solidSlideX = 0, solidSlideVx = 0;
 
         const stateDescriptions = {
             fest: '<strong>Fester Zustand:</strong> Die Teilchen schwingen nur um ihre festen Plätze. Sie sind durch starke Bindungskräfte fest miteinander verbunden und bilden eine regelmäßige Struktur (Gitter).',
@@ -2037,6 +2039,7 @@
             const centerX = stateCanvas.width / 2;
             const centerY = stateCanvas.height / 2;
 
+            solidSlideX = 0; solidSlideVx = 0;
             if (state === 'fest') {
                 // Grid arrangement - particles nearly touching, sitting on bottom
                 const cols = 8, rows = 5;
@@ -2109,13 +2112,26 @@
                     });
                 });
 
-                // Oscillate around base position (with tilt offset)
-                let sox = 0, soy = 0;
-                if (DeviceSensor.active) { sox = DeviceSensor.gravityX * 30; soy = (DeviceSensor.gravityY - 0.5) * 30; }
+                // Solid block slides along bottom when tilted
+                if (DeviceSensor.active) {
+                    solidSlideVx += DeviceSensor.gravityX * 0.15; // tilt → acceleration
+                    solidSlideVx *= 0.96; // friction on surface
+                }
+                if (DeviceSensor.consumeShake('sim2-fest')) {
+                    solidSlideVx += (Math.random() - 0.5) * 6;
+                }
+                solidSlideX += solidSlideVx;
+                // Wall bounce
+                const blockHalfW = 4 * 23; // ~half the grid width
+                const minX = -stateCanvas.width / 2 + blockHalfW + 15;
+                const maxX = stateCanvas.width / 2 - blockHalfW - 15;
+                if (solidSlideX < minX) { solidSlideX = minX; solidSlideVx = -solidSlideVx * 0.3; }
+                if (solidSlideX > maxX) { solidSlideX = maxX; solidSlideVx = -solidSlideVx * 0.3; }
+
                 stateParticles.forEach(p => {
                     const time = Date.now() / 500;
-                    p.x = p.baseX + sox + Math.sin(time + p.baseX) * 3;
-                    p.y = p.baseY + soy + Math.cos(time + p.baseY) * 3;
+                    p.x = p.baseX + solidSlideX + Math.sin(time + p.baseX) * 3;
+                    p.y = p.baseY + Math.cos(time + p.baseY) * 3;
                     p.x = Math.max(p.r, Math.min(stateCanvas.width - p.r, p.x));
                     p.y = Math.max(p.r, Math.min(stateCanvas.height - p.r, p.y));
                 });
@@ -2143,8 +2159,8 @@
                 if (DeviceSensor.consumeShake('sim2')) {
                     stateParticles.forEach(p => { p.vx += (Math.random() - 0.5) * 6; p.vy += (Math.random() - 0.5) * 6; });
                 }
-                // Movement with gravity (liquid settles to bottom, takes container shape)
-                const gLiq = getSensorGravity(0.02);
+                // Movement with gravity (liquid settles to bottom, surface stays horizontal)
+                const gLiq = getSensorGravity(0.05);
                 stateParticles.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
