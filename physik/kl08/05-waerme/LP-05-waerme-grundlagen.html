@@ -1211,8 +1211,12 @@
 
                     <h3>Umrechnung (für Interessierte)</h3>
                     <div class="formel-box">
-                        <div class="formel"><span class="fz">ϑ</span><sub>F</sub> = <span class="fz">ϑ</span><sub>C</sub> × 1,8 + 32</div>
-                        <div class="erklaerung">Fahrenheit = Celsius × 1,8 + 32</div>
+                        <div class="formel"><span class="fz">ϑ</span><sub>F</sub> = <sup>9</sup>⁄<sub>5</sub> · <span class="fz">ϑ</span><sub>C</sub> + 32</div>
+                        <div class="erklaerung">Celsius → Fahrenheit</div>
+                    </div>
+                    <div class="formel-box" style="margin-top: 8px;">
+                        <div class="formel"><span class="fz">ϑ</span><sub>C</sub> = <sup>5</sup>⁄<sub>9</sub> · (<span class="fz">ϑ</span><sub>F</sub> − 32)</div>
+                        <div class="erklaerung">Fahrenheit → Celsius</div>
                     </div>
 
                     <div class="merke-box">
@@ -1366,9 +1370,9 @@
         </section>
 
         <!-- SECTION 8: Experiment - Erwärmungskurve -->
-        <section class="section" data-step="8" data-title="Experiment: Erwärmungskurve">
-            <div class="ew-label ew-experiment">Experiment</div>
-            <h2>8. Experiment: Die Erwärmungskurve</h2>
+        <section class="section" data-step="8" data-title="Simulationsexperiment: Erwärmungskurve">
+            <div class="ew-label ew-experiment">Simulationsexperiment</div>
+            <h2>8. Simulationsexperiment: Die Erwärmungskurve</h2>
 
             <p>Was passiert, wenn wir Eis von −20 °C langsam erhitzen — bis weit über 100 °C? In dieser Simulation beobachtest du den <strong>vollständigen Verlauf</strong> und notierst die Messwerte auf deinem Arbeitsblatt.</p>
 
@@ -1380,7 +1384,7 @@
                 <strong>Aufgabe 8 auf dem AB:</strong> Halte dein Arbeitsblatt bereit — notiere während der Simulation alle 30 Sekunden die Temperatur in die Tabelle und zeichne anschließend die Kurve ins Diagramm.
             </div>
 
-            <p>Die Simulation zeigt ein Becherglas mit Thermometer auf einer Heizplatte. Die Uhr läuft — alle 30 Sekunden erscheint ein Messpunkt im Diagramm. Vergleiche diese Werte mit deinen eigenen Messungen.</p>
+            <p>Die Simulation zeigt ein Becherglas mit Thermometer auf einer Heizplatte. Die Uhr läuft — alle 30 Sekunden erscheint ein Messpunkt im Diagramm.</p>
 
             <h3>Simulation 4: Erwärmungskurve von Wasser</h3>
 
@@ -2337,10 +2341,13 @@
                 const mp = (virtualTime - 30) / 90;
                 iFrac = 0.55 * (1 - mp);
                 wFrac = 0.15 + 0.50 * mp;
+            } else if (virtualTime <= 210) {
+                wFrac = 0.65;                         // Wasser erwärmt sich
             } else if (virtualTime <= 270) {
-                wFrac = 0.65;
+                const bp = (virtualTime - 210) / 60;  // 0→1 über Siede-Plateau
+                wFrac = 0.65 * (1 - bp);              // Wasser sinkt linear auf 0
             } else {
-                wFrac = 0.65 * (1 - ((virtualTime - 270) / 30) * 0.7);
+                wFrac = 0;                             // Alles verdampft
             }
 
             if (iFrac > 0) {
@@ -2415,13 +2422,15 @@
 
             if (virtualTime >= 30 && virtualTime < 120) {
                 const mp = (virtualTime - 30) / 90;
-                heatingParticles.forEach(p => {
-                    if (!p.melted && Math.random() < 0.001 + mp * 0.005) {
-                        p.melted = true;
-                        p.vx = (Math.random() - 0.5) * 0.3;
-                        p.vy = (Math.random() - 0.5) * 0.2;
-                    }
-                });
+                const targetMelted = Math.floor(mp * heatingParticles.length);
+                const unmelted = heatingParticles.filter(p => !p.melted);
+                const currentMelted = heatingParticles.length - unmelted.length;
+                if (currentMelted < targetMelted && unmelted.length > 0) {
+                    const p = unmelted[Math.floor(Math.random() * unmelted.length)];
+                    p.melted = true;
+                    p.vx = (Math.random() - 0.5) * 0.8;
+                    p.vy = (Math.random() - 0.5) * 0.5;
+                }
             } else if (virtualTime >= 120) {
                 heatingParticles.forEach(p => { p.melted = true; });
             }
@@ -2441,7 +2450,8 @@
 
             // Bonds
             if (virtualTime < 120) {
-                const bo = virtualTime < 30 ? 0.4 : 0.4 * (1 - (virtualTime - 30) / 90);
+                const solidCount = heatingParticles.filter(p => !p.melted).length;
+                const bo = virtualTime < 30 ? 0.4 : 0.4 * (solidCount / heatingParticles.length);
                 if (bo > 0.01) {
                     heatingCtx.strokeStyle = 'rgba(230,130,0,' + bo + ')';
                     heatingCtx.lineWidth = 1.5;
@@ -2626,18 +2636,18 @@
             }
             heatingCtx.stroke();
 
-            // 30 s measurement dots
+            // 30 s measurement crosses
             let lastLabel = null;
             for (let s = 0; s <= 300; s += 30) {
                 if (s > virtualTime) break;
                 const mTemp = getTemperatureAtTime(s);
                 const mx = s2x(s), my = t2y(mTemp);
+                const cs = 5; // cross half-size
+                heatingCtx.strokeStyle = '#d32f2f';
+                heatingCtx.lineWidth = 2.5;
                 heatingCtx.beginPath();
-                heatingCtx.arc(mx, my, 4, 0, Math.PI * 2);
-                heatingCtx.fillStyle = '#d32f2f';
-                heatingCtx.fill();
-                heatingCtx.strokeStyle = '#fff';
-                heatingCtx.lineWidth = 1.5;
+                heatingCtx.moveTo(mx - cs, my); heatingCtx.lineTo(mx + cs, my);
+                heatingCtx.moveTo(mx, my - cs); heatingCtx.lineTo(mx, my + cs);
                 heatingCtx.stroke();
                 const rd = Math.round(mTemp);
                 if (rd !== lastLabel) {
@@ -2918,66 +2928,6 @@
 
         // ========== MEASUREMENT TABLES ==========
 
-        // --- Temperature measurement table (Section 4) ---
-        function saveTempMeasurement(el) {
-            const row = el.dataset.row;
-            const col = el.dataset.col;
-            localStorage.setItem(LS_PREFIX + '-temp-' + row + '-' + col, el.value);
-        }
-
-        function loadTempMeasurements() {
-            document.querySelectorAll('#tempMeasurements select[data-row]').forEach(sel => {
-                const saved = localStorage.getItem(LS_PREFIX + '-temp-' + sel.dataset.row + '-' + sel.dataset.col);
-                if (saved) sel.value = saved;
-            });
-        }
-
-        function checkTempMeasurements() {
-            // Expected: speed + trail increase with temperature
-            const expected = [
-                { speed: 'sehr langsam', trail: 'nein' },       // -50°C
-                { speed: 'langsam', trail: 'kaum' },            // 0°C
-                { speed: 'mittel', trail: 'ja' },               // 50°C
-                { speed: 'schnell', trail: 'ja' },              // 100°C
-                { speed: 'sehr schnell', trail: 'stark' }       // 150°C
-            ];
-
-            let correct = 0;
-            let total = 0;
-            const rows = document.querySelectorAll('#tempMeasurements tbody tr');
-
-            rows.forEach((row, i) => {
-                const selects = row.querySelectorAll('select');
-                selects.forEach(sel => {
-                    const col = sel.dataset.col;
-                    const cell = sel.closest('td');
-                    cell.classList.remove('correct-cell', 'incorrect-cell');
-
-                    if (sel.value) {
-                        total++;
-                        if (sel.value === expected[i][col]) {
-                            correct++;
-                            cell.classList.add('correct-cell');
-                        } else {
-                            cell.classList.add('incorrect-cell');
-                        }
-                    }
-                });
-            });
-
-            const feedback = document.getElementById('tempMeasurementFeedback');
-            if (total === 0) {
-                feedback.className = 'quiz-feedback show incorrect';
-                feedback.innerHTML = 'Bitte fülle zuerst die Tabelle aus!';
-            } else if (correct === total) {
-                feedback.className = 'quiz-feedback show correct';
-                feedback.innerHTML = '<strong>Sehr gut!</strong> Alle Beobachtungen stimmen. Je höher die Temperatur, desto schneller bewegen sich die Teilchen und desto deutlicher sind ihre Bewegungsspuren!';
-            } else {
-                feedback.className = 'quiz-feedback show incorrect';
-                feedback.innerHTML = '<strong>' + correct + ' von ' + total + ' richtig.</strong> Schau dir die rot markierten Felder noch einmal an. Tipp: Stelle den Temperaturregler auf den jeweiligen Wert und beobachte genau.';
-            }
-        }
-
         // --- Heating curve measurement table (Section 9) ---
         function saveHeatingMeasurement(el) {
             const row = el.dataset.row;
@@ -3103,7 +3053,6 @@
 
             // Restore saved predictions and measurements
             loadPredictions();
-            loadTempMeasurements();
             loadHeatingMeasurements();
         });
 
