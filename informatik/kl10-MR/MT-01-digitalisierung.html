@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minitest: Chancen und Risiken der Digitalisierung</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER (Informatik = Orange) === */
+        header {
+            background: #b35c00;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 150px; }
+
+        /* === SZENARIO-BOX === */
+        .scenario-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .scenario-box h3 {
+            color: #b35c00;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+        .scenario-box p {
+            font-style: italic;
+            font-size: 0.95em;
+        }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #b35c00; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-afb { padding: 2px 8px; font-size: 0.75em; font-weight: 600; border-radius: 3px; background: #f0f0f0; color: #666; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #b35c00; }
+        .option.selected { background: #fff3e0; border-color: #b35c00; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* Multi-Select */
+        .multi-select .option { position: relative; padding-left: 40px; }
+        .multi-select .option:before { content: ""; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border: 2px solid #888; background: white; }
+        .multi-select .option.selected:before { background: #b35c00; border-color: #b35c00; }
+        .multi-select .option.selected:after { content: "\2713"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
+
+        /* Lückentext Dropdown */
+        .luecke-select {
+            padding: 4px 8px;
+            font-size: 0.95em;
+            border: 2px solid #b35c00;
+            background: #fffbf5;
+            min-width: 140px;
+            margin: 0 3px;
+        }
+        select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        /* C/R Tabelle */
+        .cr-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .cr-table th, .cr-table td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
+        .cr-table th { background: #b35c00; color: white; text-align: center; }
+        .cr-table td:first-child { width: 70%; }
+        .cr-table td:last-child { text-align: center; }
+        .cr-table .cr-option { padding: 8px 12px; margin: 0 3px; cursor: pointer; border: 1px solid #ddd; background: #fafafa; display: inline-block; }
+        .cr-table .cr-option:hover { background: #f0f4f8; }
+        .cr-table .cr-option.selected { background: #fff3e0; border-color: #b35c00; font-weight: 600; }
+        .cr-table .cr-option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .cr-table .cr-option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        /* Phishing E-Mail */
+        .email-box {
+            background: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: "Courier New", monospace;
+            font-size: 0.9em;
+        }
+        .email-box .email-header { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; }
+        .email-box .email-field { margin: 3px 0; }
+        .email-box .email-field strong { color: #666; }
+        .email-box .email-body { line-height: 1.6; }
+
+        /* Freitext */
+        .freitext { width: 100%; min-height: 80px; padding: 10px; font-family: inherit; font-size: 0.95em; border: 1px solid #ddd; resize: vertical; }
+        .freitext:focus { border-color: #b35c00; outline: none; }
+
+        /* Variante-Auswahl */
+        .variante-choice { background: #f5f5f5; padding: 15px; margin: 15px 0; border: 1px solid #ddd; }
+        .variante-choice h4 { color: #b35c00; margin-bottom: 10px; }
+        .variante-btn { padding: 10px 20px; margin: 5px; cursor: pointer; border: 2px solid #b35c00; background: white; font-size: 0.95em; }
+        .variante-btn:hover { background: #fff3e0; }
+        .variante-btn.selected { background: #b35c00; color: white; }
+        .variante-content { display: none; margin-top: 15px; }
+        .variante-content.active { display: block; }
+
+        /* Strukturierte Eingabe */
+        .struktur-feld { margin: 12px 0; }
+        .struktur-label { font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+
+        /* Musterlösung */
+        .musterloesung {
+            background: #e3f2fd;
+            border: 2px solid #2c5aa0;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .musterloesung.show { display: block; }
+        .musterloesung h4 { color: #2c5aa0; margin-bottom: 8px; font-size: 0.95em; }
+        .musterloesung ul { margin-left: 20px; }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #b35c00; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #8a4700; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        button.btn-success { background: #2a7a4b; }
+        .results { background: white; border: 2px solid #b35c00; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #b35c00; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #b35c00; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.85em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 6px 10px; text-align: center; }
+        .grade-table th { background: #b35c00; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .hidden { display: none; }
+
+        /* === PLATZ-FELD === */
+        .seat-field { padding: 15px; background: #fff; border: 1px solid #ddd; margin: 15px 0; }
+        #seatWarning { background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00; }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container, .seat-field { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Minitest: Chancen und Risiken der Digitalisierung</h1>
+        <div class="header-info">
+            <div class="meta">Informatik 10MR | ca. 28 Minuten | 60 BE</div>
+        </div>
+    </header>
+
+    <!-- PLATZ-AUSWAHL -->
+    <div class="container">
+        <div class="seat-field">
+            <label style="font-weight: 600; font-size: 0.9em; color: #b35c00; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #b35c00; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Platznummer wählen...</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst deine Platznummer</strong>, um die Aufgaben anzuzeigen.
+        </div>
+
+        <!-- FRAGEN-CONTAINER -->
+        <div id="questionsContainer">
+
+        <!-- SZENARIO -->
+        <div class="scenario-box">
+            <h3>Einstiegsszenario: Die Familie</h3>
+            <p>Lena (15) scrollt abends durch TikTok und bestellt später Schuhe online mit PayPal. Ihr Bruder Max (17) gibt jeden Monat 20€ in Clash Royale aus. Ihre Oma Helga (72) hat gerade ihre elektronische Patientenakte eingerichtet und ist unsicher, ob das eine gute Idee war.</p>
+        </div>
+
+        <!-- AUFGABE 1: Lückentext (5 BE) -->
+        <div class="question" id="q1" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 1: Lückentext</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB I</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p><strong>Wortbank:</strong> <em>Algorithmus, Cloud, Datenschutz, Filterblase, Hashtag, Mikrotransaktion, Phishing, Streaming</em></p>
+                <p style="margin-top:15px;">Ergänze die Lücken mit den passenden Begriffen:</p>
+            </div>
+            <div style="line-height: 2.2; margin-top: 10px;">
+                <p>Lena öffnet TikTok. Ein
+                    <select id="q1-1" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    analysiert ihr Verhalten und zeigt ihr immer ähnlichere Videos. So entsteht eine
+                    <select id="q1-2" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    , in der sie andere Meinungen kaum noch sieht.
+                </p>
+                <p>Später hört sie Musik über
+                    <select id="q1-3" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    – die Songs werden direkt abgespielt, ohne sie herunterzuladen.
+                </p>
+                <p>Als sie eine verdächtige E-Mail bekommt, erkennt sie den Betrugsversuch als
+                    <select id="q1-4" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    .
+                </p>
+                <p>Ihr Bruder Max kauft im Spiel kleine Extras – sogenannte
+                    <select id="q1-5" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    .
+                </p>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Alle Begriffe richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Nicht alle Lücken sind korrekt. Die richtigen Antworten: Algorithmus, Filterblase, Streaming, Phishing, Mikrotransaktion.</div>
+        </div>
+
+        <!-- AUFGABE 2: Zuordnung (5 BE) -->
+        <div class="question" id="q2" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 2: Dienste zuordnen</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB I</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Ordne jeder Beschreibung den passenden Dienst zu:</p>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Kurzvideos im vertikalen Format, personalisierter ‚Für Dich'-Feed, gehört zu ByteDance"</span>
+                    <select id="q2-1" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Server mit verschiedenen Channels, Text- und Sprachchat, beliebt bei Gamern"</span>
+                    <select id="q2-2" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Digitale Gesundheitsakte mit Befunden, Röntgenbildern und Impfungen, seit 2021"</span>
+                    <select id="q2-3" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Online-Bezahldienst mit Käuferschutz, keine IBAN-Eingabe nötig, gehört zu keiner Bank"</span>
+                    <select id="q2-4" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Musik-Streaming mit über 100 Mio. Songs, gegründet 2006 in Schweden"</span>
+                    <select id="q2-5" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Alle Dienste richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Nicht alle Zuordnungen sind korrekt. Die richtigen Antworten: TikTok, Discord, ePA, PayPal, Spotify.</div>
+        </div>
+
+        <!-- AUFGABE 3: Chance oder Risiko? - Gegenüberstellung (6 BE) -->
+        <div class="question" id="q3" data-points="6">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 3: Chance oder Risiko?</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">6 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Jedes Paar zeigt zwei ähnliche Situationen aus dem gleichen Bereich. <strong>Eine ist eine Chance (C), die andere ein Risiko (R).</strong></p>
+                <p style="margin-top:8px; font-size:0.9em; color:#555;">Lies genau – der Unterschied steckt im Detail!</p>
+            </div>
+
+            <!-- Paar 1: Gesundheitsdaten -->
+            <div class="pair-box" style="background:#fafafa; border:1px solid #ddd; padding:15px; margin:15px 0;">
+                <div style="font-weight:600; color:#b35c00; margin-bottom:10px;">Paar 1: Gesundheitsdaten</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>A:</strong> Oma Helgas Smartwatch erkennt einen unregelmäßigen Herzschlag und alarmiert automatisch den Notarzt.
+                        </td>
+                        <td style="width:70px; text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-1a" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>B:</strong> Oma Helgas Krankenversicherung erhöht ihren Beitrag, weil ihre Smartwatch zeigt, dass sie sich wenig bewegt.
+                        </td>
+                        <td style="text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-1b" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Paar 2: Algorithmen -->
+            <div class="pair-box" style="background:#fafafa; border:1px solid #ddd; padding:15px; margin:15px 0;">
+                <div style="font-weight:600; color:#b35c00; margin-bottom:10px;">Paar 2: Algorithmen</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>A:</strong> Eine Lern-App passt die Übungsaufgaben automatisch an Lenas Stärken und Schwächen an.
+                        </td>
+                        <td style="width:70px; text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-2a" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>B:</strong> Ein Bewerbungs-Algorithmus sortiert Lenas Unterlagen aus, weil sie aus einem bestimmten Stadtteil kommt.
+                        </td>
+                        <td style="text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-2b" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Paar 3: Standortdaten -->
+            <div class="pair-box" style="background:#fafafa; border:1px solid #ddd; padding:15px; margin:15px 0;">
+                <div style="font-weight:600; color:#b35c00; margin-bottom:10px;">Paar 3: Standortdaten</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>A:</strong> Max' Eltern können ihn über sein Handy orten, als er sich beim Wandern verirrt.
+                        </td>
+                        <td style="width:70px; text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-3a" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>B:</strong> Eine App verkauft Max' Standortdaten an Werbeunternehmen – ohne dass er davon weiß.
+                        </td>
+                        <td style="text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-3b" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Paar 4: Online-Vernetzung -->
+            <div class="pair-box" style="background:#fafafa; border:1px solid #ddd; padding:15px; margin:15px 0;">
+                <div style="font-weight:600; color:#b35c00; margin-bottom:10px;">Paar 4: Online-Vernetzung</div>
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>A:</strong> Lena findet über eine Online-Community andere Jugendliche mit dem gleichen seltenen Hobby.
+                        </td>
+                        <td style="width:70px; text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-4a" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:10px; border:1px solid #ddd; vertical-align:top;">
+                            <strong>B:</strong> Lena sieht auf Social Media nur noch Inhalte, die ihre bestehende Meinung bestätigen.
+                        </td>
+                        <td style="text-align:center; vertical-align:middle; border:1px solid #ddd;">
+                            <select id="q3-4b" class="luecke-select" style="width:auto; min-width:90px;">
+                                <option value="">–</option>
+                                <option value="C">Chance</option>
+                                <option value="R">Risiko</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="feedback-box correct" id="q3-fb-correct">Alle Paare richtig! Du hast erkannt, dass dieselbe Technologie je nach Anwendung Chance oder Risiko sein kann.</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Nicht alle Zuordnungen korrekt. Tipp: Achte auf Schlüsselwörter wie „ohne dass er weiß", „alarmiert Notarzt" oder „sortiert aus".</div>
+        </div>
+
+        <!-- AUFGABE 4: Phishing-Situation (3 BE) -->
+        <div class="question" id="q4" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 4: Phishing erkennen</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Lena erhält folgende E-Mail:</p>
+            </div>
+            <div class="email-box">
+                <div class="email-header">
+                    <div class="email-field"><strong>Von:</strong> service@paypa1.com</div>
+                    <div class="email-field"><strong>Betreff:</strong> Ungewöhnliche Aktivität festgestellt</div>
+                </div>
+                <div class="email-body">
+                    <p>Sehr geehrte Kundin,</p>
+                    <p>wir haben eine Anmeldung aus einem anderen Land bemerkt. Falls Sie das nicht waren, bestätigen Sie bitte Ihre Identität über den sicheren Link unten.</p>
+                    <p>Mit freundlichen Grüßen,<br>Ihr PayPal-Sicherheitsteam</p>
+                </div>
+            </div>
+
+            <p style="margin-top:15px;"><strong>a) Was ist hier passiert? (1 BE)</strong></p>
+            <div class="options" id="q4a-options">
+                <label class="option" data-value="a"><input type="radio" name="q4a" value="a">Lenas Konto wurde wirklich aus dem Ausland gehackt</label>
+                <label class="option" data-value="b"><input type="radio" name="q4a" value="b">Es handelt sich um Phishing – die E-Mail ist gefälscht</label>
+                <label class="option" data-value="c"><input type="radio" name="q4a" value="c">PayPal prüft routinemäßig alle Konten</label>
+                <label class="option" data-value="d"><input type="radio" name="q4a" value="d">Lenas Computer hat einen Virus bekommen</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Welche zwei Reaktionen sind richtig? (2 BE)</strong></p>
+            <div class="options multi-select" id="q4b-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q4b" value="a">Schnell auf den Link klicken, bevor das Konto gesperrt wird</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q4b" value="b">Die E-Mail löschen und paypal.com direkt im Browser eingeben</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q4b" value="c">Die Daten eingeben, um zu prüfen ob es echt ist</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q4b" value="d">Den Absender genau prüfen (hier: paypa1.com statt paypal.com)</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q4b" value="e">Den Link in einem privaten Browser-Tab öffnen</label>
+                <label class="option" data-value="f"><input type="checkbox" name="q4b" value="f">Antworten und fragen, ob die E-Mail echt ist</label>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! Der Absender "paypa1.com" (mit 1 statt l) verrät die Fälschung. Immer direkt die echte Website aufrufen!</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">a) Richtig: Phishing. b) Richtig: E-Mail löschen + direkt auf paypal.com gehen UND Absender prüfen. Ein privater Tab schützt NICHT vor Phishing!</div>
+        </div>
+
+        <!-- AUFGABE 5: Gaming-Fallanalyse (4 BE) -->
+        <div class="question" id="q5" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 5: Gaming-Fallanalyse</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Max gibt jeden Monat 20€ in Clash Royale aus, um bessere Karten zu bekommen. Er sagt: „Ohne die Käufe gewinne ich nie gegen andere."</p>
+            </div>
+
+            <p style="margin-top:15px;"><strong>a) Welcher Fachbegriff beschreibt dieses Spielprinzip? (1 BE)</strong></p>
+            <div class="options" id="q5a-options">
+                <label class="option" data-value="a"><input type="radio" name="q5a" value="a">Free-to-Play</label>
+                <label class="option" data-value="b"><input type="radio" name="q5a" value="b">Pay-to-Win</label>
+                <label class="option" data-value="c"><input type="radio" name="q5a" value="c">Lootbox</label>
+                <label class="option" data-value="d"><input type="radio" name="q5a" value="d">Season Pass</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Welches Risiko entsteht durch Max' Verhalten? (1 BE)</strong></p>
+            <div class="options" id="q5b-options">
+                <label class="option" data-value="a"><input type="radio" name="q5b" value="a">Das Spiel wird langweilig</label>
+                <label class="option" data-value="b"><input type="radio" name="q5b" value="b">Die Kosten summieren sich (240€/Jahr!)</label>
+                <label class="option" data-value="c"><input type="radio" name="q5b" value="c">Seine Freunde spielen nicht mehr mit ihm</label>
+                <label class="option" data-value="d"><input type="radio" name="q5b" value="d">Der Akku seines Handys wird schneller leer</label>
+            </div>
+
+            <p style="margin-top:15px;"><strong>c) Welche zwei Tipps helfen Max am besten? (2 BE)</strong></p>
+            <div class="options multi-select" id="q5c-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q5c" value="a">Einfach aufhören zu spielen</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q5c" value="b">Monatliches Budget festlegen und einhalten</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q5c" value="c">Mehr Geld von den Eltern verlangen</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q5c" value="d">Vor jedem Kauf 24 Stunden warten</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q5c" value="e">Einen Kredit aufnehmen</label>
+            </div>
+
+            <div class="feedback-box correct" id="q5-fb-correct">Alles richtig! Pay-to-Win, Kostenrisiko erkannt, und sinnvolle Tipps gewählt.</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">a) Pay-to-Win. b) Kosten summieren sich. c) Budget festlegen + vor Kauf warten.</div>
+        </div>
+
+        <!-- AUFGABE 6: ePA Pro/Contra (7 BE) -->
+        <div class="question" id="q6" data-points="7">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 6: Die elektronische Patientenakte (ePA)</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II/III</span>
+                    <span class="question-points">7 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Oma Helga fragt: „Ist die elektronische Patientenakte gut für mich?"</p>
+            </div>
+
+            <p style="margin-top:15px;"><strong>a) Welche Aussagen sind Vorteile (PRO) der ePA? Wähle alle richtigen. (3 BE)</strong></p>
+            <div class="options multi-select" id="q6a-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q6a" value="a">Im Notfall haben Ärzte sofort Zugriff auf alle Befunde</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q6a" value="b">Sensible Gesundheitsdaten könnten gehackt werden</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q6a" value="c">Doppeluntersuchungen werden vermieden</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q6a" value="d">Nicht alle Arztpraxen nutzen das System</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q6a" value="e">Medikamentenwechselwirkungen können erkannt werden</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Welche Aussagen sind Nachteile (CONTRA) der ePA? Wähle alle richtigen. (2 BE)</strong></p>
+            <div class="options multi-select" id="q6b-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q6b" value="a">Allergien und Medikamente sind im Notfall sofort sichtbar</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q6b" value="b">Hackerangriffe auf Gesundheitsdaten sind möglich</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q6b" value="c">Technische Probleme können den Zugriff verhindern</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q6b" value="d">Ärzte können schneller die richtige Diagnose stellen</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>c) Was ist die beste Empfehlung für Oma Helga (72, mehrere Ärzte)? (2 BE)</strong></p>
+            <div class="options" id="q6c-options">
+                <label class="option" data-value="a"><input type="radio" name="q6c" value="a">Auf keinen Fall nutzen – viel zu gefährlich!</label>
+                <label class="option" data-value="b"><input type="radio" name="q6c" value="b">Sofort alle Daten freigeben – Ärzte wissen am besten</label>
+                <label class="option" data-value="c"><input type="radio" name="q6c" value="c">Nutzen, aber bewusst entscheiden, welche Daten sie freigibt</label>
+                <label class="option" data-value="d"><input type="radio" name="q6c" value="d">Abwarten, bis alle Probleme gelöst sind</label>
+            </div>
+
+            <div class="feedback-box correct" id="q6-fb-correct">Sehr gut! Du hast Pro und Contra richtig erkannt und eine ausgewogene Empfehlung gewählt.</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">a) PRO: Notfall-Zugriff, keine Doppeluntersuchungen, Wechselwirkungen erkennen. b) CONTRA: Hackerangriffe, Technikprobleme. c) Beste Empfehlung: Nutzen mit bewusster Datenfreigabe.</div>
+        </div>
+
+        <!-- AUFGABE 7: Bereiche der Digitalisierung (5 BE) -->
+        <div class="question" id="q7" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 7: Bereiche der Digitalisierung</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB I</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Ordne jedes Beispiel dem passenden Bereich zu:</p>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:250px;">Spotify</span>
+                    <select id="q7-1" class="luecke-select" style="min-width:180px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Kommunikation">Kommunikation</option>
+                        <option value="Konsum">Konsum</option>
+                        <option value="Gesundheit">Gesundheit</option>
+                        <option value="Arbeit">Arbeit/Wirtschaft</option>
+                        <option value="Bildung">Bildung</option>
+                        <option value="Freizeit">Freizeit/Gaming</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:250px;">Tablets im Unterricht</span>
+                    <select id="q7-2" class="luecke-select" style="min-width:180px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Kommunikation">Kommunikation</option>
+                        <option value="Konsum">Konsum</option>
+                        <option value="Gesundheit">Gesundheit</option>
+                        <option value="Arbeit">Arbeit/Wirtschaft</option>
+                        <option value="Bildung">Bildung</option>
+                        <option value="Freizeit">Freizeit/Gaming</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:250px;">Clash Royale</span>
+                    <select id="q7-3" class="luecke-select" style="min-width:180px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Kommunikation">Kommunikation</option>
+                        <option value="Konsum">Konsum</option>
+                        <option value="Gesundheit">Gesundheit</option>
+                        <option value="Arbeit">Arbeit/Wirtschaft</option>
+                        <option value="Bildung">Bildung</option>
+                        <option value="Freizeit">Freizeit/Gaming</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:250px;">GPS-Lenksysteme in Traktoren</span>
+                    <select id="q7-4" class="luecke-select" style="min-width:180px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Kommunikation">Kommunikation</option>
+                        <option value="Konsum">Konsum</option>
+                        <option value="Gesundheit">Gesundheit</option>
+                        <option value="Arbeit">Arbeit/Wirtschaft</option>
+                        <option value="Bildung">Bildung</option>
+                        <option value="Freizeit">Freizeit/Gaming</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:250px;">WhatsApp-Gruppenchat</span>
+                    <select id="q7-5" class="luecke-select" style="min-width:180px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Kommunikation">Kommunikation</option>
+                        <option value="Konsum">Konsum</option>
+                        <option value="Gesundheit">Gesundheit</option>
+                        <option value="Arbeit">Arbeit/Wirtschaft</option>
+                        <option value="Bildung">Bildung</option>
+                        <option value="Freizeit">Freizeit/Gaming</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">Alle Bereiche richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">Richtige Zuordnung: Spotify→Konsum, Tablets→Bildung, Clash Royale→Freizeit/Gaming, GPS→Arbeit/Wirtschaft, WhatsApp→Kommunikation.</div>
+        </div>
+
+        <!-- AUFGABE 8: Risiken zuordnen (4 BE) -->
+        <div class="question" id="q8" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 8: Risiken zuordnen</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Ordne jedes Beispiel dem passenden Risiko zu:</p>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Screenshots werden ohne Erlaubnis weitergeleitet"</span>
+                    <select id="q8-1" class="luecke-select" style="min-width:150px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Cybermobbing">Cybermobbing</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Pay-to-Win">Pay-to-Win</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Sucht">Suchtgefahr</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Ein Klick auf den Link führt zum Datenklau"</span>
+                    <select id="q8-2" class="luecke-select" style="min-width:150px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Cybermobbing">Cybermobbing</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Pay-to-Win">Pay-to-Win</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Sucht">Suchtgefahr</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Spieler mit Käufen gewinnen gegen andere"</span>
+                    <select id="q8-3" class="luecke-select" style="min-width:150px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Cybermobbing">Cybermobbing</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Pay-to-Win">Pay-to-Win</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Sucht">Suchtgefahr</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Die App speichert meinen Standort ohne zu fragen"</span>
+                    <select id="q8-4" class="luecke-select" style="min-width:150px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Cybermobbing">Cybermobbing</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Pay-to-Win">Pay-to-Win</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Sucht">Suchtgefahr</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">Alle Risiken richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Richtige Zuordnung: Screenshots→Cybermobbing, Link→Phishing, Käufe→Pay-to-Win, Standort→Datenschutz.</div>
+        </div>
+
+        <!-- AUFGABE 9: Plattform-Wissen (5 BE) -->
+        <div class="question" id="q9" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 9: Plattform-Wissen</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB I/II</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+
+            <p><strong>a) Welche Plattform gehört NICHT zu Meta? (1 BE)</strong></p>
+            <div class="options" id="q9a-options">
+                <label class="option" data-value="a"><input type="radio" name="q9a" value="a">WhatsApp</label>
+                <label class="option" data-value="b"><input type="radio" name="q9a" value="b">Instagram</label>
+                <label class="option" data-value="c"><input type="radio" name="q9a" value="c">TikTok</label>
+                <label class="option" data-value="d"><input type="radio" name="q9a" value="d">Facebook</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Was ist typisch für Discord? (1 BE)</strong></p>
+            <div class="options" id="q9b-options">
+                <label class="option" data-value="a"><input type="radio" name="q9b" value="a">Stories und Reels</label>
+                <label class="option" data-value="b"><input type="radio" name="q9b" value="b">Server mit verschiedenen Channels</label>
+                <label class="option" data-value="c"><input type="radio" name="q9b" value="c">Videos von 15-60 Sekunden</label>
+                <label class="option" data-value="d"><input type="radio" name="q9b" value="d">Personalisierte „Für Dich"-Seite</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>c) Was bedeutet „Filterblase"? (1 BE)</strong></p>
+            <div class="options" id="q9c-options">
+                <label class="option" data-value="a"><input type="radio" name="q9c" value="a">Ein Spam-Filter für E-Mails</label>
+                <label class="option" data-value="b"><input type="radio" name="q9c" value="b">Man sieht nur Inhalte, die eigene Meinungen bestätigen</label>
+                <label class="option" data-value="c"><input type="radio" name="q9c" value="c">Ein Bildbearbeitungs-Filter</label>
+                <label class="option" data-value="d"><input type="radio" name="q9c" value="d">Ein Schutz vor Fake News</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>d) Plattform erkennen: (2 BE)</strong></p>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:380px;">„Kurzvideos, chinesischer Anbieter ByteDance, personalisierter Feed"</span>
+                    <select id="q9d-1" class="luecke-select" style="min-width:130px;">
+                        <option value="">-- wählen --</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Discord">Discord</option>
+                        <option value="Instagram">Instagram</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:380px;">„Gamer-Community, Server, Text- und Sprachchat"</span>
+                    <select id="q9d-2" class="luecke-select" style="min-width:130px;">
+                        <option value="">-- wählen --</option>
+                        <option value="WhatsApp">WhatsApp</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Discord">Discord</option>
+                        <option value="Instagram">Instagram</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q9-fb-correct">Alle Plattform-Fragen richtig!</div>
+            <div class="feedback-box incorrect" id="q9-fb-incorrect">a) TikTok (gehört zu ByteDance), b) Server mit Channels, c) Inhalte bestätigen eigene Meinung, d) TikTok + Discord.</div>
+        </div>
+
+        <!-- AUFGABE 10: Online-Shopping (4 BE) -->
+        <div class="question" id="q10" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 10: Online-Shopping</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+
+            <p><strong>a) Welche sind Vorteile von Online-Shopping? Wähle alle richtigen. (2 BE)</strong></p>
+            <div class="options multi-select" id="q10a-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q10a" value="a">24 Stunden verfügbar, keine Öffnungszeiten</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q10a" value="b">Qualität unsicher, da man nichts anfassen kann</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q10a" value="c">Große Auswahl und einfacher Preisvergleich</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q10a" value="d">Betrugsrisiko durch Fakeshops</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q10a" value="e">Kundenbewertungen anderer Käufer lesen</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Welche sind Nachteile von Online-Shopping? Wähle alle richtigen. (2 BE)</strong></p>
+            <div class="options multi-select" id="q10b-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q10b" value="a">Lieferung direkt nach Hause</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q10b" value="b">Keine persönliche Beratung</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q10b" value="c">Umweltbelastung durch Retouren und Verpackung</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q10b" value="d">Viele Rabattaktionen</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q10b" value="e">Lokale Geschäfte leiden unter Konkurrenz</label>
+            </div>
+
+            <div class="feedback-box correct" id="q10-fb-correct">Vorteile und Nachteile richtig erkannt!</div>
+            <div class="feedback-box incorrect" id="q10-fb-incorrect">Vorteile: 24h verfügbar, große Auswahl, Bewertungen. Nachteile: keine Beratung, Umweltbelastung, lokale Geschäfte leiden.</div>
+        </div>
+
+        <!-- AUFGABE 11: Datensammlung (4 BE) -->
+        <div class="question" id="q11" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 11: Datensammlung & Datenschutz</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+
+            <p><strong>a) Welche Daten sammeln Social-Media-Apps wie TikTok typischerweise? (2 BE)</strong></p>
+            <div class="options multi-select" id="q11a-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q11a" value="a">Standort (GPS)</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q11a" value="b">Meine Schulnoten</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q11a" value="c">Verweildauer bei Videos</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q11a" value="d">Welche Videos ich like</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q11a" value="e">Name meiner Großeltern</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Was ist ein Risiko, wenn Apps viele persönliche Daten sammeln? (2 BE)</strong></p>
+            <div class="options" id="q11b-options">
+                <label class="option" data-value="a"><input type="radio" name="q11b" value="a">Die App wird schneller</label>
+                <label class="option" data-value="b"><input type="radio" name="q11b" value="b">Daten können missbraucht oder verkauft werden</label>
+                <label class="option" data-value="c"><input type="radio" name="q11b" value="c">Man bekommt weniger Werbung</label>
+                <label class="option" data-value="d"><input type="radio" name="q11b" value="d">Das Handy braucht weniger Akku</label>
+            </div>
+
+            <div class="feedback-box correct" id="q11-fb-correct">Richtig! Apps sammeln Standort, Verweildauer und Likes – diese Daten können missbraucht werden.</div>
+            <div class="feedback-box incorrect" id="q11-fb-incorrect">a) Standort, Verweildauer, Likes werden gesammelt. b) Daten können missbraucht/verkauft werden.</div>
+        </div>
+
+        <!-- AUFGABE 12: Suchtgefahr (4 BE) -->
+        <div class="question" id="q12" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 12: Suchtgefahr & Tipps</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II/III</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+
+            <p><strong>a) Was macht Apps wie TikTok oder YouTube Shorts „süchtig machend"? (1 BE)</strong></p>
+            <div class="options" id="q12a-options">
+                <label class="option" data-value="a"><input type="radio" name="q12a" value="a">Die Videos sind zu lang</label>
+                <label class="option" data-value="b"><input type="radio" name="q12a" value="b">Kurze Videos und endloses Scrollen ohne Ende</label>
+                <label class="option" data-value="c"><input type="radio" name="q12a" value="c">Man muss für jedes Video bezahlen</label>
+                <label class="option" data-value="d"><input type="radio" name="q12a" value="d">Die Videos haben keine Musik</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Welche Tipps helfen gegen zu viel Bildschirmzeit? Wähle alle sinnvollen. (2 BE)</strong></p>
+            <div class="options multi-select" id="q12b-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q12b" value="a">Zeitlimit in den Einstellungen aktivieren</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q12b" value="b">Noch mehr Apps installieren</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q12b" value="c">Handy nachts außerhalb des Schlafzimmers laden</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q12b" value="d">Benachrichtigungen ausschalten</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q12b" value="e">Bildschirmzeit ignorieren</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>c) Welches Problem entsteht durch zu viel Bildschirmzeit? (1 BE)</strong></p>
+            <div class="options" id="q12c-options">
+                <label class="option" data-value="a"><input type="radio" name="q12c" value="a">Bessere Schulnoten</label>
+                <label class="option" data-value="b"><input type="radio" name="q12c" value="b">Weniger Schlaf und Konzentrationsprobleme</label>
+                <label class="option" data-value="c"><input type="radio" name="q12c" value="c">Mehr Zeit für Hobbys</label>
+                <label class="option" data-value="d"><input type="radio" name="q12c" value="d">Schnelleres Internet</label>
+            </div>
+
+            <div class="feedback-box correct" id="q12-fb-correct">Alles richtig! Du kennst die Suchtgefahren und weißt, wie man sich schützt.</div>
+            <div class="feedback-box incorrect" id="q12-fb-incorrect">a) Kurze Videos + endloses Scrollen. b) Zeitlimit, Handy außerhalb, Benachrichtigungen aus. c) Weniger Schlaf, Konzentrationsprobleme.</div>
+        </div>
+
+        <!-- AUFGABE 13: Tablets & Algorithmus (4 BE) -->
+        <div class="question" id="q13" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 13: Tablets & Algorithmus</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p><strong>a) Welcher der folgenden Bereiche ist ein Beispiel für Digitalisierung im Alltag? (1 BE)</strong></p>
+            </div>
+            <div class="options" id="q13a-options">
+                <label class="option" data-value="a"><input type="radio" name="q13a" value="a">Tablets im Unterricht</label>
+                <label class="option" data-value="b"><input type="radio" name="q13a" value="b">Bücher in der Bibliothek</label>
+                <label class="option" data-value="c"><input type="radio" name="q13a" value="c">Briefe per Post versenden</label>
+                <label class="option" data-value="d"><input type="radio" name="q13a" value="d">Telefonieren mit Festnetztelefon</label>
+            </div>
+
+            <p style="margin-top:15px;"><strong>b) Welche Chance bieten Tablets im Unterricht? (1 BE)</strong></p>
+            <div class="options" id="q13b-options">
+                <label class="option" data-value="a"><input type="radio" name="q13b" value="a">Schüler können während des Unterrichts Spiele spielen</label>
+                <label class="option" data-value="b"><input type="radio" name="q13b" value="b">Interaktives Lernen mit Videos, Simulationen und Quiz</label>
+                <label class="option" data-value="c"><input type="radio" name="q13b" value="c">Lehrer müssen weniger vorbereiten</label>
+                <label class="option" data-value="d"><input type="radio" name="q13b" value="d">Die Schule spart Heizkosten</label>
+            </div>
+
+            <p style="margin-top:15px;"><strong>c) Was ist ein Risiko von Tablets im Unterricht? (1 BE)</strong></p>
+            <div class="options" id="q13c-options">
+                <label class="option" data-value="a"><input type="radio" name="q13c" value="a">Schneller Zugriff auf Informationen</label>
+                <label class="option" data-value="b"><input type="radio" name="q13c" value="b">Weniger Papier und leichterer Schulranzen</label>
+                <label class="option" data-value="c"><input type="radio" name="q13c" value="c">Ablenkung durch Spiele und Chats</label>
+                <label class="option" data-value="d"><input type="radio" name="q13c" value="d">Gemeinsames Arbeiten an Dokumenten</label>
+            </div>
+
+            <p style="margin-top:15px;"><strong>d) Welcher Begriff beschreibt das automatische Auswählen von Inhalten durch ein Computerprogramm? (1 BE)</strong></p>
+            <div class="options" id="q13d-options">
+                <label class="option" data-value="a"><input type="radio" name="q13d" value="a">Algorithmus</label>
+                <label class="option" data-value="b"><input type="radio" name="q13d" value="b">Phishing</label>
+                <label class="option" data-value="c"><input type="radio" name="q13d" value="c">Streaming</label>
+                <label class="option" data-value="d"><input type="radio" name="q13d" value="d">Mikrotransaktion</label>
+            </div>
+
+            <div class="feedback-box correct" id="q13-fb-correct">Alles richtig! Du kennst Chancen und Risiken von Tablets und den Begriff Algorithmus.</div>
+            <div class="feedback-box incorrect" id="q13-fb-incorrect">a) Tablets im Unterricht. b) Interaktives Lernen. c) Ablenkung durch Spiele/Chats. d) Algorithmus.</div>
+        </div>
+
+        <!-- SUBMIT SECTION -->
+        <div class="submit-section hidden" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="seatNumberResult" style="font-size: 2em; font-weight: 700; color: #c62828; margin: 15px 0; padding: 10px; background: #ffebee; border: 2px solid #c62828;">Platz: --</div>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte (automatisch):</div>
+                <div class="score" id="scoreDisplay">0 / 30</div>
+                <div style="font-size:0.9em; color:#888; margin-top:5px;">(Freitext-Aufgaben werden vom Lehrer bewertet)</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>Note</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                </tr>
+                <tr>
+                    <td>ab %</td><td>96</td><td>80</td><td>60</td><td>40</td><td>20</td><td>&lt;20</td>
+                </tr>
+                <tr>
+                    <td>ab BE</td><td id="be1">29</td><td id="be2">24</td><td id="be3">18</td><td id="be4">12</td><td id="be5">6</td><td id="be6">0</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>„Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>„Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                <p style="font-size: 0.85em; color: #888; margin-bottom: 10px;">Lehrer: Test zurücksetzen</p>
+                <input type="password" id="resetCode" placeholder="Code" style="padding: 5px; width: 80px; margin-right: 10px;">
+                <button class="btn-secondary" onclick="resetTest()" style="background: #c62828; color: white;">Reset</button>
+            </div>
+        </div>
+
+        </div><!-- END questionsContainer -->
+    </div>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MT Digitalisierung - JavaScript (ES5!)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    var STORAGE_KEY = 'mt-info-10mr-digitalisierung';
+    var testSubmitted = false;
+    var TOTAL_POINTS = 60;
+
+    // Tab-Wechsel-Protokoll
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // Korrekte Antworten
+    var answers = {
+        q1: ['Algorithmus', 'Filterblase', 'Streaming', 'Phishing', 'Mikrotransaktion'],
+        q2: ['TikTok', 'Discord', 'ePA', 'PayPal', 'Spotify'],
+        q3: { '1a': 'C', '1b': 'R', '2a': 'C', '2b': 'R', '3a': 'C', '3b': 'R', '4a': 'C', '4b': 'R' },
+        q4a: 'b',
+        q4b: ['b', 'd'],
+        q5a: 'b',
+        q5b: 'b',
+        q5c: ['b', 'd'],
+        q6a: ['a', 'c', 'e'],
+        q6b: ['b', 'c'],
+        q6c: 'c',
+        q7: ['Konsum', 'Bildung', 'Freizeit', 'Arbeit', 'Kommunikation'],
+        q8: ['Cybermobbing', 'Phishing', 'Pay-to-Win', 'Datenschutz'],
+        q9a: 'c',
+        q9b: 'b',
+        q9c: 'b',
+        q9d: ['TikTok', 'Discord'],
+        q10a: ['a', 'c', 'e'],
+        q10b: ['b', 'c', 'e'],
+        q11a: ['a', 'c', 'd'],
+        q11b: 'b',
+        q12a: 'b',
+        q12b: ['a', 'c', 'd'],
+        q12c: 'b',
+        q13a: 'a',
+        q13b: 'b',
+        q13c: 'c',
+        q13d: 'a'
+    };
+
+    // ===== PLATZ-FUNKTIONEN =====
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#b35c00;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+        var submitSection = document.getElementById('submitSection');
+
+        if (seatLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+            submitSection.classList.remove('hidden');
+            updateProgress();
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+            submitSection.classList.add('hidden');
+        }
+    }
+
+
+    // ===== OPTIONS SETUP =====
+    function setupOptions() {
+        // Single-select
+        var optionContainers = document.querySelectorAll('.options:not(.multi-select)');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+        // Multi-select
+        var multiOptions = document.querySelectorAll('.multi-select .option');
+        for (var m = 0; m < multiOptions.length; m++) {
+            multiOptions[m].addEventListener('click', function(e) {
+                e.preventDefault();
+                this.classList.toggle('selected');
+                var checkbox = this.querySelector('input');
+                checkbox.checked = this.classList.contains('selected');
+                updateProgress();
+                saveProgress();
+            });
+        }
+        // Dropdowns + Textareas
+        var selects = document.querySelectorAll('.luecke-select');
+        for (var d = 0; d < selects.length; d++) {
+            selects[d].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+        var textareas = document.querySelectorAll('.freitext');
+        for (var t = 0; t < textareas.length; t++) {
+            textareas[t].addEventListener('input', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+    }
+
+    // ===== PROGRESS =====
+    function countAnsweredQuestions() {
+        var answered = 0;
+        var total = 26; // All sub-questions counted
+
+        // Q1: 5 Lücken
+        var q1Filled = true;
+        for (var i = 1; i <= 5; i++) {
+            if (!document.getElementById('q1-' + i).value) q1Filled = false;
+        }
+        if (q1Filled) answered++;
+
+        // Q2: 5 Zuordnungen
+        var q2Filled = true;
+        for (var j = 1; j <= 5; j++) {
+            if (!document.getElementById('q2-' + j).value) q2Filled = false;
+        }
+        if (q2Filled) answered++;
+
+        // Q3: 4 Paare (8 Dropdowns)
+        var q3Filled = true;
+        var q3Ids = ['1a', '1b', '2a', '2b', '3a', '3b', '4a', '4b'];
+        for (var k = 0; k < q3Ids.length; k++) {
+            if (!document.getElementById('q3-' + q3Ids[k]).value) q3Filled = false;
+        }
+        if (q3Filled) answered++;
+
+        // Q4a
+        if (document.querySelector('input[name="q4a"]:checked')) answered++;
+        // Q4b
+        if (document.querySelectorAll('input[name="q4b"]:checked').length >= 2) answered++;
+
+        // Q5a
+        if (document.querySelector('input[name="q5a"]:checked')) answered++;
+        // Q5b
+        if (document.querySelector('input[name="q5b"]:checked')) answered++;
+        // Q5c (mind. 2 gewählt)
+        if (document.querySelectorAll('input[name="q5c"]:checked').length >= 2) answered++;
+
+        // Q6a (mind. 1 gewählt)
+        if (document.querySelectorAll('input[name="q6a"]:checked').length >= 1) answered++;
+        // Q6b (mind. 1 gewählt)
+        if (document.querySelectorAll('input[name="q6b"]:checked').length >= 1) answered++;
+        // Q6c
+        if (document.querySelector('input[name="q6c"]:checked')) answered++;
+
+        // Q7: 5 Zuordnungen
+        var q7Filled = true;
+        for (var m = 1; m <= 5; m++) {
+            if (!document.getElementById('q7-' + m).value) q7Filled = false;
+        }
+        if (q7Filled) answered++;
+
+        // Q8: 4 Zuordnungen
+        var q8Filled = true;
+        for (var n = 1; n <= 4; n++) {
+            if (!document.getElementById('q8-' + n).value) q8Filled = false;
+        }
+        if (q8Filled) answered++;
+
+        // Q9a, Q9b, Q9c
+        if (document.querySelector('input[name="q9a"]:checked')) answered++;
+        if (document.querySelector('input[name="q9b"]:checked')) answered++;
+        if (document.querySelector('input[name="q9c"]:checked')) answered++;
+        // Q9d: 2 Dropdowns
+        var q9dFilled = document.getElementById('q9d-1').value && document.getElementById('q9d-2').value;
+        if (q9dFilled) answered++;
+
+        // Q10a, Q10b
+        if (document.querySelectorAll('input[name="q10a"]:checked').length >= 1) answered++;
+        if (document.querySelectorAll('input[name="q10b"]:checked').length >= 1) answered++;
+
+        // Q11a, Q11b
+        if (document.querySelectorAll('input[name="q11a"]:checked').length >= 1) answered++;
+        if (document.querySelector('input[name="q11b"]:checked')) answered++;
+
+        // Q12a, Q12b, Q12c
+        if (document.querySelector('input[name="q12a"]:checked')) answered++;
+        if (document.querySelectorAll('input[name="q12b"]:checked').length >= 1) answered++;
+        if (document.querySelector('input[name="q12c"]:checked')) answered++;
+
+        // Q13 a, b, c, d
+        if (document.querySelector('input[name="q13a"]:checked')) answered++;
+        if (document.querySelector('input[name="q13b"]:checked')) answered++;
+        if (document.querySelector('input[name="q13c"]:checked')) answered++;
+        if (document.querySelector('input[name="q13d"]:checked')) answered++;
+
+        return { answered: answered, total: total };
+    }
+
+    function updateProgress() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        if (!seatLocked) {
+            document.getElementById('progressText').textContent = 'Platznummer wählen...';
+            document.getElementById('progressFill').style.width = '0%';
+            return;
+        }
+        var status = countAnsweredQuestions();
+        var percent = status.total > 0 ? (status.answered / status.total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' Aufgaben bearbeitet';
+    }
+
+    // ===== PERSISTENCE =====
+    function saveProgress() {
+        var data = {
+            q1: [
+                document.getElementById('q1-1').value,
+                document.getElementById('q1-2').value,
+                document.getElementById('q1-3').value,
+                document.getElementById('q1-4').value,
+                document.getElementById('q1-5').value
+            ],
+            q2: [
+                document.getElementById('q2-1').value,
+                document.getElementById('q2-2').value,
+                document.getElementById('q2-3').value,
+                document.getElementById('q2-4').value,
+                document.getElementById('q2-5').value
+            ],
+            q3: {
+                '1a': document.getElementById('q3-1a').value,
+                '1b': document.getElementById('q3-1b').value,
+                '2a': document.getElementById('q3-2a').value,
+                '2b': document.getElementById('q3-2b').value,
+                '3a': document.getElementById('q3-3a').value,
+                '3b': document.getElementById('q3-3b').value,
+                '4a': document.getElementById('q3-4a').value,
+                '4b': document.getElementById('q3-4b').value
+            },
+            q4a: getRadioValue('q4a'),
+            q4b: getCheckboxValues('q4b'),
+            q5a: getRadioValue('q5a'),
+            q5b: getRadioValue('q5b'),
+            q5c: getCheckboxValues('q5c'),
+            q6a: getCheckboxValues('q6a'),
+            q6b: getCheckboxValues('q6b'),
+            q6c: getRadioValue('q6c'),
+            q7: [
+                document.getElementById('q7-1').value,
+                document.getElementById('q7-2').value,
+                document.getElementById('q7-3').value,
+                document.getElementById('q7-4').value,
+                document.getElementById('q7-5').value
+            ],
+            q8: [
+                document.getElementById('q8-1').value,
+                document.getElementById('q8-2').value,
+                document.getElementById('q8-3').value,
+                document.getElementById('q8-4').value
+            ],
+            q9a: getRadioValue('q9a'),
+            q9b: getRadioValue('q9b'),
+            q9c: getRadioValue('q9c'),
+            q9d: [document.getElementById('q9d-1').value, document.getElementById('q9d-2').value],
+            q10a: getCheckboxValues('q10a'),
+            q10b: getCheckboxValues('q10b'),
+            q11a: getCheckboxValues('q11a'),
+            q11b: getRadioValue('q11b'),
+            q12a: getRadioValue('q12a'),
+            q12b: getCheckboxValues('q12b'),
+            q12c: getRadioValue('q12c'),
+            q13a: getRadioValue('q13a'),
+            q13b: getRadioValue('q13b'),
+            q13c: getRadioValue('q13c'),
+            q13d: getRadioValue('q13d'),
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            // Q1
+            if (data.q1) {
+                for (var i = 0; i < 5; i++) {
+                    document.getElementById('q1-' + (i+1)).value = data.q1[i] || '';
+                }
+            }
+            // Q2
+            if (data.q2) {
+                for (var j = 0; j < 5; j++) {
+                    document.getElementById('q2-' + (j+1)).value = data.q2[j] || '';
+                }
+            }
+            // Q3
+            if (data.q3) {
+                for (var key in data.q3) {
+                    var el = document.getElementById('q3-' + key);
+                    if (el && data.q3[key]) el.value = data.q3[key];
+                }
+            }
+            // Q4a
+            if (data.q4a) {
+                var radio4a = document.querySelector('input[name="q4a"][value="' + data.q4a + '"]');
+                if (radio4a) { radio4a.checked = true; radio4a.parentNode.classList.add('selected'); }
+            }
+            // Q4b
+            if (data.q4b) {
+                data.q4b.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q4b"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q5a
+            if (data.q5a) {
+                var radio5a = document.querySelector('input[name="q5a"][value="' + data.q5a + '"]');
+                if (radio5a) { radio5a.checked = true; radio5a.parentNode.classList.add('selected'); }
+            }
+            // Q5b
+            if (data.q5b) {
+                var radio5b = document.querySelector('input[name="q5b"][value="' + data.q5b + '"]');
+                if (radio5b) { radio5b.checked = true; radio5b.parentNode.classList.add('selected'); }
+            }
+            // Q5c
+            if (data.q5c) {
+                data.q5c.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q5c"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q6a
+            if (data.q6a) {
+                data.q6a.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q6a"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q6b
+            if (data.q6b) {
+                data.q6b.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q6b"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q6c
+            if (data.q6c) {
+                var radio6c = document.querySelector('input[name="q6c"][value="' + data.q6c + '"]');
+                if (radio6c) { radio6c.checked = true; radio6c.parentNode.classList.add('selected'); }
+            }
+            // Q7
+            if (data.q7) {
+                for (var m = 0; m < 5; m++) {
+                    document.getElementById('q7-' + (m+1)).value = data.q7[m] || '';
+                }
+            }
+            // Q8
+            if (data.q8) {
+                for (var n = 0; n < 4; n++) {
+                    document.getElementById('q8-' + (n+1)).value = data.q8[n] || '';
+                }
+            }
+            // Q9a, Q9b, Q9c
+            ['q9a', 'q9b', 'q9c'].forEach(function(name) {
+                if (data[name]) {
+                    var radio = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]');
+                    if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+                }
+            });
+            // Q9d
+            if (data.q9d) {
+                document.getElementById('q9d-1').value = data.q9d[0] || '';
+                document.getElementById('q9d-2').value = data.q9d[1] || '';
+            }
+            // Q10a, Q10b
+            ['q10a', 'q10b'].forEach(function(name) {
+                if (data[name]) {
+                    data[name].forEach(function(v) {
+                        var cb = document.querySelector('input[name="' + name + '"][value="' + v + '"]');
+                        if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                    });
+                }
+            });
+            // Q11a
+            if (data.q11a) {
+                data.q11a.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q11a"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q11b
+            if (data.q11b) {
+                var radio11b = document.querySelector('input[name="q11b"][value="' + data.q11b + '"]');
+                if (radio11b) { radio11b.checked = true; radio11b.parentNode.classList.add('selected'); }
+            }
+            // Q12a, Q12c
+            ['q12a', 'q12c'].forEach(function(name) {
+                if (data[name]) {
+                    var radio = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]');
+                    if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+                }
+            });
+            // Q12b
+            if (data.q12b) {
+                data.q12b.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q12b"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q13
+            ['q13a', 'q13b', 'q13c', 'q13d'].forEach(function(name) {
+                if (data[name]) {
+                    var radio = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]');
+                    if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+                }
+            });
+        }
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function getCheckboxValues(name) {
+        var checked = document.querySelectorAll('input[name="' + name + '"]:checked');
+        var values = [];
+        for (var i = 0; i < checked.length; i++) values.push(checked[i].value);
+        return values;
+    }
+
+    // ===== SUBMIT TEST =====
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var score = 0;
+
+        // ===== Q1: Lückentext (5 BE) =====
+        var q1Score = 0;
+        for (var i = 1; i <= 5; i++) {
+            var el = document.getElementById('q1-' + i);
+            if (el.value === answers.q1[i-1]) {
+                q1Score++;
+                el.classList.add('correct');
+            } else {
+                el.classList.add('incorrect');
+            }
+        }
+        score += q1Score;
+        showFeedback('q1', q1Score === 5);
+        showQuestionResult('q1', q1Score, 5);
+
+        // ===== Q2: Zuordnung (5 BE) =====
+        var q2Score = 0;
+        for (var j = 1; j <= 5; j++) {
+            var el2 = document.getElementById('q2-' + j);
+            if (el2.value === answers.q2[j-1]) {
+                q2Score++;
+                el2.classList.add('correct');
+            } else {
+                el2.classList.add('incorrect');
+            }
+        }
+        score += q2Score;
+        showFeedback('q2', q2Score === 5);
+        showQuestionResult('q2', q2Score, 5);
+
+        // ===== Q3: C/R Paare (6 BE) =====
+        var q3Score = 0;
+        var q3Pairs = ['1', '2', '3', '4'];
+        for (var p = 0; p < q3Pairs.length; p++) {
+            var pairNum = q3Pairs[p];
+            var selA = document.getElementById('q3-' + pairNum + 'a');
+            var selB = document.getElementById('q3-' + pairNum + 'b');
+            var correctA = answers.q3[pairNum + 'a'];
+            var correctB = answers.q3[pairNum + 'b'];
+
+            var aCorrect = (selA.value === correctA);
+            var bCorrect = (selB.value === correctB);
+
+            // Styling
+            selA.classList.add(aCorrect ? 'correct' : 'incorrect');
+            selB.classList.add(bCorrect ? 'correct' : 'incorrect');
+
+            // Punkte: Paar komplett = 1.5 BE, nur eines = 0.5 BE
+            if (aCorrect && bCorrect) q3Score += 1.5;
+            else if (aCorrect || bCorrect) q3Score += 0.5;
+        }
+        score += q3Score;
+        showFeedback('q3', q3Score === 6);
+        showQuestionResult('q3', q3Score, 6);
+
+        // ===== Q4: Phishing (3 BE) =====
+        var q4Score = 0;
+        // Q4a (1 BE)
+        var q4aVal = getRadioValue('q4a');
+        markRadioQuestion('q4a', answers.q4a, q4aVal);
+        if (q4aVal === answers.q4a) q4Score++;
+        // Q4b (2 BE)
+        var q4bVals = getCheckboxValues('q4b');
+        var q4bScore = scoreMultiSelect('q4b', answers.q4b, q4bVals, 2);
+        q4Score += q4bScore;
+        score += q4Score;
+        showFeedback('q4', q4Score === 3);
+        showQuestionResult('q4', q4Score, 3);
+
+        // ===== Q5: Gaming (4 BE) =====
+        var q5Score = 0;
+        // Q5a (1 BE)
+        var q5aVal = getRadioValue('q5a');
+        markRadioQuestion('q5a', answers.q5a, q5aVal);
+        if (q5aVal === answers.q5a) q5Score++;
+        // Q5b (1 BE)
+        var q5bVal = getRadioValue('q5b');
+        markRadioQuestion('q5b', answers.q5b, q5bVal, 'q5b-options');
+        if (q5bVal === answers.q5b) q5Score++;
+        // Q5c (2 BE)
+        var q5cVals = getCheckboxValues('q5c');
+        var q5cScore = scoreMultiSelect('q5c', answers.q5c, q5cVals, 2);
+        q5Score += q5cScore;
+        score += q5Score;
+        showFeedback('q5', q5Score === 4);
+        showQuestionResult('q5', q5Score, 4);
+
+        // ===== Q6: ePA (7 BE) =====
+        var q6Score = 0;
+        // Q6a (3 BE)
+        var q6aVals = getCheckboxValues('q6a');
+        var q6aScore = scoreMultiSelect('q6a', answers.q6a, q6aVals, 3);
+        q6Score += q6aScore;
+        // Q6b (2 BE)
+        var q6bVals = getCheckboxValues('q6b');
+        var q6bScore = scoreMultiSelect('q6b', answers.q6b, q6bVals, 2);
+        q6Score += q6bScore;
+        // Q6c (2 BE)
+        var q6cVal = getRadioValue('q6c');
+        markRadioQuestion('q6c', answers.q6c, q6cVal, 'q6c-options');
+        if (q6cVal === answers.q6c) q6Score += 2;
+        score += q6Score;
+        showFeedback('q6', q6Score === 7);
+        showQuestionResult('q6', q6Score, 7);
+
+        // ===== Q7: Bereiche (5 BE) =====
+        var q7Score = 0;
+        for (var q7i = 1; q7i <= 5; q7i++) {
+            var el7 = document.getElementById('q7-' + q7i);
+            if (el7.value === answers.q7[q7i-1]) {
+                q7Score++;
+                el7.classList.add('correct');
+            } else {
+                el7.classList.add('incorrect');
+            }
+        }
+        score += q7Score;
+        showFeedback('q7', q7Score === 5);
+        showQuestionResult('q7', q7Score, 5);
+
+        // ===== Q8: Risiken (4 BE) =====
+        var q8Score = 0;
+        for (var q8i = 1; q8i <= 4; q8i++) {
+            var el8 = document.getElementById('q8-' + q8i);
+            if (el8.value === answers.q8[q8i-1]) {
+                q8Score++;
+                el8.classList.add('correct');
+            } else {
+                el8.classList.add('incorrect');
+            }
+        }
+        score += q8Score;
+        showFeedback('q8', q8Score === 4);
+        showQuestionResult('q8', q8Score, 4);
+
+        // ===== Q9: Plattform-Wissen (5 BE) =====
+        var q9Score = 0;
+        // Q9a (1 BE)
+        var q9aVal = getRadioValue('q9a');
+        markRadioQuestion('q9a', answers.q9a, q9aVal, 'q9a-options');
+        if (q9aVal === answers.q9a) q9Score++;
+        // Q9b (1 BE)
+        var q9bVal = getRadioValue('q9b');
+        markRadioQuestion('q9b', answers.q9b, q9bVal, 'q9b-options');
+        if (q9bVal === answers.q9b) q9Score++;
+        // Q9c (1 BE)
+        var q9cVal = getRadioValue('q9c');
+        markRadioQuestion('q9c', answers.q9c, q9cVal, 'q9c-options');
+        if (q9cVal === answers.q9c) q9Score++;
+        // Q9d (2 BE)
+        var q9d1 = document.getElementById('q9d-1');
+        var q9d2 = document.getElementById('q9d-2');
+        if (q9d1.value === answers.q9d[0]) { q9Score++; q9d1.classList.add('correct'); } else { q9d1.classList.add('incorrect'); }
+        if (q9d2.value === answers.q9d[1]) { q9Score++; q9d2.classList.add('correct'); } else { q9d2.classList.add('incorrect'); }
+        score += q9Score;
+        showFeedback('q9', q9Score === 5);
+        showQuestionResult('q9', q9Score, 5);
+
+        // ===== Q10: Online-Shopping (4 BE) =====
+        var q10Score = 0;
+        // Q10a (2 BE)
+        var q10aVals = getCheckboxValues('q10a');
+        var q10aScore = scoreMultiSelect('q10a', answers.q10a, q10aVals, 2);
+        q10Score += q10aScore;
+        // Q10b (2 BE)
+        var q10bVals = getCheckboxValues('q10b');
+        var q10bScore = scoreMultiSelect('q10b', answers.q10b, q10bVals, 2);
+        q10Score += q10bScore;
+        score += q10Score;
+        showFeedback('q10', q10Score === 4);
+        showQuestionResult('q10', q10Score, 4);
+
+        // ===== Q11: Datensammlung (4 BE) =====
+        var q11Score = 0;
+        // Q11a (2 BE)
+        var q11aVals = getCheckboxValues('q11a');
+        var q11aScore = scoreMultiSelect('q11a', answers.q11a, q11aVals, 2);
+        q11Score += q11aScore;
+        // Q11b (2 BE)
+        var q11bVal = getRadioValue('q11b');
+        markRadioQuestion('q11b', answers.q11b, q11bVal, 'q11b-options');
+        if (q11bVal === answers.q11b) q11Score += 2;
+        score += q11Score;
+        showFeedback('q11', q11Score === 4);
+        showQuestionResult('q11', q11Score, 4);
+
+        // ===== Q12: Suchtgefahr (4 BE) =====
+        var q12Score = 0;
+        // Q12a (1 BE)
+        var q12aVal = getRadioValue('q12a');
+        markRadioQuestion('q12a', answers.q12a, q12aVal, 'q12a-options');
+        if (q12aVal === answers.q12a) q12Score++;
+        // Q12b (2 BE)
+        var q12bVals = getCheckboxValues('q12b');
+        var q12bScore = scoreMultiSelect('q12b', answers.q12b, q12bVals, 2);
+        q12Score += q12bScore;
+        // Q12c (1 BE)
+        var q12cVal = getRadioValue('q12c');
+        markRadioQuestion('q12c', answers.q12c, q12cVal, 'q12c-options');
+        if (q12cVal === answers.q12c) q12Score++;
+        score += q12Score;
+        showFeedback('q12', q12Score === 4);
+        showQuestionResult('q12', q12Score, 4);
+
+        // ===== Q13: Tablets & Algorithmus (4 BE) =====
+        var q13Score = 0;
+        var q13aVal = getRadioValue('q13a');
+        markRadioQuestion('q13a', answers.q13a, q13aVal, 'q13a-options');
+        if (q13aVal === answers.q13a) q13Score++;
+        var q13bVal = getRadioValue('q13b');
+        markRadioQuestion('q13b', answers.q13b, q13bVal, 'q13b-options');
+        if (q13bVal === answers.q13b) q13Score++;
+        var q13cVal = getRadioValue('q13c');
+        markRadioQuestion('q13c', answers.q13c, q13cVal, 'q13c-options');
+        if (q13cVal === answers.q13c) q13Score++;
+        var q13dVal = getRadioValue('q13d');
+        markRadioQuestion('q13d', answers.q13d, q13dVal, 'q13d-options');
+        if (q13dVal === answers.q13d) q13Score++;
+        score += q13Score;
+        showFeedback('q13', q13Score === 4);
+        showQuestionResult('q13', q13Score, 4);
+
+        displayResults(score);
+    }
+
+    function markRadioQuestion(name, correct, selected, containerId) {
+        var cId = containerId || (name + '-options');
+        var options = document.querySelectorAll('#' + cId + ' .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function scoreMultiSelect(name, correctAnswers, userAnswers, maxPoints) {
+        var qOptions = document.querySelectorAll('#' + name + '-options .option');
+        var score = 0;
+        for (var i = 0; i < qOptions.length; i++) {
+            var val = qOptions[i].dataset.value;
+            var isCorrectAnswer = correctAnswers.indexOf(val) !== -1;
+            var wasSelected = userAnswers.indexOf(val) !== -1;
+            if (isCorrectAnswer && wasSelected) { score += 1; qOptions[i].classList.add('correct'); }
+            else if (isCorrectAnswer && !wasSelected) { qOptions[i].classList.add('missed'); }
+            else if (!isCorrectAnswer && wasSelected) { score -= 0.5; qOptions[i].classList.add('incorrect'); }
+        }
+        return Math.max(0, Math.min(score, maxPoints));
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts, notGraded, suffix) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        var text = achieved + '/' + maxPts + ' BE';
+        if (suffix) text += ' ' + suffix;
+        if (notGraded) {
+            result.style.background = '#f0f0f0';
+            result.style.color = '#888';
+        } else {
+            if (achieved === maxPts) result.classList.add('full');
+            else if (achieved > 0) result.classList.add('partial');
+            else result.classList.add('zero');
+        }
+        result.textContent = text;
+        meta.appendChild(result);
+    }
+
+    function displayResults(autoScore) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+
+        // Platznummer groß und rot anzeigen
+        document.getElementById('seatNumberResult').textContent = 'Platz: ' + platzText;
+        document.getElementById('studentNameDisplay').textContent = '';
+        document.getElementById('scoreDisplay').textContent = autoScore + ' / ' + TOTAL_POINTS;
+
+        // MR Klasse 10: 6-Noten-System
+        var percent = (autoScore / TOTAL_POINTS) * 100;
+        var note;
+        if (percent >= 96) note = 1;
+        else if (percent >= 80) note = 2;
+        else if (percent >= 60) note = 3;
+        else if (percent >= 40) note = 4;
+        else if (percent >= 20) note = 5;
+        else note = 6;
+
+        document.getElementById('gradeDisplay').textContent = 'Automatische Bewertung: Note ' + note + ' (ohne Freitext)';
+
+        // BE-Grenzen
+        document.getElementById('be1').textContent = Math.ceil(TOTAL_POINTS * 0.96);
+        document.getElementById('be2').textContent = Math.ceil(TOTAL_POINTS * 0.80);
+        document.getElementById('be3').textContent = Math.ceil(TOTAL_POINTS * 0.60);
+        document.getElementById('be4').textContent = Math.ceil(TOTAL_POINTS * 0.40);
+        document.getElementById('be5').textContent = Math.ceil(TOTAL_POINTS * 0.20);
+        document.getElementById('be6').textContent = '0';
+
+        // Aktuelle Note markieren
+        if (note >= 1 && note <= 6) {
+            var cell = document.getElementById('be' + note);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', autoScore);
+
+        // Zeitstempel + Tab-Wechsel
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        document.getElementById('resultsSection').insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function disableAllInputs() {
+        var radios = document.querySelectorAll('input[type="radio"]');
+        for (var i = 0; i < radios.length; i++) radios[i].disabled = true;
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        for (var j = 0; j < checkboxes.length; j++) checkboxes[j].disabled = true;
+        var selects = document.querySelectorAll('select');
+        for (var k = 0; k < selects.length; k++) selects[k].disabled = true;
+        var textareas = document.querySelectorAll('textarea');
+        for (var t = 0; t < textareas.length; t++) textareas[t].disabled = true;
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+        var varianteBtns = document.querySelectorAll('.variante-btn');
+        for (var v = 0; v < varianteBtns.length; v++) varianteBtns[v].disabled = true;
+    }
+
+    // ===== RESET (Lehrer) =====
+    function resetTest() {
+        var code = document.getElementById('resetCode').value;
+        if (code !== '2024') {
+            alert('Falscher Code!');
+            return;
+        }
+        if (!confirm('Test wirklich zurücksetzen?\n\nAlle Eingaben werden gelöscht!')) return;
+
+        // Alle localStorage-Einträge für diesen Test löschen
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf(STORAGE_KEY) === 0) {
+                keysToRemove.push(key);
+            }
+        }
+        for (var j = 0; j < keysToRemove.length; j++) {
+            localStorage.removeItem(keysToRemove[j]);
+        }
+
+        // Seite neu laden
+        location.reload();
+    }
+
+    // ===== INIT =====
+    window.onload = function() {
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        generateSeatDropdown();
+        setupOptions();
+        loadProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
+
+        // Bereits abgegeben?
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

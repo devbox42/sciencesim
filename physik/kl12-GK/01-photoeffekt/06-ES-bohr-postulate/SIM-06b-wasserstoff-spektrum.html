@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wasserstoff-Spektrum</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   WASSERSTOFF-SPEKTRUM - Interaktive Simulation (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.sim-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.spectrum-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.spectrum-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.spectrum-bar {
+    height: 60px;
+    position: relative;
+    border: 1px solid #333;
+    cursor: pointer;
+}
+
+.continuous-spectrum {
+    background: linear-gradient(to right,
+        #8B00FF 0%,      /* 380nm violett */
+        #4B0082 10%,     /* indigo */
+        #0000FF 20%,     /* blau */
+        #00FFFF 35%,     /* cyan */
+        #00FF00 50%,     /* grün */
+        #FFFF00 65%,     /* gelb */
+        #FF7F00 80%,     /* orange */
+        #FF0000 100%     /* rot 700nm */
+    );
+}
+
+.hydrogen-spectrum {
+    background: #0a0a0a;
+}
+
+.spectral-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.spectral-line:hover {
+    transform: scaleX(1.5);
+}
+
+.spectral-line.selected {
+    box-shadow: 0 0 10px 2px currentColor;
+}
+
+.wavelength-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.info-display {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 15px;
+    margin-top: 15px;
+    min-height: 80px;
+}
+
+.info-display h3 {
+    color: var(--accent);
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+
+.info-display .value {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 1.2em;
+    color: var(--text-primary);
+}
+
+.info-display .details {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: 8px;
+}
+
+.comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.comparison-box {
+    background: #f9f9f9;
+    border: 1px solid var(--border);
+    padding: 12px;
+    text-align: center;
+}
+
+.comparison-box h4 {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.comparison-box .type {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.hint-box {
+    background: #fff3e0;
+    border: 1px solid #ff9800;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.hint-box strong {
+    color: #e65100;
+}
+
+.balmer-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.balmer-table th, .balmer-table td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: center;
+}
+
+.balmer-table th {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.balmer-table tr.selected {
+    background: #e3f2fd;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wasserstoff-Spektrum</h1>
+            <div class="meta">Diskrete Spektrallinien als Evidenz | Physik 12 GK</div>
+        </header>
+
+        <div class="sim-panel">
+            <div class="spectrum-container">
+                <div class="spectrum-label">Glühlampe (kontinuierliches Spektrum)</div>
+                <div class="spectrum-bar continuous-spectrum"></div>
+                <div class="wavelength-scale">
+                    <span>380 nm (violett)</span>
+                    <span>550 nm (grün)</span>
+                    <span>700 nm (rot)</span>
+                </div>
+            </div>
+
+            <div class="spectrum-container">
+                <div class="spectrum-label">Wasserstoff-Gasentladung (Linienspektrum) — Klicke auf eine Linie!</div>
+                <div class="spectrum-bar hydrogen-spectrum" id="hydrogenSpectrum">
+                    <!-- Balmer-Serie: Übergänge nach n=2 -->
+                </div>
+                <div class="wavelength-scale">
+                    <span>380 nm</span>
+                    <span>550 nm</span>
+                    <span>700 nm</span>
+                </div>
+            </div>
+
+            <div class="comparison">
+                <div class="comparison-box">
+                    <h4>Glühlampe</h4>
+                    <div class="type">kontinuierlich</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">alle Wellenlängen</div>
+                </div>
+                <div class="comparison-box">
+                    <h4>Wasserstoff</h4>
+                    <div class="type" style="color: var(--accent);">diskret</div>
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">nur bestimmte Wellenlängen</div>
+                </div>
+            </div>
+
+            <div class="info-display" id="infoDisplay">
+                <h3>Klicke auf eine Spektrallinie!</h3>
+                <div class="details">Die sichtbaren Linien gehören zur <strong>Balmer-Serie</strong> (Übergänge auf n = 2).</div>
+            </div>
+
+            <table class="balmer-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Übergang</th>
+                        <th>Wellenlänge</th>
+                        <th>Farbe</th>
+                    </tr>
+                </thead>
+                <tbody id="balmerTable">
+                    <tr data-line="alpha">
+                        <td>H<sub>α</sub></td>
+                        <td>n = 3 → 2</td>
+                        <td>656 nm</td>
+                        <td style="color: #ff0000;">rot</td>
+                    </tr>
+                    <tr data-line="beta">
+                        <td>H<sub>β</sub></td>
+                        <td>n = 4 → 2</td>
+                        <td>486 nm</td>
+                        <td style="color: #00cccc;">blaugrün</td>
+                    </tr>
+                    <tr data-line="gamma">
+                        <td>H<sub>γ</sub></td>
+                        <td>n = 5 → 2</td>
+                        <td>434 nm</td>
+                        <td style="color: #8800ff;">violett</td>
+                    </tr>
+                    <tr data-line="delta">
+                        <td>H<sub>δ</sub></td>
+                        <td>n = 6 → 2</td>
+                        <td>410 nm</td>
+                        <td style="color: #6600cc;">violett</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="hint-box">
+            <strong>Beobachtung:</strong> Wasserstoff sendet nur ganz bestimmte Wellenlängen aus – nicht alle!
+            <br><br>
+            <strong>Schlussfolgerung:</strong> Die Energie im Atom kann nur bestimmte Werte annehmen.
+            Die Energie ist <em>quantisiert</em>.
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// WASSERSTOFF-SPEKTRUM - Interaktive Simulation (ES5)
+// Zeigt die Balmer-Serie mit klickbaren Linien
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var hydrogenSpectrum = document.getElementById('hydrogenSpectrum');
+    var infoDisplay = document.getElementById('infoDisplay');
+    var balmerTable = document.getElementById('balmerTable');
+
+    // Balmer-Serie Daten
+    var balmerLines = [
+        { name: 'alpha', symbol: 'H<sub>α</sub>', wavelength: 656, color: '#ff0000', transition: '3 → 2', desc: 'Rot – die hellste Wasserstofflinie' },
+        { name: 'beta', symbol: 'H<sub>β</sub>', wavelength: 486, color: '#00cccc', transition: '4 → 2', desc: 'Blaugrün – gut sichtbar' },
+        { name: 'gamma', symbol: 'H<sub>γ</sub>', wavelength: 434, color: '#8800ff', transition: '5 → 2', desc: 'Violett – schwächer' },
+        { name: 'delta', symbol: 'H<sub>δ</sub>', wavelength: 410, color: '#6600cc', transition: '6 → 2', desc: 'Dunkelviolett – am Rand des Sichtbaren' }
+    ];
+
+    // Wellenlänge zu Position (380-700 nm → 0-100%)
+    function wavelengthToPosition(lambda) {
+        return ((lambda - 380) / (700 - 380)) * 100;
+    }
+
+    // Spektrallinien erstellen
+    balmerLines.forEach(function(line) {
+        var lineEl = document.createElement('div');
+        lineEl.className = 'spectral-line';
+        lineEl.dataset.name = line.name;
+        lineEl.style.left = wavelengthToPosition(line.wavelength) + '%';
+        lineEl.style.backgroundColor = line.color;
+        lineEl.style.boxShadow = '0 0 8px 2px ' + line.color;
+        hydrogenSpectrum.appendChild(lineEl);
+
+        lineEl.onclick = function() {
+            selectLine(line);
+        };
+    });
+
+    function selectLine(line) {
+        // Alle Linien deselektieren
+        var allLines = hydrogenSpectrum.querySelectorAll('.spectral-line');
+        allLines.forEach(function(el) {
+            el.classList.remove('selected');
+        });
+
+        // Diese Linie selektieren
+        var selectedLine = hydrogenSpectrum.querySelector('[data-name="' + line.name + '"]');
+        if (selectedLine) {
+            selectedLine.classList.add('selected');
+        }
+
+        // Tabellenzeile markieren
+        var allRows = balmerTable.querySelectorAll('tr');
+        allRows.forEach(function(row) {
+            row.classList.remove('selected');
+            if (row.dataset.line === line.name) {
+                row.classList.add('selected');
+            }
+        });
+
+        // Info anzeigen
+        infoDisplay.innerHTML =
+            '<h3>' + line.symbol + ' – Linie (' + line.wavelength + ' nm)</h3>' +
+            '<div class="value" style="color: ' + line.color + ';">Übergang: n = ' + line.transition + '</div>' +
+            '<div class="details">' + line.desc + '<br><br>' +
+            'Ein Elektron fällt von Energieniveau n = ' + line.transition.split(' → ')[0] +
+            ' auf n = 2 und gibt dabei ein Photon mit λ = ' + line.wavelength + ' nm ab.</div>';
+    }
+
+    // Tabellenzeilen klickbar machen
+    var rows = balmerTable.querySelectorAll('tr');
+    rows.forEach(function(row) {
+        row.style.cursor = 'pointer';
+        row.onclick = function() {
+            var lineName = row.dataset.line;
+            var line = balmerLines.find(function(l) { return l.name === lineName; });
+            if (line) {
+                selectLine(line);
+            }
+        };
+    });
+
+})();
+</script>
+</body>
+</html>

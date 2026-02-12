@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Glühlampen-Kennlinie</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --physik: #2c5aa0;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .fullscreen .container {
+            max-width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--warning);
+        }
+
+        h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--warning);
+        }
+
+        .fullscreen-btn {
+            background: var(--warning);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+        }
+
+        .fullscreen .main-content {
+            flex: 1;
+            grid-template-columns: 1fr 320px;
+        }
+
+        .circuit-area {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .circuit-svg {
+            width: 100%;
+            max-width: 500px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 12px;
+        }
+
+        .panel h2 {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--warning);
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--border);
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--warning);
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: 600;
+            min-width: 55px;
+            text-align: right;
+        }
+
+        .meter {
+            background: var(--bg);
+            padding: 10px;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .meter-label {
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .meter-value {
+            font-family: monospace;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: var(--warning);
+        }
+
+        .meter-unit {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .temp-display {
+            margin-top: 10px;
+            padding: 8px;
+            background: linear-gradient(90deg, #333 0%, #ff6600 50%, #ffcc00 100%);
+            text-align: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9em;
+            position: relative;
+        }
+
+        .temp-marker {
+            position: absolute;
+            top: -5px;
+            width: 2px;
+            height: calc(100% + 10px);
+            background: white;
+            transition: left 0.3s;
+        }
+
+        .record-btn {
+            width: 100%;
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .record-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        .data-table .recorded {
+            background: #fff3e0;
+            font-weight: 600;
+        }
+
+        .reset-btn {
+            background: var(--text-muted);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .info-box {
+            background: #fff3e0;
+            border-left: 3px solid var(--warning);
+            padding: 10px;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        .compare-box {
+            background: #e3f2fd;
+            border: 1px solid var(--physik);
+            padding: 10px;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .compare-box strong {
+            color: var(--physik);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s;
+        }
+
+        /* Glühwendel-Animation */
+        .filament {
+            transition: fill 0.3s, stroke 0.3s;
+        }
+
+        .glow {
+            filter: url(#glow-filter);
+        }
+
+        @media (max-width: 700px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Glühlampen-Kennlinie</h1>
+            <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
+        </header>
+
+        <div class="main-content">
+            <div class="circuit-area">
+                <svg class="circuit-svg" viewBox="0 0 400 280">
+                    <defs>
+                        <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+                            <feMerge>
+                                <feMergeNode in="blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                            <polygon points="0 0, 8 3, 0 6" fill="#c62828"/>
+                        </marker>
+                    </defs>
+
+                    <!-- Leitungen -->
+                    <line x1="50" y1="50" x2="350" y2="50" stroke="#222" stroke-width="2"/>
+                    <line x1="350" y1="50" x2="350" y2="230" stroke="#222" stroke-width="2"/>
+                    <line x1="350" y1="230" x2="50" y2="230" stroke="#222" stroke-width="2"/>
+                    <line x1="50" y1="230" x2="50" y2="50" stroke="#222" stroke-width="2"/>
+
+                    <!-- Spannungsquelle (links) - DIN-Symbol -->
+                    <rect x="35" y="110" width="30" height="60" fill="white" stroke="#222" stroke-width="2"/>
+                    <!-- + Pol: LANGE dünne Linie (DIN) -->
+                    <line x1="38" y1="125" x2="62" y2="125" stroke="#c62828" stroke-width="2"/>
+                    <text x="68" y="129" font-size="11" fill="#c62828" font-weight="bold">+</text>
+                    <!-- − Pol: KURZE dicke Linie (DIN) -->
+                    <line x1="43" y1="155" x2="57" y2="155" stroke="#1565c0" stroke-width="4"/>
+                    <text x="68" y="159" font-size="11" fill="#1565c0" font-weight="bold">−</text>
+                    <text x="50" y="195" text-anchor="middle" font-size="13" font-weight="bold">U</text>
+                    <text id="voltage-label" x="50" y="210" text-anchor="middle" font-size="11" font-family="monospace">0 V</text>
+
+                    <!-- Glühlampe (oben) -->
+                    <circle cx="200" cy="50" r="25" fill="white" stroke="#222" stroke-width="2"/>
+                    <path class="filament glow" id="filament" d="M190 50 L195 42 L200 58 L205 42 L210 50"
+                          fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="175" y1="50" x2="185" y2="50" stroke="#222" stroke-width="2"/>
+                    <line x1="215" y1="50" x2="225" y2="50" stroke="#222" stroke-width="2"/>
+
+                    <!-- Amperemeter (rechts) -->
+                    <circle cx="350" cy="140" r="25" fill="white" stroke="#222" stroke-width="2"/>
+                    <text x="350" y="145" text-anchor="middle" font-size="16" font-weight="bold">A</text>
+
+                    <!-- Technische Stromrichtung (rot, von + nach -) -->
+                    <line x1="265" y1="50" x2="295" y2="50" stroke="#c62828" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <text x="280" y="40" text-anchor="middle" font-size="10" fill="#c62828" font-style="italic">I</text>
+
+                    <!-- Elektronen-Bewegung (blau, von − nach +) -->
+                    <g id="electrons">
+                        <circle class="electron electron-top" cx="120" cy="50" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-top" cx="80" cy="50" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-right" cx="350" cy="200" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-right" cx="350" cy="180" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="100" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="150" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="200" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="280" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-left" cx="50" cy="80" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-left" cx="50" cy="200" r="4" fill="#1565c0"/>
+                    </g>
+
+                    <!-- Temperatur-Anzeige neben Lampe -->
+                    <text id="temp-text" x="200" y="95" text-anchor="middle" font-size="11" fill="#888">20°C</text>
+
+                    <!-- Legende -->
+                    <text x="200" y="268" text-anchor="middle" font-size="9" fill="#1565c0">e⁻: von − nach +</text>
+                </svg>
+
+                <!-- Toggle für Elektronenfluss -->
+                <div style="text-align: center; margin-top: 8px;">
+                    <label style="font-size: 0.85em; color: #555; cursor: pointer;">
+                        <input type="checkbox" id="electron-toggle" checked onchange="toggleElectrons()">
+                        Elektronenfluss anzeigen
+                    </label>
+                </div>
+
+                <div class="info-box">
+                    <strong>Beobachte:</strong> Bei höherer Spannung wird der Glühfaden heißer.<br>
+                    Wie verändert sich der Widerstand mit der Temperatur?
+                </div>
+
+                <div class="compare-box">
+                    <strong>Vergleich:</strong> Trage diese Werte <em>zusätzlich</em> in das Diagramm auf Seite 1 deines Arbeitsblatts ein – <strong>in einer anderen Farbe!</strong>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel">
+                    <h2>Steuerung</h2>
+                    <div class="control-group">
+                        <label>Spannung U einstellen:</label>
+                        <div class="slider-container">
+                            <input type="range" id="voltage-slider" min="0" max="12" step="2" value="0">
+                            <span class="value-display" id="voltage-display">0 V</span>
+                        </div>
+                    </div>
+
+                    <div class="meter">
+                        <div class="meter-label">Amperemeter zeigt:</div>
+                        <div class="meter-value" id="current-display">0,00</div>
+                        <div class="meter-unit">Ampere (A)</div>
+                    </div>
+
+                    <div class="temp-display">
+                        <span id="temp-display-text">Temperatur: 20°C</span>
+                        <div class="temp-marker" id="temp-marker" style="left: 0%"></div>
+                    </div>
+
+                    <button class="record-btn" id="record-btn" onclick="recordValue()">
+                        Messwert eintragen
+                    </button>
+                </div>
+
+                <div class="panel">
+                    <h2>Messwerte (Glühlampe)</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>U (V)</th>
+                                <th>I (A)</th>
+                                <th>R (Ω)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-body">
+                            <tr id="row-2"><td>2</td><td id="val-2">—</td><td id="r-2">—</td></tr>
+                            <tr id="row-4"><td>4</td><td id="val-4">—</td><td id="r-4">—</td></tr>
+                            <tr id="row-6"><td>6</td><td id="val-6">—</td><td id="r-6">—</td></tr>
+                            <tr id="row-8"><td>8</td><td id="val-8">—</td><td id="r-8">—</td></tr>
+                            <tr id="row-10"><td>10</td><td id="val-10">—</td><td id="r-10">—</td></tr>
+                            <tr id="row-12"><td>12</td><td id="val-12">—</td><td id="r-12">—</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <button class="reset-btn" onclick="resetData()">Zurücksetzen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Nicht-lineares Modell für Glühlampe
+        // Bei 12V soll ca. 0,8A fließen (statt 1,2A bei linearem R=10Ω)
+        // Widerstand steigt mit Temperatur: R(T) = R0 * (1 + alpha * (T - T0))
+        var R0 = 5;           // Kaltwiderstand bei 20°C
+        var alpha = 0.0045;   // Temperaturkoeffizient für Wolfram
+        var T0 = 20;          // Referenztemperatur
+
+        // Empirische Werte für Glühlampe (nicht-linear)
+        var glowData = {
+            0: { I: 0, T: 20 },
+            2: { I: 0.35, T: 200 },
+            4: { I: 0.55, T: 500 },
+            6: { I: 0.68, T: 900 },
+            8: { I: 0.78, T: 1400 },
+            10: { I: 0.85, T: 1900 },
+            12: { I: 0.90, T: 2500 }
+        };
+
+        var recordedVoltages = {};
+        var totalMeasurements = 6;
+
+        var voltageSlider = document.getElementById('voltage-slider');
+        var voltageDisplay = document.getElementById('voltage-display');
+        var voltageLabel = document.getElementById('voltage-label');
+        var currentDisplay = document.getElementById('current-display');
+        var tempText = document.getElementById('temp-text');
+        var tempDisplayText = document.getElementById('temp-display-text');
+        var tempMarker = document.getElementById('temp-marker');
+        var filament = document.getElementById('filament');
+        var recordBtn = document.getElementById('record-btn');
+        var progressFill = document.getElementById('progress-fill');
+        var electronsGroup = document.getElementById('electrons');
+
+        // Elektronen
+        var electronsTop = document.querySelectorAll('.electron-top');
+        var electronsRight = document.querySelectorAll('.electron-right');
+        var electronsBottom = document.querySelectorAll('.electron-bottom');
+        var electronsLeft = document.querySelectorAll('.electron-left');
+
+        var posTop = [120, 80];
+        var posRight = [200, 180];
+        var posBottom = [100, 150, 200, 280];
+        var posLeft = [80, 200];
+        var animationId = null;
+        var showElectrons = true;
+
+        voltageSlider.addEventListener('input', function() {
+            updateDisplay();
+        });
+
+        function updateDisplay() {
+            var U = parseInt(voltageSlider.value);
+            var data = glowData[U];
+            var I = data.I;
+            var T = data.T;
+
+            voltageDisplay.textContent = U + ' V';
+            voltageLabel.textContent = U + ' V';
+            currentDisplay.textContent = I.toFixed(2).replace('.', ',');
+
+            // Temperatur
+            tempText.textContent = T + '°C';
+            tempDisplayText.textContent = 'Temperatur: ' + T + '°C';
+            var tempPercent = Math.min(100, (T / 2500) * 100);
+            tempMarker.style.left = tempPercent + '%';
+
+            // Glühfarbe basierend auf Temperatur
+            updateFilamentColor(T);
+
+            // Elektronen-Animation
+            animateElectrons(I);
+
+            // Button-Status
+            if (U === 0) {
+                recordBtn.disabled = true;
+                recordBtn.textContent = 'Spannung > 0 wählen';
+            } else if (recordedVoltages[U]) {
+                recordBtn.disabled = true;
+                recordBtn.textContent = 'Bereits gemessen';
+            } else {
+                recordBtn.disabled = false;
+                recordBtn.textContent = 'Messwert eintragen';
+            }
+        }
+
+        function updateFilamentColor(T) {
+            var color;
+            if (T < 100) {
+                color = '#333333';
+            } else if (T < 500) {
+                // Dunkelrot
+                var r = Math.min(255, 80 + (T - 100) * 0.4);
+                color = 'rgb(' + Math.round(r) + ', 20, 20)';
+            } else if (T < 1000) {
+                // Rot-Orange
+                var g = Math.min(100, (T - 500) * 0.2);
+                color = 'rgb(255, ' + Math.round(g) + ', 20)';
+            } else if (T < 2000) {
+                // Orange-Gelb
+                var g = Math.min(200, 100 + (T - 1000) * 0.1);
+                color = 'rgb(255, ' + Math.round(g) + ', 50)';
+            } else {
+                // Weiß-Gelb (Glühtemperatur)
+                color = '#ffffcc';
+            }
+
+            filament.setAttribute('stroke', color);
+
+            // Glüh-Effekt
+            if (T > 500) {
+                filament.classList.add('glow');
+            } else {
+                filament.classList.remove('glow');
+            }
+        }
+
+        function animateElectrons(I) {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            if (I === 0 || !showElectrons) {
+                resetElectronPositions();
+                return;
+            }
+
+            var speed = I * 0.8;
+
+            function step() {
+                for (var i = 0; i < electronsTop.length; i++) {
+                    posTop[i] -= speed;
+                    if (posTop[i] < 50) posTop[i] = 350;
+                    electronsTop[i].setAttribute('cx', posTop[i]);
+                }
+                for (var i = 0; i < electronsRight.length; i++) {
+                    posRight[i] -= speed;
+                    if (posRight[i] < 50) posRight[i] = 230;
+                    electronsRight[i].setAttribute('cy', posRight[i]);
+                }
+                for (var i = 0; i < electronsBottom.length; i++) {
+                    posBottom[i] += speed;
+                    if (posBottom[i] > 350) posBottom[i] = 50;
+                    electronsBottom[i].setAttribute('cx', posBottom[i]);
+                }
+                for (var i = 0; i < electronsLeft.length; i++) {
+                    posLeft[i] += speed;
+                    if (posLeft[i] > 230) posLeft[i] = 50;
+                    electronsLeft[i].setAttribute('cy', posLeft[i]);
+                }
+                animationId = requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        function resetElectronPositions() {
+            posTop = [120, 80];
+            posRight = [200, 180];
+            posBottom = [100, 150, 200, 280];
+            posLeft = [80, 200];
+            for (var i = 0; i < electronsTop.length; i++) electronsTop[i].setAttribute('cx', posTop[i]);
+            for (var i = 0; i < electronsRight.length; i++) electronsRight[i].setAttribute('cy', posRight[i]);
+            for (var i = 0; i < electronsBottom.length; i++) electronsBottom[i].setAttribute('cx', posBottom[i]);
+            for (var i = 0; i < electronsLeft.length; i++) electronsLeft[i].setAttribute('cy', posLeft[i]);
+        }
+
+        function toggleElectrons() {
+            showElectrons = document.getElementById('electron-toggle').checked;
+            electronsGroup.style.display = showElectrons ? 'block' : 'none';
+            if (showElectrons) {
+                updateDisplay();
+            } else if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        function recordValue() {
+            var U = parseInt(voltageSlider.value);
+            if (U === 0 || recordedVoltages[U]) return;
+
+            var data = glowData[U];
+            var I = data.I;
+            var R = U / I;
+            recordedVoltages[U] = { I: I, R: R };
+
+            var cellI = document.getElementById('val-' + U);
+            var cellR = document.getElementById('r-' + U);
+            if (cellI) {
+                cellI.textContent = I.toFixed(2).replace('.', ',');
+                cellR.textContent = R.toFixed(1).replace('.', ',');
+                cellI.parentElement.classList.add('recorded');
+            }
+
+            var count = Object.keys(recordedVoltages).length;
+            progressFill.style.width = (count / totalMeasurements * 100) + '%';
+
+            updateDisplay();
+
+            if (count === totalMeasurements) {
+                setTimeout(function() {
+                    alert('Alle Messwerte aufgenommen!\n\nBeachte: Der Widerstand R steigt mit der Spannung!\n\nZeichne die Glühlampen-Kennlinie in einer anderen Farbe in dein Diagramm (Aufgabe 4a).');
+                }, 300);
+            }
+        }
+
+        function resetData() {
+            if (!confirm('Alle Messwerte löschen?')) return;
+
+            recordedVoltages = {};
+            var cellsI = document.querySelectorAll('[id^="val-"]');
+            var cellsR = document.querySelectorAll('[id^="r-"]');
+            for (var i = 0; i < cellsI.length; i++) {
+                cellsI[i].textContent = '—';
+                cellsI[i].parentElement.classList.remove('recorded');
+            }
+            for (var j = 0; j < cellsR.length; j++) {
+                cellsR[j].textContent = '—';
+            }
+            progressFill.style.width = '0%';
+            updateDisplay();
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            var btn = document.querySelector('.fullscreen-btn');
+            btn.textContent = document.body.classList.contains('fullscreen') ? 'Beenden' : 'Vollbild';
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>

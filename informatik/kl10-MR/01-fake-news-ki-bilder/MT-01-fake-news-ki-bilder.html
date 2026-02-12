@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minitest: Fake News & KI-Bilder</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #b35c00;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #b35c00; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-afb { padding: 2px 8px; font-size: 0.8em; font-weight: 600; border-radius: 3px; }
+        .afb-1 { background: #e8f5e9; color: #2a7a4b; }
+        .afb-2 { background: #e3f2fd; color: #1565c0; }
+        .afb-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #fff3e0; border-color: #b35c00; }
+        .option.selected { background: #fff3e0; border-color: #b35c00; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        .multi-select .option { position: relative; padding-left: 40px; }
+        .multi-select .option:before { content: ""; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border: 2px solid #888; background: white; }
+        .multi-select .option.selected:before { background: #b35c00; border-color: #b35c00; }
+        .multi-select .option.selected:after { content: "\2713"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
+
+        .scenario-box { background: #f5f5f5; border: 1px solid #ddd; padding: 15px; margin: 15px 0; }
+        .scenario-label { font-weight: 600; color: #b35c00; margin-bottom: 10px; }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+            min-height: 80px;
+        }
+        textarea:focus { outline: 2px solid #b35c00; border-color: #b35c00; }
+
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        .selection-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 0; }
+        .seat-field { flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd; }
+
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #b35c00; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #8a4700; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        button.btn-success { background: #2a7a4b; }
+
+        .results { background: white; border: 2px solid #b35c00; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #b35c00; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #b35c00; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #b35c00; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .hidden { display: none; }
+
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Minitest: Fake News & KI-Bilder erkennen</h1>
+        <div class="header-info">
+            <div class="meta">Informatik 10MR | 15 BE | ca. 15 Min.</div>
+        </div>
+    </header>
+
+    <div class="selection-row">
+        <div class="seat-field">
+            <label style="font-weight: 600; font-size: 0.9em; color: #b35c00; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #b35c00; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 10 Fragen</div>
+    </div>
+
+    <div class="container">
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestatige zuerst deine Platznummer!</strong><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
+
+        <!-- FRAGE 1: AFB I - Definition -->
+        <div class="question" id="q1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 1: Was sind Fake News?</div>
+                <div class="question-meta">
+                                        <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Wähle die richtige Definition:</div>
+            <div class="options" id="q1-options">
+                <label class="option" data-value="a"><input type="radio" name="q1" value="a">Nachrichten, die noch nicht bestatigt wurden</label>
+                <label class="option" data-value="b"><input type="radio" name="q1" value="b">Absichtlich verbreitete Falschinformationen, die wie echte Nachrichten aussehen</label>
+                <label class="option" data-value="c"><input type="radio" name="q1" value="c">Satire-Artikel in Zeitungen</label>
+                <label class="option" data-value="d"><input type="radio" name="q1" value="d">Veraltete Nachrichten</label>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Richtig! Fake News sind absichtlich erstellte Falschinformationen.</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Nicht ganz. Fake News sind absichtlich erstellte Falschinformationen, die täuschen sollen.</div>
+        </div>
+
+        <!-- FRAGE 2: AFB I - Verbreitung -->
+        <div class="question" id="q2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 2: Hauptverbreitungsweg</div>
+                <div class="question-meta">
+                                        <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Wo verbreiten sich Fake News am schnellsten?</div>
+            <div class="options" id="q2-options">
+                <label class="option" data-value="a"><input type="radio" name="q2" value="a">In Tageszeitungen</label>
+                <label class="option" data-value="b"><input type="radio" name="q2" value="b">Im öffentlich-rechtlichen Fernsehen</label>
+                <label class="option" data-value="c"><input type="radio" name="q2" value="c">In sozialen Medien</label>
+                <label class="option" data-value="d"><input type="radio" name="q2" value="d">In wissenschaftlichen Zeitschriften</label>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig! Soziale Medien sind der Hauptverbreitungsweg fürFake News.</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Nicht ganz. Soziale Medien sind der Hauptverbreitungsweg, weil dort jeder ohne Prüfung teilen kann.</div>
+        </div>
+
+        <!-- FRAGE 3: AFB I - KI-Merkmale (Mehrfachauswahl) -->
+        <div class="question" id="q3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 3: KI-Bilder erkennen</div>
+                <div class="question-meta">
+                                        <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Welche Merkmale deuten auf ein KI-generiertes Bild hin? <strong>(Mehrfachauswahl - wähle alle richtigen!)</strong></div>
+            <div class="options multi-select" id="q3-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q3" value="a">Hände mit falscher Anzahl an Fingern</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q3" value="b">Das Bild ist in Farbe</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q3" value="c">Asymmetrische Ohrringe oder Ohren</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q3" value="d">Verschwommener oder unlogischer Hintergrund</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q3" value="e">Das Bild zeigt eine Person</label>
+            </div>
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! Hände, Ohren und Hintergründe sind typische Schwächen der Bild-KI.</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Nicht ganz. KI hat Probleme mit: Händen, Ohren/Schmuck und Hintergründen.</div>
+        </div>
+
+        <!-- FRAGE 4: AFB I - Deepfake -->
+        <div class="question" id="q4" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 4: Was ist ein Deepfake?</div>
+                <div class="question-meta">
+                                        <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Wähle die richtige Beschreibung:</div>
+            <div class="options" id="q4-options">
+                <label class="option" data-value="a"><input type="radio" name="q4" value="a">Ein verstecktes Profil im Dark Web</label>
+                <label class="option" data-value="b"><input type="radio" name="q4" value="b">Ein KI-generiertes Video, das echte Personen zeigt</label>
+                <label class="option" data-value="c"><input type="radio" name="q4" value="c">Ein gelöschter Social-Media-Beitrag</label>
+                <label class="option" data-value="d"><input type="radio" name="q4" value="d">Eine verschlüsselte Nachricht</label>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! Deepfakes sind KI-generierte Videos von echten Personen.</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">"Deep" kommt von "Deep Learning" - Deepfakes sind KI-generierte Videos.</div>
+        </div>
+
+        <!-- FRAGE 5: AFB II - CRAAP-Methode -->
+        <div class="question" id="q5" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 5: CRAAP-Check anwenden</div>
+                <div class="question-meta">
+                                        <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ordne die Buchstaben der CRAAP-Methode zu:</div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span style="min-width:30px;font-weight:bold;">C =</span>
+                    <select id="q5-c" style="padding:8px;flex:1;max-width:300px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="currency">Aktualität (Currency)</option>
+                        <option value="relevance">Relevanz (Relevance)</option>
+                        <option value="authority">Autorität (Authority)</option>
+                        <option value="accuracy">Genauigkeit (Accuracy)</option>
+                        <option value="purpose">Zweck (Purpose)</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span style="min-width:30px;font-weight:bold;">A =</span>
+                    <select id="q5-a1" style="padding:8px;flex:1;max-width:300px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="currency">Aktualität (Currency)</option>
+                        <option value="relevance">Relevanz (Relevance)</option>
+                        <option value="authority">Autorität (Authority)</option>
+                        <option value="accuracy">Genauigkeit (Accuracy)</option>
+                        <option value="purpose">Zweck (Purpose)</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap;">
+                    <span style="min-width:30px;font-weight:bold;">P =</span>
+                    <select id="q5-p" style="padding:8px;flex:1;max-width:300px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="currency">Aktualität (Currency)</option>
+                        <option value="relevance">Relevanz (Relevance)</option>
+                        <option value="authority">Autorität (Authority)</option>
+                        <option value="accuracy">Genauigkeit (Accuracy)</option>
+                        <option value="purpose">Zweck (Purpose)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">Richtig! C=Currency, A=Authority oder Accuracy, P=Purpose</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Nicht ganz. CRAAP: Currency, Relevance, Authority, Accuracy, Purpose</div>
+        </div>
+
+        <!-- FRAGE 6: AFB II - Szenario bewerten -->
+        <div class="question" id="q6" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 6: Quelle bewerten</div>
+                <div class="question-meta">
+                                        <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="scenario-box">
+                <div class="scenario-label">Szenario:</div>
+                <p>Du findest einen Artikel uber ein neues Wundermittel gegen Erkältungen. Die Website hat kein Impressum, der Autor ist "Dr. Health" (kein echter Name zu finden), und am Ende steht ein Kauflink.</p>
+            </div>
+            <div class="question-text">Welche Warnsignale erkennst du? <strong>(Mehrfachauswahl)</strong></div>
+            <div class="options multi-select" id="q6-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q6" value="a">Kein Impressum</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q6" value="b">Pseudonym statt echtem Autorennamen</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q6" value="c">Verkaufsabsicht erkennbar</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q6" value="d">Der Artikel ist auf Deutsch</label>
+            </div>
+            <div class="feedback-box correct" id="q6-fb-correct">Richtig! Alle drei sind Warnsignale: kein Impressum, Pseudonym, Verkaufsabsicht.</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">Die Warnsignale sind: Kein Impressum, Pseudonym-Autor, Verkaufsabsicht.</div>
+        </div>
+
+        <!-- FRAGE 7: AFB II - Werkzeug wählen -->
+        <div class="question" id="q7" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 7: Richtiges Werkzeug</div>
+                <div class="question-meta">
+                                        <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Du willst herausfinden, woher ein Bild ursprunglich stammt. Welches Werkzeug nutzt du?</div>
+            <div class="options" id="q7-options">
+                <label class="option" data-value="a"><input type="radio" name="q7" value="a">Google Bilder-Rückwärtssuche oder TinEye</label>
+                <label class="option" data-value="b"><input type="radio" name="q7" value="b">Wikipedia</label>
+                <label class="option" data-value="c"><input type="radio" name="q7" value="c">ChatGPT</label>
+                <label class="option" data-value="d"><input type="radio" name="q7" value="d">Instagram-Suche</label>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">Richtig! Bilder-Rückwärtssuche zeigt, wo ein Bild schon verwendet wurde.</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">Fur Bildrecherche nutzt man Google Bilder-Rückwärtssuche oder TinEye.</div>
+        </div>
+
+        <!-- FRAGE 8: AFB II - Geschwindigkeit -->
+        <div class="question" id="q8" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Frage 8: KI-Geschwindigkeit</div>
+                <div class="question-meta">
+                                        <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Warum ist es problematisch, dass KI fotorealistische Bilder in wenigen Sekunden erstellen kann?</div>
+            <div class="options" id="q8-options">
+                <label class="option" data-value="a"><input type="radio" name="q8" value="a">Weil die Bilder zu teuer sind</label>
+                <label class="option" data-value="b"><input type="radio" name="q8" value="b">Weil massenhaft Falschinformationen schnell verbreitet werden können</label>
+                <label class="option" data-value="c"><input type="radio" name="q8" value="c">Weil die Bilder zu klein sind</label>
+                <label class="option" data-value="d"><input type="radio" name="q8" value="d">Weil Computer dadurch langsamer werden</label>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">Richtig! Die Geschwindigkeit ermöglicht massenhaft Falschinformationen.</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Das Problem ist: Massenhaft Fake-Bilder können schnell erstellt und verbreitet werden.</div>
+        </div>
+
+        <!-- FRAGE 9: AFB III - Analyse -->
+        <div class="question" id="q9" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 9: Gesellschaftliche Folgen</div>
+                <div class="question-meta">
+                                        <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Nenne zwei mögliche Folgen fürdie Gesellschaft, wenn immer mehr Menschen Fake News nicht erkennen können:</div>
+            <textarea id="q9-input" placeholder="1. ... 2. ..."></textarea>
+            <div class="feedback-box" id="q9-fb"></div>
+        </div>
+
+        <!-- FRAGE 10: AFB III - Bewertung -->
+        <div class="question" id="q10" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Frage 10: Lösungsansatz bewerten</div>
+                <div class="question-meta">
+                                        <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="scenario-box">
+                <div class="scenario-label">Vorschlag:</div>
+                <p>"Soziale Medien sollten alle KI-generierten Bilder automatisch löschen."</p>
+            </div>
+            <div class="question-text">Bewerte diesen Vorschlag: Nenne einen Vorteil und einen Nachteil.</div>
+            <textarea id="q10-input" placeholder="Vorteil: ... Nachteil: ..."></textarea>
+            <div class="feedback-box" id="q10-fb"></div>
+        </div>
+
+        <!-- SUBMIT -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- RESULTS -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 15</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+
+            <table class="grade-table">
+                <tr>
+                    <th>Note</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>92+</td><td>81-91</td><td>67-80</td><td>50-66</td><td>30-49</td><td>&lt;30</td>
+                </tr>
+                <tr>
+                    <td>BE</td><td>14-15</td><td>12-13</td><td>10-11</td><td>8-9</td><td>5-7</td><td>0-4</td>
+                </tr>
+            </table>
+
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        </div>
+    </div>
+
+    <script>
+    var STORAGE_KEY = 'mt-info-10mr-01-fake-news';
+    var testSubmitted = false;
+
+    var answers = {
+        q1: 'b',
+        q2: 'c',
+        q3: ['a', 'c', 'd'],
+        q4: 'b',
+        q5c: 'currency',
+        q5a1: 'authority',
+        q5p: 'purpose',
+        q6: ['a', 'b', 'c'],
+        q7: 'a',
+        q8: 'b'
+    };
+
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestatigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#b35c00;">P' + num + '</strong> (gesperrt)';
+    }
+
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function setupOptions() {
+        var options = document.querySelectorAll('.option');
+        for (var i = 0; i < options.length; i++) {
+            options[i].addEventListener('click', function(e) {
+                if (testSubmitted) return;
+                var input = this.querySelector('input');
+                var parent = this.closest('.options');
+
+                if (input.type === 'radio') {
+                    var siblings = parent.querySelectorAll('.option');
+                    for (var j = 0; j < siblings.length; j++) {
+                        siblings[j].classList.remove('selected');
+                    }
+                    this.classList.add('selected');
+                    input.checked = true;
+                } else {
+                    this.classList.toggle('selected');
+                    input.checked = !input.checked;
+                }
+                updateProgress();
+                saveAnswers();
+            });
+        }
+    }
+
+    function updateProgress() {
+        var answered = 0;
+        var total = 10;
+
+        for (var i = 1; i <= 8; i++) {
+            var q = document.getElementById('q' + i);
+            if (q) {
+                var selected = q.querySelectorAll('.option.selected');
+                if (selected.length > 0) answered++;
+            }
+        }
+
+        var q5Answered = document.getElementById('q5-c').value && document.getElementById('q5-a1').value && document.getElementById('q5-p').value;
+        if (q5Answered) answered++;
+
+        if (document.getElementById('q9-input').value.length > 10) answered++;
+        if (document.getElementById('q10-input').value.length > 10) answered++;
+
+        document.getElementById('progressText').textContent = answered + ' / ' + total + ' Fragen';
+        document.getElementById('progressFill').style.width = (answered / total * 100) + '%';
+    }
+
+    function saveAnswers() {
+        var data = {};
+        for (var i = 1; i <= 8; i++) {
+            var q = document.getElementById('q' + i);
+            if (q) {
+                var selected = q.querySelectorAll('.option.selected');
+                var vals = [];
+                for (var j = 0; j < selected.length; j++) {
+                    vals.push(selected[j].dataset.value);
+                }
+                data['q' + i] = vals;
+            }
+        }
+        data['q5c'] = document.getElementById('q5-c').value;
+        data['q5a1'] = document.getElementById('q5-a1').value;
+        data['q5p'] = document.getElementById('q5-p').value;
+        data['q9'] = document.getElementById('q9-input').value;
+        data['q10'] = document.getElementById('q10-input').value;
+        localStorage.setItem(STORAGE_KEY + '-answers', JSON.stringify(data));
+    }
+
+    function restoreAnswers() {
+        var saved = localStorage.getItem(STORAGE_KEY + '-answers');
+        if (!saved) return;
+        var data = JSON.parse(saved);
+
+        for (var i = 1; i <= 8; i++) {
+            if (data['q' + i]) {
+                var q = document.getElementById('q' + i);
+                var options = q.querySelectorAll('.option');
+                for (var j = 0; j < options.length; j++) {
+                    if (data['q' + i].indexOf(options[j].dataset.value) > -1) {
+                        options[j].classList.add('selected');
+                        options[j].querySelector('input').checked = true;
+                    }
+                }
+            }
+        }
+
+        if (data.q5c) document.getElementById('q5-c').value = data.q5c;
+        if (data.q5a1) document.getElementById('q5-a1').value = data.q5a1;
+        if (data.q5p) document.getElementById('q5-p').value = data.q5p;
+        if (data.q9) document.getElementById('q9-input').value = data.q9;
+        if (data.q10) document.getElementById('q10-input').value = data.q10;
+
+        updateProgress();
+    }
+
+    function submitTest() {
+        if (!confirm('Test wirklich abgeben? Du kannst danach nichts mehr ändern.')) return;
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+
+        var totalPoints = 0;
+        var earnedPoints = 0;
+
+        // Q1-Q4, Q7, Q8: Single Choice (je 1 BE, Q3 = 2 BE)
+        var singleQuestions = [
+            {id: 'q1', correct: 'b', points: 1},
+            {id: 'q2', correct: 'c', points: 1},
+            {id: 'q4', correct: 'b', points: 1},
+            {id: 'q7', correct: 'a', points: 1},
+            {id: 'q8', correct: 'b', points: 1}
+        ];
+
+        for (var i = 0; i < singleQuestions.length; i++) {
+            var sq = singleQuestions[i];
+            totalPoints += sq.points;
+            var q = document.getElementById(sq.id);
+            var selected = q.querySelector('.option.selected');
+            var options = q.querySelectorAll('.option');
+
+            if (selected && selected.dataset.value === sq.correct) {
+                earnedPoints += sq.points;
+                selected.classList.add('correct');
+                document.getElementById(sq.id + '-fb-correct').classList.add('show');
+            } else {
+                if (selected) selected.classList.add('incorrect');
+                for (var j = 0; j < options.length; j++) {
+                    if (options[j].dataset.value === sq.correct) {
+                        options[j].classList.add('missed');
+                    }
+                }
+                document.getElementById(sq.id + '-fb-incorrect').classList.add('show');
+            }
+        }
+
+        // Q3: Multi-Select (2 BE)
+        totalPoints += 2;
+        var q3Selected = [];
+        var q3Options = document.querySelectorAll('#q3-options .option');
+        for (var i = 0; i < q3Options.length; i++) {
+            if (q3Options[i].classList.contains('selected')) {
+                q3Selected.push(q3Options[i].dataset.value);
+            }
+        }
+        var q3Correct = ['a', 'c', 'd'];
+        var q3Match = 0;
+        for (var i = 0; i < q3Correct.length; i++) {
+            if (q3Selected.indexOf(q3Correct[i]) > -1) q3Match++;
+        }
+        var q3Wrong = 0;
+        for (var i = 0; i < q3Selected.length; i++) {
+            if (q3Correct.indexOf(q3Selected[i]) === -1) q3Wrong++;
+        }
+        if (q3Match === 3 && q3Wrong === 0) {
+            earnedPoints += 2;
+            document.getElementById('q3-fb-correct').classList.add('show');
+        } else if (q3Match >= 2 && q3Wrong === 0) {
+            earnedPoints += 1;
+            document.getElementById('q3-fb-incorrect').classList.add('show');
+        } else {
+            document.getElementById('q3-fb-incorrect').classList.add('show');
+        }
+        for (var i = 0; i < q3Options.length; i++) {
+            var val = q3Options[i].dataset.value;
+            if (q3Correct.indexOf(val) > -1) {
+                q3Options[i].classList.add(q3Options[i].classList.contains('selected') ? 'correct' : 'missed');
+            } else if (q3Options[i].classList.contains('selected')) {
+                q3Options[i].classList.add('incorrect');
+            }
+        }
+
+        // Q5: Dropdown (2 BE)
+        totalPoints += 2;
+        var q5c = document.getElementById('q5-c').value;
+        var q5a1 = document.getElementById('q5-a1').value;
+        var q5p = document.getElementById('q5-p').value;
+        var q5Score = 0;
+        if (q5c === 'currency') q5Score++;
+        if (q5a1 === 'authority' || q5a1 === 'accuracy') q5Score++;
+        if (q5p === 'purpose') q5Score++;
+        if (q5Score >= 3) {
+            earnedPoints += 2;
+            document.getElementById('q5-fb-correct').classList.add('show');
+        } else if (q5Score >= 2) {
+            earnedPoints += 1;
+            document.getElementById('q5-fb-incorrect').classList.add('show');
+        } else {
+            document.getElementById('q5-fb-incorrect').classList.add('show');
+        }
+
+        // Q6: Multi-Select (2 BE)
+        totalPoints += 2;
+        var q6Selected = [];
+        var q6Options = document.querySelectorAll('#q6-options .option');
+        for (var i = 0; i < q6Options.length; i++) {
+            if (q6Options[i].classList.contains('selected')) {
+                q6Selected.push(q6Options[i].dataset.value);
+            }
+        }
+        var q6Correct = ['a', 'b', 'c'];
+        var q6Match = 0;
+        for (var i = 0; i < q6Correct.length; i++) {
+            if (q6Selected.indexOf(q6Correct[i]) > -1) q6Match++;
+        }
+        var q6Wrong = 0;
+        for (var i = 0; i < q6Selected.length; i++) {
+            if (q6Correct.indexOf(q6Selected[i]) === -1) q6Wrong++;
+        }
+        if (q6Match === 3 && q6Wrong === 0) {
+            earnedPoints += 2;
+            document.getElementById('q6-fb-correct').classList.add('show');
+        } else if (q6Match >= 2 && q6Wrong === 0) {
+            earnedPoints += 1;
+            document.getElementById('q6-fb-incorrect').classList.add('show');
+        } else {
+            document.getElementById('q6-fb-incorrect').classList.add('show');
+        }
+        for (var i = 0; i < q6Options.length; i++) {
+            var val = q6Options[i].dataset.value;
+            if (q6Correct.indexOf(val) > -1) {
+                q6Options[i].classList.add(q6Options[i].classList.contains('selected') ? 'correct' : 'missed');
+            } else if (q6Options[i].classList.contains('selected')) {
+                q6Options[i].classList.add('incorrect');
+            }
+        }
+
+        // Q9: Freitext (2 BE)
+        totalPoints += 2;
+        var q9Input = document.getElementById('q9-input').value.toLowerCase();
+        var q9Fb = document.getElementById('q9-fb');
+        var q9Keywords = ['demokratie', 'wahl', 'vertrauen', 'spaltung', 'manipulation', 'meinung', 'gesellschaft', 'politik', 'hass', 'gewalt', 'entscheidung', 'information'];
+        var q9Found = 0;
+        for (var i = 0; i < q9Keywords.length; i++) {
+            if (q9Input.indexOf(q9Keywords[i]) > -1) q9Found++;
+        }
+        if (q9Input.length > 30 && q9Found >= 2) {
+            earnedPoints += 2;
+            q9Fb.className = 'feedback-box correct show';
+            q9Fb.innerHTML = 'Gute Analyse! Du hast wichtige gesellschaftliche Folgen erkannt.';
+        } else if (q9Input.length > 20 && q9Found >= 1) {
+            earnedPoints += 1;
+            q9Fb.className = 'feedback-box incorrect show';
+            q9Fb.innerHTML = 'Teilweise richtig. Denke an: Vertrauen in Medien, Wahlmanipulation, gesellschaftliche Spaltung.';
+        } else {
+            q9Fb.className = 'feedback-box incorrect show';
+            q9Fb.innerHTML = 'Mogliche Folgen: Verlust von Vertrauen in Medien, Wahlmanipulation, gesellschaftliche Spaltung.';
+        }
+
+        // Q10: Freitext (2 BE)
+        totalPoints += 2;
+        var q10Input = document.getElementById('q10-input').value.toLowerCase();
+        var q10Fb = document.getElementById('q10-fb');
+        var q10HasVorteil = q10Input.indexOf('vorteil') > -1 || q10Input.indexOf('weniger') > -1 || q10Input.indexOf('schutz') > -1 || q10Input.indexOf('sicher') > -1;
+        var q10HasNachteil = q10Input.indexOf('nachteil') > -1 || q10Input.indexOf('zensur') > -1 || q10Input.indexOf('kunst') > -1 || q10Input.indexOf('fehler') > -1 || q10Input.indexOf('falsch') > -1;
+        if (q10Input.length > 40 && q10HasVorteil && q10HasNachteil) {
+            earnedPoints += 2;
+            q10Fb.className = 'feedback-box correct show';
+            q10Fb.innerHTML = 'Gute differenzierte Bewertung!';
+        } else if (q10Input.length > 20 && (q10HasVorteil || q10HasNachteil)) {
+            earnedPoints += 1;
+            q10Fb.className = 'feedback-box incorrect show';
+            q10Fb.innerHTML = 'Teilweise. Vorteil: Weniger Fake-Bilder. Nachteil: Zensurgefahr, auch Kunst betroffen, KI macht Fehler.';
+        } else {
+            q10Fb.className = 'feedback-box incorrect show';
+            q10Fb.innerHTML = 'Beispiel-Bewertung: Vorteil = weniger Manipulation. Nachteil = Kunstfreiheit eingeschränkt, Fehlerquote der Erkennung.';
+        }
+
+        // Ergebnis anzeigen
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        document.getElementById('scoreDisplay').textContent = earnedPoints + ' / ' + totalPoints;
+
+        var seat = document.getElementById('seatNumber').value;
+        document.getElementById('studentNameDisplay').innerHTML = '<strong>Platz:</strong> P' + seat;
+
+        var percent = (earnedPoints / totalPoints) * 100;
+        var grade = '';
+        if (percent >= 92) grade = 'Note: 1';
+        else if (percent >= 81) grade = 'Note: 2';
+        else if (percent >= 67) grade = 'Note: 3';
+        else if (percent >= 50) grade = 'Note: 4';
+        else if (percent >= 30) grade = 'Note: 5';
+        else grade = 'Note: 6';
+        document.getElementById('gradeDisplay').textContent = grade;
+
+        // Alle Inputs deaktivieren
+        var allInputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].disabled = true;
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-result', JSON.stringify({
+            seat: seat,
+            points: earnedPoints,
+            total: totalPoints,
+            grade: grade
+        }));
+    }
+
+    // Init
+    window.onload = function() {
+        generateSeatDropdown();
+        setupOptions();
+        restoreAnswers();
+        checkUnlocked();
+
+        // Dropdowns fürFortschritt
+        var dropdowns = document.querySelectorAll('select');
+        for (var i = 0; i < dropdowns.length; i++) {
+            dropdowns[i].addEventListener('change', function() {
+                updateProgress();
+                saveAnswers();
+            });
+        }
+
+        // Textareas fürFortschritt
+        var textareas = document.querySelectorAll('textarea');
+        for (var i = 0; i < textareas.length; i++) {
+            textareas[i].addEventListener('input', function() {
+                updateProgress();
+                saveAnswers();
+            });
+        }
+
+        // Bereits submitted?
+        if (localStorage.getItem(STORAGE_KEY + '-submitted') === 'true') {
+            submitTest();
+        }
+    };
+    </script>
+
+</body>
+</html>

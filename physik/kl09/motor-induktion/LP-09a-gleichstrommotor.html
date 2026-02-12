@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-09a: Der Gleichstrommotor</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.5;
+            font-size: 16px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .progress-bar {
+            background: #ddd;
+            height: 6px;
+            margin: 15px 0;
+        }
+        .progress-fill {
+            background: #2c5aa0;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .step-nav-item {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .step-nav-item:hover { background: #e3f2fd; }
+        .step-nav-item.active { background: #2c5aa0; color: white; border-color: #2c5aa0; }
+        .step-nav-item.done { background: #2a7a4b; color: white; border-color: #2a7a4b; }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .section.active { display: block; }
+        .section h2 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+        .section h3 {
+            font-size: 1em;
+            margin: 15px 0 10px 0;
+            color: #333;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .info-box strong { color: #2c5aa0; }
+
+        .key-point {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .key-point::before {
+            content: "Merke";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+
+        .hefter-hinweis {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .hefter-hinweis ul { margin-left: 15px; margin-top: 5px; }
+
+        .svg-container {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #fafafa;
+            border: 1px solid #eee;
+        }
+        .svg-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .sim-embed {
+            margin: 20px 0;
+            border: 2px solid #2c5aa0;
+            background: white;
+        }
+        .sim-embed iframe {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+        .sim-link {
+            display: block;
+            background: #2c5aa0;
+            color: white;
+            text-align: center;
+            padding: 12px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .sim-link:hover { background: #1e3d6f; }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .nav-buttons button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        .nav-buttons button:hover { background: #1e3d6f; }
+        .nav-buttons button.btn-secondary {
+            background: white;
+            color: #2c5aa0;
+            border: 2px solid #2c5aa0;
+        }
+        .nav-buttons button.btn-secondary:hover { background: #e3f2fd; }
+        .nav-buttons button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .nav-buttons button.success { background: #2a7a4b; }
+        .nav-buttons button.success:hover { background: #1e5a37; }
+
+        .quiz-option {
+            display: block;
+            background: white;
+            border: 2px solid #ddd;
+            padding: 10px 15px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .quiz-option:hover { border-color: #2c5aa0; }
+        .quiz-option.selected { border-color: #2c5aa0; background: #e3f2fd; }
+        .quiz-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .quiz-option.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .feedback {
+            padding: 12px;
+            margin: 10px 0;
+            display: none;
+            font-size: 0.9em;
+        }
+        .feedback.correct {
+            background: #e8f5e9;
+            border: 1px solid #2a7a4b;
+            color: #1b5e20;
+            display: block;
+        }
+        .feedback.incorrect {
+            background: #ffebee;
+            border: 1px solid #c62828;
+            color: #b71c1c;
+            display: block;
+        }
+
+        .check-btn {
+            background: #2a7a4b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .check-btn:hover { background: #1e5a37; }
+
+        ul, ol { margin-left: 20px; margin-top: 10px; }
+        li { margin-bottom: 5px; }
+
+        .color-legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.85em;
+            margin: 10px 0;
+        }
+        .color-legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border: 1px solid #999;
+        }
+
+        .task-list {
+            list-style: none;
+            margin-left: 0;
+        }
+        .task-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .task-list li::before {
+            content: "→";
+            color: #2c5aa0;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Der Gleichstrommotor</h1>
+        <p>Klasse 9 Physik | Einführung | ca. 15 Minuten</p>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="step-nav" id="stepNav">
+            <div class="step-nav-item active" onclick="goToStep(1)" title="Lorentzkraft">1</div>
+            <div class="step-nav-item" onclick="goToStep(2)" title="Animation">2</div>
+            <div class="step-nav-item" onclick="goToStep(3)" title="Kommutator">3</div>
+            <div class="step-nav-item" onclick="goToStep(4)" title="Aufbau">4</div>
+            <div class="step-nav-item" onclick="goToStep(5)" title="Zusammenfassung">5</div>
+        </div>
+
+        <!-- Sektion 1: Wiederholung Lorentzkraft -->
+        <div class="section active" id="section1">
+            <h2>1. Wiederholung: Kraft auf Leiter im Magnetfeld</h2>
+
+            <div class="info-box" style="background:#e8f5e9; border-color:#2a7a4b;">
+                <strong>Denk mal nach:</strong> Wo bist du heute schon einem Elektromotor begegnet?<br>
+                <span style="font-size:0.9em; color:#555;">Handy-Vibration, E-Scooter, Ventilator, Bohrmaschine, Staubsauger...</span>
+            </div>
+
+            <div style="background:#e8f4fd; border:1px solid #90caf9; padding:10px 12px; margin:10px 0; font-size:0.85em;">
+                <strong style="color:#1565c0;">G-Kurs Tipp:</strong> Konzentriere dich auf die <strong>Namen der Bauteile</strong> und die <strong>Energieumwandlung</strong>. Die Details zur Lorentzkraft sind für den E-Kurs.
+            </div>
+
+            <p>Du kennst bereits die <strong>Lorentzkraft</strong>: Ein stromdurchflossener Leiter im Magnetfeld erfährt eine Kraft.</p>
+
+            <div class="svg-container">
+                <svg viewBox="0 0 400 200" width="400" height="200">
+                    <defs>
+                        <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#2e7d32"/>
+                        </marker>
+                        <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#c62828"/>
+                        </marker>
+                    </defs>
+
+                    <!-- Magnet -->
+                    <rect x="30" y="50" width="30" height="100" fill="#c62828" stroke="#333" stroke-width="2"/>
+                    <text x="45" y="105" text-anchor="middle" fill="white" font-weight="bold" font-size="14">N</text>
+                    <rect x="340" y="50" width="30" height="100" fill="#1565c0" stroke="#333" stroke-width="2"/>
+                    <text x="355" y="105" text-anchor="middle" fill="white" font-weight="bold" font-size="14">S</text>
+
+                    <!-- Feldlinien (grün) -->
+                    <line x1="70" y1="80" x2="330" y2="80" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+                    <line x1="70" y1="100" x2="330" y2="100" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+                    <line x1="70" y1="120" x2="330" y2="120" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+                    <text x="200" y="145" text-anchor="middle" fill="#2e7d32" font-size="12">B-Feld</text>
+
+                    <!-- Leiter (Querschnitt) -->
+                    <circle cx="200" cy="100" r="15" fill="#b35c00" stroke="#333" stroke-width="2"/>
+                    <circle cx="200" cy="100" r="4" fill="#333"/>
+                    <text x="200" y="75" text-anchor="middle" font-size="11">Strom ⊙ (zu dir)</text>
+
+                    <!-- Kraft (rot) -->
+                    <line x1="200" y1="100" x2="200" y2="30" stroke="#c62828" stroke-width="3" marker-end="url(#arrowRed)"/>
+                    <text x="220" y="45" fill="#c62828" font-weight="bold" font-size="12">F</text>
+                </svg>
+            </div>
+
+            <div class="color-legend">
+                <span><span class="color-box" style="background:#c62828"></span> Kraft F / Nordpol</span>
+                <span><span class="color-box" style="background:#1565c0"></span> Südpol</span>
+                <span><span class="color-box" style="background:#2e7d32"></span> B-Feld</span>
+            </div>
+
+            <div class="info-box">
+                <strong>Rechte-Hand-Regel (UVW):</strong><br>
+                Daumen = Stromrichtung (I)<br>
+                Zeigefinger = Magnetfeld (B)<br>
+                Mittelfinger = Kraft (F)
+            </div>
+
+            <p style="margin-top:15px"><strong>Leitfrage:</strong> Was passiert, wenn wir einen Leiter so aufhängen, dass er sich drehen kann?</p>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="goToStep(2)">Weiter</button>
+            </div>
+        </div>
+
+        <!-- Sektion 2: Animation (LEIFI - eingebettet) -->
+        <div class="section" id="section2">
+            <h2>2. Animation: Der Gleichstrommotor</h2>
+
+            <p>Experimentiere mit der Simulation. Beobachte, wie sich die Spule dreht und was der <strong>Kommutator</strong> macht.</p>
+
+            <div class="sim-embed" style="margin:15px 0;">
+                <iframe src="leifi/WF30-gleichstrommotor.html" style="width:100%; height:420px; border:none;"></iframe>
+                <p style="font-size:0.75em; color:#666; padding:8px; background:#f5f5f5; margin:0;">
+                    Simulation: Walter Fendt (www.walter-fendt.de) | via LEIFIphysik
+                </p>
+            </div>
+
+            <h3>Beobachtungsaufträge</h3>
+            <ul class="task-list">
+                <li>Aktiviere die Checkbox <strong>„technische Stromrichtung"</strong> (rot)</li>
+                <li>Aktiviere die Checkbox <strong>„Magnetfeld"</strong> (schwarz)</li>
+                <li>Aktiviere die Checkbox <strong>„LORENTZ-Kraft"</strong> (blau)</li>
+                <li>Beobachte: Wann ist die Kraft auf die Spule <strong>maximal</strong>?</li>
+                <li>Beobachte: Was passiert bei 90° (senkrechte Spule)?</li>
+                <li>Klicke auf <strong>„Umpolen"</strong> – was ändert sich?</li>
+            </ul>
+
+            <h3>Kurz-Check</h3>
+            <p>Wie heißt der drehbare Teil des Motors?</p>
+            <div id="quiz0">
+                <label class="quiz-option" onclick="selectOption('quiz0', 0)">
+                    <input type="radio" name="quiz0" style="display:none"> Stator
+                </label>
+                <label class="quiz-option" onclick="selectOption('quiz0', 1)">
+                    <input type="radio" name="quiz0" style="display:none"> Rotor
+                </label>
+                <label class="quiz-option" onclick="selectOption('quiz0', 2)">
+                    <input type="radio" name="quiz0" style="display:none"> Kommutator
+                </label>
+            </div>
+            <button class="check-btn" onclick="checkQuiz0()">Prüfen</button>
+            <div class="feedback" id="quiz0-feedback"></div>
+
+            <div class="hefter-hinweis">
+                <strong>Arbeitsblatt (Kasten 1):</strong>
+                <ul>
+                    <li>Ergänze die <strong>Bauteile</strong>: Stator, Rotor, Kommutator, Bürsten</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(1)">Zurück</button>
+                <button onclick="goToStep(3)">Weiter</button>
+            </div>
+        </div>
+
+        <!-- Sektion 3: Das Problem und die Lösung -->
+        <div class="section" id="section3">
+            <h2>3. Das Problem: Warum der Kommutator?</h2>
+
+            <p>Ohne Kommutator würde die Spule nach einer halben Umdrehung stoppen!</p>
+
+            <div style="background:#ffebee; border:2px solid #c62828; padding:15px; margin:15px 0;">
+                <p style="margin-bottom:10px;"><strong>Vergleiche selbst:</strong></p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div>
+                        <p style="font-weight:bold; color:#c62828; margin-bottom:5px;">Ohne Kommutator:</p>
+                        <iframe src="leifi/rotor-ohne-kommutator.html" style="width:100%; height:280px; border:1px solid #c62828;"></iframe>
+                    </div>
+                    <div>
+                        <p style="font-weight:bold; color:#2a7a4b; margin-bottom:5px;">Mit Kommutator:</p>
+                        <iframe src="leifi/rotor-mit-kommutator.html" style="width:100%; height:280px; border:1px solid #2a7a4b;"></iframe>
+                    </div>
+                </div>
+                <p style="font-size:0.75em; color:#666; margin-top:8px;">
+                    Animationen: LEIFIphysik (www.leifiphysik.de)
+                </p>
+            </div>
+
+            <div class="key-point">
+                <p><strong>Das Problem:</strong> Der N-Pol des Rotors wird zum S-Pol des Stators gezogen – und bleibt dort stehen! (nach kurzem Pendeln)</p>
+                <p style="margin-top:10px"><strong>Die Lösung:</strong> Der <strong>Kommutator</strong> kehrt die Stromrichtung im richtigen Moment um – die Pole des Rotors werden umgepolt und er wird wieder abgestoßen!</p>
+            </div>
+
+            <h3>Schnellcheck</h3>
+            <p>Wann schaltet der Kommutator die Stromrichtung um?</p>
+
+            <div id="quiz1">
+                <label class="quiz-option" onclick="selectOption('quiz1', 0)">
+                    <input type="radio" name="quiz1" style="display:none"> Bei jeder vollen Umdrehung (360°)
+                </label>
+                <label class="quiz-option" onclick="selectOption('quiz1', 1)">
+                    <input type="radio" name="quiz1" style="display:none"> Bei jeder halben Umdrehung (180°)
+                </label>
+                <label class="quiz-option" onclick="selectOption('quiz1', 2)">
+                    <input type="radio" name="quiz1" style="display:none"> Nur beim Start
+                </label>
+            </div>
+            <button class="check-btn" onclick="checkQuiz1()">Prüfen</button>
+            <div class="feedback" id="quiz1-feedback"></div>
+
+            <div class="hefter-hinweis">
+                <strong>Arbeitsblatt (Kasten 2):</strong>
+                <ul>
+                    <li>Ergänze das <strong>Funktionsprinzip</strong> (Lückentext)</li>
+                    <li>Trage die <strong>Energieumwandlung</strong> ein</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(2)">Zurück</button>
+                <button onclick="goToStep(4)">Weiter</button>
+            </div>
+        </div>
+
+        <!-- Sektion 4: Aufbau und Bauteile -->
+        <div class="section" id="section4">
+            <h2>4. Aufbau des Gleichstrommotors</h2>
+
+            <p>Betrachte die Animation und identifiziere die Bauteile:</p>
+
+            <div class="sim-embed">
+                <iframe src="leifi/rotor-mit-kommutator.html" title="Gleichstrommotor Aufbau (LEIFIphysik)"></iframe>
+            </div>
+            <p style="font-size:0.8em; color:#666; text-align:center;">Animation: LEIFIphysik</p>
+
+            <div class="key-point">
+                <p><strong>Bauteile des Gleichstrommotors:</strong></p>
+                <ul>
+                    <li><strong>Stator</strong> = feststehender Magnet</li>
+                    <li><strong>Rotor</strong> = drehbare Spule</li>
+                    <li><strong>Kommutator</strong> = Stromwender (geteilter Ring)</li>
+                    <li><strong>Bürsten</strong> = Schleifkontakte für Stromzufuhr</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <strong>Energieumwandlung:</strong><br>
+                Elektrische Energie → Bewegungsenergie (+ Wärme durch Reibung)
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(3)">Zurück</button>
+                <button onclick="goToStep(5)">Weiter</button>
+            </div>
+        </div>
+
+        <!-- Sektion 5: Zusammenfassung -->
+        <div class="section" id="section5">
+            <h2>5. Zusammenfassung</h2>
+
+            <div class="key-point">
+                <p><strong>Der Gleichstrommotor wandelt elektrische Energie in Bewegungsenergie um.</strong></p>
+                <p style="margin-top:10px"><strong>Funktionsprinzip:</strong></p>
+                <ol>
+                    <li>Strom fließt durch die Rotorspule</li>
+                    <li>Im Magnetfeld wirkt die Lorentzkraft</li>
+                    <li>Die Spule dreht sich</li>
+                    <li>Der Kommutator kehrt den Strom um (alle 180°)</li>
+                    <li>Die Drehung setzt sich fort</li>
+                </ol>
+            </div>
+
+            <h3>Drehrichtung ändern</h3>
+            <p>Die Drehrichtung kann geändert werden durch:</p>
+            <ul>
+                <li><strong>Umpolen der Spannung</strong> (+ und − vertauschen) ODER</li>
+                <li><strong>Umpolen des Magnetfelds</strong> (N und S vertauschen)</li>
+            </ul>
+            <p style="margin-top:10px; color:#c62828"><strong>Achtung:</strong> Wenn beides gleichzeitig geändert wird, bleibt die Drehrichtung gleich!</p>
+
+            <div class="hefter-hinweis">
+                <strong>Arbeitsblatt (Kasten 3 + Übungen):</strong>
+                <ul>
+                    <li>Ergänze, wie man die <strong>Drehrichtung ändert</strong></li>
+                    <li>Bearbeite die <strong>Übungen 1-4</strong></li>
+                </ul>
+            </div>
+
+            <h3>Abschluss-Check</h3>
+            <p>Warum dreht sich der Motor weiter, obwohl bei 90° kein Drehmoment wirkt?</p>
+
+            <div id="quiz2">
+                <label class="quiz-option" onclick="selectOption('quiz2', 0)">
+                    <input type="radio" name="quiz2" style="display:none"> Der Kommutator erzeugt zusätzliche Kraft
+                </label>
+                <label class="quiz-option" onclick="selectOption('quiz2', 1)">
+                    <input type="radio" name="quiz2" style="display:none"> Der Schwung (Trägheit) trägt die Spule über diesen Punkt hinweg
+                </label>
+                <label class="quiz-option" onclick="selectOption('quiz2', 2)">
+                    <input type="radio" name="quiz2" style="display:none"> Die Bürsten schieben die Spule mechanisch weiter
+                </label>
+            </div>
+            <button class="check-btn" onclick="checkQuiz2()">Prüfen</button>
+            <div class="feedback" id="quiz2-feedback"></div>
+
+            <div style="background:#f3e5f5; border:2px solid #7b1fa2; padding:12px 15px; margin:20px 0; font-size:0.9em;">
+                <strong style="color:#7b1fa2;">Für Profis:</strong> Beim <em>Wechselstrommotor</em> braucht man keinen Kommutator. Warum nicht?
+            </div>
+
+            <!-- Text-Zusammenfassung für alle Lerntypen -->
+            <details style="margin-top:20px; background:#f5f5f5; border:1px solid #ddd; padding:10px 15px;">
+                <summary style="cursor:pointer; font-weight:600; color:#2c5aa0;">Zusammenfassung als Text (zum Nachlesen)</summary>
+                <div style="margin-top:10px; font-size:0.9em; line-height:1.6;">
+                    <p><strong>Der Gleichstrommotor</strong> besteht aus vier Hauptteilen: Der <em>Stator</em> (feststehender Magnet), der <em>Rotor</em> (drehbare Spule), der <em>Kommutator</em> (Stromwender) und die <em>Bürsten</em> (Schleifkontakte).</p>
+                    <p><strong>Funktionsprinzip:</strong> Strom fließt durch die Rotorspule. Im Magnetfeld des Stators wirkt die Lorentzkraft auf den stromdurchflossenen Leiter. Die Spule beginnt sich zu drehen. Ohne Kommutator würde der Rotor stehenbleiben (nach kurzem Pendeln) – aber der Kommutator kehrt die Stromrichtung im richtigen Moment um. So dreht sich der Motor weiter.</p>
+                    <p><strong>Energieumwandlung:</strong> Elektrische Energie wird in Bewegungsenergie umgewandelt.</p>
+                    <p><strong>Drehrichtung ändern:</strong> Entweder Spannung umpolen ODER Magnetfeld umpolen. Beides gleichzeitig = keine Änderung!</p>
+                </div>
+            </details>
+
+            <div class="info-box" style="margin-top:20px; background:#e8f5e9; border-color:#2a7a4b;">
+                <strong>Geschafft!</strong> Du kennst jetzt den Aufbau und die Funktionsweise des Gleichstrommotors.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(4)">Zurück</button>
+                <button class="success" onclick="finishLP()">Fertig!</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var currentSection = 1;
+        var totalSections = 5;
+        var selectedAnswers = {};
+
+        function init() {
+            updateProgress();
+            updateStepNav();
+            loadProgress();
+        }
+
+        function updateStepNav() {
+            var navItems = document.querySelectorAll('.step-nav-item');
+            for (var i = 0; i < navItems.length; i++) {
+                navItems[i].classList.remove('active', 'done');
+                if (i + 1 < currentSection) {
+                    navItems[i].classList.add('done');
+                } else if (i + 1 === currentSection) {
+                    navItems[i].classList.add('active');
+                }
+            }
+        }
+
+        function updateProgress() {
+            var progress = ((currentSection - 1) / (totalSections - 1)) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            updateStepNav();
+        }
+
+        function showSection(num) {
+            for (var i = 1; i <= totalSections; i++) {
+                var section = document.getElementById('section' + i);
+                if (section) {
+                    section.classList.remove('active');
+                }
+            }
+            var target = document.getElementById('section' + num);
+            if (target) {
+                target.classList.add('active');
+            }
+            currentSection = num;
+            updateProgress();
+            saveProgress();
+            window.scrollTo(0, 0);
+        }
+
+        function goToStep(num) {
+            if (num >= 1 && num <= totalSections) {
+                showSection(num);
+            }
+        }
+
+        function finishLP() {
+            alert('Lernpfad abgeschlossen! Prüfe dein Arbeitsblatt.');
+        }
+
+        function selectOption(quizId, optionIndex) {
+            var options = document.querySelectorAll('#' + quizId + ' .quiz-option');
+            for (var i = 0; i < options.length; i++) {
+                options[i].classList.remove('selected', 'correct', 'incorrect');
+            }
+            options[optionIndex].classList.add('selected');
+            selectedAnswers[quizId] = optionIndex;
+        }
+
+        function checkQuiz0() {
+            var feedbackEl = document.getElementById('quiz0-feedback');
+            var options = document.querySelectorAll('#quiz0 .quiz-option');
+
+            if (selectedAnswers['quiz0'] === undefined) {
+                feedbackEl.textContent = 'Bitte wähle eine Antwort aus.';
+                feedbackEl.className = 'feedback incorrect';
+                return;
+            }
+
+            for (var i = 0; i < options.length; i++) {
+                options[i].classList.remove('correct', 'incorrect');
+            }
+
+            if (selectedAnswers['quiz0'] === 1) {
+                options[1].classList.add('correct');
+                feedbackEl.textContent = 'Richtig! Der Rotor ist der drehbare Teil (von lateinisch "rotare" = drehen). Der Stator steht still.';
+                feedbackEl.className = 'feedback correct';
+            } else {
+                options[selectedAnswers['quiz0']].classList.add('incorrect');
+                options[1].classList.add('correct');
+                feedbackEl.textContent = 'Der Rotor dreht sich (Eselsbrücke: Rotor rotiert). Der Stator steht still.';
+                feedbackEl.className = 'feedback incorrect';
+            }
+        }
+
+        function checkQuiz1() {
+            var feedbackEl = document.getElementById('quiz1-feedback');
+            var options = document.querySelectorAll('#quiz1 .quiz-option');
+
+            if (selectedAnswers['quiz1'] === undefined) {
+                feedbackEl.textContent = 'Bitte wähle eine Antwort aus.';
+                feedbackEl.className = 'feedback incorrect';
+                return;
+            }
+
+            for (var i = 0; i < options.length; i++) {
+                options[i].classList.remove('correct', 'incorrect');
+            }
+
+            if (selectedAnswers['quiz1'] === 1) {
+                options[1].classList.add('correct');
+                feedbackEl.textContent = 'Richtig! Der Kommutator schaltet alle 180° um, also zweimal pro voller Umdrehung.';
+                feedbackEl.className = 'feedback correct';
+            } else {
+                options[selectedAnswers['quiz1']].classList.add('incorrect');
+                options[1].classList.add('correct');
+                feedbackEl.textContent = 'Nicht ganz. Der Kommutator schaltet bei jeder halben Umdrehung (180°) um - also zweimal pro voller Umdrehung.';
+                feedbackEl.className = 'feedback incorrect';
+            }
+        }
+
+        function checkQuiz2() {
+            var feedbackEl = document.getElementById('quiz2-feedback');
+            var options = document.querySelectorAll('#quiz2 .quiz-option');
+
+            if (selectedAnswers['quiz2'] === undefined) {
+                feedbackEl.textContent = 'Bitte wähle eine Antwort aus.';
+                feedbackEl.className = 'feedback incorrect';
+                return;
+            }
+
+            for (var i = 0; i < options.length; i++) {
+                options[i].classList.remove('correct', 'incorrect');
+            }
+
+            if (selectedAnswers['quiz2'] === 1) {
+                options[1].classList.add('correct');
+                feedbackEl.textContent = 'Genau! Der Schwung (Trägheit) der rotierenden Spule trägt sie über den "toten Punkt" bei 90° hinweg, bis wieder ein Drehmoment wirkt.';
+                feedbackEl.className = 'feedback correct';
+            } else {
+                options[selectedAnswers['quiz2']].classList.add('incorrect');
+                options[1].classList.add('correct');
+                feedbackEl.textContent = 'Die Trägheit (Schwung) ist entscheidend: Die rotierende Spule hat genug Schwung, um über den Punkt ohne Drehmoment hinwegzukommen.';
+                feedbackEl.className = 'feedback incorrect';
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('lp-09a-motor-section', currentSection);
+        }
+
+        function loadProgress() {
+            var saved = localStorage.getItem('lp-09a-motor-section');
+            if (saved) {
+                showSection(parseInt(saved));
+            }
+        }
+
+        init();
+    </script>
+
+    <footer style="max-width:900px; margin:20px auto; padding:15px; font-size:0.75em; color:#666; border-top:1px solid #ddd;">
+        <p><strong>Quellennachweis Simulationen:</strong></p>
+        <ul style="margin:5px 0 0 15px;">
+            <li>Gleichstrom-Elektromotor (Simulation): Walter Fendt (www.walter-fendt.de), via LEIFIphysik</li>
+            <li>Rotor mit/ohne Kommutator (Animation): LEIFIphysik (www.leifiphysik.de)</li>
+        </ul>
+        <p style="margin-top:10px;">Die Simulationen dürfen für nicht-kommerzielle Zwecke verwendet werden.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Impuls & Impulserhaltung</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 20px;
+            font-size: 0.9em;
+        }
+        .info-box strong { color: #2c5aa0; }
+
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .multi-option { display: flex; align-items: center; gap: 10px; padding: 10px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; }
+        .multi-option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .multi-option input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .multi-option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .multi-option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .calc-input { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+        .calc-input input[type="number"], .calc-input input[type="text"] {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            width: 100px;
+            font-size: 1em;
+            text-align: center;
+        }
+        .calc-input select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+        }
+        .calc-input input.correct, .calc-input select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .calc-input input.incorrect, .calc-input select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.85em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .seat-field { max-width: 400px; margin: 15px auto; padding: 15px; background: #fff; border: 1px solid #ddd; }
+        .seat-field label { font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px; }
+
+        /* ISO 80000: Formelzeichen kursiv+serif, Einheiten aufrecht+sans */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-style: normal; }
+
+        .hidden { display: none; }
+
+        .hinweis { background: #fff3e0; border-left: 3px solid #b35c00; padding: 10px 15px; margin: 10px 0; font-size: 0.9em; }
+
+        .seat-warning {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            font-size: 0.8em;
+            color: #b35c00;
+        }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Impuls & Impulserhaltung</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 10E | 25 BE | 20 Min</div>
+        </div>
+    </header>
+
+    <div class="info-box">
+        <strong>Hilfsmittel erlaubt:</strong> Arbeitsblatt (AB-02), Lernpfad (LP-02)<br>
+        <strong>Kein Taschenrechner!</strong> Alle Aufgaben sind kopfrechenbar.
+    </div>
+
+    <div class="info-box" style="background: #f5f5f5; border-color: #666;">
+        <strong>Bewertung (15-NP-Skala):</strong>
+        <table style="width:100%; margin-top:8px; font-size:0.85em; border-collapse:collapse;">
+            <tr>
+                <td style="padding:4px;"><strong>15 NP:</strong> ≥25 BE</td>
+                <td style="padding:4px;"><strong>14 NP:</strong> ≥24 BE</td>
+                <td style="padding:4px;"><strong>13 NP:</strong> ≥24 BE</td>
+                <td style="padding:4px;"><strong>10 NP:</strong> ≥20 BE</td>
+            </tr>
+            <tr>
+                <td style="padding:4px;"><strong>7 NP:</strong> ≥15 BE</td>
+                <td style="padding:4px;"><strong>4 NP:</strong> ≥10 BE</td>
+                <td style="padding:4px;"><strong>1 NP:</strong> ≥5 BE</td>
+                <td style="padding:4px;"><strong>0 NP:</strong> &lt;5 BE</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="seat-field">
+        <label>Platznummer:</label>
+        <div class="seat-warning" id="seatWarning">
+            Kann nach OK <strong>nicht mehr geändert</strong> werden!
+        </div>
+        <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+            <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px;">
+                <option value="">-- wählen --</option>
+            </select>
+            <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+        </div>
+        <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600; margin-top: 10px;"></div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 8 beantwortet</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            Deine Platznummer (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
+
+        <!-- Formel-Hilfe -->
+        <div class="hinweis">
+            <strong>Formeln:</strong>
+            <span class="fz">p</span> = <span class="fz">m</span> · <span class="fz">v</span> &nbsp;|&nbsp;
+            Einheit: [<span class="fz">p</span>] = kg·m/s &nbsp;|&nbsp;
+            Impulserhaltung: Σ<span class="fz">p</span><sub>vor</sub> = Σ<span class="fz">p</span><sub>nach</sub>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A1: Impuls berechnen (6 BE) - 3 Teilaufgaben
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q1" data-points="6">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 1: Impuls berechnen</div>
+                <div class="question-meta">
+                    <span class="question-points">6 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Berechne</strong> den Impuls für folgende Objekte:
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> Fußball: <span class="fz">m</span> = 0,4 <span class="einheit">kg</span>, <span class="fz">v</span> = 25 <span class="einheit">m/s</span></p>
+                <div class="calc-input">
+                    <span><span class="fz">p</span> =</span>
+                    <input type="text" inputmode="decimal" id="q1-a" placeholder="Wert">
+                    <span class="einheit">kg·m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> Sprinter: <span class="fz">m</span> = 80 <span class="einheit">kg</span>, <span class="fz">v</span> = 10 <span class="einheit">m/s</span></p>
+                <div class="calc-input">
+                    <span><span class="fz">p</span> =</span>
+                    <input type="text" inputmode="decimal" id="q1-b" placeholder="Wert">
+                    <span class="einheit">kg·m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>c)</strong> Auto: <span class="fz">m</span> = 1200 <span class="einheit">kg</span>, <span class="fz">v</span> = 30 <span class="einheit">m/s</span></p>
+                <div class="calc-input">
+                    <span><span class="fz">p</span> =</span>
+                    <input type="text" inputmode="decimal" id="q1-c" placeholder="Wert">
+                    <span class="einheit">kg·m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q1-fb-correct">Alle Berechnungen richtig!</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">
+                a) <span class="fz">p</span> = 0,4 × 25 = 10 kg·m/s<br>
+                b) <span class="fz">p</span> = 80 × 10 = 800 kg·m/s<br>
+                c) <span class="fz">p</span> = 1200 × 30 = 36.000 kg·m/s
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A2: Impuls-Vergleich (2 BE)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 2: Wer hat mehr Wucht?</div>
+                <div class="question-meta">
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Usain Bolt (<span class="fz">m</span> = 94 kg, <span class="fz">v</span> = 12 m/s) gegen einen Sumo-Ringer (<span class="fz">m</span> = 180 kg, <span class="fz">v</span> = 4 m/s).<br>
+                <strong>Wer hat den größeren Impuls?</strong>
+            </div>
+
+            <div class="options" id="q2-options">
+                <label class="option" data-value="a"><input type="radio" name="q2" value="a">Sumo-Ringer (weil er schwerer ist)</label>
+                <label class="option" data-value="b"><input type="radio" name="q2" value="b">Usain Bolt (weil er schneller ist)</label>
+                <label class="option" data-value="c"><input type="radio" name="q2" value="c">Beide haben denselben Impuls</label>
+            </div>
+
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig! Bolt: 94×12 = 1128 kg·m/s > Sumo: 180×4 = 720 kg·m/s</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">
+                Bolt: <span class="fz">p</span> = 94 × 12 = 1128 kg·m/s<br>
+                Sumo: <span class="fz">p</span> = 180 × 4 = 720 kg·m/s<br>
+                → Bolt gewinnt, weil seine Geschwindigkeit den Massennachteil mehr als ausgleicht!
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A3: Definition Impuls (2 BE)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 3: Definition</div>
+                <div class="question-meta">
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Was beschreibt der Impuls?</strong>
+            </div>
+
+            <div class="options" id="q3-options">
+                <label class="option" data-value="a"><input type="radio" name="q3" value="a">Die Energie eines bewegten Körpers</label>
+                <label class="option" data-value="b"><input type="radio" name="q3" value="b">Wie schwer es ist, einen bewegten Körper zu stoppen ("Wucht")</label>
+                <label class="option" data-value="c"><input type="radio" name="q3" value="c">Die Beschleunigung eines Körpers</label>
+                <label class="option" data-value="d"><input type="radio" name="q3" value="d">Die Kraft, die auf einen Körper wirkt</label>
+            </div>
+
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! Der Impuls beschreibt die "Wucht" – wie schwer es ist, einen Körper zu stoppen.</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">
+                Der Impuls beschreibt, wie schwer es ist, einen bewegten Körper zu stoppen.<br>
+                Energie ist E = ½mv², Beschleunigung ist a = F/m, Kraft ist F = m·a.
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A4: Abgeschlossenes System (2 BE)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q4" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 4: Abgeschlossenes System</div>
+                <div class="question-meta">
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Was gilt für ein abgeschlossenes System?</strong>
+            </div>
+
+            <div class="options" id="q4-options">
+                <label class="option" data-value="a"><input type="radio" name="q4" value="a">Es wirken keine inneren Kräfte</label>
+                <label class="option" data-value="b"><input type="radio" name="q4" value="b">Es wirken keine äußeren Kräfte</label>
+                <label class="option" data-value="c"><input type="radio" name="q4" value="c">Die Masse bleibt konstant</label>
+                <label class="option" data-value="d"><input type="radio" name="q4" value="d">Die Geschwindigkeit bleibt konstant</label>
+            </div>
+
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! In einem abgeschlossenen System wirken keine äußeren Kräfte.</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">
+                Ein abgeschlossenes System ist ein Bereich, in dem <strong>keine äußeren Kräfte</strong> wirken.<br>
+                Beispiele: Billardkugeln, Luftkissenbahn (reibungsfrei), Weltraum
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A5: Elastisch vs. Unelastisch (3 BE) - Zuordnung
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q5" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 5: Stoßarten zuordnen</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Ordne zu:</strong> Elastischer Stoß oder Unelastischer Stoß?
+            </div>
+
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:200px;">Körper prallen ab:</span>
+                    <select id="q5-a" style="padding:8px;min-width:180px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="elastisch">Elastischer Stoß</option>
+                        <option value="unelastisch">Unelastischer Stoß</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:200px;">Körper kleben zusammen:</span>
+                    <select id="q5-b" style="padding:8px;min-width:180px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="elastisch">Elastischer Stoß</option>
+                        <option value="unelastisch">Unelastischer Stoß</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:10px 0;">
+                    <span style="min-width:200px;">Energie geht verloren (Wärme):</span>
+                    <select id="q5-c" style="padding:8px;min-width:180px;">
+                        <option value="">-- Auswählen --</option>
+                        <option value="elastisch">Elastischer Stoß</option>
+                        <option value="unelastisch">Unelastischer Stoß</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q5-fb-correct">Alle drei richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">
+                <strong>Elastischer Stoß:</strong> Körper prallen ab, Energie bleibt erhalten (z.B. Billard)<br>
+                <strong>Unelastischer Stoß:</strong> Körper kleben zusammen, Energie geht verloren (z.B. Güterwagen-Kupplung)
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A6: Impulserhaltung Rechnung (5 BE)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q6" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 6: Unelastischer Stoß</div>
+                <div class="question-meta">
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Auto (<span class="fz">m</span><sub>1</sub> = 1000 kg, <span class="fz">v</span><sub>1</sub> = 20 m/s) fährt auf ein stehendes Auto (<span class="fz">m</span><sub>2</sub> = 1500 kg, <span class="fz">v</span><sub>2</sub> = 0).<br>
+                Nach dem Aufprall sind beide <strong>verkeilt</strong>. <strong>Berechne</strong> die gemeinsame Geschwindigkeit <span class="fz">v</span>'.
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> Gesamtimpuls vorher: <span class="fz">p</span><sub>ges</sub> = <span class="fz">m</span><sub>1</sub>·<span class="fz">v</span><sub>1</sub> + <span class="fz">m</span><sub>2</sub>·<span class="fz">v</span><sub>2</sub> =</p>
+                <div class="calc-input">
+                    <span><span class="fz">p</span><sub>ges</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q6-pges" placeholder="Wert">
+                    <span class="einheit">kg·m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> Gesamtmasse: <span class="fz">m</span><sub>ges</sub> = <span class="fz">m</span><sub>1</sub> + <span class="fz">m</span><sub>2</sub> =</p>
+                <div class="calc-input">
+                    <span><span class="fz">m</span><sub>ges</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q6-mges" placeholder="Wert">
+                    <span class="einheit">kg</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(1 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>c)</strong> Geschwindigkeit nachher: <span class="fz">v</span>' = <span class="fz">p</span><sub>ges</sub> / <span class="fz">m</span><sub>ges</sub> =</p>
+                <div class="calc-input">
+                    <span><span class="fz">v</span>' =</span>
+                    <input type="text" inputmode="decimal" id="q6-v" placeholder="Wert">
+                    <span class="einheit">m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q6-fb-correct">Vollständig richtig!</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">
+                a) <span class="fz">p</span><sub>ges</sub> = 1000×20 + 1500×0 = 20.000 kg·m/s<br>
+                b) <span class="fz">m</span><sub>ges</sub> = 1000 + 1500 = 2500 kg<br>
+                c) <span class="fz">v</span>' = 20.000 / 2500 = 8 m/s
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A7: Impulserhaltung Multi-Select (3 BE)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q7" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 7: Impulserhaltung</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Wähle</strong> alle zutreffenden Aussagen zum Impulserhaltungssatz aus.<br>
+                <span style="color:#b35c00; font-size:0.85em;">Hinweis: Für jede richtige Auswahl +1 BE, für jede falsche Auswahl −1 BE (min. 0 BE)</span>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <label class="multi-option" id="q7-a">
+                    <input type="checkbox" id="q7-cb-a" value="a">
+                    <span>Der Gesamtimpuls in einem abgeschlossenen System bleibt konstant.</span>
+                </label>
+                <label class="multi-option" id="q7-b">
+                    <input type="checkbox" id="q7-cb-b" value="b">
+                    <span>Impulserhaltung gilt nur beim elastischen Stoß.</span>
+                </label>
+                <label class="multi-option" id="q7-c">
+                    <input type="checkbox" id="q7-cb-c" value="c">
+                    <span>Impuls kann zwischen Körpern übertragen werden.</span>
+                </label>
+                <label class="multi-option" id="q7-d">
+                    <input type="checkbox" id="q7-cb-d" value="d">
+                    <span>Beim unelastischen Stoß geht Impuls verloren.</span>
+                </label>
+            </div>
+
+            <div class="feedback-box correct" id="q7-fb-correct">Richtig: A und C sind korrekt. B und D sind falsch.</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">
+                <strong>Richtig:</strong><br>
+                A: Der Gesamtimpuls bleibt in einem abgeschlossenen System konstant.<br>
+                C: Impuls kann zwischen Körpern übertragen werden (z.B. beim Billard).<br><br>
+                <strong>Falsch:</strong><br>
+                B: Impulserhaltung gilt bei BEIDEN Stoßarten!<br>
+                D: Beim unelastischen Stoß geht ENERGIE verloren, nicht Impuls!
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A8: Ruckstossprinzip (2 BE)
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q8" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 8: Rückstoßprinzip</div>
+                <div class="question-meta">
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Eine Rakete stößt im Weltraum Gase nach hinten aus und wird dadurch beschleunigt.<br>
+                <strong>Wie lässt sich dies mit dem Impulserhaltungssatz erklären?</strong>
+            </div>
+
+            <div class="options" id="q8-options">
+                <label class="option" data-value="a"><input type="radio" name="q8" value="a">Die Gase drücken gegen die Luft und schieben die Rakete vorwärts.</label>
+                <label class="option" data-value="b"><input type="radio" name="q8" value="b">Der Impuls der ausgestoßenen Gase (nach hinten) ist gleich groß wie der Impuls der Rakete (nach vorne).</label>
+                <label class="option" data-value="c"><input type="radio" name="q8" value="c">Die Rakete bewegt sich, weil der Treibstoff Energie freisetzt.</label>
+                <label class="option" data-value="d"><input type="radio" name="q8" value="d">Der Gesamtimpuls des Systems nimmt zu.</label>
+            </div>
+
+            <div class="feedback-box correct" id="q8-fb-correct">Richtig! Impulserhaltung: <span class="fz">p</span><sub>Gase</sub> + <span class="fz">p</span><sub>Rakete</sub> = 0. Die Gase erhalten Impuls nach hinten, die Rakete gleich viel nach vorne.</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">
+                Im Weltraum gibt es keine Luft (A falsch). Energie erklärt nicht die Richtung (C unvollständig). Der Gesamtimpuls bleibt konstant, nimmt nicht zu (D falsch).<br>
+                <strong>Korrekt:</strong> Die ausgestoßenen Gase haben Impuls nach hinten, die Rakete erhält gleich viel Impuls nach vorne. Gesamtimpuls bleibt 0.
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 25</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>15</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td>
+                    <td id="np15">25</td>
+                    <td id="np14">24</td>
+                    <td id="np13">24</td>
+                    <td id="np12">23</td>
+                    <td id="np11">21</td>
+                    <td id="np10">20</td>
+                    <td id="np9">18</td>
+                    <td id="np8">17</td>
+                    <td id="np7">15</td>
+                    <td id="np6">13</td>
+                    <td id="np5">12</td>
+                    <td id="np4">10</td>
+                    <td id="np3">8</td>
+                    <td id="np2">7</td>
+                    <td id="np1">5</td>
+                    <td id="np0">&lt;5</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        </div><!-- END questionsContainer -->
+
+        <!-- Lehrer-Reset (dezent am Ende) -->
+        <div style="text-align: center; margin: 40px 0 20px 0;">
+            <button onclick="teacherReset()" style="background: none; border: none; color: #ccc; font-size: 0.75em; cursor: pointer;">⟳ Zurücksetzen</button>
+        </div>
+    </div>
+
+    <script>
+    var STORAGE_KEY = 'mt-physik-10e-02-impuls-v1';
+    var MAX_POINTS = 25;
+    var NUM_QUESTIONS = 8;
+    var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll (Anti-Betrug)
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // Korrekte Antworten
+    var answers = {
+        q1: { a: 10, b: 800, c: 36000 },
+        q2: 'b',
+        q3: 'b',
+        q4: 'b',
+        q5: { a: 'elastisch', b: 'unelastisch', c: 'unelastisch' },
+        q6: { pges: 20000, mges: 2500, v: 8 },
+        q7: { correct: ['a', 'c'], wrong: ['b', 'd'] },
+        q8: 'b'
+    };
+
+    // Toleranz für numerische Antworten
+    function parseNumber(value) {
+        if (value === '' || value === null) return NaN;
+        var normalized = String(value).replace(',', '.').replace(/\s/g, '');
+        return parseFloat(normalized);
+    }
+
+    function isClose(val, correct, tol) {
+        tol = tol || 0.5;
+        return Math.abs(val - correct) <= tol;
+    }
+
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') {
+            showLockedSeat(saved);
+        } else if (saved) {
+            select.value = saved;
+        }
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nDiese Auswahl kann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Deine Platznummer: <strong style="color:#2c5aa0; font-size:1.2em;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function setupOptions() {
+        var optionContainers = document.querySelectorAll('.options');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+    }
+
+    function isQuestionAnswered(qId) {
+        switch(qId) {
+            case 'q1':
+                return document.getElementById('q1-a').value &&
+                       document.getElementById('q1-b').value &&
+                       document.getElementById('q1-c').value;
+            case 'q2':
+                return !!document.querySelector('input[name="q2"]:checked');
+            case 'q3':
+                return !!document.querySelector('input[name="q3"]:checked');
+            case 'q4':
+                return !!document.querySelector('input[name="q4"]:checked');
+            case 'q5':
+                return document.getElementById('q5-a').value &&
+                       document.getElementById('q5-b').value &&
+                       document.getElementById('q5-c').value;
+            case 'q6':
+                return document.getElementById('q6-pges').value &&
+                       document.getElementById('q6-mges').value &&
+                       document.getElementById('q6-v').value;
+            case 'q7':
+                var anyChecked = false;
+                var checkboxes = document.querySelectorAll('#q7 input[type="checkbox"]');
+                for (var i = 0; i < checkboxes.length; i++) {
+                    if (checkboxes[i].checked) anyChecked = true;
+                }
+                return anyChecked;
+            case 'q8':
+                return !!document.querySelector('input[name="q8"]:checked');
+            default: return false;
+        }
+    }
+
+    function countAnsweredQuestions() {
+        var answered = 0;
+        for (var i = 1; i <= NUM_QUESTIONS; i++) {
+            if (isQuestionAnswered('q' + i)) answered++;
+        }
+        return answered;
+    }
+
+    function updateProgress() {
+        var answered = countAnsweredQuestions();
+        var percent = (answered / NUM_QUESTIONS) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = answered + ' / ' + NUM_QUESTIONS + ' beantwortet';
+    }
+
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        return {
+            q1a: document.getElementById('q1-a').value,
+            q1b: document.getElementById('q1-b').value,
+            q1c: document.getElementById('q1-c').value,
+            q2: getRadioValue('q2'),
+            q3: getRadioValue('q3'),
+            q4: getRadioValue('q4'),
+            q5a: document.getElementById('q5-a').value,
+            q5b: document.getElementById('q5-b').value,
+            q5c: document.getElementById('q5-c').value,
+            q6pges: document.getElementById('q6-pges').value,
+            q6mges: document.getElementById('q6-mges').value,
+            q6v: document.getElementById('q6-v').value,
+            q7a: document.getElementById('q7-cb-a').checked,
+            q7b: document.getElementById('q7-cb-b').checked,
+            q7c: document.getElementById('q7-cb-c').checked,
+            q7d: document.getElementById('q7-cb-d').checked,
+            q8: getRadioValue('q8')
+        };
+    }
+
+    function restoreAnswers(saved) {
+        if (saved.q1a) document.getElementById('q1-a').value = saved.q1a;
+        if (saved.q1b) document.getElementById('q1-b').value = saved.q1b;
+        if (saved.q1c) document.getElementById('q1-c').value = saved.q1c;
+
+        if (saved.q2) {
+            var radio = document.querySelector('input[name="q2"][value="' + saved.q2 + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+        if (saved.q3) {
+            var radio = document.querySelector('input[name="q3"][value="' + saved.q3 + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+        if (saved.q4) {
+            var radio = document.querySelector('input[name="q4"][value="' + saved.q4 + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+
+        if (saved.q5a) document.getElementById('q5-a').value = saved.q5a;
+        if (saved.q5b) document.getElementById('q5-b').value = saved.q5b;
+        if (saved.q5c) document.getElementById('q5-c').value = saved.q5c;
+
+        if (saved.q6pges) document.getElementById('q6-pges').value = saved.q6pges;
+        if (saved.q6mges) document.getElementById('q6-mges').value = saved.q6mges;
+        if (saved.q6v) document.getElementById('q6-v').value = saved.q6v;
+
+        if (saved.q7a) document.getElementById('q7-cb-a').checked = true;
+        if (saved.q7b) document.getElementById('q7-cb-b').checked = true;
+        if (saved.q7c) document.getElementById('q7-cb-c').checked = true;
+        if (saved.q7d) document.getElementById('q7-cb-d').checked = true;
+
+        if (saved.q8) {
+            var radio = document.querySelector('input[name="q8"][value="' + saved.q8 + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatNum = localStorage.getItem(STORAGE_KEY + '-seat');
+        if (!seatNum) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var score = 0;
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q1: Impuls berechnen (6 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q1Score = 0;
+        var q1aEl = document.getElementById('q1-a');
+        var q1bEl = document.getElementById('q1-b');
+        var q1cEl = document.getElementById('q1-c');
+
+        if (isClose(parseNumber(q1aEl.value), answers.q1.a, 0.5)) {
+            q1Score += 2; q1aEl.classList.add('correct');
+        } else { q1aEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q1bEl.value), answers.q1.b, 10)) {
+            q1Score += 2; q1bEl.classList.add('correct');
+        } else { q1bEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q1cEl.value), answers.q1.c, 500)) {
+            q1Score += 2; q1cEl.classList.add('correct');
+        } else { q1cEl.classList.add('incorrect'); }
+
+        score += q1Score;
+        showFeedback('q1', q1Score === 6);
+        showQuestionResult('q1', q1Score, 6);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q2: Impuls-Vergleich (2 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q2Val = getRadioValue('q2');
+        var q2Correct = q2Val === answers.q2;
+        var q2Score = q2Correct ? 2 : 0;
+        score += q2Score;
+        markRadioQuestion('q2', answers.q2, q2Val);
+        showFeedback('q2', q2Correct);
+        showQuestionResult('q2', q2Score, 2);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q3: Definition (2 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q3Val = getRadioValue('q3');
+        var q3Correct = q3Val === answers.q3;
+        var q3Score = q3Correct ? 2 : 0;
+        score += q3Score;
+        markRadioQuestion('q3', answers.q3, q3Val);
+        showFeedback('q3', q3Correct);
+        showQuestionResult('q3', q3Score, 2);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q4: Abgeschlossenes System (2 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q4Val = getRadioValue('q4');
+        var q4Correct = q4Val === answers.q4;
+        var q4Score = q4Correct ? 2 : 0;
+        score += q4Score;
+        markRadioQuestion('q4', answers.q4, q4Val);
+        showFeedback('q4', q4Correct);
+        showQuestionResult('q4', q4Score, 2);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q5: Zuordnung (3 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q5Score = 0;
+        var q5aEl = document.getElementById('q5-a');
+        var q5bEl = document.getElementById('q5-b');
+        var q5cEl = document.getElementById('q5-c');
+
+        if (q5aEl.value === answers.q5.a) { q5Score++; q5aEl.classList.add('correct'); } else { q5aEl.classList.add('incorrect'); }
+        if (q5bEl.value === answers.q5.b) { q5Score++; q5bEl.classList.add('correct'); } else { q5bEl.classList.add('incorrect'); }
+        if (q5cEl.value === answers.q5.c) { q5Score++; q5cEl.classList.add('correct'); } else { q5cEl.classList.add('incorrect'); }
+
+        score += q5Score;
+        showFeedback('q5', q5Score === 3);
+        showQuestionResult('q5', q5Score, 3);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q6: Unelastischer Stoß (5 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q6Score = 0;
+        var q6pgesEl = document.getElementById('q6-pges');
+        var q6mgesEl = document.getElementById('q6-mges');
+        var q6vEl = document.getElementById('q6-v');
+
+        if (isClose(parseNumber(q6pgesEl.value), answers.q6.pges, 500)) {
+            q6Score += 2; q6pgesEl.classList.add('correct');
+        } else { q6pgesEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q6mgesEl.value), answers.q6.mges, 50)) {
+            q6Score += 1; q6mgesEl.classList.add('correct');
+        } else { q6mgesEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q6vEl.value), answers.q6.v, 0.5)) {
+            q6Score += 2; q6vEl.classList.add('correct');
+        } else { q6vEl.classList.add('incorrect'); }
+
+        score += q6Score;
+        showFeedback('q6', q6Score === 5);
+        showQuestionResult('q6', q6Score, 5);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q7: Impulserhaltung Multi-Select (3 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q7Score = 0;
+        var checkboxA = document.getElementById('q7-cb-a');
+        var checkboxB = document.getElementById('q7-cb-b');
+        var checkboxC = document.getElementById('q7-cb-c');
+        var checkboxD = document.getElementById('q7-cb-d');
+
+        // A ist korrekt
+        if (checkboxA.checked) {
+            q7Score += 1;
+            document.getElementById('q7-a').classList.add('correct');
+        } else {
+            document.getElementById('q7-a').classList.add('incorrect');
+        }
+
+        // B ist FALSCH
+        if (checkboxB.checked) {
+            q7Score -= 1;
+            document.getElementById('q7-b').classList.add('incorrect');
+        } else {
+            document.getElementById('q7-b').classList.add('correct');
+        }
+
+        // C ist korrekt
+        if (checkboxC.checked) {
+            q7Score += 1;
+            document.getElementById('q7-c').classList.add('correct');
+        } else {
+            document.getElementById('q7-c').classList.add('incorrect');
+        }
+
+        // D ist FALSCH
+        if (checkboxD.checked) {
+            q7Score -= 1;
+            document.getElementById('q7-d').classList.add('incorrect');
+        } else {
+            document.getElementById('q7-d').classList.add('correct');
+        }
+
+        q7Score = Math.max(0, q7Score);
+        score += q7Score;
+        showFeedback('q7', q7Score === 3);
+        showQuestionResult('q7', q7Score, 3);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q8: Ruckstossprinzip (2 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q8Val = getRadioValue('q8');
+        var q8Correct = q8Val === answers.q8;
+        var q8Score = q8Correct ? 2 : 0;
+        score += q8Score;
+        markRadioQuestion('q8', answers.q8, q8Val);
+        showFeedback('q8', q8Correct);
+        showQuestionResult('q8', q8Score, 2);
+
+        displayResults(score);
+    }
+
+    function markRadioQuestion(name, correct, selected) {
+        var options = document.querySelectorAll('#' + name + '-options .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (achieved === maxPts) result.classList.add('full');
+        else if (achieved > 0) result.classList.add('partial');
+        else result.classList.add('zero');
+        result.textContent = achieved + '/' + maxPts + ' BE';
+        meta.appendChild(result);
+    }
+
+    function displayResults(score) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatNum = localStorage.getItem(STORAGE_KEY + '-seat');
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: P' + seatNum;
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + MAX_POINTS;
+
+        // 15-NP-Skala (Sek II Standard)
+        var np = 0;
+        var percent = (score / MAX_POINTS) * 100;
+        if (percent >= 98.67) np = 15;
+        else if (percent >= 97.33) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 85.33) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+        else np = 0;
+
+        document.getElementById('gradeDisplay').textContent = np + ' NP';
+        var cellId = 'np' + np;
+        var cell = document.getElementById(cellId);
+        if (cell) cell.classList.add('current');
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel anzeigen (Anti-Betrug)
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '\u00d7 (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('resultsSection');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    function disableAllInputs() {
+        var inputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+    }
+
+    // Lehrer-Reset (Kennwort: 2024)
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2024') {
+            if (confirm('Wirklich alle Daten für diesen Platz löschen?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_KEY + '-seat');
+                localStorage.removeItem(STORAGE_KEY + '-seat-locked');
+                localStorage.removeItem(STORAGE_KEY + '-submitted');
+                localStorage.removeItem(STORAGE_KEY + '-score');
+                localStorage.removeItem(STORAGE_KEY + '-start');
+                localStorage.removeItem(STORAGE_KEY + '-submit-time');
+                localStorage.removeItem(STORAGE_KEY + '-tabswitches');
+                localStorage.removeItem(STORAGE_KEY + '-tabseconds');
+                alert('Platz wurde zurückgesetzt. Seite wird neu geladen.');
+                location.reload();
+            }
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
+
+    window.onload = function() {
+        // Startzeit beim ersten Aufruf speichern (Anti-Betrug)
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        // Tab-Wechsel-Tracking initialisieren
+        initTabSwitchTracking();
+
+        generateSeatDropdown();
+        setupOptions();
+        loadProgress();
+        updateProgress();
+        checkUnlocked();
+
+        var allInputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+
+        // Bei Reload nach Abgabe: Ergebnisse erneut anzeigen
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

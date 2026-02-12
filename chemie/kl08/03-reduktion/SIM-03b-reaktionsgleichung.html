@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Reaktionsgleichung aufstellen</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION: Reaktionsgleichung Step-by-Step
+   Chemie Klasse 8 | sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2a7a4b;
+    --accent-light: #e8f5e9;
+    --success: #2a7a4b;
+    --success-bg: #e8f5e9;
+    --error: #c62828;
+    --error-bg: #ffebee;
+    --silver: #607d8b;
+    --oxygen: #c62828;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION CONTAINER
+═══════════════════════════════════════════════════════════════ */
+
+.sim-container {
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.sim-header {
+    background: var(--accent);
+    color: var(--white);
+    padding: 10px 15px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.step-indicator {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EQUATION DISPLAY
+═══════════════════════════════════════════════════════════════ */
+
+.equation-area {
+    padding: 30px 20px;
+    background: #fafafa;
+    border-bottom: 1px solid var(--border);
+}
+
+.equation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    font-size: 1.8em;
+    font-weight: 500;
+    flex-wrap: wrap;
+}
+
+.eq-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s;
+}
+
+.eq-formula {
+    padding: 8px 12px;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.eq-formula.highlight {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.eq-formula.new {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.coef {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.silver { color: var(--silver); }
+.oxygen { color: var(--oxygen); }
+
+sub {
+    font-size: 0.6em;
+    vertical-align: sub;
+}
+
+.arrow {
+    font-size: 1.5em;
+    color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ATOM COUNTER
+═══════════════════════════════════════════════════════════════ */
+
+.counter-area {
+    padding: 20px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.counter-title {
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.counter-grid {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+}
+
+.counter-side {
+    text-align: center;
+}
+
+.counter-side h4 {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.atom-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.atom-label {
+    font-weight: 600;
+    width: 30px;
+}
+
+.atom-label.silver { color: var(--silver); }
+.atom-label.oxygen { color: var(--oxygen); }
+
+.atom-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.atom-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.atom-dot.silver { background: var(--silver); }
+.atom-dot.oxygen { background: var(--oxygen); }
+.atom-dot.new {
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+.atom-count {
+    font-weight: 700;
+    font-size: 1.2em;
+    width: 30px;
+    text-align: center;
+}
+
+.atom-count.match { color: var(--success); }
+.atom-count.mismatch { color: var(--error); }
+
+.check-icon {
+    font-size: 1.2em;
+}
+
+.vs-arrow {
+    font-size: 2em;
+    color: var(--text-muted);
+    align-self: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPLANATION
+═══════════════════════════════════════════════════════════════ */
+
+.explanation {
+    padding: 15px 20px;
+    min-height: 80px;
+}
+
+.explanation h3 {
+    color: var(--accent);
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+
+.explanation p {
+    color: var(--text-secondary);
+    font-size: 0.95em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTROLS
+═══════════════════════════════════════════════════════════════ */
+
+.controls {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--white);
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+}
+
+.btn:hover { background: #1e5a35; }
+.btn:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { background: #666; }
+.btn-secondary:hover { background: #444; }
+
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUCCESS MESSAGE
+═══════════════════════════════════════════════════════════════ */
+
+.success-box {
+    background: var(--success-bg);
+    border: 2px solid var(--success);
+    padding: 15px;
+    margin: 15px 20px;
+    text-align: center;
+    display: none;
+}
+
+.success-box.show { display: block; }
+
+.success-box h4 {
+    color: var(--success);
+    margin-bottom: 5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+    .equation { font-size: 1.3em; gap: 8px; }
+    .counter-grid { flex-direction: column; gap: 20px; }
+    .controls { flex-direction: column; }
+    .nav-buttons { width: 100%; justify-content: space-between; }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Reaktionsgleichung aufstellen</h1>
+            <div class="meta">Zerlegung von Silberoxid | Schritt für Schritt</div>
+        </header>
+
+        <div class="sim-container">
+            <div class="sim-header">
+                <span>Reaktionsgleichung ausgleichen</span>
+                <span class="step-indicator">Schritt <span id="currentStep">1</span> von 6</span>
+            </div>
+
+            <div class="equation-area">
+                <div class="equation" id="equation">
+                    <!-- Wird dynamisch gefüllt -->
+                </div>
+            </div>
+
+            <div class="counter-area">
+                <div class="counter-title">Atombilanz</div>
+                <div class="counter-grid">
+                    <div class="counter-side">
+                        <h4>Edukte (links)</h4>
+                        <div class="atom-row">
+                            <span class="atom-label silver">Ag:</span>
+                            <div class="atom-dots" id="agDotsLeft"></div>
+                            <span class="atom-count" id="agCountLeft">0</span>
+                        </div>
+                        <div class="atom-row">
+                            <span class="atom-label oxygen">O:</span>
+                            <div class="atom-dots" id="oDotsLeft"></div>
+                            <span class="atom-count" id="oCountLeft">0</span>
+                        </div>
+                    </div>
+
+                    <div class="vs-arrow">⟷</div>
+
+                    <div class="counter-side">
+                        <h4>Produkte (rechts)</h4>
+                        <div class="atom-row">
+                            <span class="atom-label silver">Ag:</span>
+                            <div class="atom-dots" id="agDotsRight"></div>
+                            <span class="atom-count" id="agCountRight">0</span>
+                        </div>
+                        <div class="atom-row">
+                            <span class="atom-label oxygen">O:</span>
+                            <div class="atom-dots" id="oDotsRight"></div>
+                            <span class="atom-count" id="oCountRight">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="success-box" id="successBox">
+                <h4>Geschafft!</h4>
+                <p>Die Reaktionsgleichung ist ausgeglichen. Alle Atome sind auf beiden Seiten gleich.</p>
+            </div>
+
+            <div class="explanation">
+                <h3 id="explanationTitle">Schritt 1: Wortgleichung</h3>
+                <p id="explanationText">
+                    Beginnen wir mit der Wortgleichung: Was reagiert, und was entsteht?
+                </p>
+            </div>
+
+            <div class="controls">
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" id="btnPrev" disabled>Zurück</button>
+                    <button class="btn" id="btnNext">Weiter</button>
+                </div>
+                <button class="btn btn-secondary" id="btnReset">Neustart</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIMULATION: Reaktionsgleichung Step-by-Step
+// ES5-kompatibel
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var currentStep = 1;
+    var maxSteps = 6;
+
+    var steps = [
+        {
+            title: 'Schritt 1: Wortgleichung',
+            text: 'Beginnen wir mit der Wortgleichung: Silberoxid wird zerlegt in Silber und Sauerstoff.',
+            equation: '<span class="eq-formula highlight">Silberoxid</span> <span class="arrow">→</span> <span class="eq-formula">Silber</span> <span>+</span> <span class="eq-formula">Sauerstoff</span>',
+            agLeft: 0, oLeft: 0, agRight: 0, oRight: 0
+        },
+        {
+            title: 'Schritt 2: Formeln einsetzen',
+            text: 'Jetzt setzen wir die chemischen Formeln ein. Achtung: Sauerstoff kommt als O₂ vor (zweiatomiges Molekül)!',
+            equation: '<span class="eq-formula highlight"><span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span></span> <span class="arrow">→</span> <span class="eq-formula"><span class="silver">Ag</span></span> <span>+</span> <span class="eq-formula"><span class="oxygen">O</span><sub>2</sub></span>',
+            agLeft: 2, oLeft: 1, agRight: 1, oRight: 2
+        },
+        {
+            title: 'Schritt 3: Atome zählen',
+            text: 'Zählen wir die Atome auf beiden Seiten. Ag: 2 links, 1 rechts (ungleich!). O: 1 links, 2 rechts (ungleich!). Die Gleichung ist NICHT ausgeglichen!',
+            equation: '<span class="eq-formula"><span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span></span> <span class="arrow">→</span> <span class="eq-formula"><span class="silver">Ag</span></span> <span>+</span> <span class="eq-formula"><span class="oxygen">O</span><sub>2</sub></span>',
+            agLeft: 2, oLeft: 1, agRight: 1, oRight: 2
+        },
+        {
+            title: 'Schritt 4: Sauerstoff ausgleichen',
+            text: 'Wir brauchen rechts 2 Sauerstoff-Atome (O₂). Links haben wir nur 1. Lösung: Wir setzen den Koeffizienten 2 vor Ag₂O. Jetzt: 2 × 1 = 2 Sauerstoff links!',
+            equation: '<span class="eq-formula highlight"><span class="coef new">2</span> <span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span></span> <span class="arrow">→</span> <span class="eq-formula"><span class="silver">Ag</span></span> <span>+</span> <span class="eq-formula"><span class="oxygen">O</span><sub>2</sub></span>',
+            agLeft: 4, oLeft: 2, agRight: 1, oRight: 2
+        },
+        {
+            title: 'Schritt 5: Silber ausgleichen',
+            text: 'Jetzt haben wir links 2 × 2 = 4 Silber-Atome, aber rechts nur 1. Wir setzen den Koeffizienten 4 vor Ag.',
+            equation: '<span class="eq-formula"><span class="coef">2</span> <span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span></span> <span class="arrow">→</span> <span class="eq-formula highlight"><span class="coef new">4</span> <span class="silver">Ag</span></span> <span>+</span> <span class="eq-formula"><span class="oxygen">O</span><sub>2</sub></span>',
+            agLeft: 4, oLeft: 2, agRight: 4, oRight: 2
+        },
+        {
+            title: 'Schritt 6: Fertig!',
+            text: 'Die Gleichung ist ausgeglichen! Ag: 4 = 4 ✓ | O: 2 = 2 ✓. Das ist die Reaktionsgleichung für die Reduktion von Silberoxid.',
+            equation: '<span class="eq-formula" style="border: 2px solid #2a7a4b; padding: 10px; background: #e8f5e9;"><span class="coef">2</span> <span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span></span> <span class="arrow">→</span> <span class="eq-formula" style="border: 2px solid #2a7a4b; padding: 10px; background: #e8f5e9;"><span class="coef">4</span> <span class="silver">Ag</span></span> <span>+</span> <span class="eq-formula" style="border: 2px solid #2a7a4b; padding: 10px; background: #e8f5e9;"><span class="oxygen">O</span><sub>2</sub></span>',
+            agLeft: 4, oLeft: 2, agRight: 4, oRight: 2,
+            success: true
+        }
+    ];
+
+    function createDots(count, type, isNew) {
+        var html = '';
+        for (var i = 0; i < count && i < 8; i++) {
+            var newClass = isNew ? ' new' : '';
+            html += '<div class="atom-dot ' + type + newClass + '"></div>';
+        }
+        return html;
+    }
+
+    function updateUI() {
+        var step = steps[currentStep - 1];
+
+        document.getElementById('currentStep').textContent = currentStep;
+        document.getElementById('explanationTitle').textContent = step.title;
+        document.getElementById('explanationText').textContent = step.text;
+        document.getElementById('equation').innerHTML = step.equation;
+
+        // Atom-Zähler
+        var prevStep = currentStep > 1 ? steps[currentStep - 2] : { agLeft: 0, oLeft: 0, agRight: 0, oRight: 0 };
+
+        document.getElementById('agDotsLeft').innerHTML = createDots(step.agLeft, 'silver', step.agLeft > prevStep.agLeft);
+        document.getElementById('oDotsLeft').innerHTML = createDots(step.oLeft, 'oxygen', step.oLeft > prevStep.oLeft);
+        document.getElementById('agDotsRight').innerHTML = createDots(step.agRight, 'silver', step.agRight > prevStep.agRight);
+        document.getElementById('oDotsRight').innerHTML = createDots(step.oRight, 'oxygen', step.oRight > prevStep.oRight);
+
+        // Zahlen
+        var agMatch = step.agLeft === step.agRight && step.agLeft > 0;
+        var oMatch = step.oLeft === step.oRight && step.oLeft > 0;
+
+        document.getElementById('agCountLeft').textContent = step.agLeft || '-';
+        document.getElementById('agCountLeft').className = 'atom-count' + (agMatch ? ' match' : (step.agLeft > 0 ? ' mismatch' : ''));
+
+        document.getElementById('agCountRight').textContent = step.agRight || '-';
+        document.getElementById('agCountRight').className = 'atom-count' + (agMatch ? ' match' : (step.agRight > 0 ? ' mismatch' : ''));
+
+        document.getElementById('oCountLeft').textContent = step.oLeft || '-';
+        document.getElementById('oCountLeft').className = 'atom-count' + (oMatch ? ' match' : (step.oLeft > 0 ? ' mismatch' : ''));
+
+        document.getElementById('oCountRight').textContent = step.oRight || '-';
+        document.getElementById('oCountRight').className = 'atom-count' + (oMatch ? ' match' : (step.oRight > 0 ? ' mismatch' : ''));
+
+        // Success Box
+        if (step.success) {
+            document.getElementById('successBox').classList.add('show');
+        } else {
+            document.getElementById('successBox').classList.remove('show');
+        }
+
+        // Buttons
+        document.getElementById('btnPrev').disabled = currentStep === 1;
+        document.getElementById('btnNext').disabled = currentStep === maxSteps;
+        document.getElementById('btnNext').textContent = currentStep === maxSteps ? 'Fertig!' : 'Weiter';
+    }
+
+    function nextStep() {
+        if (currentStep < maxSteps) {
+            currentStep++;
+            updateUI();
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateUI();
+        }
+    }
+
+    function reset() {
+        currentStep = 1;
+        updateUI();
+    }
+
+    // Event Listeners
+    document.getElementById('btnNext').addEventListener('click', nextStep);
+    document.getElementById('btnPrev').addEventListener('click', prevStep);
+    document.getElementById('btnReset').addEventListener('click', reset);
+
+    // Init
+    updateUI();
+
+})();
+</script>
+</body>
+</html>

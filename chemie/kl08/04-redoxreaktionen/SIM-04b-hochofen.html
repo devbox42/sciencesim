@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Hochofenprozess</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION: Hochofenprozess - Interaktive Darstellung
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --panel: #ffffff;
+    --border: #ddd;
+    --text: #222;
+    --text-muted: #666;
+    --accent: #2a7a4b;
+    --accent-dark: #1e5a35;
+    --iron: #8b4513;
+    --iron-hot: #d35400;
+    --slag: #9b7653;
+    --ore: #a0522d;
+    --coke: #2d2d2d;
+    --gas-co: #1565c0;
+    --gas-co2: #666;
+    --temp-high: #c0392b;
+    --temp-mid: #e67e22;
+    --temp-low: #f1c40f;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 15px;
+}
+
+.sim-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.3em;
+    margin-bottom: 15px;
+}
+
+/* Fullscreen Button */
+.fullscreen-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 44px;
+    height: 44px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    z-index: 1000;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.fullscreen-btn:hover {
+    background: var(--bg);
+}
+
+.fullscreen-btn:active {
+    background: #ddd;
+}
+
+/* Fullscreen mode */
+.sim-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    padding: 20px;
+    background: var(--bg);
+    z-index: 999;
+    overflow: auto;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 15px;
+}
+
+@media (max-width: 800px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOCHOFEN SVG
+═══════════════════════════════════════════════════════════════ */
+
+.furnace-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.furnace-svg {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    display: block;
+}
+
+/* SVG Zonen interaktiv */
+.furnace-svg .zone {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.furnace-svg .zone:hover rect,
+.furnace-svg .zone:active rect {
+    stroke: var(--accent);
+    stroke-width: 2;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTROL PANEL
+═══════════════════════════════════════════════════════════════ */
+
+.control-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.control-panel h2 {
+    font-size: 1em;
+    color: var(--accent);
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.zone-info {
+    margin-bottom: 15px;
+}
+
+.zone-card {
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+    transition: all 0.2s;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.zone-card:hover {
+    border-color: var(--accent);
+}
+
+.zone-card.active {
+    border-color: var(--accent);
+    background: rgba(42, 122, 75, 0.1);
+}
+
+.zone-card h3 {
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.zone-card .temp {
+    font-size: 0.8em;
+    color: var(--temp-high);
+    margin-left: auto;
+}
+
+.zone-card p {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+.zone-card .reaction {
+    font-family: monospace;
+    background: #e8f5e9;
+    padding: 5px 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: var(--accent-dark);
+    border: 1px solid #c8e6c9;
+}
+
+/* Zone Colors */
+.zone-1 .indicator { background: var(--temp-high); }
+.zone-2 .indicator { background: var(--temp-mid); }
+.zone-3 .indicator { background: #f39c12; }
+.zone-4 .indicator { background: #95a5a6; }
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION CONTROLS
+═══════════════════════════════════════════════════════════════ */
+
+.anim-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    min-height: 44px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: all 0.2s;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-dark);
+}
+
+.btn-secondary {
+    background: #e0e0e0;
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: #ccc;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGEND
+═══════════════════════════════════════════════════════════════ */
+
+.legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75em;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUMMARY BOX
+═══════════════════════════════════════════════════════════════ */
+
+.summary-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.summary-box h2 {
+    font-size: 1em;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.equation-box {
+    background: #f0f0f0;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    text-align: center;
+    margin: 10px 0;
+    border: 1px solid var(--border);
+}
+
+.equation-box .label {
+    font-size: 0.75em;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.equation-box .eq {
+    font-size: 1.1em;
+}
+
+/* SVG Animations */
+@keyframes bubble {
+    0%, 100% { transform: translateY(0); opacity: 0.8; }
+    50% { transform: translateY(-5px); opacity: 1; }
+}
+
+@keyframes glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes flow {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(10px); }
+}
+
+@keyframes lavaGlow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.3); }
+}
+
+@keyframes lavaFlux1 {
+    0%, 100% { d: path("M260,367 Q268,368 273,372 Q278,378 276,390"); }
+    50% { d: path("M260,367 Q270,366 275,374 Q279,382 277,390"); }
+}
+
+@keyframes lavaFlux2 {
+    0%, 100% { stroke-width: 5; }
+    33% { stroke-width: 7; }
+    66% { stroke-width: 4; }
+}
+
+@keyframes lavaFluxCore {
+    0%, 100% { stroke-width: 2; opacity: 0.9; }
+    50% { stroke-width: 3; opacity: 1; }
+}
+
+@keyframes fall {
+    0% { transform: translateY(-15px); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(15px); opacity: 0; }
+}
+
+.gas-particle {
+    animation: bubble 2s ease-in-out infinite;
+}
+
+.falling-material {
+    animation: fall 2.5s ease-in infinite;
+}
+
+.hot-zone {
+    animation: glow 1.5s ease-in-out infinite;
+}
+
+.iron-flow {
+    animation: flow 3s ease-in-out infinite;
+}
+    </style>
+</head>
+<body>
+    <!-- Fullscreen Button -->
+    <button class="fullscreen-btn" id="fullscreenBtn" aria-label="Vollbild">⛶</button>
+
+    <div class="sim-container" id="simContainer">
+        <h1>Hochofenprozess – Eisengewinnung</h1>
+
+        <div class="main-grid">
+            <!-- Hochofen-Grafik -->
+            <div class="furnace-panel">
+                <svg class="furnace-svg" viewBox="0 0 300 450" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Hintergrund -->
+                    <defs>
+                        <linearGradient id="tempGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                            <stop offset="0%" style="stop-color:#ff4500"/>
+                            <stop offset="30%" style="stop-color:#ffa500"/>
+                            <stop offset="60%" style="stop-color:#ffff00"/>
+                            <stop offset="100%" style="stop-color:#888"/>
+                        </linearGradient>
+                        <linearGradient id="ironGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#ff6b35"/>
+                            <stop offset="100%" style="stop-color:#8b4513"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Hochofen-Körper -->
+                    <path d="M75,50 L60,120 L50,200 L45,280 L50,350 L75,400 L225,400 L250,350 L255,280 L250,200 L240,120 L225,50 Z"
+                          fill="#444" stroke="#666" stroke-width="3"/>
+
+                    <!-- Innerer Bereich mit Temperaturverlauf -->
+                    <path d="M85,60 L72,120 L62,200 L58,280 L62,345 L82,390 L218,390 L238,345 L242,280 L238,200 L228,120 L215,60 Z"
+                          fill="url(#tempGrad)" opacity="0.7"/>
+
+                    <!-- Zone 4: Vorwärmzone (oben) -->
+                    <g class="zone zone-4" data-zone="4">
+                        <rect x="85" y="60" width="130" height="60" fill="rgba(149,165,166,0.3)" rx="5"/>
+                        <text x="150" y="95" text-anchor="middle" fill="#333" font-size="11" font-weight="600">Vorwärmzone</text>
+                        <text x="150" y="108" text-anchor="middle" fill="#7f8c8d" font-size="9">~400°C</text>
+                    </g>
+
+                    <!-- Zone 3: Reduktionszone (mitte-oben) -->
+                    <g class="zone zone-3" data-zone="3">
+                        <rect x="72" y="125" width="156" height="70" fill="rgba(255,165,0,0.25)" rx="5"/>
+                        <text x="150" y="155" text-anchor="middle" fill="#333" font-size="11" font-weight="600">Reduktionszone</text>
+                        <text x="150" y="170" text-anchor="middle" fill="#d35400" font-size="9">~800–1200°C</text>
+                        <!-- Reaktionsgleichung -->
+                        <text x="150" y="185" text-anchor="middle" fill="#1a5276" font-size="8">Fe₂O₃ + 3CO → 2Fe + 3CO₂</text>
+                    </g>
+
+                    <!-- Zone 2: Kohlungszone (mitte-unten) -->
+                    <g class="zone zone-2" data-zone="2">
+                        <rect x="58" y="200" width="184" height="75" fill="rgba(255,69,0,0.25)" rx="5"/>
+                        <text x="150" y="230" text-anchor="middle" fill="#333" font-size="11" font-weight="600">Kohlungszone</text>
+                        <text x="150" y="245" text-anchor="middle" fill="#c0392b" font-size="9">~1200–1400°C</text>
+                        <!-- Boudouard -->
+                        <text x="150" y="262" text-anchor="middle" fill="#1a5276" font-size="8">CO₂ + C → 2CO</text>
+                    </g>
+
+                    <!-- Zone 1: Verbrennungszone (unten) -->
+                    <g class="zone zone-1 hot-zone" data-zone="1">
+                        <rect x="62" y="280" width="176" height="60" fill="rgba(192,57,43,0.3)" rx="5"/>
+                        <text x="150" y="305" text-anchor="middle" fill="#333" font-size="11" font-weight="600">Verbrennungszone</text>
+                        <text x="150" y="320" text-anchor="middle" fill="#922b21" font-size="9">~1600°C</text>
+                        <text x="150" y="335" text-anchor="middle" fill="#1a5276" font-size="8">2C + O₂ → 2CO</text>
+                    </g>
+
+                    <!-- Schmelzzone / Gestell -->
+                    <g class="zone zone-0">
+                        <path d="M82,345 L82,385 L218,385 L218,345 L238,345 L238,390 L62,390 L62,345 Z"
+                              fill="#333" stroke="#555"/>
+                        <text x="150" y="370" text-anchor="middle" fill="#ff6b35" font-size="10">Flüssiges Roheisen</text>
+                    </g>
+
+                    <!-- Abstich (rechts unten) - Lavastrom -->
+                    <rect x="220" y="360" width="40" height="15" fill="#333" stroke="#555"/>
+
+                    <!-- Fluktuierender Lavastrom -->
+                    <g class="lava-stream" style="animation: lavaGlow 1.5s ease-in-out infinite;">
+                        <!-- Äußerer Strom (dunkelorange) -->
+                        <path d="M260,367 Q268,368 273,372 Q278,378 276,390"
+                              fill="none" stroke="#cc4400" stroke-width="8" stroke-linecap="round"
+                              style="animation: lavaFlux2 2s ease-in-out infinite;"/>
+
+                        <!-- Hauptstrom (orange) -->
+                        <path d="M260,367 Q268,368 273,372 Q278,378 276,390"
+                              fill="none" stroke="#ff6b35" stroke-width="5" stroke-linecap="round"
+                              style="animation: lavaFlux2 2s ease-in-out infinite; animation-delay: 0.3s;"/>
+
+                        <!-- Heißer Kern (gelb) -->
+                        <path d="M260,367 Q268,368 273,372 Q278,378 276,390"
+                              fill="none" stroke="#ffcc00" stroke-width="2" stroke-linecap="round"
+                              style="animation: lavaFluxCore 1.5s ease-in-out infinite;"/>
+
+                        <!-- Glühpunkt am Austritt -->
+                        <ellipse cx="263" cy="367" rx="4" ry="2" fill="#ffee88" opacity="0.9"/>
+                    </g>
+
+                    <!-- Beschriftung rechts vom Strom -->
+                    <text x="262" y="405" fill="#ff6b35" font-size="8" font-weight="600">Roheisen</text>
+
+                    <!-- Schlackenabstich -->
+                    <rect x="220" y="340" width="35" height="12" fill="#333" stroke="#555"/>
+                    <path d="M255,343 L270,343 L270,352 L255,352 Z" fill="#9b7653"/>
+                    <text x="275" y="352" fill="#9b7653" font-size="7">Schlacke</text>
+
+                    <!-- Windformen (Heißluft mit O₂) -->
+                    <g class="wind-input">
+                        <!-- Linke Windform -->
+                        <rect x="30" y="290" width="25" height="20" fill="#666" rx="3"/>
+                        <path d="M30,300 L18,295 L18,305 Z" fill="#3498db"/>
+                        <text x="3" y="288" fill="#2980b9" font-size="7" font-weight="600">Heißluft</text>
+                        <text x="3" y="296" fill="#2980b9" font-size="6">(+O₂, ~1200°C)</text>
+
+                        <!-- Rechte Windform -->
+                        <rect x="245" y="290" width="25" height="20" fill="#666" rx="3"/>
+                        <path d="M270,300 L282,295 L282,305 Z" fill="#3498db"/>
+                        <text x="297" y="288" text-anchor="end" fill="#2980b9" font-size="7" font-weight="600">Heißluft</text>
+                        <text x="297" y="296" text-anchor="end" fill="#2980b9" font-size="6">(+O₂, ~1200°C)</text>
+                    </g>
+
+                    <!-- Beschickung oben (Gicht) - kontinuierlicher Prozess -->
+                    <g class="input-top">
+                        <rect x="120" y="15" width="60" height="40" fill="#555" rx="5"/>
+                        <text x="150" y="10" text-anchor="middle" fill="#555" font-size="7">Gicht (Beschickung)</text>
+
+                        <!-- Fallende Erzbrocken -->
+                        <circle cx="135" cy="45" r="4" fill="#a0522d" class="falling-material"/>
+                        <circle cx="150" cy="48" r="3" fill="#a0522d" class="falling-material" style="animation-delay: 0.8s"/>
+                        <circle cx="165" cy="44" r="4" fill="#a0522d" class="falling-material" style="animation-delay: 1.6s"/>
+
+                        <!-- Fallende Koksstücke -->
+                        <rect x="140" y="50" width="5" height="5" fill="#2d2d2d" class="falling-material" style="animation-delay: 0.4s"/>
+                        <rect x="155" y="52" width="4" height="4" fill="#2d2d2d" class="falling-material" style="animation-delay: 1.2s"/>
+                        <rect x="132" y="51" width="4" height="4" fill="#2d2d2d" class="falling-material" style="animation-delay: 2s"/>
+
+                        <!-- Legende oben -->
+                        <text x="105" y="38" text-anchor="end" fill="#a0522d" font-size="7">Erz (Fe₂O₃)</text>
+                        <text x="105" y="48" text-anchor="end" fill="#444" font-size="7">Koks (C)</text>
+                    </g>
+
+                    <!-- Gichtgas oben -->
+                    <g class="gas-output">
+                        <path d="M130,20 L130,5 L170,5 L170,20" fill="none" stroke="#888" stroke-width="2"/>
+                        <circle cx="135" cy="8" r="3" fill="#888" class="gas-particle"/>
+                        <circle cx="150" cy="5" r="3" fill="#888" class="gas-particle" style="animation-delay: 0.5s"/>
+                        <circle cx="165" cy="8" r="3" fill="#888" class="gas-particle" style="animation-delay: 1s"/>
+                        <text x="150" y="-2" text-anchor="middle" fill="#555" font-size="8">Gichtgas (CO₂, CO, N₂)</text>
+                    </g>
+
+                    <!-- Legende für Schichten -->
+                    <g transform="translate(5, 420)">
+                        <rect x="0" y="0" width="12" height="12" fill="#a0522d"/>
+                        <text x="16" y="10" fill="#333" font-size="8">Eisenerz (Fe₂O₃)</text>
+
+                        <rect x="90" y="0" width="12" height="12" fill="#2d2d2d"/>
+                        <text x="106" y="10" fill="#333" font-size="8">Koks (C)</text>
+
+                        <rect x="160" y="0" width="12" height="12" fill="#d35400"/>
+                        <text x="176" y="10" fill="#333" font-size="8">Roheisen (Fe)</text>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Steuerung und Info -->
+            <div class="control-panel">
+                <h2>Reaktionszonen</h2>
+
+                <div class="zone-info">
+                    <div class="zone-card zone-4 active" data-zone="4">
+                        <h3><span class="indicator"></span> Vorwärmzone <span class="temp">~400°C</span></h3>
+                        <p>Erz und Koks werden vorgewärmt, trocknen</p>
+                        <div class="reaction">Erwärmung, keine Reaktion</div>
+                    </div>
+
+                    <div class="zone-card zone-3" data-zone="3">
+                        <h3><span class="indicator"></span> Reduktionszone <span class="temp">~800–1200°C</span></h3>
+                        <p>Eisenoxid wird stufenweise zu Eisen reduziert</p>
+                        <div class="reaction">Fe₂O₃ + 3CO → 2Fe + 3CO₂</div>
+                    </div>
+
+                    <div class="zone-card zone-2" data-zone="2">
+                        <h3><span class="indicator"></span> Kohlungszone <span class="temp">~1200–1400°C</span></h3>
+                        <p>Boudouard-Gleichgewicht: CO₂ reagiert mit Koks zu CO</p>
+                        <div class="reaction">CO₂ + C → 2CO</div>
+                    </div>
+
+                    <div class="zone-card zone-1" data-zone="1">
+                        <h3><span class="indicator"></span> Verbrennungszone <span class="temp">~1600°C</span></h3>
+                        <p>Koks verbrennt mit Heißluft zu Kohlenstoffmonoxid</p>
+                        <div class="reaction">2C + O₂ → 2CO</div>
+                    </div>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #a0522d;"></div>
+                        <span>Eisenerz (Fe₂O₃)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2d2d2d; border: 1px solid #555;"></div>
+                        <span>Koks (C)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #87ceeb;"></div>
+                        <span>CO (Reduktionsmittel)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b35;"></div>
+                        <span>Roheisen (Fe)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zusammenfassung -->
+        <div class="summary-box">
+            <h2>Gesamtreaktion im Hochofen</h2>
+
+            <div class="equation-box">
+                <div class="label">Bruttogleichung (vereinfacht):</div>
+                <div class="eq">2 Fe₂O₃ + 3 C → 4 Fe + 3 CO₂</div>
+            </div>
+
+            <div class="equation-box">
+                <div class="label">Tatsächlich über CO als Reduktionsmittel:</div>
+                <div class="eq">Fe₂O₃ + 3 CO → 2 Fe + 3 CO₂</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div>
+                    <strong style="color: var(--accent);">Oxidationsmittel:</strong><br>
+                    Fe₂O₃ (gibt O ab → wird reduziert)
+                </div>
+                <div>
+                    <strong style="color: var(--accent);">Reduktionsmittel:</strong><br>
+                    CO (nimmt O auf → wird oxidiert)
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ═══════════════════════════════════════════════════════════════
+    // FULLSCREEN FUNCTIONALITY
+    // ═══════════════════════════════════════════════════════════════
+    var fullscreenBtn = document.getElementById('fullscreenBtn');
+    var simContainer = document.getElementById('simContainer');
+    var isFullscreen = false;
+
+    function toggleFullscreen() {
+        isFullscreen = !isFullscreen;
+        if (isFullscreen) {
+            simContainer.classList.add('fullscreen');
+            fullscreenBtn.textContent = '✕';
+            fullscreenBtn.setAttribute('aria-label', 'Vollbild beenden');
+        } else {
+            simContainer.classList.remove('fullscreen');
+            fullscreenBtn.textContent = '⛶';
+            fullscreenBtn.setAttribute('aria-label', 'Vollbild');
+        }
+    }
+
+    // Touch + Click Support für Fullscreen
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+    fullscreenBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        toggleFullscreen();
+    });
+
+    // ESC zum Beenden
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && isFullscreen) {
+            toggleFullscreen();
+        }
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // ZONE-KARTEN INTERAKTIV (Touch + Click)
+    // ═══════════════════════════════════════════════════════════════
+    var zoneCards = document.querySelectorAll('.zone-card');
+    var svgZones = document.querySelectorAll('.zone');
+    var activeCard = null;
+
+    function selectZone(card) {
+        var zoneNum = card.getAttribute('data-zone');
+
+        // Toggle: Wenn gleiche Karte nochmal getippt wird → deselektieren
+        if (activeCard === card) {
+            card.classList.remove('active');
+            activeCard = null;
+            // Alle SVG-Zonen wieder sichtbar
+            svgZones.forEach(function(z) {
+                z.style.opacity = '1';
+            });
+            return;
+        }
+
+        // Alle deaktivieren
+        zoneCards.forEach(function(c) { c.classList.remove('active'); });
+
+        // Diese aktivieren
+        card.classList.add('active');
+        activeCard = card;
+
+        // SVG-Zone hervorheben
+        svgZones.forEach(function(z) {
+            z.style.opacity = '0.3';
+        });
+        var activeZone = document.querySelector('.zone[data-zone="' + zoneNum + '"]');
+        if (activeZone) {
+            activeZone.style.opacity = '1';
+        }
+    }
+
+    function resetZones() {
+        // Alle SVG-Zonen wieder sichtbar (für Desktop mouseleave)
+        svgZones.forEach(function(z) {
+            z.style.opacity = '1';
+        });
+    }
+
+    zoneCards.forEach(function(card) {
+        // Click Event (Desktop)
+        card.addEventListener('click', function(e) {
+            // Verhindere Doppelauslösung bei Touch
+            if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+            selectZone(this);
+        });
+
+        // Touch Event (Mobile/Tablet)
+        card.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            selectZone(this);
+        });
+
+        // Mouseleave nur auf Desktop (nicht auf Touch-Geräten)
+        card.addEventListener('mouseleave', function() {
+            // Nur wenn kein Touch-Gerät
+            if (!('ontouchstart' in window)) {
+                resetZones();
+            }
+        });
+    });
+
+    // ═══════════════════════════════════════════════════════════════
+    // SVG ZONEN AUCH KLICKBAR
+    // ═══════════════════════════════════════════════════════════════
+    svgZones.forEach(function(zone) {
+        zone.style.cursor = 'pointer';
+        zone.style.touchAction = 'manipulation';
+
+        function handleZoneClick() {
+            var zoneNum = zone.getAttribute('data-zone');
+            var correspondingCard = document.querySelector('.zone-card[data-zone="' + zoneNum + '"]');
+            if (correspondingCard) {
+                selectZone(correspondingCard);
+                // Scroll zur Karte auf Mobile
+                correspondingCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        zone.addEventListener('click', handleZoneClick);
+        zone.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            handleZoneClick();
+        });
+    });
+
+})();
+</script>
+</body>
+</html>

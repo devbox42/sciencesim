@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: I(U)-Kennlinie aufnehmen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --physik: #2c5aa0;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --positive: #c62828;
+            --negative: #1565c0;
+            --success: #2a7a4b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .fullscreen .container {
+            max-width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--physik);
+        }
+
+        h1 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--physik);
+        }
+
+        .fullscreen-btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+
+        .fullscreen-btn:hover {
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+        }
+
+        .fullscreen .main-content {
+            flex: 1;
+            grid-template-columns: 1fr 320px;
+        }
+
+        .circuit-area {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+        }
+
+        .circuit-svg {
+            width: 100%;
+            max-width: 500px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 12px;
+        }
+
+        .panel h2 {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--physik);
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: var(--border);
+            border-radius: 0;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--physik);
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: 600;
+            min-width: 55px;
+            text-align: right;
+        }
+
+        .meter {
+            background: var(--bg);
+            padding: 10px;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .meter-label {
+            font-size: 0.8em;
+            color: var(--text-muted);
+        }
+
+        .meter-value {
+            font-family: monospace;
+            font-size: 1.5em;
+            font-weight: 600;
+            color: var(--physik);
+        }
+
+        .meter-unit {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .record-btn {
+            width: 100%;
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .record-btn:hover {
+            opacity: 0.9;
+        }
+
+        .record-btn:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background: var(--bg);
+            font-weight: 600;
+        }
+
+        .data-table .recorded {
+            background: #e8f5e9;
+            font-weight: 600;
+        }
+
+        .reset-btn {
+            background: var(--text-muted);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 3px solid var(--physik);
+            padding: 10px;
+            font-size: 0.85em;
+            margin-top: 15px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--border);
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            transition: width 0.3s;
+        }
+
+        @media (max-width: 700px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>I(U)-Kennlinie aufnehmen</h1>
+            <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
+        </header>
+
+        <div class="main-content">
+            <div class="circuit-area">
+                <svg class="circuit-svg" viewBox="0 0 400 280">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                            <polygon points="0 0, 8 3, 0 6" fill="#c62828"/>
+                        </marker>
+                        <marker id="arrowhead-blue" markerWidth="6" markerHeight="5" refX="0" refY="2.5" orient="auto">
+                            <polygon points="6 0, 0 2.5, 6 5" fill="#1565c0"/>
+                        </marker>
+                    </defs>
+
+                    <!-- Leitungen -->
+                    <line x1="50" y1="50" x2="350" y2="50" stroke="#222" stroke-width="2"/>
+                    <line x1="350" y1="50" x2="350" y2="230" stroke="#222" stroke-width="2"/>
+                    <line x1="350" y1="230" x2="50" y2="230" stroke="#222" stroke-width="2"/>
+                    <line x1="50" y1="230" x2="50" y2="50" stroke="#222" stroke-width="2"/>
+
+                    <!-- Spannungsquelle (links) - DIN-Symbol -->
+                    <rect x="35" y="110" width="30" height="60" fill="white" stroke="#222" stroke-width="2"/>
+                    <!-- + Pol: LANGE dünne Linie (DIN) -->
+                    <line x1="38" y1="125" x2="62" y2="125" stroke="#c62828" stroke-width="2"/>
+                    <text x="68" y="129" font-size="11" fill="#c62828" font-weight="bold">+</text>
+                    <!-- − Pol: KURZE dicke Linie (DIN) -->
+                    <line x1="43" y1="155" x2="57" y2="155" stroke="#1565c0" stroke-width="4"/>
+                    <text x="68" y="159" font-size="11" fill="#1565c0" font-weight="bold">−</text>
+                    <!-- U-Label -->
+                    <text x="50" y="195" text-anchor="middle" font-size="13" font-weight="bold">U</text>
+                    <text id="voltage-label" x="50" y="210" text-anchor="middle" font-size="11" font-family="monospace">0 V</text>
+
+                    <!-- Widerstand (oben) - DIN Rechteck -->
+                    <rect x="160" y="35" width="80" height="30" fill="white" stroke="#222" stroke-width="2"/>
+                    <text x="200" y="55" text-anchor="middle" font-size="14" font-weight="bold">R</text>
+                    <text x="200" y="25" text-anchor="middle" font-size="11" fill="#555">10 Ω</text>
+
+                    <!-- Amperemeter (rechts) -->
+                    <circle cx="350" cy="140" r="25" fill="white" stroke="#222" stroke-width="2"/>
+                    <text x="350" y="145" text-anchor="middle" font-size="16" font-weight="bold">A</text>
+
+                    <!-- Technische Stromrichtung (rot, von + nach -) -->
+                    <line x1="280" y1="50" x2="310" y2="50" stroke="#c62828" stroke-width="2" marker-end="url(#arrowhead)"/>
+                    <text x="295" y="40" text-anchor="middle" font-size="10" fill="#c62828" font-style="italic">I</text>
+
+                    <!-- Elektronen-Bewegung (blau, von − nach +) -->
+                    <g id="electrons">
+                        <!-- Obere Leitung (von rechts nach links) -->
+                        <circle class="electron electron-top" cx="120" cy="50" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-top" cx="80" cy="50" r="4" fill="#1565c0"/>
+                        <!-- Rechte Leitung (von unten nach oben) -->
+                        <circle class="electron electron-right" cx="350" cy="200" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-right" cx="350" cy="180" r="4" fill="#1565c0"/>
+                        <!-- Untere Leitung (von links nach rechts) -->
+                        <circle class="electron electron-bottom" cx="100" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="150" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="200" cy="230" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-bottom" cx="280" cy="230" r="4" fill="#1565c0"/>
+                        <!-- Linke Leitung (von oben nach unten, durch Quelle) -->
+                        <circle class="electron electron-left" cx="50" cy="80" r="4" fill="#1565c0"/>
+                        <circle class="electron electron-left" cx="50" cy="200" r="4" fill="#1565c0"/>
+                    </g>
+
+                    <!-- Legende Elektronenfluss -->
+                    <text x="200" y="268" text-anchor="middle" font-size="9" fill="#1565c0">e⁻: von − nach +</text>
+                </svg>
+
+                <!-- Toggle für Elektronenfluss -->
+                <div style="text-align: center; margin-top: 8px;">
+                    <label style="font-size: 0.85em; color: #555; cursor: pointer;">
+                        <input type="checkbox" id="electron-toggle" checked onchange="toggleElectrons()">
+                        Elektronenfluss anzeigen
+                    </label>
+                </div>
+
+                <div class="info-box">
+                    <strong>Aufgabe:</strong> Stelle verschiedene Spannungen ein und notiere die Stromstärke.<br>
+                    Übertrage die Werte in dein Arbeitsblatt (Aufgabe 1).
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="panel">
+                    <h2>Steuerung</h2>
+                    <div class="control-group">
+                        <label>Spannung U einstellen:</label>
+                        <div class="slider-container">
+                            <input type="range" id="voltage-slider" min="0" max="12" step="2" value="0">
+                            <span class="value-display" id="voltage-display">0 V</span>
+                        </div>
+                    </div>
+
+                    <div class="meter">
+                        <div class="meter-label">Amperemeter zeigt:</div>
+                        <div class="meter-value" id="current-display">0,00</div>
+                        <div class="meter-unit">Ampere (A)</div>
+                    </div>
+
+                    <button class="record-btn" id="record-btn" onclick="recordValue()">
+                        Messwert eintragen
+                    </button>
+                </div>
+
+                <div class="panel">
+                    <h2>Deine Messwerte</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>U (V)</th>
+                                <th>I (A)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-body">
+                            <tr id="row-2"><td>2</td><td id="val-2">—</td></tr>
+                            <tr id="row-4"><td>4</td><td id="val-4">—</td></tr>
+                            <tr id="row-6"><td>6</td><td id="val-6">—</td></tr>
+                            <tr id="row-8"><td>8</td><td id="val-8">—</td></tr>
+                            <tr id="row-10"><td>10</td><td id="val-10">—</td></tr>
+                            <tr id="row-12"><td>12</td><td id="val-12">—</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <button class="reset-btn" onclick="resetData()">Zurücksetzen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Konstanten
+        var R = 10; // Ohm
+        var recordedVoltages = {};
+        var totalMeasurements = 6;
+
+        // DOM-Elemente
+        var voltageSlider = document.getElementById('voltage-slider');
+        var voltageDisplay = document.getElementById('voltage-display');
+        var voltageLabel = document.getElementById('voltage-label');
+        var currentDisplay = document.getElementById('current-display');
+        var recordBtn = document.getElementById('record-btn');
+        var progressFill = document.getElementById('progress-fill');
+        var electronsGroup = document.getElementById('electrons');
+
+        // Elektronen nach Leitungsabschnitt
+        var electronsTop = document.querySelectorAll('.electron-top');
+        var electronsRight = document.querySelectorAll('.electron-right');
+        var electronsBottom = document.querySelectorAll('.electron-bottom');
+        var electronsLeft = document.querySelectorAll('.electron-left');
+
+        // Positionen für Animation
+        var posTop = [120, 80];
+        var posRight = [200, 180];
+        var posBottom = [100, 150, 200, 280];
+        var posLeft = [80, 200];
+
+        var animationId = null;
+        var showElectrons = true;
+
+        // Slider-Event
+        voltageSlider.addEventListener('input', function() {
+            updateDisplay();
+        });
+
+        function updateDisplay() {
+            var U = parseInt(voltageSlider.value);
+            var I = U / R;
+
+            voltageDisplay.textContent = U + ' V';
+            voltageLabel.textContent = U + ' V';
+            currentDisplay.textContent = I.toFixed(2).replace('.', ',');
+
+            // Button-Status
+            if (U === 0) {
+                recordBtn.disabled = true;
+                recordBtn.textContent = 'Spannung > 0 wählen';
+            } else if (recordedVoltages[U]) {
+                recordBtn.disabled = true;
+                recordBtn.textContent = 'Bereits gemessen';
+            } else {
+                recordBtn.disabled = false;
+                recordBtn.textContent = 'Messwert eintragen';
+            }
+
+            // Elektronen-Animation
+            animateElectrons(I);
+        }
+
+        function recordValue() {
+            var U = parseInt(voltageSlider.value);
+            if (U === 0 || recordedVoltages[U]) return;
+
+            var I = U / R;
+            recordedVoltages[U] = I;
+
+            var cell = document.getElementById('val-' + U);
+            if (cell) {
+                cell.textContent = I.toFixed(2).replace('.', ',');
+                cell.parentElement.classList.add('recorded');
+            }
+
+            var count = Object.keys(recordedVoltages).length;
+            progressFill.style.width = (count / totalMeasurements * 100) + '%';
+
+            updateDisplay();
+
+            if (count === totalMeasurements) {
+                setTimeout(function() {
+                    alert('Alle Messwerte aufgenommen!\n\nÜbertrage sie jetzt in dein Arbeitsblatt (Aufgabe 1) und zeichne die Kennlinie (Aufgabe 2).');
+                }, 300);
+            }
+        }
+
+        function resetData() {
+            if (!confirm('Alle Messwerte löschen?')) return;
+
+            recordedVoltages = {};
+            var cells = document.querySelectorAll('[id^="val-"]');
+            for (var i = 0; i < cells.length; i++) {
+                cells[i].textContent = '—';
+                cells[i].parentElement.classList.remove('recorded');
+            }
+            progressFill.style.width = '0%';
+            updateDisplay();
+        }
+
+        // Elektronen-Animation auf allen Leitungen
+        function animateElectrons(I) {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+
+            if (I === 0 || !showElectrons) {
+                resetElectronPositions();
+                return;
+            }
+
+            var speed = I * 0.8;
+
+            function step() {
+                // Obere Leitung: von rechts nach links (x abnehmen)
+                for (var i = 0; i < electronsTop.length; i++) {
+                    posTop[i] -= speed;
+                    if (posTop[i] < 50) posTop[i] = 350;
+                    electronsTop[i].setAttribute('cx', posTop[i]);
+                }
+
+                // Rechte Leitung: von unten nach oben (y abnehmen)
+                for (var i = 0; i < electronsRight.length; i++) {
+                    posRight[i] -= speed;
+                    if (posRight[i] < 50) posRight[i] = 230;
+                    electronsRight[i].setAttribute('cy', posRight[i]);
+                }
+
+                // Untere Leitung: von links nach rechts (x zunehmen)
+                for (var i = 0; i < electronsBottom.length; i++) {
+                    posBottom[i] += speed;
+                    if (posBottom[i] > 350) posBottom[i] = 50;
+                    electronsBottom[i].setAttribute('cx', posBottom[i]);
+                }
+
+                // Linke Leitung: von oben nach unten (y zunehmen)
+                for (var i = 0; i < electronsLeft.length; i++) {
+                    posLeft[i] += speed;
+                    if (posLeft[i] > 230) posLeft[i] = 50;
+                    electronsLeft[i].setAttribute('cy', posLeft[i]);
+                }
+
+                animationId = requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        function resetElectronPositions() {
+            posTop = [120, 80];
+            posRight = [200, 180];
+            posBottom = [100, 150, 200, 280];
+            posLeft = [80, 200];
+            for (var i = 0; i < electronsTop.length; i++) electronsTop[i].setAttribute('cx', posTop[i]);
+            for (var i = 0; i < electronsRight.length; i++) electronsRight[i].setAttribute('cy', posRight[i]);
+            for (var i = 0; i < electronsBottom.length; i++) electronsBottom[i].setAttribute('cx', posBottom[i]);
+            for (var i = 0; i < electronsLeft.length; i++) electronsLeft[i].setAttribute('cy', posLeft[i]);
+        }
+
+        function toggleElectrons() {
+            showElectrons = document.getElementById('electron-toggle').checked;
+            electronsGroup.style.display = showElectrons ? 'block' : 'none';
+            if (showElectrons) {
+                updateDisplay();
+            } else if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            var btn = document.querySelector('.fullscreen-btn');
+            btn.textContent = document.body.classList.contains('fullscreen') ? 'Beenden' : 'Vollbild';
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>

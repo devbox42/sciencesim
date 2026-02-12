@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Ohmsches Gesetz</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════
+           MT-02 Ohmsches Gesetz - Klasse 8
+           ═══════════════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER === */
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        /* === TIMER === */
+        .timer-container {
+            background: white;
+            padding: 8px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .timer-display {
+            font-size: 1.4em;
+            font-weight: 600;
+            font-family: "Courier New", monospace;
+            color: #2c5aa0;
+            min-width: 80px;
+            text-align: center;
+        }
+        .timer-display.warning { color: #b35c00; }
+        .timer-display.critical { color: #c62828; animation: pulse 1s infinite; }
+        .timer-label { font-size: 0.85em; color: #666; }
+        .timer-note { font-size: 0.75em; color: #888; font-style: italic; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* === TEIL-HEADER === */
+        .teil-header {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 20px;
+            margin: 20px 0 15px 0;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-niveau { padding: 2px 8px; font-size: 0.8em; font-weight: 600; }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* Diagram */
+        .diagram { text-align: center; padding: 15px; background: #fafafa; margin: 10px 0; }
+        .diagram svg { max-width: 100%; height: auto; }
+
+        /* Berechnungs-Felder */
+        .calc-fields { margin: 15px 0; }
+        .calc-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+        .calc-row label { min-width: 120px; font-weight: 500; }
+        .calc-row input { padding: 8px 12px; border: 1px solid #ddd; width: 100px; font-size: 1em; }
+        .calc-row .unit { color: #666; font-size: 0.9em; }
+
+        /* Umrechnungs-Felder */
+        .convert-fields { margin: 15px 0; }
+        .convert-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+        .convert-row .from { font-weight: 500; min-width: 100px; }
+        .convert-row input { padding: 8px 12px; border: 1px solid #ddd; width: 100px; font-size: 1em; text-align: right; }
+        .convert-row .to-unit { color: #666; font-size: 0.9em; }
+
+        /* Zuordnungs-Felder */
+        .matching-fields { margin: 15px 0; }
+        .matching-row { display: flex; align-items: center; gap: 15px; margin: 10px 0; flex-wrap: wrap; }
+        .matching-row .left { min-width: 180px; font-weight: 500; }
+        .matching-row select { padding: 8px 12px; font-size: 1em; border: 1px solid #ddd; min-width: 150px; }
+
+        /* Dropdown-Auswahl */
+        .dropdown-field { margin: 15px 0; }
+        .dropdown-field select { padding: 10px 15px; font-size: 1em; border: 1px solid #ddd; min-width: 250px; }
+
+        /* Info-Box */
+        .info-box { background: #e3f2fd; border-left: 3px solid #2c5aa0; padding: 10px 15px; margin: 10px 0; font-size: 0.9em; }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* Niveau-Hinweis */
+        .niveau-hinweis { background: #fff3e0; border: 1px solid #b35c00; color: #b35c00; padding: 8px 12px; margin-bottom: 12px; font-size: 0.85em; font-style: italic; }
+        .nicht-gewertet-box { background: #f5f5f5; border: 1px solid #888; color: #666; padding: 10px 15px; margin-top: 12px; text-align: center; font-weight: 600; }
+
+        /* Input-Markierung */
+        input.correct { border-color: #2a7a4b !important; background: #e8f5e9 !important; }
+        input.incorrect { border-color: #c62828 !important; background: #ffebee !important; }
+        select.correct { border-color: #2a7a4b !important; background: #e8f5e9 !important; }
+        select.incorrect { border-color: #c62828 !important; background: #ffebee !important; }
+        select.unanswered { border-color: #b35c00 !important; background: #fff3e0 !important; }
+
+        /* Lösungsbox nach Abgabe */
+        .solution-box {
+            background: #f0f7ff;
+            border: 1px solid #2c5aa0;
+            border-left: 4px solid #2c5aa0;
+            padding: 12px 15px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .solution-box .solution-header {
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .solution-box .solution-header::before {
+            content: "✓";
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: #2c5aa0;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 12px;
+        }
+        .solution-box .student-answer {
+            background: #fff;
+            padding: 6px 10px;
+            margin: 8px 0;
+            border-left: 3px solid #888;
+        }
+        .solution-box .student-answer.wrong {
+            border-left-color: #c62828;
+            background: #fff5f5;
+        }
+        .solution-box .student-answer.right {
+            border-left-color: #2a7a4b;
+            background: #f5fff5;
+        }
+        .solution-box .correct-answer {
+            color: #2a7a4b;
+            font-weight: 600;
+        }
+        .solution-box .calculation {
+            background: #fff;
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-family: "Times New Roman", Times, serif;
+            border: 1px dashed #ccc;
+        }
+
+        /* Freitext */
+        .freetext-field { margin: 15px 0; }
+        .freetext-field textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            resize: vertical;
+        }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .hidden { display: none; }
+
+        /* Lückentext inline */
+        .luecke {
+            border: none;
+            border-bottom: 2px solid #2c5aa0;
+            padding: 2px 8px;
+            width: 100px;
+            font-size: inherit;
+            background: transparent;
+            text-align: center;
+        }
+
+        /* ISO 80000: Formelzeichen kursiv+Serif, Einheiten aufrecht+Sans */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-style: normal; }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+            .niveau-hinweis { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Ohmsches Gesetz</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 8 | Differenziert (★/★★/★★★)</div>
+        </div>
+    </header>
+
+    <!-- Timer -->
+    <div class="timer-container" id="timerContainer">
+        <span class="timer-label">Verbleibende Zeit:</span>
+        <span class="timer-display" id="timerDisplay">30:00</span>
+        <span class="timer-note">(nur zur Orientierung)</span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PLATZ + NIVEAU AUSWAHL
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="selection-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 20px;">
+        <div class="seat-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+
+        <div class="niveau-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px;">Niveau:</label>
+            <div id="niveauWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="niveauRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="niveauSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 180px;">
+                    <option value="">-- wählen --</option>
+                    <option value="1">★ Basis (25 BE)</option>
+                    <option value="2">★★ Standard (35 BE)</option>
+                    <option value="3">★★★ Erweitert (45 BE)</option>
+                </select>
+                <button id="btnNiveauOk" onclick="confirmNiveau()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="niveauConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Niveau wählen...</div>
+    </div>
+
+    <div class="container">
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TEIL I: GRUNDLAGEN (★) - 25 BE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="teil-header">Teil I: Grundlagen (★)</div>
+
+        <!-- I.1 Definition Ohmsches Gesetz (1 BE) -->
+        <div class="question" id="qI1" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.1 Definition</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ergänze: Das Ohmsche Gesetz gilt für metallische Leiter bei konstanter ...</div>
+            <div class="dropdown-field">
+                <select id="qI1-a">
+                    <option value="">-- wählen --</option>
+                    <option value="stromstaerke">Stromstärke</option>
+                    <option value="laenge">Leiterlänge</option>
+                    <option value="temperatur">Temperatur</option>
+                    <option value="spannung">Spannung</option>
+                </select>
+            </div>
+            <div class="feedback-box" id="fbI1"></div>
+        </div>
+
+        <!-- I.2 Proportionalität (1 BE) -->
+        <div class="question" id="qI2" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.2 Proportionalität</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ergänze: Bei konstantem Widerstand ist die Stromstärke ... zur Spannung.</div>
+            <div class="dropdown-field">
+                <select id="qI2-a">
+                    <option value="">-- wählen --</option>
+                    <option value="unabhaengig">unabhängig</option>
+                    <option value="proportional">proportional</option>
+                    <option value="gleich">gleich</option>
+                    <option value="umgekehrt">umgekehrt proportional</option>
+                </select>
+            </div>
+            <div class="feedback-box" id="fbI2"></div>
+        </div>
+
+        <!-- I.3 Einheit (1 BE) -->
+        <div class="question" id="qI3" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.3 Einheit</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Die Einheit des elektrischen Widerstands ist:</div>
+            <div class="dropdown-field">
+                <select id="qI3-a">
+                    <option value="">-- wählen --</option>
+                    <option value="ampere">Ampere (A)</option>
+                    <option value="watt">Watt (W)</option>
+                    <option value="ohm">Ohm (Ω)</option>
+                    <option value="volt">Volt (V)</option>
+                </select>
+            </div>
+            <div class="feedback-box" id="fbI3"></div>
+        </div>
+
+        <!-- I.4 Formel-Zuordnung (3 BE) -->
+        <div class="question" id="qI4" data-niveau="1" data-points="3">
+            <div class="question-header">
+                <div class="question-title">I.4 Formeln zuordnen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ordne die richtigen Formeln zu:</div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left"><span class="fz">R</span> = </span>
+                    <select id="qI4-a">
+                        <option value="">-- wählen --</option>
+                        <option value="ur">U / R</option>
+                        <option value="ui">U / I</option>
+                        <option value="ri">R · I</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left"><span class="fz">U</span> = </span>
+                    <select id="qI4-b">
+                        <option value="">-- wählen --</option>
+                        <option value="ri">R · I</option>
+                        <option value="ur">U / R</option>
+                        <option value="ui">U / I</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left"><span class="fz">I</span> = </span>
+                    <select id="qI4-c">
+                        <option value="">-- wählen --</option>
+                        <option value="ui">U / I</option>
+                        <option value="ur">U / R</option>
+                        <option value="ri">R · I</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI4"></div>
+        </div>
+
+        <!-- I.5 Berechnung R (1 BE) -->
+        <div class="question" id="qI5" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.5 Berechne R</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Gegeben: <span class="fz">U</span> = 18 <span class="einheit">V</span>, <span class="fz">I</span> = 6 <span class="einheit">A</span>. Berechne <span class="fz">R</span>.</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">R</span> =</label>
+                    <input type="text" id="qI5-a" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI5"></div>
+        </div>
+
+        <!-- I.6 Berechnung U (1 BE) -->
+        <div class="question" id="qI6" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.6 Berechne U</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Gegeben: <span class="fz">R</span> = 9 <span class="einheit">Ω</span>, <span class="fz">I</span> = 4 <span class="einheit">A</span>. Berechne <span class="fz">U</span>.</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">U</span> =</label>
+                    <input type="text" id="qI6-a" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI6"></div>
+        </div>
+
+        <!-- I.7 Berechnung I (1 BE) -->
+        <div class="question" id="qI7" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.7 Berechne I</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Gegeben: <span class="fz">U</span> = 28 <span class="einheit">V</span>, <span class="fz">R</span> = 7 <span class="einheit">Ω</span>. Berechne <span class="fz">I</span>.</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">I</span> =</label>
+                    <input type="text" id="qI7-a" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI7"></div>
+        </div>
+
+        <!-- I.8 Wasseranalogie (3 BE) -->
+        <div class="question" id="qI8" data-niveau="1" data-points="3">
+            <div class="question-header">
+                <div class="question-title">I.8 Wasseranalogie</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">In der Wasseranalogie entspricht...</div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left">Spannung U ~</span>
+                    <select id="qI8-a">
+                        <option value="">-- wählen --</option>
+                        <option value="menge">Wassermenge pro Zeit</option>
+                        <option value="rohrlaenge">Rohrlänge</option>
+                        <option value="druck">Wasserdruck (Pumpe)</option>
+                        <option value="engstelle">Engstelle im Rohr</option>
+                        <option value="temperatur">Wassertemperatur</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Stromstärke I ~</span>
+                    <select id="qI8-b">
+                        <option value="">-- wählen --</option>
+                        <option value="engstelle">Engstelle im Rohr</option>
+                        <option value="druck">Wasserdruck (Pumpe)</option>
+                        <option value="temperatur">Wassertemperatur</option>
+                        <option value="menge">Wassermenge pro Zeit</option>
+                        <option value="rohrlaenge">Rohrlänge</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Widerstand R ~</span>
+                    <select id="qI8-c">
+                        <option value="">-- wählen --</option>
+                        <option value="druck">Wasserdruck (Pumpe)</option>
+                        <option value="temperatur">Wassertemperatur</option>
+                        <option value="menge">Wassermenge pro Zeit</option>
+                        <option value="engstelle">Engstelle im Rohr</option>
+                        <option value="rohrlaenge">Rohrlänge</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI8"></div>
+        </div>
+
+        <!-- I.9 Schaltplan beschriften (5 BE) -->
+        <div class="question" id="qI9" data-niveau="1" data-points="5">
+            <div class="question-header">
+                <div class="question-title">I.9 Schaltplan beschriften</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Beschrifte den Schaltplan:</div>
+            <div class="diagram">
+                <svg viewBox="0 0 400 220" width="380" height="210">
+                    <!-- Leitungen -->
+                    <line x1="60" y1="50" x2="140" y2="50" stroke="#333" stroke-width="2"/>
+                    <line x1="200" y1="50" x2="340" y2="50" stroke="#333" stroke-width="2"/>
+                    <line x1="340" y1="50" x2="340" y2="170" stroke="#333" stroke-width="2"/>
+                    <line x1="340" y1="170" x2="60" y2="170" stroke="#333" stroke-width="2"/>
+                    <line x1="60" y1="170" x2="60" y2="130" stroke="#333" stroke-width="2"/>
+                    <line x1="60" y1="90" x2="60" y2="50" stroke="#333" stroke-width="2"/>
+
+                    <!-- Spannungsquelle (DIN: lange Linie = +, kurze dicke = −) -->
+                    <line x1="45" y1="95" x2="75" y2="95" stroke="#c62828" stroke-width="2"/>
+                    <line x1="50" y1="125" x2="70" y2="125" stroke="#1565c0" stroke-width="4"/>
+                    <text x="85" y="98" font-size="11" fill="#c62828">+</text>
+                    <text x="85" y="128" font-size="11" fill="#1565c0">−</text>
+
+                    <!-- Widerstand R (Rechteck DIN) -->
+                    <rect x="140" y="35" width="60" height="30" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <text x="170" y="55" text-anchor="middle" font-size="14" font-weight="bold">R</text>
+
+                    <!-- Amperemeter -->
+                    <circle cx="270" cy="50" r="18" fill="#fff" stroke="#333" stroke-width="2"/>
+                    <text x="270" y="55" text-anchor="middle" font-size="14" font-weight="bold">A</text>
+
+                    <!-- Fragezeichen-Boxen -->
+                    <rect x="20" y="100" width="20" height="20" fill="#e3f2fd" stroke="#2c5aa0" stroke-width="1"/>
+                    <text x="30" y="114" text-anchor="middle" font-size="11" fill="#2c5aa0">1</text>
+
+                    <rect x="155" y="5" width="30" height="20" fill="#e3f2fd" stroke="#2c5aa0" stroke-width="1"/>
+                    <text x="170" y="19" text-anchor="middle" font-size="11" fill="#2c5aa0">2</text>
+
+                    <rect x="255" y="75" width="30" height="20" fill="#e3f2fd" stroke="#2c5aa0" stroke-width="1"/>
+                    <text x="270" y="89" text-anchor="middle" font-size="11" fill="#2c5aa0">3</text>
+
+                    <!-- Pol-Fragezeichen -->
+                    <rect x="88" y="88" width="18" height="18" fill="#fff3e0" stroke="#b35c00" stroke-width="1"/>
+                    <text x="97" y="101" text-anchor="middle" font-size="10" fill="#b35c00">4</text>
+
+                    <rect x="88" y="118" width="18" height="18" fill="#fff3e0" stroke="#b35c00" stroke-width="1"/>
+                    <text x="97" y="131" text-anchor="middle" font-size="10" fill="#b35c00">5</text>
+                </svg>
+            </div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left">1 (Bauteil links):</span>
+                    <select id="qI9-a">
+                        <option value="">-- wählen --</option>
+                        <option value="r">Widerstand</option>
+                        <option value="u">Spannungsquelle</option>
+                        <option value="i">Amperemeter</option>
+                        <option value="v">Voltmeter</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">2 (Bauteil oben):</span>
+                    <select id="qI9-b">
+                        <option value="">-- wählen --</option>
+                        <option value="u">Spannungsquelle</option>
+                        <option value="r">Widerstand</option>
+                        <option value="v">Voltmeter</option>
+                        <option value="i">Amperemeter</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">3 (Bauteil rechts):</span>
+                    <select id="qI9-c">
+                        <option value="">-- wählen --</option>
+                        <option value="v">Voltmeter</option>
+                        <option value="i">Amperemeter</option>
+                        <option value="u">Spannungsquelle</option>
+                        <option value="r">Widerstand</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">4 (Pol oben, lange Linie):</span>
+                    <select id="qI9-d">
+                        <option value="">-- wählen --</option>
+                        <option value="minus">Minuspol (−)</option>
+                        <option value="plus">Pluspol (+)</option>
+                        <option value="neutral">Neutral</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">5 (Pol unten, kurze Linie):</span>
+                    <select id="qI9-e">
+                        <option value="">-- wählen --</option>
+                        <option value="plus">Pluspol (+)</option>
+                        <option value="minus">Minuspol (−)</option>
+                        <option value="neutral">Neutral</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI9"></div>
+        </div>
+
+        <!-- I.10 Kennlinie erkennen (2 BE) -->
+        <div class="question" id="qI10" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">I.10 Kennlinie erkennen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Welche Kennlinie gehört zum ohmschen Widerstand, welche zur Glühlampe?</div>
+            <div class="diagram" style="display: flex; justify-content: center; gap: 40px;">
+                <div style="text-align: center;">
+                    <svg viewBox="0 0 100 80" width="100" height="80">
+                        <line x1="15" y1="65" x2="90" y2="65" stroke="#333" stroke-width="1.5"/>
+                        <line x1="15" y1="65" x2="15" y2="10" stroke="#333" stroke-width="1.5"/>
+                        <line x1="15" y1="65" x2="85" y2="15" stroke="#2c5aa0" stroke-width="2"/>
+                        <text x="92" y="68" font-size="9" font-style="italic" font-family="Times, serif">U</text>
+                        <text x="8" y="8" font-size="9" font-style="italic" font-family="Times, serif">I</text>
+                    </svg>
+                    <div style="font-weight: 600; font-size: 0.9em;">Kennlinie A</div>
+                </div>
+                <div style="text-align: center;">
+                    <svg viewBox="0 0 100 80" width="100" height="80">
+                        <line x1="15" y1="65" x2="90" y2="65" stroke="#333" stroke-width="1.5"/>
+                        <line x1="15" y1="65" x2="15" y2="10" stroke="#333" stroke-width="1.5"/>
+                        <path d="M 15 65 Q 40 40, 85 30" stroke="#c62828" stroke-width="2" fill="none"/>
+                        <text x="92" y="68" font-size="9" font-style="italic" font-family="Times, serif">U</text>
+                        <text x="8" y="8" font-size="9" font-style="italic" font-family="Times, serif">I</text>
+                    </svg>
+                    <div style="font-weight: 600; font-size: 0.9em;">Kennlinie B</div>
+                </div>
+            </div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left">Ohmscher Widerstand:</span>
+                    <select id="qI10-a">
+                        <option value="">-- wählen --</option>
+                        <option value="b">Kennlinie B (Kurve)</option>
+                        <option value="a">Kennlinie A (Gerade)</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Glühlampe:</span>
+                    <select id="qI10-b">
+                        <option value="">-- wählen --</option>
+                        <option value="a">Kennlinie A (Gerade)</option>
+                        <option value="b">Kennlinie B (Kurve)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI10"></div>
+        </div>
+
+        <!-- I.11 Einheit Definition (2 BE) -->
+        <div class="question" id="qI11" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">I.11 Einheit definieren</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ergänze: 1 Ohm = 1 ... geteilt durch 1 ...</div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left">1 Ω = 1</span>
+                    <select id="qI11-a">
+                        <option value="">-- wählen --</option>
+                        <option value="a">Ampere</option>
+                        <option value="w">Watt</option>
+                        <option value="v">Volt</option>
+                        <option value="c">Coulomb</option>
+                    </select>
+                    <span>/ 1</span>
+                    <select id="qI11-b">
+                        <option value="">-- wählen --</option>
+                        <option value="w">Watt</option>
+                        <option value="v">Volt</option>
+                        <option value="a">Ampere</option>
+                        <option value="c">Coulomb</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI11"></div>
+        </div>
+
+        <!-- I.12 Lampen-Berechnung (1 BE) -->
+        <div class="question" id="qI12" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.12 Lampe berechnen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Eine Lampe hat <span class="fz">U</span> = 9 <span class="einheit">V</span> und <span class="fz">I</span> = 1,5 <span class="einheit">A</span>. Berechne den Widerstand.</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">R</span> =</label>
+                    <input type="text" id="qI12-a" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI12"></div>
+        </div>
+
+        <!-- I.13 Umrechnung mA (1 BE) -->
+        <div class="question" id="qI13" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.13 Umrechnung mA</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um: 250 mA = ? A</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>250 mA =</label>
+                    <input type="text" id="qI13-a" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI13"></div>
+        </div>
+
+        <!-- I.14 Umrechnung kΩ (1 BE) -->
+        <div class="question" id="qI14" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.14 Umrechnung kΩ</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um: 4,7 kΩ = ? Ω</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>4,7 kΩ =</label>
+                    <input type="text" id="qI14-a" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI14"></div>
+        </div>
+
+        <!-- I.15 Umrechnung mV (1 BE) -->
+        <div class="question" id="qI15" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.15 Umrechnung mV</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um: 3500 mV = ? V</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>3500 mV =</label>
+                    <input type="text" id="qI15-a" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbI15"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TEIL II: ANWENDUNG (★★) - 10 BE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="teil-header">Teil II: Anwendung (★★)</div>
+
+        <!-- II.1 Berechnung mit mA (3 BE) -->
+        <div class="question" id="qII1" data-niveau="2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">II.1 Berechnung mit mA</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Gegeben: <span class="fz">R</span> = 40 <span class="einheit">Ω</span>, <span class="fz">I</span> = 250 <span class="einheit">mA</span>. Berechne <span class="fz">U</span>.</div>
+            <div class="info-box">Tipp: Rechne zuerst mA in A um!</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">U</span> =</label>
+                    <input type="text" id="qII1-a" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbII1"></div>
+        </div>
+
+        <!-- II.2 Kennlinie interpretieren (3 BE) -->
+        <div class="question" id="qII2" data-niveau="2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">II.2 Kennlinie interpretieren</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Lies aus der Kennlinie ab und berechne:</div>
+            <div class="diagram">
+                <svg viewBox="0 0 300 220" width="300" height="220">
+                    <!-- Hilfsraster (vertikal) -->
+                    <line x1="100" y1="180" x2="100" y2="40" stroke="#ddd" stroke-width="1"/>
+                    <line x1="160" y1="180" x2="160" y2="40" stroke="#ddd" stroke-width="1"/>
+                    <line x1="220" y1="180" x2="220" y2="40" stroke="#ddd" stroke-width="1"/>
+                    <!-- Hilfsraster (horizontal) -->
+                    <line x1="40" y1="140" x2="260" y2="140" stroke="#ddd" stroke-width="1"/>
+                    <line x1="40" y1="100" x2="260" y2="100" stroke="#ddd" stroke-width="1"/>
+                    <line x1="40" y1="60" x2="260" y2="60" stroke="#ddd" stroke-width="1"/>
+                    <!-- Achsen -->
+                    <line x1="40" y1="180" x2="280" y2="180" stroke="#333" stroke-width="2"/>
+                    <line x1="40" y1="180" x2="40" y2="20" stroke="#333" stroke-width="2"/>
+                    <!-- Pfeilspitzen -->
+                    <polygon points="280,180 270,175 270,185" fill="#333"/>
+                    <polygon points="40,20 35,30 45,30" fill="#333"/>
+                    <!-- Achsenbeschriftung (ISO 80000: Formelzeichen kursiv+Serif, Einheiten aufrecht+Sans) -->
+                    <text x="285" y="185" font-size="12">
+                        <tspan font-style="italic" font-family="Times, serif">U</tspan>
+                        <tspan font-family="sans-serif"> in </tspan>
+                        <tspan font-family="sans-serif">V</tspan>
+                    </text>
+                    <text x="20" y="15" font-size="12">
+                        <tspan font-style="italic" font-family="Times, serif">I</tspan>
+                        <tspan font-family="sans-serif"> in </tspan>
+                        <tspan font-family="sans-serif">A</tspan>
+                    </text>
+                    <!-- Skalierung U -->
+                    <text x="40" y="195" font-size="10" text-anchor="middle">0</text>
+                    <text x="100" y="195" font-size="10" text-anchor="middle">2</text>
+                    <text x="160" y="195" font-size="10" text-anchor="middle">4</text>
+                    <text x="220" y="195" font-size="10" text-anchor="middle">6</text>
+                    <line x1="100" y1="180" x2="100" y2="175" stroke="#333"/>
+                    <line x1="160" y1="180" x2="160" y2="175" stroke="#333"/>
+                    <line x1="220" y1="180" x2="220" y2="175" stroke="#333"/>
+                    <!-- Skalierung I -->
+                    <text x="30" y="180" font-size="10" text-anchor="end">0</text>
+                    <text x="30" y="140" font-size="10" text-anchor="end">1</text>
+                    <text x="30" y="100" font-size="10" text-anchor="end">2</text>
+                    <text x="30" y="60" font-size="10" text-anchor="end">3</text>
+                    <line x1="40" y1="140" x2="45" y2="140" stroke="#333"/>
+                    <line x1="40" y1="100" x2="45" y2="100" stroke="#333"/>
+                    <line x1="40" y1="60" x2="45" y2="60" stroke="#333"/>
+                    <!-- Kennlinie (Gerade: bei U=4V → I=2A, also R=2Ω) -->
+                    <line x1="40" y1="180" x2="220" y2="60" stroke="#2c5aa0" stroke-width="3"/>
+                </svg>
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>Bei <span class="fz">U</span> = 4 <span class="einheit">V</span>: <span class="fz">I</span> =</label>
+                    <input type="text" id="qII2-a" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+                <div class="calc-row">
+                    <label>Daraus folgt: <span class="fz">R</span> =</label>
+                    <input type="text" id="qII2-b" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbII2"></div>
+        </div>
+
+        <!-- II.3 Fehlersuche (2 BE) -->
+        <div class="question" id="qII3" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.3 Fehlersuche</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ein Schüler rechnet:</div>
+            <div class="info-box" style="background: #fff; border: 1px solid #ddd; font-family: monospace;">
+                Gegeben: <span class="fz">U</span> = 12 <span class="einheit">V</span>, <span class="fz">I</span> = 3 <span class="einheit">A</span><br>
+                Gesucht: <span class="fz">R</span><br>
+                Formel: <span class="fz">R</span> = <span class="fz">U</span> · <span class="fz">I</span><br>
+                Rechnung: <span class="fz">R</span> = 12 <span class="einheit">V</span> · 3 <span class="einheit">A</span> = 36 <span class="einheit">Ω</span>
+            </div>
+            <div class="question-text" style="margin-top: 15px;">Analysiere den Fehler und korrigiere:</div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left">Die richtige Formel lautet:</span>
+                    <select id="qII3-a">
+                        <option value="">-- wählen --</option>
+                        <option value="ui">R = U · I</option>
+                        <option value="iu">R = I / U</option>
+                        <option value="div">R = U / I</option>
+                        <option value="ru">R = R · U</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Das korrekte Ergebnis ist:</span>
+                    <input type="text" id="qII3-b" inputmode="decimal" style="width: 80px;">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbII3"></div>
+        </div>
+
+        <!-- II.4 Reihenschaltung rückwärts (2 BE) -->
+        <div class="question" id="qII4" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.4 Reihenschaltung umgekehrt</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Gegeben: <span class="fz">R</span><sub>ges</sub> = 80 <span class="einheit">Ω</span>, <span class="fz">R</span><sub>1</sub> = 35 <span class="einheit">Ω</span>. Berechne <span class="fz">R</span><sub>2</sub>.</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">R</span><sub>2</sub> =</label>
+                    <input type="text" id="qII4-a" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbII4"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TEIL III: TRANSFER (★★★) - 10 BE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="teil-header">Teil III: Transfer (★★★)</div>
+
+        <!-- III.1 Parallelschaltung gleich (2 BE) -->
+        <div class="question" id="qIII1" data-niveau="3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">III.1 Parallelschaltung (gleiche R)</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Zwei gleiche Widerstände parallel: <span class="fz">R</span><sub>1</sub> = <span class="fz">R</span><sub>2</sub> = 30 <span class="einheit">Ω</span>. Berechne <span class="fz">R</span><sub>ges</sub>.</div>
+            <div class="info-box">Formel: 1/<span class="fz">R</span><sub>ges</sub> = 1/<span class="fz">R</span><sub>1</sub> + 1/<span class="fz">R</span><sub>2</sub></div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">R</span><sub>ges</sub> =</label>
+                    <input type="text" id="qIII1-a" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbIII1"></div>
+        </div>
+
+        <!-- III.2 Parallelschaltung ungleich (3 BE) -->
+        <div class="question" id="qIII2" data-niveau="3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">III.2 Parallelschaltung (ungleiche R)</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Zwei Widerstände parallel: <span class="fz">R</span><sub>1</sub> = 12 <span class="einheit">Ω</span>, <span class="fz">R</span><sub>2</sub> = 24 <span class="einheit">Ω</span>. Berechne <span class="fz">R</span><sub>ges</sub>.</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label><span class="fz">R</span><sub>ges</sub> =</label>
+                    <input type="text" id="qIII2-a" inputmode="decimal">
+                    <span class="unit">Ω</span>
+                </div>
+            </div>
+            <div class="feedback-box" id="fbIII2"></div>
+        </div>
+
+        <!-- III.3 Temperatureffekt erklären (3 BE) -->
+        <div class="question" id="qIII3" data-niveau="3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">III.3 Temperatureffekt erklären</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ergänze die Erklärung, warum der Widerstand einer Glühlampe bei höherer Temperatur zunimmt:</div>
+            <div style="line-height: 2.4; padding: 15px; background: #fafafa; border: 1px solid #ddd;">
+                Bei höherer Temperatur
+                <select id="qIII3-a" style="padding: 4px;">
+                    <option value="">--</option>
+                    <option value="ruhen">ruhen</option>
+                    <option value="verschwinden">verschwinden</option>
+                    <option value="leuchten">leuchten</option>
+                    <option value="schwingen">schwingen</option>
+                    <option value="schmelzen">schmelzen</option>
+                </select>
+                die
+                <select id="qIII3-b" style="padding: 4px;">
+                    <option value="">--</option>
+                    <option value="elektronen">Elektronen</option>
+                    <option value="protonen">Protonen</option>
+                    <option value="photonen">Photonen</option>
+                    <option value="atomruempfe">Atomrümpfe</option>
+                    <option value="neutronen">Neutronen</option>
+                </select>
+                im Metall stärker. Die freien
+                <select id="qIII3-c" style="padding: 4px;">
+                    <option value="">--</option>
+                    <option value="atomruempfe">Atomrümpfe</option>
+                    <option value="neutronen">Neutronen</option>
+                    <option value="ionen">Ionen</option>
+                    <option value="elektronen">Elektronen</option>
+                    <option value="photonen">Photonen</option>
+                </select>
+                <select id="qIII3-d" style="padding: 4px;">
+                    <option value="">--</option>
+                    <option value="fliessen">fließen</option>
+                    <option value="ruhen">ruhen</option>
+                    <option value="stossen">stoßen</option>
+                    <option value="verschwinden">verschwinden</option>
+                    <option value="leuchten">leuchten</option>
+                </select>
+                dadurch häufiger mit ihnen zusammen. Der elektrische
+                <select id="qIII3-e" style="padding: 4px;">
+                    <option value="">--</option>
+                    <option value="strom">Strom</option>
+                    <option value="druck">Druck</option>
+                    <option value="fluss">Fluss</option>
+                    <option value="widerstand">Widerstand</option>
+                    <option value="impuls">Impuls</option>
+                </select>
+                wird
+                <select id="qIII3-f" style="padding: 4px;">
+                    <option value="">--</option>
+                    <option value="kleiner">kleiner</option>
+                    <option value="konstant">konstant</option>
+                    <option value="null">null</option>
+                    <option value="groesser">größer</option>
+                    <option value="negativ">negativ</option>
+                </select>.
+            </div>
+            <div class="feedback-box" id="fbIII3"></div>
+        </div>
+
+        <!-- III.4 Parallelschaltung Merkregel (2 BE) -->
+        <div class="question" id="qIII4" data-niveau="3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">III.4 Merkregel Parallelschaltung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Vervollständige: Bei Parallelschaltung ist <span class="fz">R</span><sub>ges</sub> immer ... als der kleinste Einzelwiderstand.</div>
+            <div class="options">
+                <label class="option" onclick="selectOption(this, 'qIII4')">
+                    <input type="radio" name="qIII4" value="a">
+                    größer
+                </label>
+                <label class="option" onclick="selectOption(this, 'qIII4')">
+                    <input type="radio" name="qIII4" value="b">
+                    gleich
+                </label>
+                <label class="option" onclick="selectOption(this, 'qIII4')">
+                    <input type="radio" name="qIII4" value="c">
+                    kleiner
+                </label>
+            </div>
+            <div class="feedback-box" id="fbIII4"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             ABGABE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p>Wenn du fertig bist, klicke auf <strong>Abgeben</strong>.</p>
+            <button onclick="submitTest()" id="btnSubmit" disabled>Abgeben</button>
+        </div>
+
+        <div class="results hidden" id="resultsBox">
+            <h2>Ergebnis</h2>
+            <div class="score" id="scoreDisplay">-- / --</div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table" id="gradeTable"></table>
+        </div>
+
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════
+        // MT-02 OHMSCHES GESETZ - LOGIK (ES5)
+        // ═══════════════════════════════════════════════════════════════════════
+
+        var STORAGE_KEY = 'mt-02-ohm-v1';
+        var selectedNiveau = 0;
+        var confirmedSeat = '';
+        var confirmedNiveau = false;
+        var submitted = false;
+
+        // Timer (30 Minuten = 1800 Sekunden)
+        var TIMER_DURATION = 30 * 60;
+        var timerSeconds = TIMER_DURATION;
+        var timerInterval = null;
+        var timerStarted = false;
+
+        // BE pro Niveau (aktualisiert: neue Werte, Fehlersuche, Transfer)
+        var BE_NIVEAU = { 1: 25, 2: 35, 3: 45 };
+
+        // Notentabelle (14-NP Sek I)
+        var GRADE_TABLE = [
+            { np: 14, pct: 100, label: '14 NP (1+)' },
+            { np: 13, pct: 96, label: '13 NP (1)' },
+            { np: 12, pct: 90.67, label: '12 NP (1-)' },
+            { np: 11, pct: 86, label: '11 NP (2+)' },
+            { np: 10, pct: 80, label: '10 NP (2)' },
+            { np: 9, pct: 73.33, label: '9 NP (2-)' },
+            { np: 8, pct: 66.67, label: '8 NP (3+)' },
+            { np: 7, pct: 60, label: '7 NP (3)' },
+            { np: 6, pct: 53.33, label: '6 NP (3-)' },
+            { np: 5, pct: 46.67, label: '5 NP (4+)' },
+            { np: 4, pct: 40, label: '4 NP (4)' },
+            { np: 3, pct: 33.33, label: '3 NP (4-)' },
+            { np: 2, pct: 26.67, label: '2 NP (5+)' },
+            { np: 1, pct: 20, label: '1 NP (5)' },
+            { np: 0, pct: 0, label: '0 NP (6)' }
+        ];
+
+        // Lösungen
+        var SOLUTIONS = {
+            // Teil I (★)
+            'qI1-a': { type: 'dropdown', correct: 'temperatur' },
+            'qI2-a': { type: 'dropdown', correct: 'proportional' },
+            'qI3-a': { type: 'dropdown', correct: 'ohm' },
+            'qI4-a': { type: 'dropdown', correct: 'ui' },
+            'qI4-b': { type: 'dropdown', correct: 'ri' },
+            'qI4-c': { type: 'dropdown', correct: 'ur' },
+            'qI5-a': { type: 'numeric', correct: 3, tolerance: 0.01 },
+            'qI6-a': { type: 'numeric', correct: 36, tolerance: 0.01 },
+            'qI7-a': { type: 'numeric', correct: 4, tolerance: 0.01 },
+            'qI8-a': { type: 'dropdown', correct: 'druck' },
+            'qI8-b': { type: 'dropdown', correct: 'menge' },
+            'qI8-c': { type: 'dropdown', correct: 'engstelle' },
+            'qI9-a': { type: 'dropdown', correct: 'u' },
+            'qI9-b': { type: 'dropdown', correct: 'r' },
+            'qI9-c': { type: 'dropdown', correct: 'i' },
+            'qI9-d': { type: 'dropdown', correct: 'plus' },
+            'qI9-e': { type: 'dropdown', correct: 'minus' },
+            'qI10-a': { type: 'dropdown', correct: 'a' },
+            'qI10-b': { type: 'dropdown', correct: 'b' },
+            'qI11-a': { type: 'dropdown', correct: 'v' },
+            'qI11-b': { type: 'dropdown', correct: 'a' },
+            'qI12-a': { type: 'numeric', correct: 6, tolerance: 0.01 },
+            'qI13-a': { type: 'numeric', correct: 0.25, tolerance: 0.01 },
+            'qI14-a': { type: 'numeric', correct: 4700, tolerance: 1 },
+            'qI15-a': { type: 'numeric', correct: 3.5, tolerance: 0.01 },
+            // Teil II (★★) - umstrukturiert, Umrechnungen nach Teil I verschoben
+            'qII1-a': { type: 'numeric', correct: 10, tolerance: 0.1 },
+            'qII2-a': { type: 'numeric', correct: 2, tolerance: 0.1 },
+            'qII2-b': { type: 'numeric', correct: 2, tolerance: 0.1 },
+            'qII3-a': { type: 'dropdown', correct: 'div' },
+            'qII3-b': { type: 'numeric', correct: 4, tolerance: 0.01 },
+            'qII4-a': { type: 'numeric', correct: 45, tolerance: 0.1 },
+            // Teil III (★★★)
+            'qIII1-a': { type: 'numeric', correct: 15, tolerance: 0.1 },
+            'qIII2-a': { type: 'numeric', correct: 8, tolerance: 0.1 },
+            'qIII3-a': { type: 'dropdown', correct: 'schwingen' },
+            'qIII3-b': { type: 'dropdown', correct: 'atomruempfe' },
+            'qIII3-c': { type: 'dropdown', correct: 'elektronen' },
+            'qIII3-d': { type: 'dropdown', correct: 'stossen' },
+            'qIII3-e': { type: 'dropdown', correct: 'widerstand' },
+            'qIII3-f': { type: 'dropdown', correct: 'groesser' },
+            'qIII4': { type: 'mc', correct: 'c' }
+        };
+
+        // Lösungstexte für jede Aufgabe (nach Abgabe angezeigt)
+        var SOLUTION_TEXTS = {
+            'qI1': {
+                answer: 'Temperatur',
+                explanation: 'Das Ohmsche Gesetz gilt nur bei konstanter Temperatur, da der Widerstand temperaturabhängig ist.'
+            },
+            'qI2': {
+                answer: 'proportional',
+                explanation: 'Bei konstantem R gilt: Verdoppelt sich U, verdoppelt sich auch I.'
+            },
+            'qI3': {
+                answer: 'Ohm (Ω)',
+                explanation: 'Die Einheit ist nach Georg Simon Ohm benannt.'
+            },
+            'qI4': {
+                answer: 'R = U/I, U = R·I, I = U/R',
+                explanation: 'Diese drei Formeln sind Umstellungen des Ohmschen Gesetzes.'
+            },
+            'qI5': {
+                answer: '3 Ω',
+                calculation: '<span class="fz">R</span> = <span class="fz">U</span> / <span class="fz">I</span> = 18 V / 6 A = <strong>3 Ω</strong>'
+            },
+            'qI6': {
+                answer: '36 V',
+                calculation: '<span class="fz">U</span> = <span class="fz">R</span> · <span class="fz">I</span> = 9 Ω · 4 A = <strong>36 V</strong>'
+            },
+            'qI7': {
+                answer: '4 A',
+                calculation: '<span class="fz">I</span> = <span class="fz">U</span> / <span class="fz">R</span> = 28 V / 7 Ω = <strong>4 A</strong>'
+            },
+            'qI8': {
+                answer: 'U ~ Druck, I ~ Wassermenge, R ~ Engstelle',
+                explanation: 'Die Wasseranalogie hilft, elektrische Größen zu verstehen.'
+            },
+            'qI9': {
+                answer: '1: Spannungsquelle, 2: Widerstand, 3: Amperemeter, 4: +, 5: −',
+                explanation: 'DIN-Symbole: Lange Linie = Pluspol, kurze dicke Linie = Minuspol.'
+            },
+            'qI10': {
+                answer: 'Ohmscher Widerstand: A (Gerade), Glühlampe: B (Kurve)',
+                explanation: 'Der ohmsche Widerstand zeigt eine lineare Kennlinie (Gerade durch Ursprung).'
+            },
+            'qI11': {
+                answer: '1 Ω = 1 V / 1 A',
+                explanation: 'Die Einheit Ohm ist definiert als Volt pro Ampere.'
+            },
+            'qI12': {
+                answer: '6 Ω',
+                calculation: '<span class="fz">R</span> = <span class="fz">U</span> / <span class="fz">I</span> = 9 V / 1,5 A = <strong>6 Ω</strong>'
+            },
+            'qI13': {
+                answer: '0,25 A',
+                calculation: '250 mA = 250 / 1000 A = <strong>0,25 A</strong>'
+            },
+            'qI14': {
+                answer: '4700 Ω',
+                calculation: '4,7 kΩ = 4,7 · 1000 Ω = <strong>4700 Ω</strong>'
+            },
+            'qI15': {
+                answer: '3,5 V',
+                calculation: '3500 mV = 3500 / 1000 V = <strong>3,5 V</strong>'
+            },
+            'qII1': {
+                answer: '10 V',
+                calculation: '1. Umrechnung: 250 mA = 0,25 A<br>2. <span class="fz">U</span> = <span class="fz">R</span> · <span class="fz">I</span> = 40 Ω · 0,25 A = <strong>10 V</strong>'
+            },
+            'qII2': {
+                answer: 'I = 2 A, R = 2 Ω',
+                calculation: '1. Ablesen bei U = 4 V: <span class="fz">I</span> = <strong>2 A</strong><br>2. <span class="fz">R</span> = <span class="fz">U</span> / <span class="fz">I</span> = 4 V / 2 A = <strong>2 Ω</strong>'
+            },
+            'qII3': {
+                answer: 'R = U / I, Ergebnis: 4 Ω',
+                calculation: 'Fehler: Der Schüler hat multipliziert statt dividiert!<br>Richtig: <span class="fz">R</span> = <span class="fz">U</span> / <span class="fz">I</span> = 12 V / 3 A = <strong>4 Ω</strong>'
+            },
+            'qII4': {
+                answer: '45 Ω',
+                calculation: '<span class="fz">R</span><sub>2</sub> = <span class="fz">R</span><sub>ges</sub> − <span class="fz">R</span><sub>1</sub> = 80 Ω − 35 Ω = <strong>45 Ω</strong>'
+            },
+            'qIII1': {
+                answer: '15 Ω',
+                calculation: 'Bei zwei gleichen Widerständen parallel:<br><span class="fz">R</span><sub>ges</sub> = <span class="fz">R</span> / 2 = 30 Ω / 2 = <strong>15 Ω</strong><br><em>(Oder: 1/R<sub>ges</sub> = 1/30 + 1/30 = 2/30 → R<sub>ges</sub> = 15 Ω)</em>'
+            },
+            'qIII2': {
+                answer: '8 Ω',
+                calculation: '1/<span class="fz">R</span><sub>ges</sub> = 1/<span class="fz">R</span><sub>1</sub> + 1/<span class="fz">R</span><sub>2</sub> = 1/12 + 1/24 = 2/24 + 1/24 = 3/24 = 1/8<br>→ <span class="fz">R</span><sub>ges</sub> = <strong>8 Ω</strong>'
+            },
+            'qIII3': {
+                answer: 'schwingen, Atomrümpfe, Elektronen, stoßen, Widerstand, größer',
+                explanation: 'Bei höherer Temperatur schwingen die Atomrümpfe stärker. Die freien Elektronen stoßen häufiger mit ihnen zusammen → der Widerstand wird größer.'
+            },
+            'qIII4': {
+                answer: 'kleiner',
+                explanation: 'Bei Parallelschaltung ist R<sub>ges</sub> immer kleiner als der kleinste Einzelwiderstand, weil der Strom mehrere Wege hat.'
+            }
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function init() {
+            // Plätze generieren
+            var seatSel = document.getElementById('seatSelect');
+            for (var i = 1; i <= 30; i++) {
+                var opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = 'Platz ' + i;
+                seatSel.appendChild(opt);
+            }
+
+            loadState();
+            updateUI();
+            attachInputListeners();
+        }
+
+        function loadState() {
+            var saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                var data = JSON.parse(saved);
+                confirmedSeat = data.seat || '';
+                selectedNiveau = data.niveau || 0;
+                confirmedNiveau = data.confirmedNiveau || false;
+                submitted = data.submitted || false;
+
+                // Restore timer
+                if (typeof data.timerSeconds === 'number') {
+                    timerSeconds = data.timerSeconds;
+                }
+                if (data.timerStarted) {
+                    timerStarted = false; // Reset flag so startTimer() works
+                    startTimer();
+                }
+
+                // Restore inputs
+                if (data.answers) {
+                    for (var id in data.answers) {
+                        var el = document.getElementById(id);
+                        if (el) {
+                            if (el.tagName === 'TEXTAREA') {
+                                el.value = data.answers[id];
+                            } else if (el.tagName === 'SELECT') {
+                                el.value = data.answers[id];
+                            } else if (el.tagName === 'INPUT') {
+                                if (el.type === 'radio') {
+                                    el.checked = (data.answers[id] === el.value);
+                                    if (el.checked) {
+                                        el.parentElement.classList.add('selected');
+                                    }
+                                } else {
+                                    el.value = data.answers[id];
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Initial timer display
+            displayTimer();
+        }
+
+        function saveState() {
+            var answers = {};
+
+            // Collect all inputs
+            var inputs = document.querySelectorAll('input[type="text"], input[type="radio"]:checked, select, textarea');
+            for (var i = 0; i < inputs.length; i++) {
+                var el = inputs[i];
+                if (el.id && el.id.indexOf('q') === 0) {
+                    answers[el.id] = el.value;
+                } else if (el.name && el.name.indexOf('q') === 0 && el.type === 'radio' && el.checked) {
+                    answers[el.name] = el.value;
+                }
+            }
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                seat: confirmedSeat,
+                niveau: selectedNiveau,
+                confirmedNiveau: confirmedNiveau,
+                submitted: submitted,
+                answers: answers,
+                timerSeconds: timerSeconds,
+                timerStarted: timerStarted
+            }));
+        }
+
+        function attachInputListeners() {
+            var els = document.querySelectorAll('input, select, textarea');
+            for (var i = 0; i < els.length; i++) {
+                els[i].addEventListener('change', saveState);
+                els[i].addEventListener('input', saveState);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // TIMER
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function startTimer() {
+            if (timerStarted || submitted) return;
+            timerStarted = true;
+            timerInterval = setInterval(updateTimer, 1000);
+            saveState();
+        }
+
+        function updateTimer() {
+            if (submitted) {
+                stopTimer();
+                return;
+            }
+
+            timerSeconds--;
+            if (timerSeconds < 0) timerSeconds = 0;
+
+            displayTimer();
+            saveState();
+        }
+
+        function displayTimer() {
+            var display = document.getElementById('timerDisplay');
+            var minutes = Math.floor(timerSeconds / 60);
+            var seconds = timerSeconds % 60;
+            display.textContent = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+
+            // Farbwechsel bei wenig Zeit
+            display.classList.remove('warning', 'critical');
+            if (timerSeconds <= 300 && timerSeconds > 60) {
+                display.classList.add('warning'); // Letzte 5 Minuten
+            } else if (timerSeconds <= 60) {
+                display.classList.add('critical'); // Letzte Minute
+            }
+
+            // Timer bei 0 stoppen (Test läuft weiter!)
+            if (timerSeconds <= 0) {
+                stopTimer();
+                display.textContent = '00:00';
+            }
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // TEACHER RESET (Template-Pflicht)
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function teacherReset() {
+            var code = prompt('Lehrer-Code eingeben:');
+            if (code === '2024') {
+                if (confirm('Test wirklich zurücksetzen? Alle Eingaben werden gelöscht!')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    location.reload();
+                }
+            } else if (code !== null) {
+                alert('Falscher Code!');
+            }
+        }
+
+        // Lehrer-Reset über Tastatur: Strg+Shift+R
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                teacherReset();
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // HELPER: markDropdown (Template-Empfehlung)
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function markDropdown(selectEl, isCorrect) {
+            selectEl.classList.remove('correct', 'incorrect', 'unanswered');
+            if (selectEl.value === '' || selectEl.value === null) {
+                selectEl.classList.add('unanswered');
+            } else if (isCorrect) {
+                selectEl.classList.add('correct');
+            } else {
+                selectEl.classList.add('incorrect');
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SEAT & NIVEAU
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function confirmSeat() {
+            var val = document.getElementById('seatSelect').value;
+            if (!val) { alert('Bitte Platz wählen!'); return; }
+            confirmedSeat = val;
+            document.getElementById('seatNumber').value = val;
+            document.getElementById('seatRow').style.display = 'none';
+            document.getElementById('seatWarning').style.display = 'none';
+            document.getElementById('seatConfirmed').style.display = 'block';
+            document.getElementById('seatConfirmed').textContent = '✓ Platz ' + val;
+            saveState();
+            checkReady();
+        }
+
+        function confirmNiveau() {
+            var val = parseInt(document.getElementById('niveauSelect').value);
+            if (!val) { alert('Bitte Niveau wählen!'); return; }
+            selectedNiveau = val;
+            confirmedNiveau = true;
+            document.getElementById('niveauRow').style.display = 'none';
+            document.getElementById('niveauWarning').style.display = 'none';
+            document.getElementById('niveauConfirmed').style.display = 'block';
+            var labels = { 1: '★ Basis (25 BE)', 2: '★★ Standard (35 BE)', 3: '★★★ Erweitert (45 BE)' };
+            document.getElementById('niveauConfirmed').textContent = '✓ ' + labels[val];
+            saveState();
+            updateUI();
+            checkReady();
+        }
+
+        function checkReady() {
+            if (confirmedSeat && confirmedNiveau) {
+                document.getElementById('btnSubmit').disabled = false;
+                // Timer starten sobald Platz + Niveau bestätigt
+                startTimer();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // UI UPDATE
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function updateUI() {
+            // Show/hide questions based on niveau
+            var questions = document.querySelectorAll('.question');
+            var visibleCount = 0;
+            var totalPoints = 0;
+
+            for (var i = 0; i < questions.length; i++) {
+                var q = questions[i];
+                var qNiveau = parseInt(q.getAttribute('data-niveau'));
+                var qPoints = parseInt(q.getAttribute('data-points'));
+
+                if (confirmedNiveau && qNiveau <= selectedNiveau) {
+                    q.style.display = 'block';
+                    visibleCount++;
+                    totalPoints += qPoints;
+
+                    // Remove "nicht gewertet" if visible
+                    var ng = q.querySelector('.nicht-gewertet-box');
+                    if (ng) ng.remove();
+                } else if (confirmedNiveau && qNiveau > selectedNiveau) {
+                    q.style.display = 'none';
+                } else {
+                    q.style.display = 'block';
+                }
+            }
+
+            // Update progress
+            if (confirmedNiveau) {
+                document.getElementById('progressText').textContent = visibleCount + ' Aufgaben | ' + totalPoints + ' BE';
+            }
+
+            // If already submitted, show results
+            if (submitted) {
+                showResults();
+            }
+        }
+
+        function selectOption(label, qName) {
+            if (submitted) return;
+            var options = label.parentElement.querySelectorAll('.option');
+            for (var i = 0; i < options.length; i++) {
+                options[i].classList.remove('selected');
+            }
+            label.classList.add('selected');
+            label.querySelector('input').checked = true;
+            saveState();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // DECIMAL COMMA SUPPORT
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function parseNum(val) {
+            if (val === '' || val === null || val === undefined) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SUBMIT & EVALUATE
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function submitTest() {
+            if (!confirm('Wirklich abgeben? Du kannst danach nichts mehr ändern!')) return;
+            submitted = true;
+            saveState();
+            showResults();
+        }
+
+        function showResults() {
+            // Timer stoppen und ausblenden
+            stopTimer();
+            var timerContainer = document.getElementById('timerContainer');
+            if (timerContainer) {
+                timerContainer.innerHTML = '<span class="timer-label">Abgegeben</span><span class="timer-display" style="color: #2a7a4b;">✓</span>';
+            }
+
+            // Disable all inputs
+            var inputs = document.querySelectorAll('input, select, textarea');
+            for (var i = 0; i < inputs.length; i++) {
+                inputs[i].disabled = true;
+            }
+
+            // Hide submit button
+            document.getElementById('submitSection').style.display = 'none';
+
+            // Calculate score
+            var totalEarned = 0;
+            var totalPossible = BE_NIVEAU[selectedNiveau];
+
+            // Evaluate each question
+            var questions = document.querySelectorAll('.question');
+            for (var q = 0; q < questions.length; q++) {
+                var qEl = questions[q];
+                var qNiveau = parseInt(qEl.getAttribute('data-niveau'));
+                if (qNiveau > selectedNiveau) continue;
+
+                var qPoints = parseInt(qEl.getAttribute('data-points'));
+                var qId = qEl.id;
+                var earned = evaluateQuestion(qId, qPoints);
+                totalEarned += earned;
+
+                // Show result badge (nur wenn noch nicht vorhanden)
+                var header = qEl.querySelector('.question-header');
+                if (!header.querySelector('.question-result')) {
+                    var badge = document.createElement('span');
+                    badge.className = 'question-result';
+                    if (earned === qPoints) {
+                        badge.className += ' full';
+                        badge.textContent = earned + '/' + qPoints + ' BE ✓';
+                    } else if (earned > 0) {
+                        badge.className += ' partial';
+                        badge.textContent = earned + '/' + qPoints + ' BE';
+                    } else {
+                        badge.className += ' zero';
+                        badge.textContent = '0/' + qPoints + ' BE';
+                    }
+                    header.appendChild(badge);
+                }
+
+                // Lösungsbox anzeigen (nur wenn noch nicht vorhanden)
+                if (!qEl.querySelector('.solution-box')) {
+                    showSolutionBox(qEl, qId, earned === qPoints);
+                }
+            }
+
+            // Show results box
+            var pct = (totalEarned / totalPossible) * 100;
+            document.getElementById('scoreDisplay').textContent = totalEarned + ' / ' + totalPossible + ' BE';
+
+            // Find grade
+            var grade = '0 NP (6)';
+            for (var g = 0; g < GRADE_TABLE.length; g++) {
+                if (pct >= GRADE_TABLE[g].pct) {
+                    grade = GRADE_TABLE[g].label;
+                    break;
+                }
+            }
+            document.getElementById('gradeDisplay').textContent = grade;
+
+            // Build grade table
+            var tableHtml = '<tr><th>NP</th>';
+            for (var t = 0; t < GRADE_TABLE.length; t++) {
+                tableHtml += '<th>' + GRADE_TABLE[t].np + '</th>';
+            }
+            tableHtml += '</tr><tr><th>%</th>';
+            for (var t2 = 0; t2 < GRADE_TABLE.length; t2++) {
+                var cls = (pct >= GRADE_TABLE[t2].pct && (t2 === 0 || pct < GRADE_TABLE[t2-1].pct)) ? ' class="current"' : '';
+                tableHtml += '<td' + cls + '>' + Math.round(GRADE_TABLE[t2].pct) + '</td>';
+            }
+            tableHtml += '</tr>';
+            document.getElementById('gradeTable').innerHTML = tableHtml;
+
+            document.getElementById('resultsBox').classList.remove('hidden');
+        }
+
+        function evaluateQuestion(qId, maxPoints) {
+            var earned = 0;
+
+            // Find all solution keys for this question
+            var keys = [];
+            for (var k in SOLUTIONS) {
+                if (k.indexOf(qId.replace('q', 'q')) === 0 || k === qId.replace('q', 'q')) {
+                    keys.push(k);
+                }
+            }
+
+            // Special handling per question type
+            if (qId === 'qI1' || qId === 'qI2' || qId === 'qI3') {
+                // Single dropdown
+                earned = checkSingle(qId + '-a', 1);
+            }
+            else if (qId === 'qI4') {
+                // 3 dropdowns, 1 BE each
+                earned = checkSingle('qI4-a', 1) + checkSingle('qI4-b', 1) + checkSingle('qI4-c', 1);
+            }
+            else if (qId === 'qI5' || qId === 'qI6' || qId === 'qI7' || qId === 'qI12' || qId === 'qI13' || qId === 'qI14' || qId === 'qI15') {
+                earned = checkSingle(qId + '-a', maxPoints);
+            }
+            else if (qId === 'qI8') {
+                earned = checkSingle('qI8-a', 1) + checkSingle('qI8-b', 1) + checkSingle('qI8-c', 1);
+            }
+            else if (qId === 'qI9') {
+                // 5 dropdowns: Bauteile + Polung
+                earned = checkSingle('qI9-a', 1) + checkSingle('qI9-b', 1) + checkSingle('qI9-c', 1) + checkSingle('qI9-d', 1) + checkSingle('qI9-e', 1);
+            }
+            else if (qId === 'qI10') {
+                // 2 dropdowns: Kennlinie zuordnen
+                earned = checkSingle('qI10-a', 1) + checkSingle('qI10-b', 1);
+            }
+            else if (qId === 'qIII4') {
+                earned = checkMC(qId, maxPoints);
+            }
+            else if (qId === 'qI11') {
+                earned = checkSingle('qI11-a', 1) + checkSingle('qI11-b', 1);
+            }
+            else if (qId === 'qII1' || qId === 'qII4' || qId === 'qIII1' || qId === 'qIII2') {
+                earned = checkSingle(qId + '-a', maxPoints);
+            }
+            else if (qId === 'qII3') {
+                // Fehlersuche: 2 dropdowns, 1 BE each
+                earned = checkSingle('qII3-a', 1) + checkSingle('qII3-b', 1);
+            }
+            else if (qId === 'qII2') {
+                // Kennlinie: 2 numeric, split points (1 + 2 = 3 BE)
+                var a = checkSingle('qII2-a', 1);
+                var b = checkSingle('qII2-b', 2);
+                earned = a + b;
+            }
+            else if (qId === 'qIII3') {
+                // 6 dropdowns, 0.5 BE each = 3 BE total
+                earned = checkSingle('qIII3-a', 0.5) + checkSingle('qIII3-b', 0.5) + checkSingle('qIII3-c', 0.5) + checkSingle('qIII3-d', 0.5) + checkSingle('qIII3-e', 0.5) + checkSingle('qIII3-f', 0.5);
+            }
+
+            return Math.min(earned, maxPoints);
+        }
+
+        function checkSingle(id, points) {
+            var sol = SOLUTIONS[id];
+            if (!sol) return 0;
+
+            var el = document.getElementById(id);
+            if (!el) return 0;
+
+            var val = el.value;
+            var correct = false;
+
+            if (sol.type === 'dropdown') {
+                correct = (val === sol.correct);
+                // Nutze markDropdown Helper für Dropdowns
+                markDropdown(el, correct);
+            } else if (sol.type === 'numeric') {
+                var num = parseNum(val);
+                correct = !isNaN(num) && Math.abs(num - sol.correct) <= sol.tolerance;
+                // Numerische Inputs normal markieren
+                if (correct) {
+                    el.classList.add('correct');
+                } else {
+                    el.classList.add('incorrect');
+                }
+            }
+
+            return correct ? points : 0;
+        }
+
+        function checkMC(qName, points) {
+            var sol = SOLUTIONS[qName];
+            if (!sol) return 0;
+
+            var selected = document.querySelector('input[name="' + qName + '"]:checked');
+            var correct = selected && selected.value === sol.correct;
+
+            // Mark options
+            var options = document.querySelectorAll('input[name="' + qName + '"]');
+            for (var i = 0; i < options.length; i++) {
+                var opt = options[i];
+                var label = opt.parentElement;
+                if (opt.value === sol.correct) {
+                    label.classList.add('correct');
+                } else if (opt.checked) {
+                    label.classList.add('incorrect');
+                }
+            }
+
+            return correct ? points : 0;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // LÖSUNGSBOX ANZEIGEN
+        // ═══════════════════════════════════════════════════════════════════════
+
+        function showSolutionBox(qEl, qId, isFullyCorrect) {
+            var solText = SOLUTION_TEXTS[qId];
+            if (!solText) return;
+
+            // Schülerantwort sammeln
+            var studentAnswer = getStudentAnswer(qId);
+
+            // Box erstellen
+            var box = document.createElement('div');
+            box.className = 'solution-box';
+
+            var html = '<div class="solution-header">Lösung</div>';
+
+            // Schülerantwort anzeigen
+            var answerClass = isFullyCorrect ? 'right' : 'wrong';
+            html += '<div class="student-answer ' + answerClass + '">';
+            html += '<strong>Deine Antwort:</strong> ' + (studentAnswer || '<em>(keine Eingabe)</em>');
+            html += '</div>';
+
+            // Korrekte Antwort
+            html += '<div class="correct-answer">Richtige Antwort: ' + solText.answer + '</div>';
+
+            // Rechnung oder Erklärung
+            if (solText.calculation) {
+                html += '<div class="calculation">' + solText.calculation + '</div>';
+            } else if (solText.explanation) {
+                html += '<div class="calculation" style="font-family: inherit;">' + solText.explanation + '</div>';
+            }
+
+            box.innerHTML = html;
+            qEl.appendChild(box);
+        }
+
+        function getStudentAnswer(qId) {
+            var parts = [];
+
+            // Alle Inputs/Selects für diese Frage finden
+            var inputs = document.querySelectorAll('[id^="' + qId + '-"], [name="' + qId + '"]');
+
+            for (var i = 0; i < inputs.length; i++) {
+                var el = inputs[i];
+                var val = '';
+
+                if (el.tagName === 'SELECT') {
+                    var selected = el.options[el.selectedIndex];
+                    val = selected && selected.value ? selected.textContent : '';
+                } else if (el.tagName === 'INPUT') {
+                    if (el.type === 'radio') {
+                        if (el.checked) {
+                            val = el.parentElement.textContent.trim();
+                        }
+                    } else {
+                        val = el.value;
+                    }
+                }
+
+                if (val) parts.push(val);
+            }
+
+            // Spezialfall: MC-Fragen ohne Suffix
+            if (parts.length === 0) {
+                var mcInput = document.querySelector('input[name="' + qId + '"]:checked');
+                if (mcInput) {
+                    parts.push(mcInput.parentElement.textContent.trim());
+                }
+            }
+
+            return parts.join(', ');
+        }
+
+        function checkFreetext(id, points) {
+            var sol = SOLUTIONS[id];
+            if (!sol) return 0;
+
+            var el = document.getElementById(id);
+            if (!el) return 0;
+
+            var text = el.value.toLowerCase();
+            var found = 0;
+
+            for (var i = 0; i < sol.keywords.length; i++) {
+                if (text.indexOf(sol.keywords[i]) !== -1) {
+                    found++;
+                }
+            }
+
+            // At least 2 keywords for full points
+            if (found >= 3) {
+                el.classList.add('correct');
+                return points;
+            } else if (found >= 2) {
+                el.classList.add('correct');
+                return Math.ceil(points * 0.66);
+            } else if (found >= 1) {
+                el.classList.add('incorrect');
+                return Math.ceil(points * 0.33);
+            } else {
+                el.classList.add('incorrect');
+                return 0;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // START
+        // ═══════════════════════════════════════════════════════════════════════
+
+        init();
+    </script>
+</body>
+</html>

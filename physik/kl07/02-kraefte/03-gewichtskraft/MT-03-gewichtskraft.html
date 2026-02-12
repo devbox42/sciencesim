@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Die Gewichtskraft</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            font-size: 16px;
+            color: #222;
+            line-height: 1.5;
+            padding-top: 55px;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            color: #2c5aa0;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        header .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Timer-Leiste */
+        .timer-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #2a7a4b;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            font-weight: 600;
+            transition: background 0.5s;
+        }
+        .timer-bar.warning { background: #b35c00; }
+        .timer-bar.danger { background: #c62828; animation: pulse 1s ease-in-out infinite; }
+        .timer-bar.expired { background: #c62828; animation: pulse 0.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .timer-display { font-size: 1.4em; font-family: monospace; letter-spacing: 2px; }
+        .timer-label { font-size: 0.95em; }
+
+        /* Auswahl-Bereich */
+        .selection-section {
+            background: #fff;
+            border: 2px solid #2c5aa0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .selection-section h2 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+        }
+        .selection-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .selection-row label {
+            font-weight: 600;
+            min-width: 120px;
+        }
+        .selection-row select {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            min-width: 200px;
+        }
+        .selection-row .btn {
+            padding: 10px 20px;
+        }
+        .locked-display {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 12px 20px;
+            font-weight: 600;
+            color: #2a7a4b;
+        }
+        .locked-display.niveau-1 { background: #e8f5e9; border-color: #2a7a4b; color: #2a7a4b; }
+        .locked-display.niveau-2 { background: #e3f2fd; border-color: #2c5aa0; color: #2c5aa0; }
+        .locked-display.niveau-3 { background: #f3e5f5; border-color: #7b1fa2; color: #7b1fa2; }
+
+        /* Progress */
+        .progress-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            background: #2c5aa0;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        /* Fragen */
+        .question {
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            display: none;
+        }
+        .question.visible { display: block; }
+        .question.unanswered { background: #fff3e0 !important; }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .question-title {
+            color: #2c5aa0;
+            font-weight: 600;
+        }
+        .question-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .question-niveau {
+            padding: 2px 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points {
+            color: #888;
+            font-size: 0.85em;
+        }
+        .question-text { margin-bottom: 12px; }
+        .question-result {
+            padding: 3px 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* Optionen */
+        .options label {
+            display: block;
+            padding: 10px 12px;
+            margin: 4px 0;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .options label:hover { background: #e8f4fd; }
+        .options label.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .options label.correct { background: #e8f5e9 !important; border-color: #2a7a4b !important; }
+        .options label.incorrect { background: #ffebee !important; border-color: #c62828 !important; }
+        .options input[type="radio"] { margin-right: 10px; }
+
+        /* Inputs */
+        input[type="number"], input[type="text"] {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            width: 100px;
+            margin: 0 5px;
+        }
+        select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+        }
+        select.correct { border: 2px solid #2a7a4b !important; background: #e8f5e9; }
+        select.incorrect { border: 2px solid #c62828 !important; background: #ffebee; }
+        select.unanswered { border: 2px solid #b35c00 !important; }
+        .inline-answer {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        .calc-row {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px 5px 5px 0;
+        }
+        .btn:hover { background: #1e4a8a; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-success { background: #2a7a4b; }
+        .btn-success:hover { background: #1e5a35; }
+        .btn-small { padding: 6px 12px; font-size: 0.85em; }
+
+        /* Feedback */
+        .feedback-box {
+            padding: 12px 15px;
+            margin: 10px 0;
+            display: none;
+        }
+        .feedback-box.correct { background: #e8f5e9; border: 1px solid #2a7a4b; color: #1b5e20; }
+        .feedback-box.incorrect { background: #ffebee; border: 1px solid #c62828; color: #b71c1c; }
+        .feedback-box.show { display: block; }
+
+        /* Ergebnisse */
+        .results {
+            background: #fff;
+            border: 2px solid #2c5aa0;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        .results h2 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+        .results-score {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin: 15px 0;
+        }
+        .results-np {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin: 10px 0;
+            padding: 10px 15px;
+            display: inline-block;
+        }
+        .results-np.good { background: #e8f5e9; color: #2a7a4b; }
+        .results-np.ok { background: #fff3e0; color: #b35c00; }
+        .results-np.weak { background: #ffebee; color: #c62828; }
+
+        /* Notentabelle */
+        .grade-table {
+            margin: 15px 0;
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.85em;
+        }
+        .grade-table th, .grade-table td {
+            border: 1px solid #ddd;
+            padding: 4px 6px;
+            text-align: center;
+        }
+        .grade-table th { background: #f5f5f5; }
+        .current-grade { background: #e3f2fd !important; font-weight: bold; }
+
+        /* ISO 80000 */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: sans-serif; font-style: normal; }
+        .bruch-inline {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.85em;
+            line-height: 1.1;
+        }
+        .bruch-inline .zi {
+            display: block;
+            border-bottom: 1px solid currentColor;
+            padding: 0 2px 1px;
+        }
+        .bruch-inline .ni {
+            display: block;
+            padding: 1px 2px 0;
+        }
+
+        /* Lehrer-Bereich */
+        .teacher-section {
+            margin-top: 40px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 1px dashed #999;
+        }
+        .teacher-section summary {
+            cursor: pointer;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            .timer-bar, .selection-section, .progress-container, button, .teacher-section { display: none; }
+            body { padding-top: 0; }
+            .question { page-break-inside: avoid; display: block !important; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Timer-Leiste -->
+    <div class="timer-bar" id="timerBar">
+        <span class="timer-label">Stundenleistung: Die Gewichtskraft</span>
+        <span class="timer-display" id="timerDisplay">15:00</span>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Stundenleistung: Die Gewichtskraft</h1>
+            <div class="meta">Physik Klasse 7 | Differenziert (&#9733;/&#9733;&#9733;/&#9733;&#9733;&#9733;) | 15 Minuten</div>
+        </header>
+
+        <!-- AUSWAHL: Platz + Niveau -->
+        <div class="selection-section" id="selectionSection">
+            <h2>Vor dem Start</h2>
+
+            <div class="selection-row" id="seatRow">
+                <label>Platznummer:</label>
+                <select id="seatSelect">
+                    <option value="">-- Platz wählen --</option>
+                    <script>for(var i=1;i<=30;i++){document.write('<option value="'+i+'">P'+i+'</option>');}</script>
+                </select>
+                <button class="btn btn-small" onclick="confirmSeat()">Bestätigen</button>
+            </div>
+            <div id="seatLocked" style="display:none;"></div>
+
+            <div class="selection-row" id="niveauRow">
+                <label>Niveau:</label>
+                <select id="niveauSelect">
+                    <option value="">-- Niveau wählen --</option>
+                    <option value="1">&#9733; Basis (23 BE)</option>
+                    <option value="2">&#9733;&#9733; Standard (28 BE)</option>
+                    <option value="3">&#9733;&#9733;&#9733; Erweitert (29 BE)</option>
+                </select>
+                <button class="btn btn-small" onclick="confirmNiveau()">Bestätigen</button>
+            </div>
+            <div id="niveauLocked" style="display:none;"></div>
+        </div>
+
+        <!-- FORTSCHRITT -->
+        <div class="progress-container" id="progressContainer" style="display:none;">
+            <div class="progress-text" id="progressText">0 / 0 beantwortet</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <!-- FRAGEN-CONTAINER -->
+        <div id="questionsContainer">
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- ★ NIVEAU 1: BASISAUFGABEN (25 BE) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <!-- F1: Definition Masse (1 BE) -->
+            <div class="question" id="q1" data-niveau="1" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 1: Definition Masse</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Die <strong>Masse</strong> gibt an, wie viel ... in einem Körper enthalten ist.
+                </div>
+                <div class="options" id="q1-options">
+                    <label class="option" data-value="a"><input type="radio" name="q1" value="a"> Gewicht</label>
+                    <label class="option" data-value="b"><input type="radio" name="q1" value="b"> Stoff</label>
+                    <label class="option" data-value="c"><input type="radio" name="q1" value="c"> Kraft</label>
+                    <label class="option" data-value="d"><input type="radio" name="q1" value="d"> Energie</label>
+                </div>
+                <div class="feedback-box correct" id="q1-fb-correct">Richtig! Die Masse gibt die Stoffmenge an.</div>
+                <div class="feedback-box incorrect" id="q1-fb-incorrect">Die Masse gibt an, wie viel <strong>Stoff</strong> in einem Körper enthalten ist.</div>
+            </div>
+
+            <!-- F2: Definition Gewichtskraft (1 BE) -->
+            <div class="question" id="q2" data-niveau="1" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 2: Definition Gewichtskraft</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Die <strong>Gewichtskraft</strong> ist die Kraft, mit der ...
+                </div>
+                <div class="options" id="q2-options">
+                    <label class="option" data-value="a"><input type="radio" name="q2" value="a"> ein Körper beschleunigt wird</label>
+                    <label class="option" data-value="b"><input type="radio" name="q2" value="b"> die Erde einen Körper anzieht</label>
+                    <label class="option" data-value="c"><input type="radio" name="q2" value="c"> zwei Körper zusammenprallen</label>
+                    <label class="option" data-value="d"><input type="radio" name="q2" value="d"> eine Feder gespannt wird</label>
+                </div>
+                <div class="feedback-box correct" id="q2-fb-correct">Richtig! Die Gewichtskraft ist die Anziehungskraft der Erde.</div>
+                <div class="feedback-box incorrect" id="q2-fb-incorrect">Die Gewichtskraft ist die Kraft, mit der <strong>die Erde einen Körper anzieht</strong>.</div>
+            </div>
+
+            <!-- F3: Einheiten zuordnen (3 BE) -->
+            <div class="question" id="q3" data-niveau="1" data-points="3">
+                <div class="question-header">
+                    <div class="question-title">Frage 3: Einheiten zuordnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">3 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Ordne zu:</strong> Welche Einheit gehört zu welcher Größe?
+                </div>
+                <div style="margin: 15px 0;">
+                    <div class="inline-answer">
+                        <span style="min-width:180px;">Gewichtskraft <span class="fz">F</span><sub>G</sub>:</span>
+                        <select id="q3a">
+                            <option value="">-- wählen --</option>
+                            <option value="N">N (Newton)</option>
+                            <option value="kg">kg (Kilogramm)</option>
+                            <option value="N/kg">N/kg</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:180px;">Masse <span class="fz">m</span>:</span>
+                        <select id="q3b">
+                            <option value="">-- wählen --</option>
+                            <option value="N">N (Newton)</option>
+                            <option value="kg">kg (Kilogramm)</option>
+                            <option value="N/kg">N/kg</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:180px;">Ortsfaktor <span class="fz">g</span>:</span>
+                        <select id="q3c">
+                            <option value="">-- wählen --</option>
+                            <option value="N">N (Newton)</option>
+                            <option value="kg">kg (Kilogramm)</option>
+                            <option value="N/kg">N/kg</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="feedback-box correct" id="q3-fb-correct">Alle richtig! <span class="fz">F</span><sub>G</sub> in N, <span class="fz">m</span> in kg, <span class="fz">g</span> in N/kg.</div>
+                <div class="feedback-box incorrect" id="q3-fb-incorrect"><span class="fz">F</span><sub>G</sub> = Newton (N), <span class="fz">m</span> = Kilogramm (kg), <span class="fz">g</span> = N/kg</div>
+            </div>
+
+            <!-- F4: F_G berechnen m=5kg (2 BE) -->
+            <div class="question" id="q4" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 4: Gewichtskraft berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die Gewichtskraft auf der Erde (<span class="fz">g</span> = 10 <span class="einheit"><span class="bruch-inline"><span class="zi">N</span><span class="ni">kg</span></span></span>):<br>
+                    <span class="fz">m</span> = 5 <span class="einheit">kg</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">F</span><sub>G</sub> =
+                    <input type="text" inputmode="decimal" id="q4v" style="width:80px;">
+                    <span class="einheit">N</span>
+                </div>
+                <div class="feedback-box correct" id="q4-fb-correct">Richtig! 5 kg · 10 N/kg = 50 N</div>
+                <div class="feedback-box incorrect" id="q4-fb-incorrect"><span class="fz">F</span><sub>G</sub> = 5 · 10 = <strong>50 N</strong></div>
+            </div>
+
+            <!-- F5: F_G berechnen m=8kg (2 BE) -->
+            <div class="question" id="q5" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 5: Gewichtskraft berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die Gewichtskraft:<br>
+                    <span class="fz">m</span> = 8 <span class="einheit">kg</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">F</span><sub>G</sub> =
+                    <input type="text" inputmode="decimal" id="q5v" style="width:80px;">
+                    <span class="einheit">N</span>
+                </div>
+                <div class="feedback-box correct" id="q5-fb-correct">Richtig! 8 · 10 = 80 N</div>
+                <div class="feedback-box incorrect" id="q5-fb-incorrect"><span class="fz">F</span><sub>G</sub> = 8 · 10 = <strong>80 N</strong></div>
+            </div>
+
+            <!-- F6: F_G berechnen m=3kg (2 BE) -->
+            <div class="question" id="q6" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 6: Gewichtskraft berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die Gewichtskraft:<br>
+                    <span class="fz">m</span> = 3 <span class="einheit">kg</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">F</span><sub>G</sub> =
+                    <input type="text" inputmode="decimal" id="q6v" style="width:80px;">
+                    <span class="einheit">N</span>
+                </div>
+                <div class="feedback-box correct" id="q6-fb-correct">Richtig! 3 · 10 = 30 N</div>
+                <div class="feedback-box incorrect" id="q6-fb-incorrect"><span class="fz">F</span><sub>G</sub> = 3 · 10 = <strong>30 N</strong></div>
+            </div>
+
+            <!-- F7: m berechnen F_G=40N (2 BE) -->
+            <div class="question" id="q7" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 7: Masse berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die Masse. Formel: <span class="fz">m</span> = <span class="fz">F</span><sub>G</sub> / <span class="fz">g</span><br>
+                    <span class="fz">F</span><sub>G</sub> = 40 <span class="einheit">N</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">m</span> =
+                    <input type="text" inputmode="decimal" id="q7v" style="width:80px;">
+                    <span class="einheit">kg</span>
+                </div>
+                <div class="feedback-box correct" id="q7-fb-correct">Richtig! 40 / 10 = 4 kg</div>
+                <div class="feedback-box incorrect" id="q7-fb-incorrect"><span class="fz">m</span> = 40 / 10 = <strong>4 kg</strong></div>
+            </div>
+
+            <!-- F8: m berechnen F_G=70N (2 BE) -->
+            <div class="question" id="q8" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 8: Masse berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die Masse:<br>
+                    <span class="fz">F</span><sub>G</sub> = 70 <span class="einheit">N</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">m</span> =
+                    <input type="text" inputmode="decimal" id="q8v" style="width:80px;">
+                    <span class="einheit">kg</span>
+                </div>
+                <div class="feedback-box correct" id="q8-fb-correct">Richtig! 70 / 10 = 7 kg</div>
+                <div class="feedback-box incorrect" id="q8-fb-incorrect"><span class="fz">m</span> = 70 / 10 = <strong>7 kg</strong></div>
+            </div>
+
+            <!-- F9: F_G auf Erde m=60kg (2 BE) -->
+            <div class="question" id="q9" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 9: Gewichtskraft auf der Erde</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Schüler hat eine Masse von <span class="fz">m</span> = 60 <span class="einheit">kg</span>.<br>
+                    <strong>Berechne</strong> seine Gewichtskraft auf der <strong>Erde</strong>.
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">F</span><sub>G</sub> =
+                    <input type="text" inputmode="decimal" id="q9v" style="width:80px;">
+                    <span class="einheit">N</span>
+                </div>
+                <div class="feedback-box correct" id="q9-fb-correct">Richtig! 60 · 10 = 600 N</div>
+                <div class="feedback-box incorrect" id="q9-fb-incorrect"><span class="fz">F</span><sub>G</sub> = 60 · 10 = <strong>600 N</strong></div>
+            </div>
+
+            <!-- F10: F_G auf Mond m=60kg (2 BE) -->
+            <div class="question" id="q10" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 10: Gewichtskraft auf dem Mond</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Derselbe Schüler (<span class="fz">m</span> = 60 <span class="einheit">kg</span>) steht auf dem <strong>Mond</strong>.<br>
+                    <strong>Berechne</strong> seine Gewichtskraft (<span class="fz">g</span><sub>Mond</sub> = 1,6 <span class="einheit"><span class="bruch-inline"><span class="zi">N</span><span class="ni">kg</span></span></span>).
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">F</span><sub>G</sub> =
+                    <input type="text" inputmode="decimal" id="q10v" style="width:80px;">
+                    <span class="einheit">N</span>
+                </div>
+                <div class="feedback-box correct" id="q10-fb-correct">Richtig! 60 · 1,6 = 96 N</div>
+                <div class="feedback-box incorrect" id="q10-fb-incorrect"><span class="fz">F</span><sub>G</sub> = 60 · 1,6 = <strong>96 N</strong></div>
+            </div>
+
+            <!-- F11: Was bleibt gleich? (2 BE) -->
+            <div class="question" id="q11" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 11: Reise zum Mond</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Astronaut fliegt von der Erde zum Mond. <strong>Was bleibt gleich?</strong>
+                </div>
+                <div class="options" id="q11-options">
+                    <label class="option" data-value="a"><input type="radio" name="q11" value="a"> Die Gewichtskraft</label>
+                    <label class="option" data-value="b"><input type="radio" name="q11" value="b"> Die Masse</label>
+                    <label class="option" data-value="c"><input type="radio" name="q11" value="c"> Beides bleibt gleich</label>
+                    <label class="option" data-value="d"><input type="radio" name="q11" value="d"> Nichts bleibt gleich</label>
+                </div>
+                <div class="feedback-box correct" id="q11-fb-correct">Richtig! Die Masse ist überall gleich, die Gewichtskraft ändert sich.</div>
+                <div class="feedback-box incorrect" id="q11-fb-incorrect">Die <strong>Masse</strong> bleibt gleich (Stoffmenge). Die Gewichtskraft ändert sich mit dem Ortsfaktor.</div>
+            </div>
+
+            <!-- F12: Warum g unterschiedlich? (2 BE) -->
+            <div class="question" id="q12" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 12: Ortsfaktor</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Warum</strong> ist der Ortsfaktor <span class="fz">g</span> auf dem Mond kleiner als auf der Erde?
+                </div>
+                <div class="options" id="q12-options">
+                    <label class="option" data-value="a"><input type="radio" name="q12" value="a"> Weil der Mond weiter von der Sonne entfernt ist</label>
+                    <label class="option" data-value="b"><input type="radio" name="q12" value="b"> Weil der Mond weniger Masse hat und schwächer anzieht</label>
+                    <label class="option" data-value="c"><input type="radio" name="q12" value="c"> Weil es auf dem Mond keine Luft gibt</label>
+                    <label class="option" data-value="d"><input type="radio" name="q12" value="d"> Weil der Mond schneller rotiert</label>
+                </div>
+                <div class="feedback-box correct" id="q12-fb-correct">Richtig! Der Mond hat weniger Masse, daher ist seine Anziehungskraft geringer.</div>
+                <div class="feedback-box incorrect" id="q12-fb-incorrect">Der Mond hat <strong>weniger Masse</strong> als die Erde, daher zieht er Körper schwächer an.</div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- ★★ NIVEAU 2: STANDARD (+5 BE = 30 BE) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <!-- F13: F_G Dezimal m=2,5kg (2 BE) -->
+            <div class="question" id="q13" data-niveau="2" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 13: Dezimalzahlen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-2">&#9733;&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die Gewichtskraft:<br>
+                    <span class="fz">m</span> = 2,5 <span class="einheit">kg</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">F</span><sub>G</sub> =
+                    <input type="text" inputmode="decimal" id="q13v" style="width:80px;">
+                    <span class="einheit">N</span>
+                </div>
+                <div class="feedback-box correct" id="q13-fb-correct">Richtig! 2,5 · 10 = 25 N</div>
+                <div class="feedback-box incorrect" id="q13-fb-incorrect"><span class="fz">F</span><sub>G</sub> = 2,5 · 10 = <strong>25 N</strong></div>
+            </div>
+
+            <!-- F14: Masse berechnen aus F_G (3 BE) -->
+            <div class="question" id="q14" data-niveau="2" data-points="3">
+                <div class="question-header">
+                    <div class="question-title">Frage 14: Masse berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-2">&#9733;&#9733;</span>
+                        <span class="question-points">3 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Koffer hat auf der Erde eine Gewichtskraft von <span class="fz">F</span><sub>G</sub> = 150 <span class="einheit">N</span>.<br>
+                    <strong>Berechne</strong> die Masse des Koffers.
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">m</span> =
+                    <input type="text" inputmode="decimal" id="q14v" style="width:80px;">
+                    <span class="einheit">kg</span>
+                </div>
+                <div class="feedback-box correct" id="q14-fb-correct">Richtig! m = 150 / 10 = 15 kg</div>
+                <div class="feedback-box incorrect" id="q14-fb-incorrect"><span class="fz">m</span> = <span class="fz">F</span><sub>G</sub> / <span class="fz">g</span> = 150 / 10 = <strong>15 kg</strong></div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- ★★★ NIVEAU 3: ERWEITERT (+1 BE = 31 BE) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <!-- F15: Transfer - Himmelskörper identifizieren (1 BE) -->
+            <div class="question" id="q15" data-niveau="3" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 15: Welcher Himmelskörper?</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-3">&#9733;&#9733;&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Astronaut (<span class="fz">m</span> = 50 <span class="einheit">kg</span>) misst seine Gewichtskraft: <span class="fz">F</span><sub>G</sub> = 200 <span class="einheit">N</span>.<br>
+                    <strong>Überlege:</strong> Auf welchem Himmelskörper steht er?
+                    <table style="margin: 10px 0; font-size: 0.9em; border-collapse: collapse;">
+                        <tr style="background:#f5f5f5;"><th style="padding:5px 10px; border:1px solid #ddd;">Himmelskörper</th><th style="padding:5px 10px; border:1px solid #ddd;"><span class="fz">g</span> in <span class="bruch-inline"><span class="zi">N</span><span class="ni">kg</span></span></th></tr>
+                        <tr><td style="padding:5px 10px; border:1px solid #ddd;">Mars</td><td style="padding:5px 10px; border:1px solid #ddd;">4</td></tr>
+                        <tr><td style="padding:5px 10px; border:1px solid #ddd;">Erde</td><td style="padding:5px 10px; border:1px solid #ddd;">10</td></tr>
+                        <tr><td style="padding:5px 10px; border:1px solid #ddd;">Jupiter</td><td style="padding:5px 10px; border:1px solid #ddd;">25</td></tr>
+                    </table>
+                </div>
+                <div class="inline-answer">
+                    Himmelskörper:
+                    <select id="q15b">
+                        <option value="">-- wählen --</option>
+                        <option value="mars">Mars</option>
+                        <option value="erde">Erde</option>
+                        <option value="jupiter">Jupiter</option>
+                    </select>
+                </div>
+                <div class="feedback-box correct" id="q15-fb-correct">Richtig! 200 / 50 = 4 → Mars</div>
+                <div class="feedback-box incorrect" id="q15-fb-incorrect"><span class="fz">g</span> = 200 / 50 = 4 → Das ist der <strong>Mars</strong>.</div>
+            </div>
+
+        </div><!-- /questionsContainer -->
+
+        <!-- SUBMIT -->
+        <div id="submitSection" style="display:none; margin: 20px 0;">
+            <button class="btn btn-success" onclick="submitTest()">Auswerten</button>
+        </div>
+
+        <!-- ERGEBNISSE -->
+        <div class="results" id="results">
+            <h2>Ergebnis</h2>
+            <div class="results-score" id="scoreDisplay"></div>
+            <div id="npDisplay"></div>
+
+            <h3 style="margin-top: 20px; color: #2c5aa0;">Bewertung (14-NP)</h3>
+            <table class="grade-table" id="gradeTable">
+                <tr>
+                    <th>NP</th>
+                    <th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th>
+                    <th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+                </tr>
+                <tr id="gradeRow">
+                    <td>%</td>
+                    <td>100</td><td>96</td><td>91</td><td>86</td><td>80</td><td>73</td><td>67</td>
+                    <td>60</td><td>53</td><td>47</td><td>40</td><td>33</td><td>27</td><td>20</td><td>&lt;20</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- LEHRER-BEREICH -->
+        <details class="teacher-section">
+            <summary>Lehrerbereich</summary>
+            <button class="btn btn-small" onclick="teacherReset()">Platz zurücksetzen</button>
+        </details>
+
+    </div><!-- /container -->
+
+    <script>
+        // ============================================================
+        // KONFIGURATION
+        // ============================================================
+
+        var STORAGE_KEY = 'mt-physik-kl7-03-gewichtskraft-v3';
+        var TIME_LIMIT = 15 * 60;
+        var timeRemaining = TIME_LIMIT;
+        var timerInterval = null;
+        var selectedNiveau = 0;
+        var testSubmitted = false;
+
+        // Tab-Wechsel-Protokoll (Anti-Betrug)
+        var tabSwitchCount = 0;
+        var tabSwitchStart = 0;
+        var tabSwitchSeconds = 0;
+
+        // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+        function formatTimestamp(ts) {
+            if (!ts) return '—';
+            var d = new Date(parseInt(ts));
+            var day = d.getDate();
+            var month = d.getMonth() + 1;
+            var year = d.getFullYear();
+            var hours = d.getHours();
+            var minutes = d.getMinutes();
+            return (day < 10 ? '0' : '') + day + '.' +
+                   (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+                   (hours < 10 ? '0' : '') + hours + ':' +
+                   (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+        }
+
+        // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+        function initTabSwitchTracking() {
+            var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+            var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+            if (savedCount) tabSwitchCount = parseInt(savedCount);
+            if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+            document.addEventListener('visibilitychange', function() {
+                if (testSubmitted) return;
+
+                if (document.hidden) {
+                    tabSwitchStart = Date.now();
+                    tabSwitchCount++;
+                    localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+                } else {
+                    if (tabSwitchStart > 0) {
+                        var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                        tabSwitchSeconds += duration;
+                        localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                        tabSwitchStart = 0;
+                    }
+                }
+            });
+        }
+
+        function formatDuration(seconds) {
+            if (seconds < 60) return seconds + ' Sek.';
+            var min = Math.floor(seconds / 60);
+            var sec = seconds % 60;
+            return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+        }
+
+        var niveauPoints = {
+            1: 23,  // ★ Basis
+            2: 28,  // ★★ Standard
+            3: 29   // ★★★ Erweitert
+        };
+
+        var answers = {
+            q1: 'b', q2: 'b',
+            q3a: 'N', q3b: 'kg', q3c: 'N/kg',
+            q4: 50, q5: 80, q6: 30,
+            q7: 4, q8: 7,
+            q9: 600, q10: 96,
+            q11: 'b', q12: 'b',
+            q13: 25, q14: 15,
+            q15b: 'mars'
+        };
+
+        function parseNumber(val) {
+            if (val === '' || val === null || val === undefined) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        // ============================================================
+        // TIMER
+        // ============================================================
+
+        function startTimer() {
+            var savedTime = localStorage.getItem(STORAGE_KEY + '-time');
+            if (savedTime) timeRemaining = parseInt(savedTime);
+            updateTimerDisplay();
+            timerInterval = setInterval(function() {
+                if (testSubmitted) { clearInterval(timerInterval); return; }
+                timeRemaining--;
+                if (timeRemaining < 0) timeRemaining = 0;
+                localStorage.setItem(STORAGE_KEY + '-time', timeRemaining);
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            var timerBar = document.getElementById('timerBar');
+            var timerDisplay = document.getElementById('timerDisplay');
+            if (timeRemaining <= 0) {
+                timerDisplay.textContent = 'Zeit zum Abgeben!';
+                timerBar.className = 'timer-bar expired';
+                return;
+            }
+            var m = Math.floor(timeRemaining / 60);
+            var s = timeRemaining % 60;
+            timerDisplay.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            timerBar.classList.remove('warning', 'danger', 'expired');
+            if (timeRemaining <= 120) timerBar.classList.add('danger');
+            else if (timeRemaining <= 300) timerBar.classList.add('warning');
+        }
+
+        // ============================================================
+        // PLATZ + NIVEAU SPERRUNG
+        // ============================================================
+
+        function confirmSeat() {
+            var sel = document.getElementById('seatSelect');
+            var num = sel.value;
+            if (!num) { alert('Bitte Platznummer wählen!'); return; }
+            var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+            if (!ok) return;
+            localStorage.setItem(STORAGE_KEY + '-seat', num);
+            localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+            showLockedSeat(num);
+            checkUnlocked();
+        }
+
+        function showLockedSeat(num) {
+            document.getElementById('seatRow').style.display = 'none';
+            var locked = document.getElementById('seatLocked');
+            locked.innerHTML = '<div class="locked-display">Platz: <strong>P' + num + '</strong></div>';
+            locked.style.display = 'block';
+        }
+
+        function confirmNiveau() {
+            var sel = document.getElementById('niveauSelect');
+            var val = sel.value;
+            if (!val) { alert('Bitte Niveau wählen!'); return; }
+            var stars = ['', '★ Basis (23 BE)', '★★ Standard (28 BE)', '★★★ Erweitert (29 BE)'][parseInt(val)];
+            var ok = confirm('Niveau "' + stars + '" bestätigen?\n\nKann NICHT mehr geändert werden!');
+            if (!ok) return;
+            localStorage.setItem(STORAGE_KEY + '-niveau', val);
+            localStorage.setItem(STORAGE_KEY + '-niveau-locked', 'true');
+            selectedNiveau = parseInt(val);
+            showLockedNiveau(val);
+            activateNiveau(selectedNiveau);
+            checkUnlocked();
+        }
+
+        function showLockedNiveau(val) {
+            document.getElementById('niveauRow').style.display = 'none';
+            var locked = document.getElementById('niveauLocked');
+            var stars = ['', '★ Basis', '★★ Standard', '★★★ Erweitert'][parseInt(val)];
+            locked.innerHTML = '<div class="locked-display niveau-' + val + '">Niveau: <strong>' + stars + '</strong> (' + niveauPoints[val] + ' BE)</div>';
+            locked.style.display = 'block';
+        }
+
+        // ===== FRAGEN FREISCHALTEN =====
+        function checkUnlocked() {
+            var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+            var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+            var container = document.getElementById('questionsContainer');
+            var hint = document.getElementById('unlockHint');
+
+            if (seatLocked && niveauLocked) {
+                container.classList.add('unlocked');
+                hint.style.display = 'none';
+            } else {
+                container.classList.remove('unlocked');
+                hint.style.display = 'block';
+            }
+        }
+
+        function activateNiveau(niveau) {
+            var questions = document.querySelectorAll('.question');
+            for (var i = 0; i < questions.length; i++) {
+                var qNiveau = parseInt(questions[i].dataset.niveau);
+                if (qNiveau <= niveau) {
+                    questions[i].classList.add('visible');
+                }
+            }
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('submitSection').style.display = 'block';
+            updateProgress();
+        }
+
+        // ============================================================
+        // FORTSCHRITT
+        // ============================================================
+
+        function isAnswered(qId) {
+            switch(qId) {
+                case 'q1': case 'q2': case 'q11': case 'q12':
+                    return !!document.querySelector('input[name="' + qId + '"]:checked');
+                case 'q3':
+                    return document.getElementById('q3a').value && document.getElementById('q3b').value && document.getElementById('q3c').value;
+                case 'q4': return document.getElementById('q4v').value !== '';
+                case 'q5': return document.getElementById('q5v').value !== '';
+                case 'q6': return document.getElementById('q6v').value !== '';
+                case 'q7': return document.getElementById('q7v').value !== '';
+                case 'q8': return document.getElementById('q8v').value !== '';
+                case 'q9': return document.getElementById('q9v').value !== '';
+                case 'q10': return document.getElementById('q10v').value !== '';
+                case 'q13': return document.getElementById('q13v').value !== '';
+                case 'q14': return document.getElementById('q14v').value !== '';
+                case 'q15': return document.getElementById('q15b').value !== '';
+                default: return false;
+            }
+        }
+
+        function updateProgress() {
+            if (selectedNiveau === 0) return;
+            var answered = 0, total = 0;
+            var questions = document.querySelectorAll('.question');
+            for (var i = 0; i < questions.length; i++) {
+                var qNiveau = parseInt(questions[i].dataset.niveau);
+                if (qNiveau <= selectedNiveau) {
+                    total++;
+                    if (isAnswered(questions[i].id)) answered++;
+                }
+            }
+            var pct = total > 0 ? (answered / total) * 100 : 0;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressText').textContent = answered + ' / ' + total + ' beantwortet (' + niveauPoints[selectedNiveau] + ' BE)';
+        }
+
+        // ============================================================
+        // PERSISTENZ
+        // ============================================================
+
+        function saveProgress() {
+            if (testSubmitted) return;
+            var inputs = document.querySelectorAll('input, select');
+            for (var i = 0; i < inputs.length; i++) {
+                var el = inputs[i];
+                if (el.type === 'radio') {
+                    if (el.checked) localStorage.setItem(STORAGE_KEY + '-' + el.name, el.value);
+                } else if (el.id) {
+                    localStorage.setItem(STORAGE_KEY + '-' + el.id, el.value);
+                }
+            }
+        }
+
+        function loadProgress() {
+            var wasSubmitted = localStorage.getItem(STORAGE_KEY + '-submitted') === 'true';
+
+            // Load seat (immer)
+            if (localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true') {
+                var seat = localStorage.getItem(STORAGE_KEY + '-seat');
+                if (seat) showLockedSeat(seat);
+            }
+
+            // Load niveau (immer)
+            if (localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true') {
+                var niveau = localStorage.getItem(STORAGE_KEY + '-niveau');
+                if (niveau) {
+                    selectedNiveau = parseInt(niveau);
+                    showLockedNiveau(niveau);
+                    activateNiveau(selectedNiveau);
+                }
+            }
+
+            // Load answers (IMMER - auch nach Abgabe!)
+            var inputs = document.querySelectorAll('input, select');
+            for (var i = 0; i < inputs.length; i++) {
+                var el = inputs[i];
+                if (el.type === 'radio') {
+                    var saved = localStorage.getItem(STORAGE_KEY + '-' + el.name);
+                    if (saved && el.value === saved) el.checked = true;
+                } else if (el.id) {
+                    var saved = localStorage.getItem(STORAGE_KEY + '-' + el.id);
+                    if (saved) el.value = saved;
+                }
+            }
+
+            // Nach Abgabe: Ergebnisse anzeigen (NACHDEM Antworten geladen wurden!)
+            if (wasSubmitted) {
+                testSubmitted = true;
+                displayResults();
+            }
+        }
+
+        document.addEventListener('change', function() {
+            saveProgress();
+            updateProgress();
+        });
+
+        // ============================================================
+        // AUSWERTUNG
+        // ============================================================
+
+        function submitTest() {
+            if (testSubmitted) return;
+            if (selectedNiveau === 0) { alert('Bitte erst Niveau wählen!'); return; }
+
+            var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+            if (seatLocked !== 'true') { alert('Bitte erst Platznummer bestätigen!'); return; }
+
+            testSubmitted = true;
+            localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+            localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+            clearInterval(timerInterval);
+            displayResults();
+        }
+
+        function displayResults() {
+            var score = 0;
+            var maxPts = niveauPoints[selectedNiveau];
+
+            // ★ NIVEAU 1
+            if (selectedNiveau >= 1) {
+                score += evalRadio('q1', 'b', 1);
+                score += evalRadio('q2', 'b', 1);
+                score += evalDropdowns();
+                score += evalNumeric('q4v', 50, 2);
+                score += evalNumeric('q5v', 80, 2);
+                score += evalNumeric('q6v', 30, 2);
+                score += evalNumeric('q7v', 4, 2);
+                score += evalNumeric('q8v', 7, 2);
+                score += evalNumeric('q9v', 600, 2);
+                score += evalNumeric('q10v', 96, 2);
+                score += evalRadio('q11', 'b', 2);
+                score += evalRadio('q12', 'b', 2);
+            }
+
+            // ★★ NIVEAU 2
+            if (selectedNiveau >= 2) {
+                score += evalNumeric('q13v', 25, 2);
+                score += evalNumeric('q14v', 15, 3);
+            }
+
+            // ★★★ NIVEAU 3
+            if (selectedNiveau >= 3) {
+                score += evalQ15();
+            }
+
+            // Ergebnis anzeigen
+            document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPts + ' BE';
+
+            // NP berechnen
+            var pct = (score / maxPts) * 100;
+            var np = calcNP(pct);
+            var npClass = np >= 10 ? 'good' : (np >= 5 ? 'ok' : 'weak');
+            document.getElementById('npDisplay').innerHTML = '<div class="results-np ' + npClass + '">' + np + ' Notenpunkte (' + Math.round(pct) + '%)</div>';
+
+            // Tabelle markieren
+            markGradeTable(np);
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('submitSection').style.display = 'none';
+
+            // Zeitstempel anzeigen (Anti-Betrug)
+            var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+            var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+            var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+            var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+            var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+                '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+                '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+                '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+                '</div>';
+            var resultsEl = document.getElementById('results');
+            if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+            disableAllInputs();
+        }
+
+        function evalRadio(name, correct, pts) {
+            var sel = document.querySelector('input[name="' + name + '"]:checked');
+            var val = sel ? sel.value : '';
+            var isCorrect = val === correct;
+            markRadioOptions(name, correct, val);
+            showFeedback(name, isCorrect);
+            showResult(name, isCorrect ? pts : 0, pts);
+            return isCorrect ? pts : 0;
+        }
+
+        function evalNumeric(id, correct, pts) {
+            var el = document.getElementById(id);
+            var val = parseNumber(el.value);
+            var isCorrect = val === correct;
+            el.style.border = isCorrect ? '2px solid #2a7a4b' : '2px solid #c62828';
+            el.style.background = isCorrect ? '#e8f5e9' : '#ffebee';
+            var qId = id.replace('v', '');
+            showFeedback(qId, isCorrect);
+            showResult(qId, isCorrect ? pts : 0, pts);
+            return isCorrect ? pts : 0;
+        }
+
+        function evalDropdowns() {
+            var score = 0;
+            var q3a = document.getElementById('q3a');
+            var q3b = document.getElementById('q3b');
+            var q3c = document.getElementById('q3c');
+
+            if (q3a.value === 'N') { score++; q3a.classList.add('correct'); }
+            else { q3a.classList.add('incorrect'); }
+
+            if (q3b.value === 'kg') { score++; q3b.classList.add('correct'); }
+            else { q3b.classList.add('incorrect'); }
+
+            if (q3c.value === 'N/kg') { score++; q3c.classList.add('correct'); }
+            else { q3c.classList.add('incorrect'); }
+
+            showFeedback('q3', score === 3);
+            showResult('q3', score, 3);
+            return score;
+        }
+
+        function evalQ15() {
+            var q15b = document.getElementById('q15b');
+            var isCorrect = q15b.value === 'mars';
+
+            if (isCorrect) {
+                q15b.classList.add('correct');
+            } else {
+                q15b.classList.add('incorrect');
+            }
+
+            showFeedback('q15', isCorrect);
+            showResult('q15', isCorrect ? 1 : 0, 1);
+            return isCorrect ? 1 : 0;
+        }
+
+        function markRadioOptions(name, correct, selected) {
+            var opts = document.querySelectorAll('#' + name + '-options .option');
+            for (var i = 0; i < opts.length; i++) {
+                var val = opts[i].dataset.value;
+                if (val === correct) opts[i].classList.add('correct');
+                else if (val === selected && val !== correct) opts[i].classList.add('incorrect');
+            }
+        }
+
+        function showFeedback(qId, isCorrect) {
+            var fbC = document.getElementById(qId + '-fb-correct');
+            var fbI = document.getElementById(qId + '-fb-incorrect');
+            if (isCorrect && fbC) fbC.classList.add('show');
+            else if (!isCorrect && fbI) fbI.classList.add('show');
+        }
+
+        function showResult(qId, achieved, maxPts) {
+            var q = document.getElementById(qId);
+            var meta = q.querySelector('.question-meta');
+            var res = document.createElement('span');
+            res.className = 'question-result';
+            if (achieved === maxPts) res.classList.add('full');
+            else if (achieved > 0) res.classList.add('partial');
+            else res.classList.add('zero');
+            res.textContent = achieved + '/' + maxPts + ' BE';
+            meta.appendChild(res);
+        }
+
+        function calcNP(pct) {
+            var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+            for (var i = 0; i < thresholds.length; i++) {
+                if (pct >= thresholds[i]) return 14 - i;
+            }
+            return 0;
+        }
+
+        function markGradeTable(np) {
+            var cells = document.getElementById('gradeRow').cells;
+            var idx = 15 - np;
+            if (idx >= 1 && idx < cells.length) {
+                cells[idx].classList.add('current-grade');
+            }
+        }
+
+        function disableAllInputs() {
+            var inputs = document.querySelectorAll('input, select');
+            for (var i = 0; i < inputs.length; i++) {
+                inputs[i].disabled = true;
+            }
+        }
+
+        // ============================================================
+        // LEHRER-RESET
+        // ============================================================
+
+        function teacherReset() {
+            var code = prompt('Lehrer-Code eingeben:');
+            if (code === '2024') {
+                var keys = [];
+                for (var i = 0; i < localStorage.length; i++) {
+                    var key = localStorage.key(i);
+                    if (key && key.indexOf(STORAGE_KEY) === 0) keys.push(key);
+                }
+                for (var j = 0; j < keys.length; j++) {
+                    localStorage.removeItem(keys[j]);
+                }
+                alert('Platz zurückgesetzt. Seite wird neu geladen.');
+                location.reload();
+            } else if (code !== null) {
+                alert('Falscher Code!');
+            }
+        }
+
+        // ============================================================
+        // PERSISTENZ-ABLAUF (16 Stunden)
+        // ============================================================
+
+        var EXPIRY_MS = 16 * 60 * 60 * 1000; // 16 Stunden in Millisekunden
+
+        function checkExpiry() {
+            var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+            if (startTime) {
+                var elapsed = Date.now() - parseInt(startTime);
+                if (elapsed > EXPIRY_MS) {
+                    clearAllData();
+                    return true;
+                }
+            } else {
+                // Erste Nutzung: Startzeit setzen
+                localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+            }
+            return false;
+        }
+
+        function clearAllData() {
+            var keys = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf(STORAGE_KEY) === 0) keys.push(key);
+            }
+            for (var j = 0; j < keys.length; j++) {
+                localStorage.removeItem(keys[j]);
+            }
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        initTabSwitchTracking();
+
+        // Prüfen ob Session abgelaufen (16h)
+        if (checkExpiry()) {
+            // Daten wurden gelöscht, Seite neu laden für frischen Start
+            location.reload();
+        } else {
+            loadProgress();
+            if (!testSubmitted) {
+                startTimer();
+            }
+            checkUnlocked();
+        }
+    </script>
+</body>
+</html>

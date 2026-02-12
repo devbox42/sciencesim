@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abstandsgesetz (1/r²) – Simulation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 20px;
+        }
+        .sim-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        canvas {
+            display: block;
+            background: #1a1a2e;
+            border: 1px solid #ddd;
+            cursor: crosshair;
+        }
+        .meter-panel {
+            background: #f0f0f0;
+            padding: 15px;
+        }
+        .meter-panel h3 {
+            font-size: 1em;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+        .meter-display {
+            background: #222;
+            color: #4ade80;
+            font-family: monospace;
+            font-size: 2em;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .meter-display small {
+            font-size: 0.5em;
+            color: #888;
+        }
+        .distance-display {
+            font-size: 1.2em;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+        }
+        .distance-display strong {
+            color: #2c5aa0;
+        }
+        .data-table {
+            width: 100%;
+            font-size: 0.85em;
+        }
+        .data-table th, .data-table td {
+            padding: 6px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background: #e0e0e0;
+        }
+        .instructions {
+            font-size: 0.85em;
+            color: #555;
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+        }
+        .info-box {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .info-box h3 {
+            font-size: 1em;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+        }
+        .formula {
+            font-family: serif;
+            font-size: 1.4em;
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            margin: 10px 0;
+        }
+        button {
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            font-size: 0.85em;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1e4080;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Abstandsgesetz der Strahlung</h1>
+        <p class="subtitle">Die Dosisleistung nimmt mit dem Quadrat des Abstands ab (1/r²)</p>
+
+        <div class="sim-container">
+            <div class="sim-grid">
+                <div>
+                    <canvas id="canvas" width="450" height="400"></canvas>
+                    <div class="instructions">
+                        💡 <strong>Anleitung:</strong> Klicke oder ziehe den Detektor (grünes Quadrat) an verschiedene Positionen, um die Dosisleistung zu messen.
+                    </div>
+                </div>
+                <div class="meter-panel">
+                    <h3>Dosimeter</h3>
+
+                    <div class="meter-display">
+                        <span id="doseRate">100.0</span><br>
+                        <small>µSv/h</small>
+                    </div>
+
+                    <div class="distance-display">
+                        Abstand: <strong><span id="distance">1.0</span> m</strong>
+                    </div>
+
+                    <h3 style="margin-top: 20px;">Messwerte</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>r (m)</th>
+                                <th>D (µSv/h)</th>
+                                <th>Faktor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable">
+                            <tr><td>1</td><td>100</td><td>1</td></tr>
+                            <tr><td>2</td><td>25</td><td>1/4</td></tr>
+                            <tr><td>3</td><td>11.1</td><td>1/9</td></tr>
+                            <tr><td>5</td><td>4</td><td>1/25</td></tr>
+                            <tr><td>10</td><td>1</td><td>1/100</td></tr>
+                        </tbody>
+                    </table>
+
+                    <button id="btnReset">↺ Position zurücksetzen</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>Das Abstandsquadratgesetz</h3>
+            <div class="formula">
+                D(r) = D₀ · (r₀/r)² &nbsp; oder &nbsp; D ∼ 1/r²
+            </div>
+            <p>
+                <strong>Bedeutung:</strong> Verdoppelt man den Abstand, sinkt die Dosisleistung auf ein Viertel.
+                Verdreifacht man den Abstand, sinkt sie auf ein Neuntel.
+            </p>
+            <p style="margin-top: 10px;">
+                <strong>Strahlenschutz-Regel:</strong> Abstand ist der einfachste und effektivste Schutz!
+                Bei 10-fachem Abstand: nur 1% der ursprünglichen Dosis.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constants
+        const sourceX = 50;
+        const sourceY = 200;
+        const baseDose = 100; // µSv/h at 1m
+        const pixelsPerMeter = 40;
+
+        // Detector state
+        let detector = { x: 90, y: 200 };
+        let isDragging = false;
+
+        // Calculate distance in meters
+        function getDistance() {
+            const dx = detector.x - sourceX;
+            const dy = detector.y - sourceY;
+            const pixels = Math.sqrt(dx * dx + dy * dy);
+            return Math.max(pixels / pixelsPerMeter, 0.5); // Min 0.5m
+        }
+
+        // Calculate dose rate
+        function getDoseRate(distance) {
+            return baseDose / (distance * distance);
+        }
+
+        // Update displays
+        function updateDisplays() {
+            const dist = getDistance();
+            const dose = getDoseRate(dist);
+
+            document.getElementById('distance').textContent = dist.toFixed(1);
+            document.getElementById('doseRate').textContent = dose.toFixed(1);
+
+            // Color based on dose
+            const display = document.querySelector('.meter-display');
+            if (dose > 50) {
+                display.style.color = '#ef4444'; // Red
+            } else if (dose > 10) {
+                display.style.color = '#fbbf24'; // Yellow
+            } else {
+                display.style.color = '#4ade80'; // Green
+            }
+        }
+
+        // Draw
+        function draw() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, 450, 400);
+
+            const dist = getDistance();
+            const dose = getDoseRate(dist);
+
+            // Draw radiation circles (inverse intensity)
+            for (let r = 1; r <= 10; r++) {
+                const radius = r * pixelsPerMeter;
+                const alpha = 0.3 / (r * r);
+                ctx.strokeStyle = `rgba(255, 200, 50, ${Math.min(alpha * 5, 0.5)})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(sourceX, sourceY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Distance labels
+                if (r <= 5 || r === 10) {
+                    ctx.fillStyle = '#666';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(r + 'm', sourceX + radius + 10, sourceY + 4);
+                }
+            }
+
+            // Draw radiation rays
+            const numRays = 24;
+            for (let i = 0; i < numRays; i++) {
+                const angle = (i / numRays) * Math.PI * 2;
+                const rayLength = 400;
+                const endX = sourceX + Math.cos(angle) * rayLength;
+                const endY = sourceY + Math.sin(angle) * rayLength;
+
+                const gradient = ctx.createLinearGradient(sourceX, sourceY, endX, endY);
+                gradient.addColorStop(0, 'rgba(255, 200, 50, 0.6)');
+                gradient.addColorStop(0.3, 'rgba(255, 150, 50, 0.2)');
+                gradient.addColorStop(1, 'rgba(255, 100, 50, 0)');
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(sourceX, sourceY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+
+            // Draw source
+            ctx.fillStyle = '#c62828';
+            ctx.beginPath();
+            ctx.arc(sourceX, sourceY, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Radiation symbol
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('☢', sourceX, sourceY + 6);
+
+            // Draw connection line
+            ctx.strokeStyle = '#4ade80';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(sourceX, sourceY);
+            ctx.lineTo(detector.x, detector.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw detector
+            const detectorSize = 24;
+            ctx.fillStyle = dose > 50 ? '#ef4444' : (dose > 10 ? '#fbbf24' : '#4ade80');
+            ctx.fillRect(detector.x - detectorSize/2, detector.y - detectorSize/2, detectorSize, detectorSize);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(detector.x - detectorSize/2, detector.y - detectorSize/2, detectorSize, detectorSize);
+
+            // Detector label
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('D', detector.x, detector.y + 4);
+
+            // Distance label on line
+            const midX = (sourceX + detector.x) / 2;
+            const midY = (sourceY + detector.y) / 2;
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px sans-serif';
+            ctx.fillText(dist.toFixed(1) + ' m', midX, midY - 10);
+
+            // Labels
+            ctx.fillStyle = '#888';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Quelle', sourceX, sourceY + 40);
+            ctx.fillText('Detektor', detector.x, detector.y + 30);
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            // Check if clicking on detector
+            const dx = x - detector.x;
+            const dy = y - detector.y;
+            if (Math.sqrt(dx*dx + dy*dy) < 20) {
+                isDragging = true;
+            } else {
+                // Move detector to click position
+                detector.x = Math.max(70, Math.min(440, x));
+                detector.y = Math.max(20, Math.min(380, y));
+                updateDisplays();
+            }
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            detector.x = Math.max(70, Math.min(440, x));
+            detector.y = Math.max(20, Math.min(380, y));
+            updateDisplays();
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            isDragging = false;
+        });
+
+        // Touch events
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+            detector.x = Math.max(70, Math.min(440, x));
+            detector.y = Math.max(20, Math.min(380, y));
+            isDragging = true;
+            updateDisplays();
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            if (!isDragging) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+
+            detector.x = Math.max(70, Math.min(440, x));
+            detector.y = Math.max(20, Math.min(380, y));
+            updateDisplays();
+        });
+
+        canvas.addEventListener('touchend', function() {
+            isDragging = false;
+        });
+
+        // Reset button
+        document.getElementById('btnReset').addEventListener('click', function() {
+            detector = { x: 90, y: 200 };
+            updateDisplays();
+        });
+
+        // Animation loop
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        updateDisplays();
+        animate();
+    </script>
+</body>
+</html>

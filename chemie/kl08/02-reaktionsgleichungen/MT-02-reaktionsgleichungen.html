@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Reaktionsgleichungen</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════
+           MINT-MINITEST - Chemie Klasse 8: Reaktionsgleichungen
+           Fachfarbe: #2a7a4b (Chemie-Grün)
+           ═══════════════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER === */
+        header {
+            background: #2a7a4b;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2a7a4b; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 180px; }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2a7a4b; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-niveau { padding: 2px 8px; font-size: 0.8em; font-weight: 600; border-radius: 3px; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2a7a4b; }
+        .option.selected { background: #e8f5e9; border-color: #2a7a4b; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* === INPUTS & SELECTS === */
+        .inline-input {
+            border: none;
+            border-bottom: 2px solid #2a7a4b;
+            padding: 3px 8px;
+            width: 50px;
+            background: transparent;
+            text-align: center;
+            font-size: 1em;
+            font-weight: bold;
+        }
+        .subscript-input {
+            width: 25px;
+            font-size: 0.8em;
+            vertical-align: sub;
+            padding: 2px 4px;
+        }
+        .inline-input.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .inline-input.incorrect { border-color: #c62828; background: #ffebee; }
+
+        select {
+            padding: 4px 8px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-bottom: 2px solid #2a7a4b;
+            background: transparent;
+            vertical-align: baseline;
+        }
+        select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        select.incorrect { border-color: #c62828; background: #ffebee; }
+        select.unanswered { border: 2px solid #b35c00 !important; }
+
+        .equation-row {
+            background: #fafafa;
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+        .formula {
+            display: inline;
+        }
+        .formula sub {
+            vertical-align: sub;
+            font-size: 0.75em;
+            line-height: 0;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        table.data-table th, table.data-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        table.data-table th {
+            background: #f0f0f0;
+            font-weight: 600;
+        }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* Niveau-Hinweis */
+        .niveau-hinweis { background: #fff3e0; border: 1px solid #b35c00; color: #b35c00; padding: 8px 12px; margin-bottom: 12px; font-size: 0.85em; font-style: italic; }
+        .nicht-gewertet-box { background: #f5f5f5; border: 1px solid #888; color: #666; padding: 10px 15px; margin-top: 12px; text-align: center; font-weight: 600; }
+        .question.unanswered { background: #fff3e0 !important; }
+
+        /* Lösungsbox nach Abgabe */
+        .solution-box { background: #e3f2fd; border: 1px solid #1565c0; padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .solution-box.show { display: block; }
+        .solution-box strong { color: #1565c0; }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2a7a4b; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e5a35; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        .results { background: white; border: 2px solid #2a7a4b; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2a7a4b; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2a7a4b; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #2a7a4b; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .hidden { display: none; }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+            .niveau-hinweis { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Reaktionsgleichungen</h1>
+        <div class="header-info">
+            <div class="meta">Chemie Klasse 8 | Differenziert (★★/★★★)</div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PLATZ + NIVEAU AUSWAHL
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="selection-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 20px;">
+        <!-- Platz-Auswahl -->
+        <div class="seat-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2a7a4b; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2a7a4b; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+
+        <!-- Niveau-Auswahl -->
+        <div class="niveau-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2a7a4b; display: block; margin-bottom: 8px;">Niveau:</label>
+            <div id="niveauWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="niveauRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="niveauSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2a7a4b; min-width: 180px;">
+                    <option value="">-- wählen --</option>
+                    <option value="2">★★ Standard (38 BE)</option>
+                    <option value="3">★★★ Erweitert (48 BE)</option>
+                </select>
+                <button id="btnNiveauOk" onclick="confirmNiveau()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="niveauConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Niveau wählen...</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
+        <div class="info-banner" style="background: #fff3e0; border: 1px solid #b35c00; padding: 10px 15px; margin-bottom: 15px; font-size: 0.9em;">
+            <strong>Hilfsmittel erlaubt:</strong> Arbeitsblatt mit Wertigkeitstabelle und Algorithmen
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             NIVEAU 2 (★★) FRAGEN - 33 BE
+             ═══════════════════════════════════════════════════════════════════════ -->
+
+        <!-- FRAGE 1: Wertigkeit bestimmen (4 BE) -->
+        <div class="question" id="q1" data-niveau="2" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Frage 1: Wertigkeit bestimmen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Bestimme</strong> die Wertigkeiten aus der Oxidformel.<br>
+                <em>Sauerstoff hat immer die Wertigkeit II.</em>
+            </div>
+            <div style="margin: 15px 0;">
+                <p style="margin: 8px 0;">a) In <strong>Na<sub>2</sub>O</strong> hat Natrium die Wertigkeit <select id="q1a"><option value="">--</option><option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option></select></p>
+                <p style="margin: 8px 0;">b) In <strong>Al<sub>2</sub>O<sub>3</sub></strong> hat Aluminium die Wertigkeit <select id="q1b"><option value="">--</option><option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option></select></p>
+                <p style="margin: 8px 0;">c) In <strong>Fe<sub>2</sub>O<sub>3</sub></strong> hat Eisen die Wertigkeit <select id="q1c"><option value="">--</option><option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option></select></p>
+                <p style="margin: 8px 0;">d) In <strong>FeO</strong> hat Eisen die Wertigkeit <select id="q1d"><option value="">--</option><option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option></select></p>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Richtig! Na₂O → Na=I, Al₂O₃ → Al=III, Fe₂O₃ → Fe=III, FeO → Fe=II</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Tipp: Die Kreuzregel rückwärts anwenden. Bei Na₂O steht die 2 bei Na, also kommt die vom O (Wertigkeit II) → Na hat I.</div>
+        </div>
+
+        <!-- FRAGE 2: Begriffe (4 BE) -->
+        <div class="question" id="q2" data-niveau="2" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Frage 2: Fachbegriffe</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Ergänze</strong> die Fachbegriffe im Lückentext.</div>
+            <div style="margin: 15px 0;">
+                <p style="margin: 8px 0;">a) Die Wertigkeit gibt an, wie viele <select id="q2a"><option value="">--</option><option value="bindungen">Bindungen</option><option value="elektronen">Elektronen</option><option value="protonen">Protonen</option><option value="neutronen">Neutronen</option><option value="atome">Atome</option></select> ein Atom eingehen kann.</p>
+                <p style="margin: 8px 0;">b) In der Formel Fe<sub>2</sub>O<sub>3</sub> ist die Zahl 2 der <select id="q2b"><option value="">--</option><option value="index">Index</option><option value="vorfaktor">Vorfaktor</option><option value="koeffizient">Koeffizient</option><option value="wertigkeit">Wertigkeit</option><option value="exponent">Exponent</option></select> von Eisen.</p>
+                <p style="margin: 8px 0;">c) In der Gleichung 2 Mg + O<sub>2</sub> → 2 MgO ist die erste Zahl 2 der <select id="q2c"><option value="">--</option><option value="index">Index</option><option value="vorfaktor">Vorfaktor</option><option value="wertigkeit">Wertigkeit</option><option value="exponent">Exponent</option><option value="quotient">Quotient</option></select> von Magnesium.</p>
+                <p style="margin: 8px 0;">d) Das Gesetz der Erhaltung der <select id="q2d"><option value="">--</option><option value="masse">Masse</option><option value="energie">Energie</option><option value="ladung">Ladung</option><option value="atome">Atome</option><option value="stoffe">Stoffe</option></select> besagt, dass auf beiden Seiten gleich viele Atome stehen müssen.</p>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig! Bindungen, Index, Vorfaktor, Masse</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Index = tiefgestellt (in der Formel), Vorfaktor/Koeffizient = vor der Formel</div>
+        </div>
+
+        <!-- FRAGE 3: Kreuzregel (6 BE) -->
+        <div class="question" id="q3" data-niveau="2" data-points="6">
+            <div class="question-header">
+                <div class="question-title">Frage 3: Kreuzregel anwenden</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">6 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Wende</strong> die Kreuzregel an und <strong>schreibe</strong> die Oxidformel.</div>
+            <table class="data-table">
+                <tr><th>Metall</th><th>Wertigkeiten</th><th>Oxidformel</th></tr>
+                <tr>
+                    <td>Zink</td>
+                    <td>Zn(II), O(II)</td>
+                    <td>Zn<input type="text" class="inline-input subscript-input" id="q3a1">O<input type="text" class="inline-input subscript-input" id="q3a2"></td>
+                </tr>
+                <tr>
+                    <td>Aluminium</td>
+                    <td>Al(III), O(II)</td>
+                    <td>Al<input type="text" class="inline-input subscript-input" id="q3b1">O<input type="text" class="inline-input subscript-input" id="q3b2"></td>
+                </tr>
+                <tr>
+                    <td>Natrium</td>
+                    <td>Na(I), O(II)</td>
+                    <td>Na<input type="text" class="inline-input subscript-input" id="q3c1">O<input type="text" class="inline-input subscript-input" id="q3c2"></td>
+                </tr>
+            </table>
+            <p style="font-size: 0.85em; color: #888;">Hinweis: Index 1 wird nicht geschrieben – lass das Feld leer oder schreibe 1.</p>
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! ZnO (1:1 kürzen), Al₂O₃, Na₂O</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Kreuzregel: Wertigkeit des einen wird Index des anderen. Bei gleichen Wertigkeiten kürzen!</div>
+        </div>
+
+        <!-- FRAGE 4: Atome zählen (4 BE) -->
+        <div class="question" id="q4" data-niveau="2" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Frage 4: Atome zählen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Zähle</strong> die Atome auf beiden Seiten der Gleichung.</div>
+            <div class="equation-row" style="font-size: 1.2em;">
+                <span class="formula">Fe + O<sub>2</sub> → Fe<sub>2</sub>O<sub>3</sub></span>
+            </div>
+            <table class="data-table">
+                <tr><th></th><th>Links (Edukte)</th><th>Rechts (Produkte)</th></tr>
+                <tr>
+                    <td><strong>Fe-Atome</strong></td>
+                    <td><input type="text" class="inline-input" id="q4a"></td>
+                    <td><input type="text" class="inline-input" id="q4b"></td>
+                </tr>
+                <tr>
+                    <td><strong>O-Atome</strong></td>
+                    <td><input type="text" class="inline-input" id="q4c"></td>
+                    <td><input type="text" class="inline-input" id="q4d"></td>
+                </tr>
+            </table>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! Links: 1 Fe, 2 O | Rechts: 2 Fe, 3 O → nicht ausgeglichen!</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">Beachte: Der Index multipliziert! Fe₂O₃ hat 2 Fe und 3 O.</div>
+        </div>
+
+        <!-- FRAGE 5: Gleichungen ausgleichen (9 BE) -->
+        <div class="question" id="q5" data-niveau="2" data-points="9">
+            <div class="question-header">
+                <div class="question-title">Frage 5: Gleichungen ausgleichen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">9 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Gleiche</strong> die Reaktionsgleichungen aus.</div>
+
+            <p style="margin: 10px 0;"><strong>a) Calcium:</strong></p>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q5a1"> <span class="formula">Ca + </span>
+                <input type="text" class="inline-input" id="q5a2"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q5a3"> <span class="formula">CaO</span>
+            </div>
+
+            <p style="margin: 10px 0;"><strong>b) Barium:</strong></p>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q5b1"> <span class="formula">Ba + </span>
+                <input type="text" class="inline-input" id="q5b2"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q5b3"> <span class="formula">BaO</span>
+            </div>
+
+            <p style="margin: 10px 0;"><strong>c) Kohlenstoff (zu CO<sub>2</sub>):</strong></p>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q5c1"> <span class="formula">C + </span>
+                <input type="text" class="inline-input" id="q5c2"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q5c3"> <span class="formula">CO<sub>2</sub></span>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">Richtig! a) 2 Ca + 1 O₂ → 2 CaO, b) 2 Ba + 1 O₂ → 2 BaO, c) 1-1-1 (bereits ausgeglichen!)</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Tipp: Bei c) CO₂ ist die Gleichung bereits ausgeglichen – alle Koeffizienten sind 1!</div>
+        </div>
+
+        <!-- FRAGE 6: Gleichungen prüfen (3 BE) -->
+        <div class="question" id="q6" data-niveau="2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 6: Gleichungen prüfen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Prüfe</strong>, ob die Gleichungen ausgeglichen sind.</div>
+            <div style="margin: 15px 0;">
+                <p style="margin: 8px 0;">a) 4 Na + O<sub>2</sub> → 2 Na<sub>2</sub>O ist <select id="q6a"><option value="">--</option><option value="richtig">ausgeglichen</option><option value="falsch">nicht ausgeglichen</option></select></p>
+                <p style="margin: 8px 0;">b) 2 Al + O<sub>2</sub> → Al<sub>2</sub>O<sub>3</sub> ist <select id="q6b"><option value="">--</option><option value="richtig">ausgeglichen</option><option value="falsch">nicht ausgeglichen</option></select></p>
+                <p style="margin: 8px 0;">c) 4 Fe + 3 O<sub>2</sub> → 2 Fe<sub>2</sub>O<sub>3</sub> ist <select id="q6c"><option value="">--</option><option value="richtig">ausgeglichen</option><option value="falsch">nicht ausgeglichen</option></select></p>
+            </div>
+            <div class="feedback-box correct" id="q6-fb-correct">Richtig! a) ✓ ausgeglichen, b) ✗ nicht ausgeglichen (2 O links, 3 O rechts), c) ✓ ausgeglichen</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">Zähle die Atome! Bei b): Links 2 Al + 2 O, Rechts 2 Al + 3 O → O stimmt nicht!</div>
+        </div>
+
+        <!-- FRAGE 7: Chrom ausgleichen (3 BE) - gehört zu ★★ -->
+        <div class="question" id="q7" data-niveau="2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Frage 7: Chrom-Gleichung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text"><strong>Gleiche</strong> die Gleichung für Chrom (Wertigkeit III) aus.</div>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q7a"> <span class="formula">Cr + </span>
+                <input type="text" class="inline-input" id="q7b"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q7c"> <span class="formula">Cr<sub>2</sub>O<sub>3</sub></span>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">Richtig! 4 Cr + 3 O₂ → 2 Cr₂O₃ (kgV von 2 und 3 ist 6)</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">Tipp: Cr₂O₃ hat 3 O, O₂ hat 2 O. kgV(2,3) = 6, also 3 O₂ → 6 O → 2 Cr₂O₃ → 4 Cr</div>
+        </div>
+
+        <!-- FRAGE 8: Fehleranalyse (5 BE) - jetzt ★★ -->
+        <div class="question" id="q8" data-niveau="2" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Frage 8: Fehleranalyse</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Lisa schreibt: <strong style="color: #c62828;">Mg + O<sub>2</sub> → MgO<sub>2</sub></strong><br>
+                <strong>Analysiere</strong> Lisas Fehler.
+            </div>
+            <div style="margin: 15px 0;">
+                <p style="margin: 8px 0;">a) Lisa hat den <select id="q8a"><option value="">--</option><option value="index">Index</option><option value="vorfaktor">Vorfaktor</option><option value="koeffizienten">Koeffizienten</option><option value="exponenten">Exponenten</option></select> statt den <select id="q8a2"><option value="">--</option><option value="index">Index</option><option value="vorfaktor">Vorfaktor</option><option value="koeffizienten">Koeffizienten</option><option value="exponenten">Exponenten</option></select> geändert.</p>
+                <p style="margin: 8px 0;">b) Das ist falsch, weil MgO<sub>2</sub> <select id="q8b"><option value="">--</option><option value="stoff">ein anderer Stoff</option><option value="mehr">mehr Masse</option><option value="weniger">weniger Masse</option><option value="gleich">derselbe Stoff</option></select> als MgO ist.</p>
+            </div>
+            <p style="margin: 10px 0;"><strong>c) Wie lautet die richtige Gleichung?</strong></p>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q8c1"> <span class="formula">Mg + </span>
+                <input type="text" class="inline-input" id="q8c2"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q8c3"> <span class="formula">MgO</span>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">Richtig! Lisa hat den Index statt den Vorfaktor geändert. MgO₂ wäre ein anderer Stoff (Magnesiumperoxid). Richtig: 2 Mg + 1 O₂ → 2 MgO</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Merke: Der Index gibt die Zusammensetzung des Stoffes an und darf NICHT geändert werden! Nur der Vorfaktor (Koeffizient) darf angepasst werden.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             NIVEAU 3 (★★★) FRAGEN - zusätzlich 10 BE
+             ═══════════════════════════════════════════════════════════════════════ -->
+
+        <!-- FRAGE 9: Transfer Gallium (5 BE) -->
+        <div class="question" id="q9" data-niveau="3" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Frage 9: Transfer – Gallium</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Gallium (Ga, Wertigkeit III) verbrennt in Sauerstoff.<br>
+                <strong>Entwickle</strong> die vollständige Reaktionsgleichung.
+            </div>
+            <p style="margin: 10px 0;"><strong>a) Wie lautet die Oxidformel?</strong></p>
+            <div class="equation-row">
+                <span class="formula">Ga</span><input type="text" class="inline-input subscript-input" id="q9a1"><span class="formula">O</span><input type="text" class="inline-input subscript-input" id="q9a2">
+            </div>
+            <p style="margin: 10px 0;"><strong>b) Gleiche die Reaktionsgleichung aus:</strong></p>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q9b1"> <span class="formula">Ga + </span>
+                <input type="text" class="inline-input" id="q9b2"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q9b3"> <span class="formula">Ga<sub>2</sub>O<sub>3</sub></span>
+            </div>
+            <div class="feedback-box correct" id="q9-fb-correct">Richtig! Ga₂O₃ (Kreuzregel: III und II → 2 und 3), dann 4 Ga + 3 O₂ → 2 Ga₂O₃</div>
+            <div class="feedback-box incorrect" id="q9-fb-incorrect">Kreuzregel: Ga(III), O(II) → Ga₂O₃. Dann: kgV(2,3)=6, also 3 O₂ für 6 O, 2 Ga₂O₃ für 6 O, 4 Ga.</div>
+        </div>
+
+        <!-- FRAGE 10: Phosphoroxid (5 BE) -->
+        <div class="question" id="q10" data-niveau="3" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Frage 10: Phosphoroxid</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Phosphor</strong> (P, Wertigkeit V) verbrennt zu Phosphor(V)-oxid.<br>
+                <strong>Entwickle</strong> die Oxidformel und die ausgeglichene Reaktionsgleichung.
+            </div>
+
+            <p style="margin: 10px 0;"><strong>a) Oxidformel:</strong></p>
+            <p style="font-size: 1.1em;"><span class="formula">P</span><input type="text" class="inline-input subscript-input" id="q10a1"><span class="formula">O</span><input type="text" class="inline-input subscript-input" id="q10a2"></p>
+
+            <p style="margin: 10px 0;"><strong>b) Reaktionsgleichung:</strong></p>
+            <div class="equation-row">
+                <input type="text" class="inline-input" id="q10a3"> <span class="formula">P + </span>
+                <input type="text" class="inline-input" id="q10a4"> <span class="formula">O<sub>2</sub> → </span>
+                <input type="text" class="inline-input" id="q10a5"> <span class="formula">P<sub>2</sub>O<sub>5</sub></span>
+            </div>
+            <div class="feedback-box correct" id="q10-fb-correct">Richtig! P₂O₅ (Kreuzregel: V und II → 2 und 5), dann 4 P + 5 O₂ → 2 P₂O₅</div>
+            <div class="feedback-box incorrect" id="q10-fb-incorrect">Kreuzregel: P(V), O(II) → P₂O₅. Dann kgV(5,2)=10 für O-Atome: 5 O₂ → 10 O → 2 P₂O₅ → 4 P.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom: 15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentInfoDisplay"></div>
+            <div style="margin: 10px 0; font-size: 0.9em;" id="niveauDisplay"></div>
+            <div style="margin-top: 20px;">
+                <div style="font-size: 1.1em; font-weight: 600; color: #555; margin-bottom: 5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 0</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>100</td><td>96</td><td>90,7</td><td>86</td><td>80</td><td>73,3</td><td>66,7</td><td>60</td><td>53,3</td><td>46,7</td><td>40</td><td>33,3</td><td>26,7</td><td>20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be14">-</td><td id="be13">-</td><td id="be12">-</td><td id="be11">-</td><td id="be10">-</td><td id="be9">-</td><td id="be8">-</td><td id="be7">-</td><td id="be6">-</td><td id="be5">-</td><td id="be4">-</td><td id="be3">-</td><td id="be2">-</td><td id="be1">-</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+        </div><!-- END questionsContainer -->
+
+        <!-- Lehrer-Reset -->
+        <div style="margin-top: 40px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; text-align: center;">
+            <button class="btn-secondary" onclick="teacherReset()" style="font-size: 0.85em; padding: 8px 15px;">Lehrer-Reset</button>
+        </div>
+    </div>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MINT-MINITEST - Chemie Klasse 8: Reaktionsgleichungen
+       JavaScript (ES5!)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    // ===== KONFIGURATION =====
+    var STORAGE_KEY = 'mt-chemie-8-02-reaktionsgleichungen';
+    var selectedNiveau = 0;
+    var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll (Anti-Betrug)
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // BE pro Niveau
+    var niveauPoints = {
+        2: 38,   // ★★ Standard (Fragen 1-8)
+        3: 48    // ★★★ Erweitert (Fragen 1-10)
+    };
+
+    // Korrekte Antworten
+    var answers = {
+        // Frage 1
+        q1a: '1', q1b: '3', q1c: '3', q1d: '2',
+        // Frage 2
+        q2a: 'bindungen', q2b: 'index', q2c: 'vorfaktor', q2d: 'masse',
+        // Frage 3
+        q3a1: '1', q3a2: '1', q3b1: '2', q3b2: '3', q3c1: '2', q3c2: '1',
+        // Frage 4
+        q4a: '1', q4b: '2', q4c: '2', q4d: '3',
+        // Frage 5
+        q5a1: '2', q5a2: '1', q5a3: '2',
+        q5b1: '2', q5b2: '1', q5b3: '2',
+        q5c1: '1', q5c2: '1', q5c3: '1',
+        // Frage 6
+        q6a: 'richtig', q6b: 'falsch', q6c: 'richtig',
+        // Frage 7
+        q7a: '4', q7b: '3', q7c: '2',
+        // Frage 8
+        q8a: 'index', q8a2: 'vorfaktor', q8b: 'stoff',
+        q8c1: '2', q8c2: '1', q8c3: '2',
+        // Frage 9
+        q9a1: '2', q9a2: '3',
+        q9b1: '4', q9b2: '3', q9b3: '2',
+        // Frage 10
+        q10a1: '2', q10a2: '5',
+        q10a3: '4', q10a4: '5', q10a5: '2'
+    };
+
+    // ===== PLATZ-FUNKTIONEN =====
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#2a7a4b;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== NIVEAU-FUNKTIONEN =====
+    function restoreNiveauDropdown() {
+        var saved = localStorage.getItem(STORAGE_KEY + '-niveau');
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (saved && niveauLocked === 'true') {
+            selectedNiveau = parseInt(saved);
+            showLockedNiveau(saved);
+            selectNiveau(selectedNiveau);
+        } else if (saved) {
+            document.getElementById('niveauSelect').value = saved;
+        }
+    }
+
+    function confirmNiveau() {
+        var select = document.getElementById('niveauSelect');
+        var val = select.value;
+        if (!val) { alert('Bitte wähle zuerst ein Niveau!'); return; }
+        var niveauStars = { '2': '★★ Standard', '3': '★★★ Erweitert' };
+        var ok = confirm('Niveau "' + niveauStars[val] + '" bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-niveau', val);
+        localStorage.setItem(STORAGE_KEY + '-niveau-locked', 'true');
+        selectedNiveau = parseInt(val);
+        showLockedNiveau(val);
+        selectNiveau(selectedNiveau);
+        checkUnlocked();
+    }
+
+    function showLockedNiveau(val) {
+        var niveauStars = { '2': '★★ Standard (' + niveauPoints[2] + ' BE)', '3': '★★★ Erweitert (' + niveauPoints[3] + ' BE)' };
+        document.getElementById('niveauWarning').style.display = 'none';
+        document.getElementById('niveauRow').style.display = 'none';
+        document.getElementById('niveauConfirmed').style.display = 'block';
+        document.getElementById('niveauConfirmed').innerHTML = 'Niveau: <strong style="color:#2a7a4b;">' + niveauStars[val] + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked && niveauLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function selectNiveau(niveau) {
+        selectedNiveau = niveau;
+        var questions = document.querySelectorAll('.question');
+        for (var j = 0; j < questions.length; j++) {
+            var qNiveau = parseInt(questions[j].dataset.niveau);
+            var qId = questions[j].id;
+            var existingHint = document.getElementById(qId + '-niveau-hinweis');
+            if (qNiveau > niveau) {
+                if (!existingHint) {
+                    var hint = document.createElement('div');
+                    hint.className = 'niveau-hinweis';
+                    hint.id = qId + '-niveau-hinweis';
+                    hint.innerHTML = 'Diese Aufgabe wird bei deinem Niveau <strong>nicht gewertet</strong>.';
+                    var header = questions[j].querySelector('.question-header');
+                    if (header && header.nextSibling) header.parentNode.insertBefore(hint, header.nextSibling);
+                }
+            } else if (existingHint) {
+                existingHint.remove();
+            }
+        }
+        updateProgress();
+        saveProgress();
+    }
+
+    // ===== PROGRESS =====
+    function countAnsweredQuestions() {
+        if (selectedNiveau === 0) return { answered: 0, total: 0 };
+        var answered = 0, total = 0;
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            if (qNiveau <= selectedNiveau) {
+                total++;
+                if (isQuestionAnswered(questions[i].id)) answered++;
+            }
+        }
+        return { answered: answered, total: total };
+    }
+
+    function isQuestionAnswered(qId) {
+        switch(qId) {
+            case 'q1': return document.getElementById('q1a').value && document.getElementById('q1b').value && document.getElementById('q1c').value && document.getElementById('q1d').value;
+            case 'q2': return document.getElementById('q2a').value && document.getElementById('q2b').value && document.getElementById('q2c').value && document.getElementById('q2d').value;
+            case 'q3': return document.getElementById('q3a1').value || document.getElementById('q3b1').value || document.getElementById('q3c1').value;
+            case 'q4': return document.getElementById('q4a').value && document.getElementById('q4b').value;
+            case 'q5': return document.getElementById('q5a1').value || document.getElementById('q5b1').value || document.getElementById('q5c1').value;
+            case 'q6': return document.getElementById('q6a').value && document.getElementById('q6b').value && document.getElementById('q6c').value;
+            case 'q7': return document.getElementById('q7a').value && document.getElementById('q7b').value && document.getElementById('q7c').value;
+            case 'q8': return document.getElementById('q8a').value && document.getElementById('q8b').value;
+            case 'q9': return document.getElementById('q9a1').value || document.getElementById('q9b1').value;
+            case 'q10': return document.getElementById('q10a1').value || document.getElementById('q10a3').value;
+            default: return false;
+        }
+    }
+
+    function updateProgress() {
+        if (selectedNiveau === 0) {
+            document.getElementById('progressText').textContent = 'Niveau wählen...';
+            document.getElementById('progressFill').style.width = '0%';
+            return;
+        }
+        var status = countAnsweredQuestions();
+        var percent = status.total > 0 ? (status.answered / status.total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' beantwortet (' + niveauPoints[selectedNiveau] + ' BE)';
+    }
+
+    // ===== PERSISTENCE =====
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        var result = {};
+        var inputs = document.querySelectorAll('input.inline-input, select');
+        for (var i = 0; i < inputs.length; i++) {
+            if (inputs[i].id) result[inputs[i].id] = inputs[i].value;
+        }
+        return result;
+    }
+
+    function restoreAnswers(saved) {
+        for (var key in saved) {
+            var el = document.getElementById(key);
+            if (el) el.value = saved[key];
+        }
+        updateProgress();
+    }
+
+    // ===== HILFSFUNKTIONEN =====
+    function normalize(val) {
+        if (val === null || val === undefined) return '';
+        return String(val).trim().toLowerCase();
+    }
+
+    function checkIndex(val) {
+        var v = normalize(val);
+        return (v === '' || v === '1');
+    }
+
+    // Für Vorfaktoren: leer oder "1" sind beide korrekt (Vorfaktor 1 wird nicht geschrieben)
+    function checkOne(val) {
+        var v = normalize(val);
+        return (v === '' || v === '1');
+    }
+
+    function markInput(id, isCorrect) {
+        var el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('correct', 'incorrect');
+            el.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts, notGraded) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (notGraded) {
+            result.style.background = '#f0f0f0';
+            result.style.color = '#888';
+            result.textContent = '(' + achieved + ')/' + maxPts + ' BE';
+        } else {
+            if (achieved === maxPts) result.classList.add('full');
+            else if (achieved > 0) result.classList.add('partial');
+            else result.classList.add('zero');
+            result.textContent = achieved + '/' + maxPts + ' BE';
+        }
+        meta.appendChild(result);
+    }
+
+    // ===== SUBMIT TEST =====
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (niveauLocked !== 'true' || selectedNiveau === 0) { alert('Bitte bestätige zuerst dein Niveau!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var score = 0;
+        var maxPoints = niveauPoints[selectedNiveau];
+
+        // ===== FRAGE 1: Wertigkeit (4 BE) =====
+        var q1Score = 0;
+        if (document.getElementById('q1a').value === answers.q1a) { q1Score++; markInput('q1a', true); } else { markInput('q1a', false); }
+        if (document.getElementById('q1b').value === answers.q1b) { q1Score++; markInput('q1b', true); } else { markInput('q1b', false); }
+        if (document.getElementById('q1c').value === answers.q1c) { q1Score++; markInput('q1c', true); } else { markInput('q1c', false); }
+        if (document.getElementById('q1d').value === answers.q1d) { q1Score++; markInput('q1d', true); } else { markInput('q1d', false); }
+        score += q1Score;
+        showFeedback('q1', q1Score === 4);
+        showQuestionResult('q1', q1Score, 4);
+
+        // ===== FRAGE 2: Begriffe (4 BE) =====
+        var q2Score = 0;
+        if (document.getElementById('q2a').value === answers.q2a) { q2Score++; markInput('q2a', true); } else { markInput('q2a', false); }
+        if (document.getElementById('q2b').value === answers.q2b) { q2Score++; markInput('q2b', true); } else { markInput('q2b', false); }
+        if (document.getElementById('q2c').value === answers.q2c) { q2Score++; markInput('q2c', true); } else { markInput('q2c', false); }
+        if (document.getElementById('q2d').value === answers.q2d) { q2Score++; markInput('q2d', true); } else { markInput('q2d', false); }
+        score += q2Score;
+        showFeedback('q2', q2Score === 4);
+        showQuestionResult('q2', q2Score, 4);
+
+        // ===== FRAGE 3: Kreuzregel (6 BE) =====
+        var q3Score = 0;
+        // ZnO (1:1)
+        var q3a1Ok = checkIndex(document.getElementById('q3a1').value);
+        var q3a2Ok = checkIndex(document.getElementById('q3a2').value);
+        if (q3a1Ok && q3a2Ok) q3Score += 2;
+        markInput('q3a1', q3a1Ok); markInput('q3a2', q3a2Ok);
+        // Al2O3
+        var q3b1Ok = normalize(document.getElementById('q3b1').value) === '2';
+        var q3b2Ok = normalize(document.getElementById('q3b2').value) === '3';
+        if (q3b1Ok && q3b2Ok) q3Score += 2;
+        markInput('q3b1', q3b1Ok); markInput('q3b2', q3b2Ok);
+        // Na2O
+        var q3c1Ok = normalize(document.getElementById('q3c1').value) === '2';
+        var q3c2Ok = checkIndex(document.getElementById('q3c2').value);
+        if (q3c1Ok && q3c2Ok) q3Score += 2;
+        markInput('q3c1', q3c1Ok); markInput('q3c2', q3c2Ok);
+        score += q3Score;
+        showFeedback('q3', q3Score === 6);
+        showQuestionResult('q3', q3Score, 6);
+
+        // ===== FRAGE 4: Atome zählen (4 BE) =====
+        var q4Score = 0;
+        var q4aOk = checkOne(document.getElementById('q4a').value);
+        if (q4aOk) { q4Score++; markInput('q4a', true); } else { markInput('q4a', false); }
+        if (normalize(document.getElementById('q4b').value) === '2') { q4Score++; markInput('q4b', true); } else { markInput('q4b', false); }
+        if (normalize(document.getElementById('q4c').value) === '2') { q4Score++; markInput('q4c', true); } else { markInput('q4c', false); }
+        if (normalize(document.getElementById('q4d').value) === '3') { q4Score++; markInput('q4d', true); } else { markInput('q4d', false); }
+        score += q4Score;
+        showFeedback('q4', q4Score === 4);
+        showQuestionResult('q4', q4Score, 4);
+
+        // ===== FRAGE 5: Ausgleichen (9 BE) =====
+        var q5Score = 0;
+        // Ca: 2-1-2 (Vorfaktor 1 vor O₂ → leer oder "1" akzeptiert)
+        var q5a1Ok = normalize(document.getElementById('q5a1').value) === '2';
+        var q5a2Ok = checkOne(document.getElementById('q5a2').value);
+        var q5a3Ok = normalize(document.getElementById('q5a3').value) === '2';
+        if (q5a1Ok && q5a2Ok && q5a3Ok) q5Score += 3;
+        markInput('q5a1', q5a1Ok);
+        markInput('q5a2', q5a2Ok);
+        markInput('q5a3', q5a3Ok);
+        // Ba: 2-1-2 (Vorfaktor 1 vor O₂ → leer oder "1" akzeptiert)
+        var q5b1Ok = normalize(document.getElementById('q5b1').value) === '2';
+        var q5b2Ok = checkOne(document.getElementById('q5b2').value);
+        var q5b3Ok = normalize(document.getElementById('q5b3').value) === '2';
+        if (q5b1Ok && q5b2Ok && q5b3Ok) q5Score += 3;
+        markInput('q5b1', q5b1Ok);
+        markInput('q5b2', q5b2Ok);
+        markInput('q5b3', q5b3Ok);
+        // CO2: 1-1-1 (alle Vorfaktoren 1 → leer oder "1" akzeptiert)
+        var q5c1Ok = checkOne(document.getElementById('q5c1').value);
+        var q5c2Ok = checkOne(document.getElementById('q5c2').value);
+        var q5c3Ok = checkOne(document.getElementById('q5c3').value);
+        if (q5c1Ok && q5c2Ok && q5c3Ok) q5Score += 3;
+        markInput('q5c1', q5c1Ok);
+        markInput('q5c2', q5c2Ok);
+        markInput('q5c3', q5c3Ok);
+        score += q5Score;
+        showFeedback('q5', q5Score === 9);
+        showQuestionResult('q5', q5Score, 9);
+
+        // ===== FRAGE 6: Prüfen (3 BE) =====
+        var q6Score = 0;
+        if (document.getElementById('q6a').value === 'richtig') { q6Score++; markInput('q6a', true); } else { markInput('q6a', false); }
+        if (document.getElementById('q6b').value === 'falsch') { q6Score++; markInput('q6b', true); } else { markInput('q6b', false); }
+        if (document.getElementById('q6c').value === 'richtig') { q6Score++; markInput('q6c', true); } else { markInput('q6c', false); }
+        score += q6Score;
+        showFeedback('q6', q6Score === 3);
+        showQuestionResult('q6', q6Score, 3);
+
+        // ===== FRAGE 7: Chrom (3 BE) - gehört zu ★★ =====
+        var q7Score = 0;
+        if (normalize(document.getElementById('q7a').value) === '4') { q7Score++; markInput('q7a', true); } else { markInput('q7a', false); }
+        if (normalize(document.getElementById('q7b').value) === '3') { q7Score++; markInput('q7b', true); } else { markInput('q7b', false); }
+        if (normalize(document.getElementById('q7c').value) === '2') { q7Score++; markInput('q7c', true); } else { markInput('q7c', false); }
+        score += q7Score;
+        showFeedback('q7', q7Score === 3);
+        showQuestionResult('q7', q7Score, 3);
+
+        // ===== FRAGE 8: Fehleranalyse (5 BE) - jetzt ★★ =====
+        var q8Score = 0;
+        if (document.getElementById('q8a').value === 'index') { q8Score++; markInput('q8a', true); } else { markInput('q8a', false); }
+        if (document.getElementById('q8a2').value === 'vorfaktor') { q8Score++; markInput('q8a2', true); } else { markInput('q8a2', false); }
+        if (document.getElementById('q8b').value === 'stoff') { q8Score++; markInput('q8b', true); } else { markInput('q8b', false); }
+        // Gleichung: 2 Mg + 1 O₂ → 2 MgO (Vorfaktor 1 vor O₂ → leer oder "1" akzeptiert)
+        var q8c1Ok = normalize(document.getElementById('q8c1').value) === '2';
+        var q8c2Ok = checkOne(document.getElementById('q8c2').value);
+        var q8c3Ok = normalize(document.getElementById('q8c3').value) === '2';
+        if (q8c1Ok && q8c2Ok && q8c3Ok) q8Score += 2;
+        markInput('q8c1', q8c1Ok);
+        markInput('q8c2', q8c2Ok);
+        markInput('q8c3', q8c3Ok);
+        score += q8Score;
+        showFeedback('q8', q8Score === 5);
+        showQuestionResult('q8', q8Score, 5);
+
+        // ===== NIVEAU 3 FRAGEN =====
+        var isNiveau3 = selectedNiveau >= 3;
+
+        // ===== FRAGE 9: Transfer Ga (5 BE) =====
+        var q9Score = 0;
+        // Formel (2 BE: je 1 BE pro Index)
+        if (normalize(document.getElementById('q9a1').value) === '2') { q9Score++; markInput('q9a1', true); } else { markInput('q9a1', false); }
+        if (normalize(document.getElementById('q9a2').value) === '3') { q9Score++; markInput('q9a2', true); } else { markInput('q9a2', false); }
+        // Gleichung (3 BE: je 1 BE pro Koeffizient)
+        if (normalize(document.getElementById('q9b1').value) === '4') { q9Score++; markInput('q9b1', true); } else { markInput('q9b1', false); }
+        if (normalize(document.getElementById('q9b2').value) === '3') { q9Score++; markInput('q9b2', true); } else { markInput('q9b2', false); }
+        if (normalize(document.getElementById('q9b3').value) === '2') { q9Score++; markInput('q9b3', true); } else { markInput('q9b3', false); }
+        if (isNiveau3) score += q9Score;
+        showFeedback('q9', q9Score === 5);
+        showQuestionResult('q9', q9Score, 5, !isNiveau3);
+
+        // ===== FRAGE 10: Phosphoroxid (5 BE) =====
+        var q10Score = 0;
+        // P2O5 Formel (2 BE: je 1 BE pro Index)
+        if (normalize(document.getElementById('q10a1').value) === '2') { q10Score++; markInput('q10a1', true); } else { markInput('q10a1', false); }
+        if (normalize(document.getElementById('q10a2').value) === '5') { q10Score++; markInput('q10a2', true); } else { markInput('q10a2', false); }
+        // P2O5 Gleichung (3 BE: je 1 BE pro Koeffizient)
+        if (normalize(document.getElementById('q10a3').value) === '4') { q10Score++; markInput('q10a3', true); } else { markInput('q10a3', false); }
+        if (normalize(document.getElementById('q10a4').value) === '5') { q10Score++; markInput('q10a4', true); } else { markInput('q10a4', false); }
+        if (normalize(document.getElementById('q10a5').value) === '2') { q10Score++; markInput('q10a5', true); } else { markInput('q10a5', false); }
+        if (isNiveau3) score += q10Score;
+        showFeedback('q10', q10Score === 5);
+        showQuestionResult('q10', q10Score, 5, !isNiveau3);
+
+        // Nicht gewertete Fragen markieren
+        markNichtGewertet();
+
+        // Lösungen anzeigen
+        showSolutions();
+
+        // Ergebnis anzeigen
+        displayResults(score, maxPoints);
+    }
+
+    // ===== LÖSUNGEN ANZEIGEN =====
+    function showSolutions() {
+        var solutions = {
+            'q1': '<strong>Lösung:</strong> a) I, b) III, c) III, d) II',
+            'q2': '<strong>Lösung:</strong> a) Bindungen, b) Index, c) Vorfaktor, d) Masse',
+            'q3': '<strong>Lösung:</strong> ZnO (leer/1, leer/1), Al₂O₃ (2, 3), Na₂O (2, leer/1)',
+            'q4': '<strong>Lösung:</strong> Fe links: 1, Fe rechts: 2, O links: 2, O rechts: 3',
+            'q5': '<strong>Lösung:</strong> a) 2 Ca + 1 O₂ → 2 CaO, b) 2 Ba + 1 O₂ → 2 BaO, c) 1 C + 1 O₂ → 1 CO₂',
+            'q6': '<strong>Lösung:</strong> a) ausgeglichen, b) nicht ausgeglichen, c) ausgeglichen',
+            'q7': '<strong>Lösung:</strong> 4 Cr + 3 O₂ → 2 Cr₂O₃',
+            'q8': '<strong>Lösung:</strong> a) Index statt Vorfaktor, b) ein anderer Stoff, c) 2 Mg + 1 O₂ → 2 MgO',
+            'q9': '<strong>Lösung:</strong> a) Ga₂O₃ (2, 3), b) 4 Ga + 3 O₂ → 2 Ga₂O₃',
+            'q10': '<strong>Lösung:</strong> a) P₂O₅ (2, 5), b) 4 P + 5 O₂ → 2 P₂O₅'
+        };
+
+        for (var qId in solutions) {
+            var question = document.getElementById(qId);
+            if (question) {
+                var existingSol = document.getElementById(qId + '-solution');
+                if (!existingSol) {
+                    var solBox = document.createElement('div');
+                    solBox.className = 'solution-box show';
+                    solBox.id = qId + '-solution';
+                    solBox.innerHTML = solutions[qId];
+                    question.appendChild(solBox);
+                }
+            }
+        }
+    }
+
+    function markNichtGewertet() {
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            var qId = questions[i].id;
+            if (qNiveau > selectedNiveau) {
+                var hint = document.getElementById(qId + '-niveau-hinweis');
+                if (hint) hint.remove();
+                var existingBox = document.getElementById(qId + '-nicht-gewertet');
+                if (!existingBox) {
+                    var box = document.createElement('div');
+                    box.className = 'nicht-gewertet-box';
+                    box.id = qId + '-nicht-gewertet';
+                    box.textContent = 'Nicht gewertet, nur informativ';
+                    questions[i].appendChild(box);
+                }
+            }
+        }
+    }
+
+    function displayResults(score, maxPoints) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+        var niveauStars = { 2: '★★', 3: '★★★' };
+
+        document.getElementById('studentInfoDisplay').textContent = 'Platznummer: ' + platzText;
+        document.getElementById('niveauDisplay').textContent = 'Niveau: ' + niveauStars[selectedNiveau] + ' (' + maxPoints + ' BE)';
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPoints;
+
+        // BE-Tabelle berechnen
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        var npIds = ['be14', 'be13', 'be12', 'be11', 'be10', 'be9', 'be8', 'be7', 'be6', 'be5', 'be4', 'be3', 'be2', 'be1'];
+        for (var i = 0; i < thresholds.length; i++) {
+            var beExact = maxPoints * thresholds[i] / 100;
+            var be = Math.ceil(beExact * 2) / 2;
+            document.getElementById(npIds[i]).textContent = be;
+        }
+
+        // Note bestimmen
+        var percent = (score / maxPoints) * 100;
+        var np = 0;
+        if (percent >= 100) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 86) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+
+        document.getElementById('gradeDisplay').textContent = np + ' Notenpunkte (' + Math.round(percent) + '%)';
+        if (np > 0) {
+            var cellId = 'be' + np;
+            var cell = document.getElementById(cellId);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel anzeigen (Anti-Betrug)
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('resultsSection') || document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function disableAllInputs() {
+        var inputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+        var btnNiveauOk = document.getElementById('btnNiveauOk');
+        if (btnNiveauOk) btnNiveauOk.disabled = true;
+    }
+
+    // ===== LEHRER-RESET =====
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2024') {
+            localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEY + '-seat');
+            localStorage.removeItem(STORAGE_KEY + '-seat-locked');
+            localStorage.removeItem(STORAGE_KEY + '-niveau');
+            localStorage.removeItem(STORAGE_KEY + '-niveau-locked');
+            localStorage.removeItem(STORAGE_KEY + '-submitted');
+            localStorage.removeItem(STORAGE_KEY + '-score');
+            alert('Platz wurde zurückgesetzt. Seite wird neu geladen.');
+            location.reload();
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
+
+    // ===== INIT =====
+    window.onload = function() {
+        // Startzeit beim ersten Aufruf speichern (Anti-Betrug)
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        generateSeatDropdown();
+        restoreNiveauDropdown();
+        loadProgress();
+        updateProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
+
+        // Event-Listener für Speicherung
+        var inputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener('change', function() {
+                saveProgress();
+                updateProgress();
+            });
+        }
+
+        // Bereits abgegeben? → Ergebnisse wiederherstellen
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            // Niveau wiederherstellen (VOR submitTest!)
+            var savedNiveau = localStorage.getItem(STORAGE_KEY + '-niveau');
+            if (savedNiveau) selectedNiveau = parseInt(savedNiveau);
+            // NICHT testSubmitted = true setzen - submitTest() macht das selbst
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

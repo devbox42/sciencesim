@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geschwindigkeit messen</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           LERNPFAD - Geschwindigkeit | Physik Klasse 6
+           Mit 100m-Lauf Simulation
+           ═══════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.4em; font-weight: 600; }
+        header p { font-size: 0.9em; opacity: 0.9; margin-top: 5px; }
+
+        .progress-bar { background: #e0e0e0; height: 6px; }
+        .progress-fill { background: #2a7a4b; height: 100%; width: 0%; transition: width 0.3s; }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 25px;
+            display: none;
+        }
+        .section.active { display: block; }
+        .section h2 {
+            color: #2c5aa0;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+        .section h3 {
+            color: #2c5aa0;
+            font-size: 1em;
+            margin: 20px 0 10px 0;
+        }
+
+        .info-box {
+            background: #e8f0fa;
+            border-left: 4px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .merke-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .merke-box h4 { color: #2a7a4b; margin-bottom: 8px; font-size: 0.95em; }
+
+        .hefter-hinweis {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "📋 Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .hefter-hinweis ul { margin: 8px 0 0 20px; }
+
+        .formel-box {
+            background: white;
+            border: 2px solid #2c5aa0;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .formel-box .formel {
+            font-size: 2em;
+            color: #2c5aa0;
+            font-weight: 600;
+        }
+
+        /* ISO 80000: Formelzeichen kursiv + Serif, Einheiten aufrecht + Sans-Serif */
+        .fz {
+            font-family: "Times New Roman", Times, serif;
+            font-style: italic;
+        }
+        .einheit {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-style: normal;
+            font-weight: normal;
+        }
+        .formel-gross {
+            font-size: 1.8em;
+            color: #2c5aa0;
+        }
+        .formel-gross .fz {
+            font-weight: 600;
+        }
+
+        /* Quiz */
+        .quiz-box {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .quiz-box h4 { color: #2c5aa0; margin-bottom: 10px; font-size: 0.95em; }
+        .operator { font-weight: 600; text-decoration: underline; }
+
+        .quiz-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .quiz-row label { min-width: 180px; }
+        .quiz-row select {
+            padding: 6px 10px;
+            font-size: 0.95em;
+            border: 1px solid #2c5aa0;
+            min-width: 140px;
+        }
+        .quiz-row select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .quiz-row select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .feedback {
+            padding: 12px 15px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; color: #1b5e20; }
+        .feedback.incorrect { background: #ffebee; border-left: 3px solid #c62828; color: #b71c1c; }
+
+        /* Simulation */
+        .sim-container {
+            background: #fafafa;
+            border: 2px solid #2c5aa0;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .sim-container h4 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        #raceTrack {
+            background: #e8f0fa;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+        .sim-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .sim-timer {
+            font-size: 2em;
+            font-weight: 600;
+            color: #2c5aa0;
+            text-align: center;
+            font-family: monospace;
+        }
+        .sim-results {
+            margin-top: 15px;
+        }
+        .sim-results table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .sim-results th {
+            background: #2c5aa0;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+        .sim-results td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .sim-results tr:nth-child(even) { background: #fafafa; }
+        .sim-results .finished { background: #e8f5e9; }
+
+        /* Berechnung */
+        .calc-box {
+            background: #fafafa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .calc-box h4 { color: #2c5aa0; margin-bottom: 10px; font-size: 0.95em; }
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .calc-row input {
+            padding: 6px 10px;
+            font-size: 1em;
+            border: 1px solid #2c5aa0;
+            width: 80px;
+            text-align: center;
+        }
+        .calc-row input.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .calc-row input.incorrect { border-color: #c62828; background: #ffebee; }
+        .calc-row .unit { color: #666; font-size: 0.9em; }
+
+        /* Animation für Formel */
+        .formel-animation {
+            text-align: center;
+            padding: 20px;
+        }
+        .formel-step {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            margin: 10px 0;
+        }
+        .formel-step.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Beispielrechnung */
+        .beispiel-box {
+            background: #f0f7ff;
+            border: 1px solid #2c5aa0;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .beispiel-box h4 { color: #2c5aa0; margin-bottom: 10px; }
+        .beispiel-step {
+            margin: 8px 0;
+            padding-left: 10px;
+            border-left: 3px solid #2c5aa0;
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary { background: #2c5aa0; color: white; }
+        .btn-primary:hover { background: #1e4080; }
+        .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+        .btn-secondary { background: #666; color: white; }
+        .btn-success { background: #2a7a4b; color: white; }
+        .btn-small { padding: 8px 15px; font-size: 0.9em; }
+
+        /* Step Navigation */
+        .step-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #2c5aa0;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        .step-nav-inner {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 850px;
+            width: 100%;
+            justify-content: center;
+        }
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            color: #888;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .step-dot:hover:not(.locked) { border-color: #2c5aa0; color: #2c5aa0; }
+        .step-dot:hover:not(.locked)::after {
+            content: attr(data-title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            white-space: nowrap;
+            margin-bottom: 5px;
+            z-index: 10;
+        }
+        .step-dot.active { background: #2c5aa0; border-color: #2c5aa0; color: white; }
+        .step-dot.completed { background: #2a7a4b; border-color: #2a7a4b; color: white; }
+        .step-dot.locked { opacity: 0.4; cursor: not-allowed; }
+        .step-dot.unlocked { border-color: #2c5aa0; opacity: 0.8; }
+        .step-nav-label {
+            font-size: 0.85em;
+            color: #666;
+            margin: 0 10px;
+            white-space: nowrap;
+        }
+        .step-nav-arrows {
+            display: flex;
+            gap: 5px;
+        }
+        .step-nav-arrows button {
+            padding: 6px 12px;
+            font-size: 1.2em;
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .step-nav-arrows button:disabled { background: #ccc; cursor: not-allowed; }
+        .step-nav-arrows button:hover:not(:disabled) { background: #1e4080; }
+
+        /* Platz für fixierte Navigation */
+        body { padding-bottom: 70px; }
+
+        @media (max-width: 600px) {
+            .quiz-row { flex-direction: column; align-items: flex-start; }
+            .quiz-row label { min-width: auto; }
+            .step-dot { width: 24px; height: 24px; font-size: 0.65em; }
+            .step-nav { padding: 8px 10px; }
+            .step-nav-label { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏃 Geschwindigkeit messen</h1>
+        <p>Physik Klasse 6 | ca. 35 Minuten</p>
+    </header>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <div class="container">
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 1: Start
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section active" id="section1">
+            <h2>Willkommen!</h2>
+
+            <div class="info-box">
+                <strong>Heute lernst du:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Was Geschwindigkeit bedeutet</li>
+                    <li>Wie man Geschwindigkeit berechnet</li>
+                    <li>Die Formel <strong><span class="fz">v</span> = <span class="fz">s</span> / <span class="fz">t</span></strong></li>
+                </ul>
+            </div>
+
+            <div class="merke-box">
+                <h4>Du brauchst:</h4>
+                <ul style="margin-left: 20px;">
+                    <li>Dein <strong>Arbeitsblatt</strong> (AB)</li>
+                    <li>Einen Stift</li>
+                    <li>Einen Taschenrechner (oder Kopfrechnen)</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button class="btn-primary" onclick="nextSection()">Start →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 2: Warm-up Quiz (Wiederholung Std. 1)
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section2">
+            <h2>Warm-up: Bewegungsarten</h2>
+
+            <p>Zuerst wiederholen wir kurz, was du schon weißt.</p>
+
+            <div class="quiz-box">
+                <h4><span class="operator">Ordne zu:</span> Welche Bahnform und Bewegungsart?</h4>
+
+                <div class="quiz-row">
+                    <label>1. Rolltreppe:</label>
+                    <select id="q1-bahn"><option value="">Bahnform...</option><option value="geradlinig">geradlinig</option><option value="krummlinig">krummlinig</option></select>
+                    <select id="q1-art"><option value="">Bewegungsart...</option><option value="gleichfoermig">gleichförmig</option><option value="ungleichfoermig">ungleichförmig</option></select>
+                </div>
+                <div class="quiz-row">
+                    <label>2. Karussell:</label>
+                    <select id="q2-bahn"><option value="">Bahnform...</option><option value="geradlinig">geradlinig</option><option value="krummlinig">krummlinig</option></select>
+                    <select id="q2-art"><option value="">Bewegungsart...</option><option value="gleichfoermig">gleichförmig</option><option value="ungleichfoermig">ungleichförmig</option></select>
+                </div>
+                <div class="quiz-row">
+                    <label>3. Auto bremst:</label>
+                    <select id="q3-bahn"><option value="">Bahnform...</option><option value="geradlinig">geradlinig</option><option value="krummlinig">krummlinig</option></select>
+                    <select id="q3-art"><option value="">Bewegungsart...</option><option value="gleichfoermig">gleichförmig</option><option value="ungleichfoermig">ungleichförmig</option></select>
+                </div>
+                <div class="quiz-row">
+                    <label>4. Fallender Stein:</label>
+                    <select id="q4-bahn"><option value="">Bahnform...</option><option value="geradlinig">geradlinig</option><option value="krummlinig">krummlinig</option></select>
+                    <select id="q4-art"><option value="">Bewegungsart...</option><option value="gleichfoermig">gleichförmig</option><option value="ungleichfoermig">ungleichförmig</option></select>
+                </div>
+
+                <button class="btn-primary btn-small" onclick="checkWarmup()" style="margin-top:15px;">Prüfen</button>
+
+                <div class="feedback correct" id="warmup-correct">
+                    Super! Du kennst die Bewegungsarten noch. Jetzt lernst du, wie man Geschwindigkeit berechnet.
+                </div>
+                <div class="feedback incorrect" id="warmup-incorrect">
+                    Einige Antworten sind noch falsch. Tipp: Kreisförmig = krummlinig. Bremsen/Fallen = ungleichförmig.
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 1:</strong> Übertrage deine Antworten in die Tabelle</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()" id="btn-warmup-next" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 3: Experiment Einführung
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section3">
+            <h2>Experiment: 100-Meter-Lauf</h2>
+
+            <div class="info-box">
+                <strong>Forschungsfrage:</strong> Wie schnell laufen verschiedene Personen?
+            </div>
+
+            <p>Gleich siehst du eine Simulation mit 4 Läufern:</p>
+
+            <ul style="margin: 15px 0 15px 25px;">
+                <li><strong>Usain</strong> – Weltklasse-Sprinter</li>
+                <li><strong>Lisa</strong> – Sportliche Schülerin</li>
+                <li><strong>Tom</strong> – Durchschnittlicher Jogger</li>
+                <li><strong>Oma Erna</strong> – Gemütliche Spaziergängerin</li>
+            </ul>
+
+            <div class="merke-box">
+                <h4>Deine Aufgabe:</h4>
+                <ol style="margin-left: 20px;">
+                    <li>Klicke auf <strong>[START]</strong></li>
+                    <li>Beobachte die Stoppuhr</li>
+                    <li>Notiere die Zeit, wenn jeder Läufer im Ziel ankommt</li>
+                    <li>Trage die Zeiten in dein <strong>Arbeitsblatt</strong> ein</li>
+                </ol>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()">Zur Simulation →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 4: Simulation
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section4">
+            <h2>🏃 100-Meter-Lauf</h2>
+
+            <div class="sim-container">
+                <div class="sim-timer">⏱️ <span id="timerDisplay">0,0 s</span></div>
+
+                <canvas id="raceTrack" width="780" height="200"></canvas>
+
+                <div class="sim-controls">
+                    <button class="btn-success" onclick="startRace()" id="btnStart">▶ START</button>
+                    <button class="btn-secondary" onclick="resetRace()" id="btnReset" disabled>↺ Neustart</button>
+                </div>
+
+                <div class="sim-results">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Läufer</th>
+                                <th>Strecke s</th>
+                                <th>Zeit t (ablesen!)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="row-usain">
+                                <td>🏃 Usain</td>
+                                <td>100 m</td>
+                                <td id="time-usain">—</td>
+                                <td id="status-usain">Wartet...</td>
+                            </tr>
+                            <tr id="row-lisa">
+                                <td>🏃 Lisa</td>
+                                <td>100 m</td>
+                                <td id="time-lisa">—</td>
+                                <td id="status-lisa">Wartet...</td>
+                            </tr>
+                            <tr id="row-tom">
+                                <td>🏃 Tom</td>
+                                <td>100 m</td>
+                                <td id="time-tom">—</td>
+                                <td id="status-tom">Wartet...</td>
+                            </tr>
+                            <tr id="row-erna">
+                                <td>🚶 Oma Erna</td>
+                                <td>100 m</td>
+                                <td id="time-erna">—</td>
+                                <td id="status-erna">Wartet...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 2a:</strong> Trage die gemessenen Zeiten in die Tabelle ein</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()" id="btn-sim-next" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 5: Erkenntnis - Wer ist schneller?
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section5">
+            <h2>Wer ist am schnellsten?</h2>
+
+            <p>Du hast die Zeiten gemessen. Aber wie vergleichen wir, wer <strong>schneller</strong> ist?</p>
+
+            <div class="quiz-box">
+                <h4><span class="operator">Nenne:</span> Wer war am schnellsten?</h4>
+                <div class="quiz-row">
+                    <select id="q-fastest">
+                        <option value="">Wähle...</option>
+                        <option value="usain">Usain</option>
+                        <option value="lisa">Lisa</option>
+                        <option value="tom">Tom</option>
+                        <option value="erna">Oma Erna</option>
+                    </select>
+                    <button class="btn-primary btn-small" onclick="checkFastest()">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="fastest-correct">
+                    Richtig! Usain war am schnellsten – er hat die kürzeste Zeit gebraucht.
+                </div>
+                <div class="feedback incorrect" id="fastest-incorrect">
+                    Denke nach: Wer hat die <strong>kürzeste</strong> Zeit gebraucht?
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Problem:</strong> Was, wenn zwei Läufer <em>unterschiedlich lange Strecken</em> laufen?<br>
+                Dann können wir die Zeiten nicht einfach vergleichen!
+            </div>
+
+            <p style="margin-top: 15px;">Wir brauchen eine Zahl, die angibt: <strong>Wie viel Weg pro Zeit?</strong></p>
+
+            <p>Das ist die <strong>Geschwindigkeit</strong>.</p>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 6: Formel v = s/t
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section6">
+            <h2>Die Formel für Geschwindigkeit</h2>
+
+            <div class="formel-animation" id="formelAnimation">
+                <div class="formel-step" id="step1">
+                    <p style="font-size: 1.1em;">Die <strong>Geschwindigkeit</strong> gibt an,</p>
+                </div>
+                <div class="formel-step" id="step2">
+                    <p style="font-size: 1.1em;">welchen <strong>Weg</strong> ein Körper</p>
+                </div>
+                <div class="formel-step" id="step3">
+                    <p style="font-size: 1.1em;">in einer bestimmten <strong>Zeit</strong> zurücklegt.</p>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="showFormelAnimation()" id="btn-show-formel" style="display:block; margin: 20px auto;">Animation zeigen</button>
+
+            <div class="formel-box" id="formelBox" style="display:none;">
+                <div class="formel-gross"><span class="fz">v</span> = <span class="fz">s</span> / <span class="fz">t</span></div>
+                <p style="margin-top: 15px; font-size: 0.95em;">
+                    <span class="fz">v</span> = Geschwindigkeit (in <span class="einheit">m/s</span>)<br>
+                    <span class="fz">s</span> = Weg / Strecke (in <span class="einheit">m</span>)<br>
+                    <span class="fz">t</span> = Zeit (in <span class="einheit">s</span>)
+                </p>
+            </div>
+
+            <div class="merke-box" id="merkeBox" style="display:none;">
+                <h4>Merksatz:</h4>
+                <p><strong>Geschwindigkeit = Weg geteilt durch Zeit</strong></p>
+                <p style="margin-top: 10px; font-style: italic;">Je mehr Weg in kurzer Zeit → desto schneller!</p>
+            </div>
+
+            <div class="hefter-hinweis" id="hefter-merksatz" style="display:none;">
+                <ul>
+                    <li><strong>Aufgabe 2b:</strong> Ergänze den Merksatz und die Formel</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()" id="btn-formel-next" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 7: Beispielrechnung
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section7">
+            <h2>So rechnest du</h2>
+
+            <div class="beispiel-box">
+                <h4>Beispiel: Usain läuft 100 m in 10 s</h4>
+
+                <div class="beispiel-step">
+                    <strong>1. Gegeben:</strong> <span class="fz">s</span> = 100 <span class="einheit">m</span>, <span class="fz">t</span> = 10 <span class="einheit">s</span>
+                </div>
+                <div class="beispiel-step">
+                    <strong>2. Gesucht:</strong> <span class="fz">v</span> = ?
+                </div>
+                <div class="beispiel-step">
+                    <strong>3. Formel:</strong> <span class="fz">v</span> = <span class="fz">s</span> / <span class="fz">t</span>
+                </div>
+                <div class="beispiel-step">
+                    <strong>4. Einsetzen:</strong> <span class="fz">v</span> = 100 <span class="einheit">m</span> / 10 <span class="einheit">s</span>
+                </div>
+                <div class="beispiel-step">
+                    <strong>5. Ergebnis:</strong> <span class="fz">v</span> = <strong>10 <span class="einheit">m/s</span></strong>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Was bedeutet 10 m/s?</strong><br>
+                Usain legt in jeder Sekunde 10 Meter zurück. Das sind 36 km/h!
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()">Jetzt du! →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 8: Berechnung - Experiment auswerten
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section8">
+            <h2>Experiment auswerten</h2>
+
+            <p>Berechne jetzt die Geschwindigkeit für jeden Läufer.</p>
+
+            <div class="calc-box">
+                <h4>Lisa: <span class="fz">s</span> = 100 <span class="einheit">m</span>, <span class="fz">t</span> = 12,5 <span class="einheit">s</span></h4>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> = 100 <span class="einheit">m</span> / 12,5 <span class="einheit">s</span> =</span>
+                    <input type="text" id="calc-lisa" placeholder="?" inputmode="decimal">
+                    <span class="einheit">m/s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('lisa', 8, 0.5)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-lisa-correct">Richtig! <span class="fz">v</span> = 8 <span class="einheit">m/s</span></div>
+                <div class="feedback incorrect" id="calc-lisa-incorrect">Teile 100 durch 12,5. Tipp: 100 / 12,5 = 8</div>
+            </div>
+
+            <div class="calc-box">
+                <h4>Tom: <span class="fz">s</span> = 100 <span class="einheit">m</span>, <span class="fz">t</span> = 20 <span class="einheit">s</span></h4>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> = 100 <span class="einheit">m</span> / 20 <span class="einheit">s</span> =</span>
+                    <input type="text" id="calc-tom" placeholder="?" inputmode="decimal">
+                    <span class="einheit">m/s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('tom', 5, 0.5)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-tom-correct">Richtig! <span class="fz">v</span> = 5 <span class="einheit">m/s</span></div>
+                <div class="feedback incorrect" id="calc-tom-incorrect">Teile 100 durch 20.</div>
+            </div>
+
+            <div class="calc-box">
+                <h4>Oma Erna: <span class="fz">s</span> = 100 <span class="einheit">m</span>, <span class="fz">t</span> = 50 <span class="einheit">s</span></h4>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> = 100 <span class="einheit">m</span> / 50 <span class="einheit">s</span> =</span>
+                    <input type="text" id="calc-erna" placeholder="?" inputmode="decimal">
+                    <span class="einheit">m/s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('erna', 2, 0.5)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-erna-correct">Richtig! <span class="fz">v</span> = 2 <span class="einheit">m/s</span></div>
+                <div class="feedback incorrect" id="calc-erna-incorrect">Teile 100 durch 50.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 2a:</strong> Trage die berechneten Geschwindigkeiten in die Tabelle ein</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()" id="btn-calc-next" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 9: Übung
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section9">
+            <h2>Übung: Geschwindigkeit berechnen</h2>
+
+            <div class="calc-box">
+                <h4>Aufgabe a) Radfahrer</h4>
+                <p>Ein Radfahrer legt <strong>200 <span class="einheit">m</span></strong> in <strong>40 <span class="einheit">s</span></strong> zurück.</p>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> =</span>
+                    <input type="text" id="calc-rad" placeholder="?" inputmode="decimal">
+                    <span class="einheit">m/s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('rad', 5, 0.5)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-rad-correct">Richtig! <span class="fz">v</span> = 200/40 = 5 <span class="einheit">m/s</span></div>
+                <div class="feedback incorrect" id="calc-rad-incorrect"><span class="fz">v</span> = <span class="fz">s</span>/<span class="fz">t</span> = 200/40 = ?</div>
+            </div>
+
+            <div class="calc-box">
+                <h4>Aufgabe b) Schnecke</h4>
+                <p>Eine Schnecke kriecht <strong>6 <span class="einheit">m</span></strong> in <strong>600 <span class="einheit">s</span></strong> (10 Minuten).</p>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> =</span>
+                    <input type="text" id="calc-snail" placeholder="?" inputmode="decimal">
+                    <span class="einheit">m/s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('snail', 0.01, 0.005)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-snail-correct">Richtig! <span class="fz">v</span> = 6/600 = 0,01 <span class="einheit">m/s</span> (sehr langsam!)</div>
+                <div class="feedback incorrect" id="calc-snail-incorrect"><span class="fz">v</span> = 6/600 = 0,01 <span class="einheit">m/s</span></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 3a + 3b:</strong> Schreibe die Rechnungen mit Lösungsschema auf</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 10: Textaufgabe
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section10">
+            <h2>Textaufgabe</h2>
+
+            <div class="calc-box">
+                <h4>Aufgabe: Schulweg</h4>
+                <p>Lisa geht zur Schule. Sie läuft <strong>600 <span class="einheit">m</span></strong> in <strong>10 Minuten</strong>.</p>
+                <p style="color: #b35c00; font-size: 0.9em;"><strong>Achtung:</strong> Rechne erst Minuten in Sekunden um!</p>
+
+                <div class="calc-row" style="margin-top: 15px;">
+                    <span>Zeit <span class="fz">t</span> =</span>
+                    <input type="text" id="calc-zeit" placeholder="?" inputmode="decimal" style="width: 60px;">
+                    <span class="einheit">s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('zeit', 600, 0)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-zeit-correct">Richtig! 10 min = 600 <span class="einheit">s</span></div>
+                <div class="feedback incorrect" id="calc-zeit-incorrect">10 Minuten = 10 · 60 Sekunden = ?</div>
+
+                <div class="calc-row" style="margin-top: 15px;">
+                    <span><span class="fz">v</span> =</span>
+                    <input type="text" id="calc-lisa2" placeholder="?" inputmode="decimal">
+                    <span class="einheit">m/s</span>
+                    <button class="btn-primary btn-small" onclick="checkCalc('lisa2', 1, 0.1)">Prüfen</button>
+                </div>
+                <div class="feedback correct" id="calc-lisa2-correct">Richtig! <span class="fz">v</span> = 600/600 = 1 <span class="einheit">m/s</span></div>
+                <div class="feedback incorrect" id="calc-lisa2-incorrect"><span class="fz">v</span> = 600 <span class="einheit">m</span> / 600 <span class="einheit">s</span> = ?</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li><strong>Aufgabe 4:</strong> Schreibe die vollständige Rechnung auf</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <button class="btn-primary" onclick="nextSection()">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             SEKTION 11: Abschluss
+             ═══════════════════════════════════════════════════════════════ -->
+        <div class="section" id="section11">
+            <h2>Geschafft!</h2>
+
+            <div class="merke-box">
+                <h4>Das hast du gelernt:</h4>
+                <ul style="margin-left: 20px;">
+                    <li>Geschwindigkeit = Weg geteilt durch Zeit</li>
+                    <li>Formel: <strong><span class="fz">v</span> = <span class="fz">s</span> / <span class="fz">t</span></strong></li>
+                    <li>Einheit: <strong><span class="einheit">m/s</span></strong> (Meter pro Sekunde)</li>
+                </ul>
+            </div>
+
+            <div class="info-box">
+                <strong>Typische Geschwindigkeiten:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Fußgänger: 1–2 <span class="einheit">m/s</span></li>
+                    <li>Jogger: 3–4 <span class="einheit">m/s</span></li>
+                    <li>Radfahrer: 5–8 <span class="einheit">m/s</span></li>
+                    <li>Sprinter: 10 <span class="einheit">m/s</span></li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis">
+                <ul>
+                    <li>Prüfe, ob dein <strong>Arbeitsblatt vollständig</strong> ist (Aufgabe 1-4)</li>
+                </ul>
+            </div>
+
+            <div class="info-box" style="margin-top: 20px;">
+                <strong>Zusatzaufgaben (für Schnelle):</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li><strong>Aufgabe 5 (★★):</strong> Weg berechnen mit <span class="fz">s</span> = <span class="fz">v</span> · <span class="fz">t</span></li>
+                    <li><strong>Aufgabe 6 (★★★):</strong> Zeit berechnen mit <span class="fz">t</span> = <span class="fz">s</span> / <span class="fz">v</span></li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis" style="margin-top: 15px;">
+                <ul>
+                    <li><strong>Aufgabe 5:</strong> Berechne den Weg (Formel umstellen!)</li>
+                    <li><strong>Aufgabe 6:</strong> Berechne die Zeit (Formel umstellen!)</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: #e8f5e9; border: 2px solid #2a7a4b;">
+                <p style="font-size: 1.2em; color: #2a7a4b; font-weight: 600;">
+                    ✅ Lernpfad abgeschlossen!
+                </p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="prevSection()">← Zurück</button>
+                <span></span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Step Navigation -->
+    <nav class="step-nav">
+        <div class="step-nav-inner">
+            <div class="step-nav-arrows">
+                <button onclick="prevSection()" id="nav-prev" title="Zurück">◀</button>
+            </div>
+            <span class="step-nav-label" id="step-label">Schritt 1/11</span>
+            <div class="step-dot active" onclick="goToSection(1)" data-title="Start">1</div>
+            <div class="step-dot locked" onclick="goToSection(2)" data-title="Warm-up">2</div>
+            <div class="step-dot locked" onclick="goToSection(3)" data-title="Experiment">3</div>
+            <div class="step-dot locked" onclick="goToSection(4)" data-title="Simulation">4</div>
+            <div class="step-dot locked" onclick="goToSection(5)" data-title="Auswertung">5</div>
+            <div class="step-dot locked" onclick="goToSection(6)" data-title="Formel">6</div>
+            <div class="step-dot locked" onclick="goToSection(7)" data-title="Beispiel">7</div>
+            <div class="step-dot locked" onclick="goToSection(8)" data-title="Berechnung">8</div>
+            <div class="step-dot locked" onclick="goToSection(9)" data-title="Übung">9</div>
+            <div class="step-dot locked" onclick="goToSection(10)" data-title="Textaufgabe">10</div>
+            <div class="step-dot locked" onclick="goToSection(11)" data-title="Abschluss">11</div>
+            <span class="step-nav-label" id="step-title">Start</span>
+            <div class="step-nav-arrows">
+                <button onclick="nextSection()" id="nav-next" title="Weiter">▶</button>
+            </div>
+        </div>
+    </nav>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // KONFIGURATION
+    // ═══════════════════════════════════════════════════════════════
+    var STORAGE_KEY = 'lp-02-geschwindigkeit';
+    var currentSection = 1;
+    var totalSections = 11;
+
+    // Läufer-Daten (Zeit in Sekunden für 100m)
+    var runners = [
+        { id: 'usain', name: 'Usain', time: 10, color: '#c62828', x: 50 },
+        { id: 'lisa', name: 'Lisa', time: 12.5, color: '#2c5aa0', x: 50 },
+        { id: 'tom', name: 'Tom', time: 20, color: '#2a7a4b', x: 50 },
+        { id: 'erna', name: 'Erna', time: 50, color: '#b35c00', x: 50 }
+    ];
+    var raceRunning = false;
+    var raceStartTime = 0;
+    var finishedCount = 0;
+    var animationId = null;
+
+    // ═══════════════════════════════════════════════════════════════
+    // NAVIGATION
+    // ═══════════════════════════════════════════════════════════════
+    var sectionTitles = [
+        '', // Index 0 unused
+        'Start',
+        'Warm-up',
+        'Experiment',
+        'Simulation',
+        'Auswertung',
+        'Formel',
+        'Beispiel',
+        'Berechnung',
+        'Übung',
+        'Textaufgabe',
+        'Abschluss'
+    ];
+    var highestSection = 1; // Höchster erreichter Schritt
+
+    function showSection(n) {
+        for (var i = 1; i <= totalSections; i++) {
+            document.getElementById('section' + i).classList.remove('active');
+        }
+        document.getElementById('section' + n).classList.add('active');
+        currentSection = n;
+        if (n > highestSection) highestSection = n;
+        updateProgress();
+        updateStepNav();
+        saveState();
+        window.scrollTo(0, 0);
+    }
+
+    function goToSection(n) {
+        // Nur erlauben wenn Schritt bereits besucht wurde
+        if (n <= highestSection) {
+            showSection(n);
+        }
+    }
+
+    function nextSection() {
+        if (currentSection < totalSections) {
+            showSection(currentSection + 1);
+        }
+    }
+
+    function prevSection() {
+        if (currentSection > 1) {
+            showSection(currentSection - 1);
+        }
+    }
+
+    function updateProgress() {
+        var pct = ((currentSection - 1) / (totalSections - 1)) * 100;
+        document.getElementById('progressFill').style.width = pct + '%';
+    }
+
+    function updateStepNav() {
+        var dots = document.querySelectorAll('.step-dot');
+        for (var i = 0; i < dots.length; i++) {
+            var stepNum = i + 1;
+            dots[i].classList.remove('active', 'completed', 'locked', 'unlocked');
+            if (stepNum === currentSection) {
+                dots[i].classList.add('active');
+            } else if (stepNum < currentSection) {
+                dots[i].classList.add('completed');
+            } else if (stepNum <= highestSection) {
+                // Bereits besucht aber nicht aktuell
+                dots[i].classList.add('unlocked');
+            } else {
+                dots[i].classList.add('locked');
+            }
+        }
+        // Labels aktualisieren
+        document.getElementById('step-label').textContent = 'Schritt ' + currentSection + '/' + totalSections;
+        document.getElementById('step-title').textContent = sectionTitles[currentSection];
+        // Pfeile deaktivieren
+        document.getElementById('nav-prev').disabled = (currentSection <= 1);
+        document.getElementById('nav-next').disabled = (currentSection >= totalSections);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // WARM-UP QUIZ
+    // ═══════════════════════════════════════════════════════════════
+    var warmupAnswers = {
+        'q1-bahn': 'geradlinig', 'q1-art': 'gleichfoermig',
+        'q2-bahn': 'krummlinig', 'q2-art': 'gleichfoermig',
+        'q3-bahn': 'geradlinig', 'q3-art': 'ungleichfoermig',
+        'q4-bahn': 'geradlinig', 'q4-art': 'ungleichfoermig'
+    };
+
+    function checkWarmup() {
+        var allCorrect = true;
+        for (var key in warmupAnswers) {
+            var el = document.getElementById(key);
+            if (el.value === warmupAnswers[key]) {
+                el.classList.add('correct');
+                el.classList.remove('incorrect');
+            } else {
+                el.classList.add('incorrect');
+                el.classList.remove('correct');
+                allCorrect = false;
+            }
+        }
+        if (allCorrect) {
+            document.getElementById('warmup-correct').classList.add('show');
+            document.getElementById('warmup-incorrect').classList.remove('show');
+            document.getElementById('btn-warmup-next').disabled = false;
+        } else {
+            document.getElementById('warmup-incorrect').classList.add('show');
+            document.getElementById('warmup-correct').classList.remove('show');
+        }
+        saveState();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 100m SIMULATION
+    // ═══════════════════════════════════════════════════════════════
+    function drawTrack() {
+        var canvas = document.getElementById('raceTrack');
+        var ctx = canvas.getContext('2d');
+        var w = canvas.width;
+        var h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Hintergrund
+        ctx.fillStyle = '#e8f0fa';
+        ctx.fillRect(0, 0, w, h);
+
+        // Bahnen
+        var laneHeight = 35;
+        var startY = 30;
+        for (var i = 0; i < 4; i++) {
+            var y = startY + i * laneHeight;
+            // Bahn
+            ctx.fillStyle = i % 2 === 0 ? '#d0e0f0' : '#c0d5e8';
+            ctx.fillRect(50, y, 680, laneHeight - 5);
+            // Start-Linie
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(50, y);
+            ctx.lineTo(50, y + laneHeight - 5);
+            ctx.stroke();
+            // Ziel-Linie
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(730, y);
+            ctx.lineTo(730, y + laneHeight - 5);
+            ctx.stroke();
+        }
+
+        // Beschriftung
+        ctx.fillStyle = '#222';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('START', 30, 20);
+        ctx.fillText('ZIEL', 715, 20);
+        ctx.fillText('0 m', 45, h - 10);
+        ctx.fillText('100 m', 710, h - 10);
+
+        // Läufer zeichnen
+        for (var i = 0; i < runners.length; i++) {
+            var r = runners[i];
+            var y = startY + i * laneHeight + laneHeight / 2 - 2;
+            ctx.fillStyle = r.color;
+            ctx.beginPath();
+            ctx.arc(r.x, y, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(r.name.charAt(0), r.x, y + 4);
+        }
+        ctx.textAlign = 'left';
+    }
+
+    function startRace() {
+        if (raceRunning) return;
+        raceRunning = true;
+        raceStartTime = Date.now();
+        finishedCount = 0;
+        document.getElementById('btnStart').disabled = true;
+        document.getElementById('btnReset').disabled = true;
+
+        // Reset Läufer
+        for (var i = 0; i < runners.length; i++) {
+            runners[i].x = 50;
+            runners[i].finished = false;
+            document.getElementById('time-' + runners[i].id).textContent = '—';
+            document.getElementById('status-' + runners[i].id).textContent = 'Läuft...';
+            document.getElementById('row-' + runners[i].id).classList.remove('finished');
+        }
+
+        animateRace();
+    }
+
+    function animateRace() {
+        var elapsed = (Date.now() - raceStartTime) / 1000;
+        document.getElementById('timerDisplay').textContent = elapsed.toFixed(1) + ' s';
+
+        // Läufer bewegen
+        for (var i = 0; i < runners.length; i++) {
+            var r = runners[i];
+            if (!r.finished) {
+                // Position berechnen: 680px für 100m in r.time Sekunden
+                var progress = Math.min(elapsed / r.time, 1);
+                r.x = 50 + progress * 680;
+
+                if (progress >= 1 && !r.finished) {
+                    r.finished = true;
+                    finishedCount++;
+                    var finishTime = r.time.toFixed(1).replace('.', ',');
+                    document.getElementById('time-' + r.id).textContent = finishTime + ' s';
+                    document.getElementById('status-' + r.id).textContent = '✅ Im Ziel!';
+                    document.getElementById('row-' + r.id).classList.add('finished');
+                }
+            }
+        }
+
+        drawTrack();
+
+        if (finishedCount < runners.length) {
+            animationId = requestAnimationFrame(animateRace);
+        } else {
+            raceRunning = false;
+            document.getElementById('btnReset').disabled = false;
+            document.getElementById('btn-sim-next').disabled = false;
+            saveState();
+        }
+    }
+
+    function resetRace() {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+        raceRunning = false;
+        for (var i = 0; i < runners.length; i++) {
+            runners[i].x = 50;
+            runners[i].finished = false;
+            document.getElementById('time-' + runners[i].id).textContent = '—';
+            document.getElementById('status-' + runners[i].id).textContent = 'Wartet...';
+            document.getElementById('row-' + runners[i].id).classList.remove('finished');
+        }
+        document.getElementById('timerDisplay').textContent = '0,0 s';
+        document.getElementById('btnStart').disabled = false;
+        document.getElementById('btnReset').disabled = true;
+        drawTrack();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FORMEL ANIMATION
+    // ═══════════════════════════════════════════════════════════════
+    function showFormelAnimation() {
+        var steps = ['step1', 'step2', 'step3'];
+        var delay = 800;
+        for (var i = 0; i < steps.length; i++) {
+            (function(idx) {
+                setTimeout(function() {
+                    document.getElementById(steps[idx]).classList.add('visible');
+                }, idx * delay);
+            })(i);
+        }
+        setTimeout(function() {
+            document.getElementById('formelBox').style.display = 'block';
+            document.getElementById('merkeBox').style.display = 'block';
+            document.getElementById('hefter-merksatz').style.display = 'block';
+            document.getElementById('btn-show-formel').style.display = 'none';
+            document.getElementById('btn-formel-next').disabled = false;
+            saveState();
+        }, steps.length * delay + 500);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // BERECHNUNGEN PRÜFEN
+    // ═══════════════════════════════════════════════════════════════
+    var calcCorrect = {};
+
+    function checkCalc(id, correct, tolerance) {
+        var input = document.getElementById('calc-' + id);
+        var val = parseFloat(input.value.replace(',', '.'));
+        var isCorrect = !isNaN(val) && Math.abs(val - correct) <= tolerance;
+
+        if (isCorrect) {
+            input.classList.add('correct');
+            input.classList.remove('incorrect');
+            document.getElementById('calc-' + id + '-correct').classList.add('show');
+            document.getElementById('calc-' + id + '-incorrect').classList.remove('show');
+            calcCorrect[id] = true;
+        } else {
+            input.classList.add('incorrect');
+            input.classList.remove('correct');
+            document.getElementById('calc-' + id + '-incorrect').classList.add('show');
+            document.getElementById('calc-' + id + '-correct').classList.remove('show');
+        }
+
+        // Prüfen ob alle Experiment-Berechnungen fertig
+        if (calcCorrect['lisa'] && calcCorrect['tom'] && calcCorrect['erna']) {
+            document.getElementById('btn-calc-next').disabled = false;
+        }
+        saveState();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SCHNELLSTER LÄUFER
+    // ═══════════════════════════════════════════════════════════════
+    function checkFastest() {
+        var sel = document.getElementById('q-fastest');
+        if (sel.value === 'usain') {
+            document.getElementById('fastest-correct').classList.add('show');
+            document.getElementById('fastest-incorrect').classList.remove('show');
+        } else {
+            document.getElementById('fastest-incorrect').classList.add('show');
+            document.getElementById('fastest-correct').classList.remove('show');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SPEICHERN & LADEN
+    // ═══════════════════════════════════════════════════════════════
+    function saveState() {
+        var state = {
+            section: currentSection,
+            highestSection: highestSection,
+            calcCorrect: calcCorrect,
+            inputs: {}
+        };
+        // Alle Inputs speichern
+        var inputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < inputs.length; i++) {
+            if (inputs[i].id) {
+                state.inputs[inputs[i].id] = inputs[i].value;
+            }
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+        var stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+        var state = JSON.parse(stored);
+
+        if (state.highestSection) {
+            highestSection = state.highestSection;
+        }
+        if (state.section) {
+            showSection(state.section);
+        }
+        if (state.calcCorrect) {
+            calcCorrect = state.calcCorrect;
+        }
+        if (state.inputs) {
+            for (var id in state.inputs) {
+                var el = document.getElementById(id);
+                if (el) el.value = state.inputs[id];
+            }
+        }
+        // Buttons reaktivieren basierend auf Fortschritt
+        if (calcCorrect['lisa'] && calcCorrect['tom'] && calcCorrect['erna']) {
+            document.getElementById('btn-calc-next').disabled = false;
+        }
+        updateStepNav();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════
+    drawTrack();
+    loadState();
+    updateProgress();
+    updateStepNav();
+    </script>
+</body>
+</html>

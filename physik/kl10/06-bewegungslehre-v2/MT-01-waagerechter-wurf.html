@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Waagerechter Wurf</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 15px;
+            margin: 15px 20px;
+            font-size: 0.9em;
+        }
+        .info-box strong { color: #2c5aa0; }
+
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .multi-option { display: flex; align-items: center; gap: 10px; padding: 10px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; }
+        .multi-option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .multi-option input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .multi-option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .multi-option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .calc-input { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+        .calc-input input[type="number"], .calc-input input[type="text"] {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            width: 100px;
+            font-size: 1em;
+            text-align: center;
+        }
+        .calc-input select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+        }
+        .calc-input input.correct, .calc-input select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .calc-input input.incorrect, .calc-input select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.85em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 6px 8px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .seat-field { max-width: 400px; margin: 15px auto; padding: 15px; background: #fff; border: 1px solid #ddd; }
+        .seat-field label { font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px; }
+
+        /* ISO 80000: Formelzeichen kursiv+serif, Einheiten aufrecht+sans */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-style: normal; }
+
+        .hidden { display: none; }
+
+        .hinweis { background: #fff3e0; border-left: 3px solid #b35c00; padding: 10px 15px; margin: 10px 0; font-size: 0.9em; }
+
+        .tan-table { margin: 15px 0; font-size: 0.9em; border-collapse: collapse; }
+        .tan-table th, .tan-table td { border: 1px solid #ddd; padding: 6px 12px; text-align: center; }
+        .tan-table th { background: #f5f5f5; }
+
+        .seat-warning {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            font-size: 0.8em;
+            color: #b35c00;
+        }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Waagerechter Wurf</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 10E | 27 BE | 20 Min</div>
+        </div>
+    </header>
+
+    <div class="info-box">
+        <strong>Hilfsmittel erlaubt:</strong> Arbeitsblatt (AB-01), Lernpfad (LP-01)<br>
+        <strong>Kein Taschenrechner!</strong> Alle Aufgaben sind kopfrechenbar.
+    </div>
+
+    <div class="info-box" style="background: #f5f5f5; border-color: #666;">
+        <strong>Bewertung (15-NP-Skala):</strong>
+        <table style="width:100%; margin-top:8px; font-size:0.85em; border-collapse:collapse;">
+            <tr>
+                <td style="padding:4px;"><strong>15 NP:</strong> ≥27 BE</td>
+                <td style="padding:4px;"><strong>14 NP:</strong> ≥26 BE</td>
+                <td style="padding:4px;"><strong>13 NP:</strong> ≥26 BE</td>
+                <td style="padding:4px;"><strong>10 NP:</strong> ≥22 BE</td>
+            </tr>
+            <tr>
+                <td style="padding:4px;"><strong>7 NP:</strong> ≥16 BE</td>
+                <td style="padding:4px;"><strong>4 NP:</strong> ≥11 BE</td>
+                <td style="padding:4px;"><strong>1 NP:</strong> ≥5 BE</td>
+                <td style="padding:4px;"><strong>0 NP:</strong> &lt;5 BE</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="seat-field">
+        <label>Platznummer:</label>
+        <div class="seat-warning" id="seatWarning">
+            Kann nach OK <strong>nicht mehr geändert</strong> werden!
+        </div>
+        <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+            <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px;">
+                <option value="">-- wählen --</option>
+            </select>
+            <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+        </div>
+        <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600; margin-top: 10px;"></div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0 / 6 beantwortet</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            Deine Platznummer (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
+
+        <!-- Tangens-Tabelle -->
+        <div class="hinweis">
+            <strong>Tangens-Werte (zur Verwendung):</strong>
+            <table class="tan-table" style="margin-top:8px;">
+                <tr>
+                    <th><span class="fz">α</span></th>
+                    <td>30°</td><td>37°</td><td>45°</td><td>53°</td><td>60°</td>
+                </tr>
+                <tr>
+                    <th>tan(<span class="fz">α</span>)</th>
+                    <td>0,58</td><td>0,75</td><td>1,00</td><td>1,33</td><td>1,73</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A1: Drohnen-Lieferung (10 BE) - h=80m, v₀=30m/s
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q1" data-points="10">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 1: Drohnen-Lieferung</div>
+                <div class="question-meta">
+                    <span class="question-points">10 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Eine Lieferdrohne fliegt in <span class="fz">h</span> = 80 <span class="einheit">m</span> Höhe mit konstanter horizontaler Geschwindigkeit <span class="fz">v</span><sub>0</sub> = 30 <span class="einheit">m/s</span> und lässt ein Paket fallen.
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> <strong>Berechne</strong> die Fallzeit <span class="fz">t</span>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">t</span> =</span>
+                    <input type="text" inputmode="decimal" id="q1-t" placeholder="Wert">
+                    <span class="einheit">s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> <strong>Berechne</strong> die Wurfweite <span class="fz">s</span><sub>x</sub>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">s</span><sub>x</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q1-sx" placeholder="Wert">
+                    <span class="einheit">m</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>c)</strong> <strong>Berechne</strong> die vertikale Geschwindigkeit <span class="fz">v</span><sub>y</sub> beim Aufprall.</p>
+                <div class="calc-input">
+                    <span><span class="fz">v</span><sub>y</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q1-vy" placeholder="Wert">
+                    <span class="einheit">m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>d)</strong> <strong>Berechne</strong> die Aufprallgeschwindigkeit <span class="fz">v</span><sub>res</sub>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">v</span><sub>res</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q1-vres" placeholder="Wert">
+                    <span class="einheit">m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>e)</strong> <strong>Bestimme</strong> den Aufprallwinkel <span class="fz">α</span> mit der Tabelle oben.</p>
+                <div class="calc-input">
+                    <span><span class="fz">α</span> ≈</span>
+                    <select id="q1-alpha">
+                        <option value="">-- wählen --</option>
+                        <option value="30">30°</option>
+                        <option value="37">37°</option>
+                        <option value="45">45°</option>
+                        <option value="53">53°</option>
+                        <option value="60">60°</option>
+                    </select>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q1-fb-correct">Vollständig richtig!</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">
+                <span class="fz">t</span> = √(160/10) = 4 s,
+                <span class="fz">s</span><sub>x</sub> = 30·4 = 120 m,
+                <span class="fz">v</span><sub>y</sub> = 10·4 = 40 m/s,
+                <span class="fz">v</span><sub>res</sub> = √(30²+40²) = 50 m/s (3-4-5-Tripel!),
+                tan(<span class="fz">α</span>) = 40/30 = 1,33 → <span class="fz">α</span> ≈ 53°
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A2: Umkehraufgabe (4 BE) - t=5s, s_x=200m
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q2" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 2: Umkehraufgabe</div>
+                <div class="question-meta">
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Objekt fällt <span class="fz">t</span> = 5 <span class="einheit">s</span> und landet <span class="fz">s</span><sub>x</sub> = 200 <span class="einheit">m</span> entfernt.
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> <strong>Berechne</strong> die Anfangsgeschwindigkeit <span class="fz">v</span><sub>0</sub>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">v</span><sub>0</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q2-v0" placeholder="Wert">
+                    <span class="einheit">m/s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> <strong>Berechne</strong> die Abwurfhöhe <span class="fz">h</span>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">h</span> =</span>
+                    <input type="text" inputmode="decimal" id="q2-h" placeholder="Wert">
+                    <span class="einheit">m</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig!</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">
+                <span class="fz">v</span><sub>0</sub> = <span class="fz">s</span><sub>x</sub>/<span class="fz">t</span> = 200/5 = 40 m/s,
+                <span class="fz">h</span> = ½·<span class="fz">g</span>·<span class="fz">t</span>² = ½·10·25 = 125 m
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A3: Weitere Berechnung (3 BE) - h=45m, v₀=40m/s
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 3: Schneller Wurf</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                Ein Ball wird aus <span class="fz">h</span> = 45 <span class="einheit">m</span> Höhe mit <span class="fz">v</span><sub>0</sub> = 40 <span class="einheit">m/s</span> waagerecht geworfen.
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> <strong>Berechne</strong> die Fallzeit <span class="fz">t</span>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">t</span> =</span>
+                    <input type="text" inputmode="decimal" id="q3-t" placeholder="Wert">
+                    <span class="einheit">s</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(1 BE)</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> <strong>Berechne</strong> die Wurfweite <span class="fz">s</span><sub>x</sub>.</p>
+                <div class="calc-input">
+                    <span><span class="fz">s</span><sub>x</sub> =</span>
+                    <input type="text" inputmode="decimal" id="q3-sx" placeholder="Wert">
+                    <span class="einheit">m</span>
+                    <span style="color:#888; font-size:0.85em; margin-left:10px;">(2 BE)</span>
+                </div>
+            </div>
+
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig!</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">
+                <span class="fz">t</span> = √(90/10) = √9 = 3 s,
+                <span class="fz">s</span><sub>x</sub> = 40·3 = 120 m
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A4: Verständnis MC (3 BE) - 3 x 1 BE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q4" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 4: Verständnis</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> <strong>Gib an:</strong> Die horizontale Geschwindigkeit beim waagerechten Wurf...</p>
+                <div class="options" id="q4a-options">
+                    <label class="option" data-value="a"><input type="radio" name="q4a" value="a">...nimmt während des Flugs ab.</label>
+                    <label class="option" data-value="b"><input type="radio" name="q4a" value="b">...bleibt während des Flugs konstant.</label>
+                    <label class="option" data-value="c"><input type="radio" name="q4a" value="c">...nimmt während des Flugs zu.</label>
+                </div>
+                <span style="color:#888; font-size:0.85em;">(1 BE)</span>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> <strong>Gib an:</strong> Verdoppelt man die Abwurfhöhe, dann...</p>
+                <div class="options" id="q4b-options">
+                    <label class="option" data-value="a"><input type="radio" name="q4b" value="a">...verdoppelt sich auch die Fallzeit.</label>
+                    <label class="option" data-value="b"><input type="radio" name="q4b" value="b">...vervierfacht sich die Fallzeit.</label>
+                    <label class="option" data-value="c"><input type="radio" name="q4b" value="c">...erhöht sich die Fallzeit um den Faktor √2.</label>
+                </div>
+                <span style="color:#888; font-size:0.85em;">(1 BE)</span>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>c)</strong> <strong>Gib an:</strong> Die Fallzeit beim waagerechten Wurf hängt ab von...</p>
+                <div class="options" id="q4c-options">
+                    <label class="option" data-value="a"><input type="radio" name="q4c" value="a">...der Abwurfgeschwindigkeit <span class="fz">v</span><sub>0</sub>.</label>
+                    <label class="option" data-value="b"><input type="radio" name="q4c" value="b">...der Abwurfhöhe <span class="fz">h</span>.</label>
+                    <label class="option" data-value="c"><input type="radio" name="q4c" value="c">...der Masse des Objekts.</label>
+                </div>
+                <span style="color:#888; font-size:0.85em;">(1 BE)</span>
+            </div>
+
+            <div class="feedback-box correct" id="q4-fb-correct">Alle drei Antworten richtig!</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">
+                a) konstant (keine horizontale Kraft),
+                b) √2 (weil <span class="fz">t</span> ~ √<span class="fz">h</span>),
+                c) nur von <span class="fz">h</span> (Unabhängigkeitsprinzip)
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A5: Schräger Wurf Multi-Select (3 BE) mit Penalty
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q5" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 5: Schräger Wurf</div>
+                <div class="question-meta">
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <strong>Wähle</strong> alle zutreffenden Aussagen zum schrägen Wurf aus.<br>
+                <span style="color:#b35c00; font-size:0.85em;">Hinweis: Für jede richtige Auswahl +1 BE, für jede falsche Auswahl -1 BE (min. 0 BE gesamt).</span>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <label class="multi-option" id="q5-a">
+                    <input type="checkbox" id="q5-cb-a" value="a">
+                    <span>Der schräge Wurf ist eine Überlagerung von gleichförmiger Horizontalbewegung und senkrechtem Wurf.</span>
+                </label>
+                <label class="multi-option" id="q5-b">
+                    <input type="checkbox" id="q5-cb-b" value="b">
+                    <span>Die maximale Wurfweite wird bei einem Abwurfwinkel von 45° erreicht.</span>
+                </label>
+                <label class="multi-option" id="q5-c">
+                    <input type="checkbox" id="q5-cb-c" value="c">
+                    <span>Bei symmetrischem Wurf ist die Steigzeit kleiner als die Fallzeit.</span>
+                </label>
+                <label class="multi-option" id="q5-d">
+                    <input type="checkbox" id="q5-cb-d" value="d">
+                    <span>Die Bahnkurve ist eine Parabel.</span>
+                </label>
+            </div>
+
+            <div class="feedback-box correct" id="q5-fb-correct">Richtig: A, B, D sind korrekt. C ist falsch (Steigzeit = Fallzeit).</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">
+                Richtig sind: A (Überlagerungsprinzip), B (45° für max. Weite), D (Parabel).
+                Falsch ist C: Bei symmetrischem Wurf gilt Steigzeit = Fallzeit.
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             A6: Orbit MC (4 BE) - 2 x 2 BE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q6" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 6: Orbitalmechanik</div>
+                <div class="question-meta">
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>a)</strong> <strong>Nenne</strong> den korrekten Wert für die erste kosmische Geschwindigkeit <span class="fz">v</span><sub>1</sub> (Orbitgeschwindigkeit).</p>
+                <div class="options" id="q6a-options">
+                    <label class="option" data-value="a"><input type="radio" name="q6a" value="a"><span class="fz">v</span><sub>1</sub> ≈ 3,7 km/s</label>
+                    <label class="option" data-value="b"><input type="radio" name="q6a" value="b"><span class="fz">v</span><sub>1</sub> ≈ 7,9 km/s</label>
+                    <label class="option" data-value="c"><input type="radio" name="q6a" value="c"><span class="fz">v</span><sub>1</sub> ≈ 11,2 km/s</label>
+                    <label class="option" data-value="d"><input type="radio" name="q6a" value="d"><span class="fz">v</span><sub>1</sub> ≈ 29,8 km/s</label>
+                </div>
+                <span style="color:#888; font-size:0.85em;">(2 BE)</span>
+            </div>
+
+            <div style="margin: 15px 0;">
+                <p><strong>b)</strong> <strong>Erkläre:</strong> Ein Satellit im Orbit...</p>
+                <div class="options" id="q6b-options">
+                    <label class="option" data-value="a"><input type="radio" name="q6b" value="a">...schwebt kräftefrei im All, weil dort keine Gravitation wirkt.</label>
+                    <label class="option" data-value="b"><input type="radio" name="q6b" value="b">...fällt ständig zur Erde, aber die Erde krümmt sich unter ihm weg.</label>
+                    <label class="option" data-value="c"><input type="radio" name="q6b" value="c">...wird durch die Zentrifugalkraft nach außen gedrückt und dadurch stabil gehalten.</label>
+                    <label class="option" data-value="d"><input type="radio" name="q6b" value="d">...bewegt sich auf einer geraden Linie tangential zur Erdoberfläche.</label>
+                </div>
+                <span style="color:#888; font-size:0.85em;">(2 BE)</span>
+            </div>
+
+            <div class="feedback-box correct" id="q6-fb-correct">Beide Antworten richtig!</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">
+                a) <span class="fz">v</span><sub>1</sub> ≈ 7,9 km/s (nicht zu verwechseln mit <span class="fz">v</span><sub>2</sub> = 11,2 km/s = Fluchtgeschwindigkeit).
+                b) Der Satellit fällt ständig – genau wie beim waagerechten Wurf – aber die Erde krümmt sich unter ihm weg.
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 27</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>15</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td>
+                    <td id="np15">27</td>
+                    <td id="np14">26</td>
+                    <td id="np13">26</td>
+                    <td id="np12">24</td>
+                    <td id="np11">23</td>
+                    <td id="np10">22</td>
+                    <td id="np9">20</td>
+                    <td id="np8">18</td>
+                    <td id="np7">16</td>
+                    <td id="np6">14</td>
+                    <td id="np5">13</td>
+                    <td id="np4">11</td>
+                    <td id="np3">9</td>
+                    <td id="np2">7</td>
+                    <td id="np1">5</td>
+                    <td id="np0">&lt;5</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        </div><!-- END questionsContainer -->
+
+        <!-- Lehrer-Reset (dezent am Ende) -->
+        <div style="text-align: center; margin: 40px 0 20px 0;">
+            <button onclick="teacherReset()" style="background: none; border: none; color: #ccc; font-size: 0.75em; cursor: pointer;">⟳ Zurücksetzen</button>
+        </div>
+    </div>
+
+    <script>
+    var STORAGE_KEY = 'mt-physik-10e-01-waagerechter-wurf-v1';
+    var MAX_POINTS = 27;
+    var NUM_QUESTIONS = 6;
+    var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll (Anti-Betrug)
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // Korrekte Antworten
+    var answers = {
+        q1: { t: 4, sx: 120, vy: 40, vres: 50, alpha: '53' },
+        q2: { v0: 40, h: 125 },
+        q3: { t: 3, sx: 120 },
+        q4: { a: 'b', b: 'c', c: 'b' },
+        q5: { correct: ['a', 'b', 'd'], wrong: ['c'] },
+        q6: { a: 'b', b: 'b' }
+    };
+
+    // Toleranz für numerische Antworten (für Dezimalkomma-Eingaben)
+    function parseNumber(value) {
+        if (value === '' || value === null) return NaN;
+        var normalized = String(value).replace(',', '.');
+        return parseFloat(normalized);
+    }
+
+    function isClose(val, correct, tol) {
+        tol = tol || 0.5;
+        return Math.abs(val - correct) <= tol;
+    }
+
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') {
+            showLockedSeat(saved);
+        } else if (saved) {
+            select.value = saved;
+        }
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nDiese Auswahl kann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Deine Platznummer: <strong style="color:#2c5aa0; font-size:1.2em;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function setupOptions() {
+        var optionContainers = document.querySelectorAll('.options');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+    }
+
+    function isQuestionAnswered(qId) {
+        switch(qId) {
+            case 'q1':
+                return document.getElementById('q1-t').value &&
+                       document.getElementById('q1-sx').value &&
+                       document.getElementById('q1-vy').value &&
+                       document.getElementById('q1-vres').value &&
+                       document.getElementById('q1-alpha').value;
+            case 'q2':
+                return document.getElementById('q2-v0').value &&
+                       document.getElementById('q2-h').value;
+            case 'q3':
+                return document.getElementById('q3-t').value &&
+                       document.getElementById('q3-sx').value;
+            case 'q4':
+                return document.querySelector('input[name="q4a"]:checked') &&
+                       document.querySelector('input[name="q4b"]:checked') &&
+                       document.querySelector('input[name="q4c"]:checked');
+            case 'q5':
+                var anyChecked = false;
+                var checkboxes = document.querySelectorAll('#q5 input[type="checkbox"]');
+                for (var i = 0; i < checkboxes.length; i++) {
+                    if (checkboxes[i].checked) anyChecked = true;
+                }
+                return anyChecked;
+            case 'q6':
+                return document.querySelector('input[name="q6a"]:checked') &&
+                       document.querySelector('input[name="q6b"]:checked');
+            default: return false;
+        }
+    }
+
+    function countAnsweredQuestions() {
+        var answered = 0;
+        for (var i = 1; i <= NUM_QUESTIONS; i++) {
+            if (isQuestionAnswered('q' + i)) answered++;
+        }
+        return answered;
+    }
+
+    function updateProgress() {
+        var answered = countAnsweredQuestions();
+        var percent = (answered / NUM_QUESTIONS) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = answered + ' / ' + NUM_QUESTIONS + ' beantwortet';
+    }
+
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        return {
+            q1t: document.getElementById('q1-t').value,
+            q1sx: document.getElementById('q1-sx').value,
+            q1vy: document.getElementById('q1-vy').value,
+            q1vres: document.getElementById('q1-vres').value,
+            q1alpha: document.getElementById('q1-alpha').value,
+            q2v0: document.getElementById('q2-v0').value,
+            q2h: document.getElementById('q2-h').value,
+            q3t: document.getElementById('q3-t').value,
+            q3sx: document.getElementById('q3-sx').value,
+            q4a: getRadioValue('q4a'),
+            q4b: getRadioValue('q4b'),
+            q4c: getRadioValue('q4c'),
+            q5a: document.getElementById('q5-cb-a').checked,
+            q5b: document.getElementById('q5-cb-b').checked,
+            q5c: document.getElementById('q5-cb-c').checked,
+            q5d: document.getElementById('q5-cb-d').checked,
+            q6a: getRadioValue('q6a'),
+            q6b: getRadioValue('q6b')
+        };
+    }
+
+    function restoreAnswers(saved) {
+        if (saved.q1t) document.getElementById('q1-t').value = saved.q1t;
+        if (saved.q1sx) document.getElementById('q1-sx').value = saved.q1sx;
+        if (saved.q1vy) document.getElementById('q1-vy').value = saved.q1vy;
+        if (saved.q1vres) document.getElementById('q1-vres').value = saved.q1vres;
+        if (saved.q1alpha) document.getElementById('q1-alpha').value = saved.q1alpha;
+        if (saved.q2v0) document.getElementById('q2-v0').value = saved.q2v0;
+        if (saved.q2h) document.getElementById('q2-h').value = saved.q2h;
+        if (saved.q3t) document.getElementById('q3-t').value = saved.q3t;
+        if (saved.q3sx) document.getElementById('q3-sx').value = saved.q3sx;
+
+        if (saved.q4a) {
+            var radio = document.querySelector('input[name="q4a"][value="' + saved.q4a + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+        if (saved.q4b) {
+            var radio = document.querySelector('input[name="q4b"][value="' + saved.q4b + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+        if (saved.q4c) {
+            var radio = document.querySelector('input[name="q4c"][value="' + saved.q4c + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+
+        if (saved.q5a) document.getElementById('q5-cb-a').checked = true;
+        if (saved.q5b) document.getElementById('q5-cb-b').checked = true;
+        if (saved.q5c) document.getElementById('q5-cb-c').checked = true;
+        if (saved.q5d) document.getElementById('q5-cb-d').checked = true;
+
+        if (saved.q6a) {
+            var radio = document.querySelector('input[name="q6a"][value="' + saved.q6a + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+        if (saved.q6b) {
+            var radio = document.querySelector('input[name="q6b"][value="' + saved.q6b + '"]');
+            if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+        }
+
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatNum = localStorage.getItem(STORAGE_KEY + '-seat');
+        if (!seatNum) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var score = 0;
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q1: Drohnen-Lieferung (10 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q1Score = 0;
+        var q1tEl = document.getElementById('q1-t');
+        var q1sxEl = document.getElementById('q1-sx');
+        var q1vyEl = document.getElementById('q1-vy');
+        var q1vresEl = document.getElementById('q1-vres');
+        var q1alphaEl = document.getElementById('q1-alpha');
+
+        if (isClose(parseNumber(q1tEl.value), answers.q1.t, 0.1)) {
+            q1Score += 2; q1tEl.classList.add('correct');
+        } else { q1tEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q1sxEl.value), answers.q1.sx, 1)) {
+            q1Score += 2; q1sxEl.classList.add('correct');
+        } else { q1sxEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q1vyEl.value), answers.q1.vy, 1)) {
+            q1Score += 2; q1vyEl.classList.add('correct');
+        } else { q1vyEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q1vresEl.value), answers.q1.vres, 1)) {
+            q1Score += 2; q1vresEl.classList.add('correct');
+        } else { q1vresEl.classList.add('incorrect'); }
+
+        if (q1alphaEl.value === answers.q1.alpha) {
+            q1Score += 2; q1alphaEl.classList.add('correct');
+        } else { q1alphaEl.classList.add('incorrect'); }
+
+        score += q1Score;
+        showFeedback('q1', q1Score === 10);
+        showQuestionResult('q1', q1Score, 10);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q2: Umkehraufgabe (4 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q2Score = 0;
+        var q2v0El = document.getElementById('q2-v0');
+        var q2hEl = document.getElementById('q2-h');
+
+        if (isClose(parseNumber(q2v0El.value), answers.q2.v0, 1)) {
+            q2Score += 2; q2v0El.classList.add('correct');
+        } else { q2v0El.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q2hEl.value), answers.q2.h, 1)) {
+            q2Score += 2; q2hEl.classList.add('correct');
+        } else { q2hEl.classList.add('incorrect'); }
+
+        score += q2Score;
+        showFeedback('q2', q2Score === 4);
+        showQuestionResult('q2', q2Score, 4);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q3: Schneller Wurf (3 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q3Score = 0;
+        var q3tEl = document.getElementById('q3-t');
+        var q3sxEl = document.getElementById('q3-sx');
+
+        if (isClose(parseNumber(q3tEl.value), answers.q3.t, 0.1)) {
+            q3Score += 1; q3tEl.classList.add('correct');
+        } else { q3tEl.classList.add('incorrect'); }
+
+        if (isClose(parseNumber(q3sxEl.value), answers.q3.sx, 1)) {
+            q3Score += 2; q3sxEl.classList.add('correct');
+        } else { q3sxEl.classList.add('incorrect'); }
+
+        score += q3Score;
+        showFeedback('q3', q3Score === 3);
+        showQuestionResult('q3', q3Score, 3);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q4: Verständnis MC (3 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q4Score = 0;
+        var q4aVal = getRadioValue('q4a');
+        var q4bVal = getRadioValue('q4b');
+        var q4cVal = getRadioValue('q4c');
+
+        if (q4aVal === answers.q4.a) {
+            q4Score += 1;
+            markRadioQuestion('q4a', answers.q4.a, q4aVal);
+        } else {
+            markRadioQuestion('q4a', answers.q4.a, q4aVal);
+        }
+
+        if (q4bVal === answers.q4.b) {
+            q4Score += 1;
+            markRadioQuestion('q4b', answers.q4.b, q4bVal);
+        } else {
+            markRadioQuestion('q4b', answers.q4.b, q4bVal);
+        }
+
+        if (q4cVal === answers.q4.c) {
+            q4Score += 1;
+            markRadioQuestion('q4c', answers.q4.c, q4cVal);
+        } else {
+            markRadioQuestion('q4c', answers.q4.c, q4cVal);
+        }
+
+        score += q4Score;
+        showFeedback('q4', q4Score === 3);
+        showQuestionResult('q4', q4Score, 3);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q5: Schräger Wurf Multi-Select (3 BE) mit Penalty
+        // ═══════════════════════════════════════════════════════════════════
+        var q5Score = 0;
+        var correctSet = answers.q5.correct;
+        var wrongSet = answers.q5.wrong;
+
+        var checkboxA = document.getElementById('q5-cb-a');
+        var checkboxB = document.getElementById('q5-cb-b');
+        var checkboxC = document.getElementById('q5-cb-c');
+        var checkboxD = document.getElementById('q5-cb-d');
+
+        // A ist korrekt
+        if (checkboxA.checked) {
+            q5Score += 1;
+            document.getElementById('q5-a').classList.add('correct');
+        } else {
+            document.getElementById('q5-a').classList.add('incorrect');
+        }
+
+        // B ist korrekt
+        if (checkboxB.checked) {
+            q5Score += 1;
+            document.getElementById('q5-b').classList.add('correct');
+        } else {
+            document.getElementById('q5-b').classList.add('incorrect');
+        }
+
+        // C ist FALSCH - Penalty wenn angekreuzt
+        if (checkboxC.checked) {
+            q5Score -= 1;
+            document.getElementById('q5-c').classList.add('incorrect');
+        } else {
+            document.getElementById('q5-c').classList.add('correct');
+        }
+
+        // D ist korrekt
+        if (checkboxD.checked) {
+            q5Score += 1;
+            document.getElementById('q5-d').classList.add('correct');
+        } else {
+            document.getElementById('q5-d').classList.add('incorrect');
+        }
+
+        // Minimum 0
+        q5Score = Math.max(0, q5Score);
+
+        score += q5Score;
+        showFeedback('q5', q5Score === 3);
+        showQuestionResult('q5', q5Score, 3);
+
+        // ═══════════════════════════════════════════════════════════════════
+        // Q6: Orbitalmechanik (4 BE)
+        // ═══════════════════════════════════════════════════════════════════
+        var q6Score = 0;
+        var q6aVal = getRadioValue('q6a');
+        var q6bVal = getRadioValue('q6b');
+
+        if (q6aVal === answers.q6.a) {
+            q6Score += 2;
+            markRadioQuestion('q6a', answers.q6.a, q6aVal);
+        } else {
+            markRadioQuestion('q6a', answers.q6.a, q6aVal);
+        }
+
+        if (q6bVal === answers.q6.b) {
+            q6Score += 2;
+            markRadioQuestion('q6b', answers.q6.b, q6bVal);
+        } else {
+            markRadioQuestion('q6b', answers.q6.b, q6bVal);
+        }
+
+        score += q6Score;
+        showFeedback('q6', q6Score === 4);
+        showQuestionResult('q6', q6Score, 4);
+
+        displayResults(score);
+    }
+
+    function markRadioQuestion(name, correct, selected) {
+        var options = document.querySelectorAll('#' + name + '-options .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (achieved === maxPts) result.classList.add('full');
+        else if (achieved > 0) result.classList.add('partial');
+        else result.classList.add('zero');
+        result.textContent = achieved + '/' + maxPts + ' BE';
+        meta.appendChild(result);
+    }
+
+    function displayResults(score) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatNum = localStorage.getItem(STORAGE_KEY + '-seat');
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: P' + seatNum;
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + MAX_POINTS;
+
+        // 15-NP-Skala (Sek II Standard)
+        var np = 0;
+        var percent = (score / MAX_POINTS) * 100;
+        if (percent >= 98.67) np = 15;
+        else if (percent >= 97.33) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 85.33) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+        else np = 0;
+
+        document.getElementById('gradeDisplay').textContent = np + ' NP';
+        var cellId = 'np' + np;
+        var cell = document.getElementById(cellId);
+        if (cell) cell.classList.add('current');
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel anzeigen (Anti-Betrug)
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '\u00d7 (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('resultsSection');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    function disableAllInputs() {
+        var inputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+    }
+
+    // Lehrer-Reset (Kennwort: 2024)
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2024') {
+            if (confirm('Wirklich alle Daten für diesen Platz löschen?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_KEY + '-seat');
+                localStorage.removeItem(STORAGE_KEY + '-submitted');
+                localStorage.removeItem(STORAGE_KEY + '-score');
+                localStorage.removeItem(STORAGE_KEY + '-start');
+                localStorage.removeItem(STORAGE_KEY + '-submit-time');
+                alert('Platz wurde zurückgesetzt. Seite wird neu geladen.');
+                location.reload();
+            }
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
+
+    window.onload = function() {
+        // Startzeit beim ersten Aufruf speichern (Anti-Betrug)
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        // Tab-Wechsel-Tracking initialisieren
+        initTabSwitchTracking();
+
+        generateSeatDropdown();
+        setupOptions();
+        loadProgress();
+        updateProgress();
+        checkUnlocked();
+
+        var allInputs = document.querySelectorAll('input, select, textarea');
+        for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+
+        // Bei Reload nach Abgabe: Ergebnisse erneut anzeigen
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

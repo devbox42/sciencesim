@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewerteter Lernpfad: Wellen und Schall | Physik 10MR</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f0ff;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+            --hypo: #6a1b9a;
+            --hypo-light: #f3e5f5;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 0;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; margin-bottom: 4px; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .bewertung-badge {
+            display: inline-block;
+            background: var(--error);
+            color: white;
+            padding: 3px 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 6px;
+        }
+
+        /* Erkenntnisweg-Leiste */
+        .ew-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 12px 10px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            margin: 0 -20px 15px;
+            flex-wrap: wrap;
+        }
+        .ew-step {
+            padding: 6px 10px;
+            font-size: 0.7em;
+            font-weight: 600;
+            background: var(--border);
+            color: var(--text-muted);
+            text-align: center;
+            min-width: 44px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ew-step.active { background: var(--fach); color: white; }
+        .ew-step.done { background: var(--success); color: white; }
+        .ew-step.graded { border-bottom: 3px solid var(--error); }
+        .ew-arrow {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            padding: 0 2px;
+        }
+
+        .progress-bar {
+            background: var(--border);
+            height: 6px;
+            margin: 0 0 15px;
+        }
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Phasen/Steps */
+        .step {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .step-title { font-size: 1.1em; font-weight: 600; color: var(--fach); }
+        .step-badge {
+            font-size: 0.75em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 8px;
+        }
+        .be-badge {
+            font-size: 0.75em;
+            background: var(--error-bg);
+            color: var(--error);
+            padding: 3px 8px;
+            font-weight: 700;
+        }
+
+        /* Zonen */
+        .practice-zone {
+            border: 2px solid var(--fach);
+            border-style: dashed;
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .practice-zone::before {
+            content: "UBUNG (unbewertet, beliebig oft)";
+            display: inline-block;
+            background: var(--fach);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            letter-spacing: 0.5px;
+        }
+        .assess-zone {
+            border: 2px solid var(--error);
+            padding: 15px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .assess-zone::before {
+            content: attr(data-label);
+            display: inline-block;
+            background: var(--error);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            letter-spacing: 0.5px;
+        }
+        .assess-zone.locked {
+            opacity: 0.85;
+            pointer-events: none;
+        }
+        .hypo-zone {
+            border: 2px solid var(--hypo);
+            padding: 15px;
+            margin: 15px 0;
+            background: var(--hypo-light);
+            position: relative;
+        }
+        .hypo-zone::before {
+            content: "HYPOTHESE (1 Versuch)";
+            display: inline-block;
+            background: var(--hypo);
+            color: white;
+            font-size: 0.7em;
+            font-weight: 700;
+            padding: 2px 10px;
+            position: absolute;
+            top: -12px;
+            left: 10px;
+        }
+        .hypo-confrontation {
+            background: var(--hypo-light);
+            border: 2px solid var(--hypo);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .hypo-confrontation .correct { color: var(--success); font-weight: 700; }
+        .hypo-confrontation .wrong { color: var(--error); font-weight: 700; }
+
+        h3 { font-size: 1em; font-weight: 600; margin: 15px 0 10px; color: var(--text); }
+        p { margin-bottom: 12px; }
+        .info-box {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .formel-box {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.3em;
+        }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-assess {
+            background: var(--error);
+        }
+        .btn-small { padding: 6px 12px; font-size: 0.9em; margin: 3px; }
+        .nav-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Simulation */
+        .sim-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        canvas {
+            border: 1px solid var(--border);
+            background: #fafafa;
+            display: block;
+            max-width: 100%;
+        }
+        .slider-group { margin-bottom: 8px; }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .slider-group input[type="range"] { width: 100%; min-height: 44px; }
+        .value-display {
+            background: var(--fach-light);
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        /* Wellenarten-Vergleich */
+        .wave-compare {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .wave-compare-item {
+            flex: 1 1 250px;
+            text-align: center;
+        }
+        .wave-compare-item h4 {
+            margin-bottom: 8px;
+            color: var(--fach);
+        }
+
+        /* Formularfelder */
+        input[type="number"], input[type="text"] {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            font-size: 1em;
+            width: 80px;
+            text-align: center;
+        }
+        select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-height: 44px;
+        }
+        .feedback {
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+            font-size: 0.9em;
+        }
+        .feedback.correct { background: var(--success-bg); border: 1px solid var(--success); color: var(--success); display: block; }
+        .feedback.incorrect { background: var(--error-bg); border: 1px solid var(--error); color: var(--error); display: block; }
+
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+
+        /* Tabellen */
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        th { background: var(--fach-light); }
+        .warning td { background: #fff8e1; }
+        .danger td { background: var(--error-bg); }
+
+        /* Mess-Tabelle */
+        .mess-table input {
+            width: 70px;
+            text-align: center;
+        }
+        .mess-table .locked-cell {
+            background: var(--fach-light);
+            font-weight: 600;
+        }
+
+        /* Ergebnis */
+        .results-grid {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .result-box {
+            flex: 1 1 120px;
+            text-align: center;
+            padding: 15px;
+            border: 1px solid var(--border);
+            background: var(--white);
+        }
+        .result-box .value { font-size: 2em; font-weight: 700; color: var(--fach); }
+        .result-box .label { font-size: 0.8em; color: var(--text-muted); margin-top: 5px; }
+        .grade-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .grade-display .grade {
+            font-size: 3em;
+            font-weight: 700;
+        }
+        .grade-display .grade.g1 { color: var(--success); }
+        .grade-display .grade.g2 { color: #4caf50; }
+        .grade-display .grade.g3 { color: var(--warning); }
+        .grade-display .grade.g4 { color: #e65100; }
+        .grade-display .grade.g5 { color: var(--error); }
+        .grade-display .grade.g6 { color: #b71c1c; }
+        .phase-breakdown { margin: 15px 0; }
+        .phase-breakdown td:first-child { text-align: left; }
+
+        /* Login */
+        .login-box {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 30px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .login-box input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .login-box .hint {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        /* MC-Optionen */
+        .mc-options { margin: 10px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .mc-option:hover { background: var(--fach-light); }
+        .mc-option.selected { background: var(--fach-light); border-color: var(--fach); font-weight: 600; }
+        .mc-option.correct-reveal { background: var(--success-bg); border-color: var(--success); }
+        .mc-option.wrong-reveal { background: var(--error-bg); border-color: var(--error); }
+        .mc-option.disabled { pointer-events: none; cursor: default; opacity: 0.85; }
+
+        .teacher-reset {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.7em;
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0.5;
+        }
+        .teacher-reset:hover { opacity: 1; }
+
+        @media print {
+            .btn, .nav-buttons, .ew-nav, .progress-bar, .teacher-reset { display: none !important; }
+            .step { display: block !important; page-break-inside: avoid; border: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Wellen und Schall</h1>
+        <p>Physik 10MR | Bewerteter Lernpfad | 15 BE</p>
+        <div class="bewertung-badge">Bewertet &ndash; Jede markierte Antwort z&auml;hlt!</div>
+    </header>
+
+    <!-- Erkenntnisweg-Navigation -->
+    <div class="ew-nav" id="ewNav">
+        <div class="ew-step graded" data-phase="1" id="ew1">Ph&auml;nomen</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="2" id="ew2">Hypothese</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="3" id="ew3">Experiment</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="4" id="ew4">Auswertung</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="5" id="ew5">Anwendung</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" data-phase="6" id="ew6">Verallgem.</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step" data-phase="7" id="ew7">Ergebnis</div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 0: Anmeldung -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step active" id="step0">
+        <div class="login-box">
+            <h2 style="color: var(--fach); margin-bottom: 10px;">Anmeldung</h2>
+            <p>Gib deinen vollst&auml;ndigen Namen ein, um zu starten.</p>
+            <input type="text" id="nameInput" placeholder="Vorname Nachname" autocomplete="off">
+            <button class="btn" id="btnStart" disabled onclick="startLP()">Lernpfad starten</button>
+            <p class="hint">Dein Name erzeugt deine individuelle Aufgabenversion.<br>Jede markierte Antwort wird bewertet (15 BE).</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 1: PH&Auml;NOMEN (2 BE) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step1">
+        <div class="step-header">
+            <span class="step-title">Phase 1: Ph&auml;nomen &ndash; Was ist eine Welle?</span>
+            <span class="be-badge">2 BE</span>
+        </div>
+
+        <p>Stell dir die <strong>La-Ola-Welle</strong> im Stadion vor: Die Zuschauer stehen nacheinander auf und setzen sich wieder hin. Die &bdquo;Welle&ldquo; wandert durchs Stadion &ndash; aber kein Zuschauer verl&auml;sst seinen Platz!</p>
+
+        <div class="wave-compare" style="margin: 15px 0;">
+            <div class="wave-compare-item">
+                <h4>Transversalwelle</h4>
+                <p style="font-size:0.85em;">Teilchen schwingen <strong>senkrecht</strong> zur Ausbreitung</p>
+                <canvas id="transCanvas" width="280" height="140"></canvas>
+                <p style="font-size:0.8em; color: var(--text-muted);">Beispiel: Seilwelle</p>
+            </div>
+            <div class="wave-compare-item">
+                <h4>Longitudinalwelle</h4>
+                <p style="font-size:0.85em;">Teilchen schwingen <strong>parallel</strong> zur Ausbreitung</p>
+                <canvas id="longCanvas" width="280" height="140"></canvas>
+                <p style="font-size:0.8em; color: var(--text-muted);">Beispiel: Schallwelle</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Merke:</strong> Eine Welle transportiert <strong>Energie</strong>, aber die Teilchen bleiben an ihrem Ort und schwingen nur um ihre Ruhelage.
+        </div>
+
+        <!-- &Uuml;bungszone -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>Ordne zu:</strong></p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <span>Seilwelle:</span>
+                <select id="practice-w1" style="min-width: 140px;">
+                    <option value="">-- w&auml;hlen --</option>
+                    <option value="trans">transversal</option>
+                    <option value="long">longitudinal</option>
+                    <option value="beide">Mischform</option>
+                </select>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px;">
+                <span>Schallwelle in Luft:</span>
+                <select id="practice-w2" style="min-width: 140px;">
+                    <option value="">-- w&auml;hlen --</option>
+                    <option value="trans">transversal</option>
+                    <option value="long">longitudinal</option>
+                    <option value="beide">Mischform</option>
+                </select>
+            </div>
+            <button class="btn btn-small" onclick="checkPracticeWaves()">Pr&uuml;fen</button>
+            <div class="feedback" id="fb-practice-waves"></div>
+        </div>
+
+        <!-- Bewertungszone -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; 2 BE (1 Versuch)" id="assess1">
+            <p style="margin-top: 8px;"><strong>Ordne zu (andere Beispiele):</strong></p>
+            <div id="assess1-container"></div>
+            <button class="btn btn-assess btn-small" id="btn-assess1" onclick="submitPhase1()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess1"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next1" disabled onclick="goToPhase(2)">Weiter zur Hypothese &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 2: HYPOTHESE (2 BE) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step2">
+        <div class="step-header">
+            <span class="step-title">Phase 2: Hypothese &ndash; Was beeinflusst die Wellengeschwindigkeit?</span>
+            <span class="be-badge">2 BE</span>
+        </div>
+
+        <p>Eine Welle hat drei wichtige Gr&ouml;&szlig;en:</p>
+        <ul style="margin: 0 0 15px 25px;">
+            <li><strong>Wellenl&auml;nge &lambda;</strong> (Lambda) &ndash; Abstand von Berg zu Berg</li>
+            <li><strong>Frequenz <span class="fz">f</span></strong> &ndash; Wie oft pro Sekunde ein Berg vorbeikommt</li>
+            <li><strong>Geschwindigkeit <span class="fz">v</span></strong> &ndash; Wie schnell sich die Welle ausbreitet</li>
+        </ul>
+
+        <p><strong>Erkunde die Simulation 60 Sekunden lang</strong>, bevor du deine Hypothese abgibst:</p>
+
+        <div class="sim-container">
+            <canvas id="hypoCanvas" width="480" height="160"></canvas>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px;">
+                <div class="slider-group" style="flex: 1 1 200px;">
+                    <label>&lambda; (Wellenl&auml;nge): <span id="hypoLambdaVal">120</span> cm</label>
+                    <input type="range" id="hypoLambdaSlider" min="60" max="200" step="10" value="120">
+                </div>
+                <div class="slider-group" style="flex: 1 1 200px;">
+                    <label><span class="fz">f</span> (Frequenz): <span id="hypoFreqVal">1,0</span> Hz</label>
+                    <input type="range" id="hypoFreqSlider" min="5" max="30" step="1" value="10">
+                </div>
+            </div>
+            <div class="value-display">
+                <div class="value-row">
+                    <span><span class="fz">v</span> = &lambda; &middot; <span class="fz">f</span></span>
+                    <strong id="hypoSpeed">120 cm/s</strong>
+                </div>
+            </div>
+            <p id="hypoTimer" style="text-align:center; margin-top:8px; font-weight:600; color: var(--hypo);">Erkunde noch: 60s</p>
+        </div>
+
+        <div class="hypo-zone" id="hypoZone">
+            <p style="margin-top: 8px;"><strong>Deine Vorhersage:</strong></p>
+            <div style="margin: 10px 0;">
+                <p>Wenn &lambda; gr&ouml;&szlig;er wird (<span class="fz">f</span> bleibt gleich): Was passiert mit <span class="fz">v</span>?</p>
+                <select id="hypo1" style="width: 200px;">
+                    <option value="">-- w&auml;hlen --</option>
+                    <option value="groesser">v wird gr&ouml;&szlig;er</option>
+                    <option value="kleiner">v wird kleiner</option>
+                    <option value="gleich">v bleibt gleich</option>
+                </select>
+            </div>
+            <div style="margin: 10px 0;">
+                <p>Wenn <span class="fz">f</span> gr&ouml;&szlig;er wird (&lambda; bleibt gleich): Was passiert mit <span class="fz">v</span>?</p>
+                <select id="hypo2" style="width: 200px;">
+                    <option value="">-- w&auml;hlen --</option>
+                    <option value="groesser">v wird gr&ouml;&szlig;er</option>
+                    <option value="kleiner">v wird kleiner</option>
+                    <option value="gleich">v bleibt gleich</option>
+                </select>
+            </div>
+            <button class="btn btn-assess btn-small" id="btn-hypo" onclick="submitHypothesis()" disabled>Hypothese abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-hypo"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next2" disabled onclick="goToPhase(3)">Weiter zum Experiment &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 3: EXPERIMENT (3 BE) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step3">
+        <div class="step-header">
+            <span class="step-title">Phase 3: Experiment &ndash; Daten sammeln</span>
+            <span class="be-badge">3 BE</span>
+        </div>
+
+        <p>Jetzt &uuml;berpr&uuml;fst du deine Hypothese experimentell. F&uuml;hre <strong>3 Messungen</strong> an der Wellenwanne durch.</p>
+
+        <div class="sim-container">
+            <canvas id="waveCanvas" width="560" height="220"></canvas>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px;">
+                <div class="slider-group" style="flex: 1 1 200px;">
+                    <label>&lambda;: <span id="lambdaValue">120</span> cm</label>
+                    <input type="range" id="lambdaSlider" min="60" max="200" step="10" value="120">
+                </div>
+                <div class="slider-group" style="flex: 1 1 200px;">
+                    <label><span class="fz">f</span>: <span id="freqValue">1,0</span> Hz</label>
+                    <input type="range" id="freqSlider" min="5" max="30" step="1" value="10">
+                </div>
+            </div>
+            <div class="value-display">
+                <div class="value-row">
+                    <span>&lambda; = <span id="dispLambda">120 cm</span></span>
+                    <span><span class="fz">f</span> = <span id="dispFreq">1,0 Hz</span></span>
+                    <strong><span class="fz">v</span> = <span id="dispSpeed">120 cm/s</span></strong>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <button class="btn btn-small" id="btnWaveStart">Start</button>
+                <button class="btn btn-small" id="btnWavePause" style="display:none;">Pause (Snapshot)</button>
+                <button class="btn btn-small" onclick="resetWave()">Reset</button>
+            </div>
+        </div>
+
+        <!-- &Uuml;bungsmessung -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>Probemessung:</strong> Stelle &lambda; = 100 cm und <span class="fz">f</span> = 1,5 Hz ein. Lies <span class="fz">v</span> ab.</p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span><span class="fz">v</span> = </span>
+                <input type="text" id="practice-v" style="width: 80px;" inputmode="decimal">
+                <span>cm/s</span>
+                <button class="btn btn-small" onclick="checkPracticeMeasure()">Pr&uuml;fen</button>
+            </div>
+            <div class="feedback" id="fb-practice-measure"></div>
+        </div>
+
+        <!-- Bewertete Messungen -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; 3 BE (1 Versuch)" id="assess3">
+            <p style="margin-top: 8px;"><strong>Messreihe:</strong> Stelle die angegebenen Werte ein und lies <span class="fz">v</span> ab.</p>
+            <table class="mess-table">
+                <tr>
+                    <th>#</th>
+                    <th>&lambda; (cm)</th>
+                    <th><span class="fz">f</span> (Hz)</th>
+                    <th><span class="fz">v</span> (cm/s) &ndash; ablesen</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td class="locked-cell" id="m1-lambda">—</td>
+                    <td class="locked-cell" id="m1-freq">—</td>
+                    <td><input type="text" id="m1-v" inputmode="decimal"></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td class="locked-cell" id="m2-lambda">—</td>
+                    <td class="locked-cell" id="m2-freq">—</td>
+                    <td><input type="text" id="m2-v" inputmode="decimal"></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td class="locked-cell" id="m3-lambda">—</td>
+                    <td class="locked-cell" id="m3-freq">—</td>
+                    <td><input type="text" id="m3-v" inputmode="decimal"></td>
+                </tr>
+            </table>
+            <button class="btn btn-assess btn-small" id="btn-assess3" onclick="submitPhase3()">Messreihe abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess3"></div>
+        </div>
+
+        <!-- Hypothesen-Konfrontation -->
+        <div class="hypo-confrontation" id="hypoConfront" style="display: none;">
+            <h3 style="color: var(--hypo);">Hypothesen-Check</h3>
+            <div id="hypoConfrontContent"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next3" disabled onclick="goToPhase(4)">Weiter zur Auswertung &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 4: AUSWERTUNG (3 BE) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step4">
+        <div class="step-header">
+            <span class="step-title">Phase 4: Auswertung &ndash; Die Formel</span>
+            <span class="be-badge">3 BE</span>
+        </div>
+
+        <p>Aus deinen Messdaten ergibt sich ein einfacher Zusammenhang:</p>
+        <ul style="margin: 0 0 12px 25px;">
+            <li>In einer Periodendauer <span class="fz">T</span> legt die Welle genau eine Wellenl&auml;nge &lambda; zur&uuml;ck</li>
+            <li>Also: <span class="fz">v</span> = &lambda; / <span class="fz">T</span> = &lambda; &middot; (1/<span class="fz">T</span>) = &lambda; &middot; <span class="fz">f</span></li>
+        </ul>
+
+        <div class="formel-box">
+            <span class="fz">v</span> = &lambda; &middot; <span class="fz">f</span>
+        </div>
+
+        <table>
+            <tr><th>Gr&ouml;&szlig;e</th><th>Formelzeichen</th><th>Einheit</th></tr>
+            <tr><td>Geschwindigkeit</td><td><span class="fz">v</span></td><td>m/s (oder cm/s)</td></tr>
+            <tr><td>Wellenl&auml;nge</td><td>&lambda;</td><td>m (oder cm)</td></tr>
+            <tr><td>Frequenz</td><td><span class="fz">f</span></td><td>Hz = 1/s</td></tr>
+        </table>
+
+        <!-- &Uuml;bung -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>&Uuml;bungsrechnung:</strong> &lambda; = 2 m, <span class="fz">f</span> = 5 Hz. Berechne <span class="fz">v</span>.</p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span><span class="fz">v</span> = &lambda; &middot; <span class="fz">f</span> = </span>
+                <input type="text" id="practice-calc" inputmode="decimal" style="width:80px;">
+                <span>m/s</span>
+                <button class="btn btn-small" onclick="checkPracticeCalc()">Pr&uuml;fen</button>
+            </div>
+            <div class="feedback" id="fb-practice-calc"></div>
+        </div>
+
+        <!-- Bewertung -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; 3 BE (1 Versuch)" id="assess4">
+            <p style="margin-top: 8px;" id="assess4-q1"></p>
+            <div id="assess4-mc" class="mc-options" style="margin-bottom:15px;"></div>
+
+            <p id="assess4-q2"></p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="assess4-q2-label"></span>
+                <input type="text" id="assess4-input1" inputmode="decimal" style="width:80px;">
+                <span id="assess4-q2-unit"></span>
+            </div>
+
+            <p id="assess4-q3"></p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+                <span id="assess4-q3-label"></span>
+                <input type="text" id="assess4-input2" inputmode="decimal" style="width:80px;">
+                <span id="assess4-q3-unit"></span>
+            </div>
+
+            <button class="btn btn-assess btn-small" id="btn-assess4" onclick="submitPhase4()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess4"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next4" disabled onclick="goToPhase(5)">Weiter zur Anwendung &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 5: ANWENDUNG (3 BE) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step5">
+        <div class="step-header">
+            <span class="step-title">Phase 5: Anwendung &ndash; Schallwellen</span>
+            <span class="be-badge">3 BE</span>
+        </div>
+
+        <p>Schall ist eine <strong>Longitudinalwelle</strong> in Luft. Luftteilchen werden abwechselnd zusammengedr&uuml;ckt (Verdichtung) und auseinandergezogen (Verd&uuml;nnung).</p>
+
+        <div class="formel-box" style="font-size: 1.1em;">
+            <span class="fz">v</span><sub>Schall</sub> &asymp; 340 m/s &nbsp;(in Luft bei 20 &deg;C)
+        </div>
+
+        <div class="info-box">
+            <strong>Faustregel:</strong> Schall legt in <strong>3 Sekunden etwa 1 km</strong> zur&uuml;ck.
+        </div>
+
+        <h3>H&ouml;rbereich des Menschen</h3>
+        <table>
+            <tr><th>Bereich</th><th>Frequenz</th></tr>
+            <tr><td>Infraschall (nicht h&ouml;rbar)</td><td>unter 20 Hz</td></tr>
+            <tr><td><strong>H&ouml;rbereich</strong></td><td><strong>20 Hz &ndash; 20 000 Hz</strong></td></tr>
+            <tr><td>Ultraschall (nicht h&ouml;rbar)</td><td>&uuml;ber 20 000 Hz</td></tr>
+        </table>
+
+        <h3>Lautst&auml;rke</h3>
+        <table>
+            <tr><th>Schallquelle</th><th>Lautst&auml;rke</th></tr>
+            <tr><td>Bl&auml;tterrauschen</td><td>10 dB</td></tr>
+            <tr><td>Fl&uuml;stern</td><td>30 dB</td></tr>
+            <tr><td>Normales Gespr&auml;ch</td><td>60 dB</td></tr>
+            <tr class="warning"><td>Stra&szlig;enverkehr</td><td>70&ndash;85 dB</td></tr>
+            <tr class="danger"><td>Konzert, Kreiss&auml;ge</td><td>100&ndash;110 dB</td></tr>
+            <tr class="danger"><td>Schmerzgrenze</td><td>120 dB</td></tr>
+        </table>
+
+        <div class="info-box" style="background: var(--error-bg); border-color: var(--error);">
+            <strong style="color: var(--error);">Gesundheitsgefahr:</strong> Ab 85 dB drohen bei Dauerbelastung bleibende H&ouml;rsch&auml;den! Geh&ouml;rschutz tragen!
+        </div>
+
+        <!-- &Uuml;bung -->
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>Blitz und Donner (&Uuml;bung):</strong> Du siehst einen Blitz und h&ouml;rst den Donner 6 Sekunden sp&auml;ter. Wie weit?</p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span><span class="fz">s</span> = <span class="fz">v</span> &middot; <span class="fz">t</span> = </span>
+                <input type="text" id="practice-blitz" inputmode="decimal" style="width:80px;">
+                <span>m</span>
+                <button class="btn btn-small" onclick="checkPracticeBlitz()">Pr&uuml;fen</button>
+            </div>
+            <div class="feedback" id="fb-practice-blitz"></div>
+        </div>
+
+        <!-- Bewertung -->
+        <div class="assess-zone" data-label="BEWERTET &ndash; 3 BE (1 Versuch)" id="assess5">
+            <p style="margin-top: 8px;" id="assess5-blitz-text"></p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                <span><span class="fz">s</span> = </span>
+                <input type="text" id="assess5-m" inputmode="decimal" style="width:80px;">
+                <span>m &asymp;</span>
+                <input type="text" id="assess5-km" inputmode="decimal" style="width:60px;">
+                <span>km</span>
+            </div>
+
+            <p id="assess5-mc-text"></p>
+            <div id="assess5-mc" class="mc-options"></div>
+
+            <button class="btn btn-assess btn-small" id="btn-assess5" onclick="submitPhase5()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess5"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next5" disabled onclick="goToPhase(6)">Weiter zur Verallgemeinerung &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 6: VERALLGEMEINERUNG (2 BE) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step6">
+        <div class="step-header">
+            <span class="step-title">Phase 6: Verallgemeinerung</span>
+            <span class="be-badge">2 BE</span>
+        </div>
+
+        <div class="assess-zone" data-label="BEWERTET &ndash; 2 BE (1 Versuch)" id="assess6">
+            <p style="margin-top: 8px;"><strong>1. Merksatz vervollst&auml;ndigen:</strong></p>
+            <p>Eine Welle transportiert
+                <select id="gen1a" style="min-width: 100px;">
+                    <option value="">--</option>
+                    <option value="energie">Energie</option>
+                    <option value="masse">Masse</option>
+                    <option value="teilchen">Teilchen</option>
+                </select>,
+                aber die Teilchen bleiben an ihrem
+                <select id="gen1b" style="min-width: 100px;">
+                    <option value="">--</option>
+                    <option value="ort">Ort</option>
+                    <option value="ziel">Ziel</option>
+                    <option value="anfang">Anfang</option>
+                </select>.
+            </p>
+
+            <p style="margin-top: 15px;"><strong>2. Behauptung bewerten:</strong></p>
+            <p id="gen2-claim"></p>
+            <div id="gen2-mc" class="mc-options"></div>
+
+            <button class="btn btn-assess btn-small" id="btn-assess6" onclick="submitPhase6()">Abgeben (1 Versuch!)</button>
+            <div class="feedback" id="fb-assess6"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next6" disabled onclick="showResults()">Ergebnis anzeigen &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 7: ERGEBNIS -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step7">
+        <div class="step-header">
+            <span class="step-title">Ergebnis</span>
+            <span class="step-badge">Abschluss</span>
+        </div>
+
+        <p style="text-align: center; font-size: 1.1em; margin-bottom: 5px;" id="resultName"></p>
+
+        <div class="results-grid">
+            <div class="result-box">
+                <div class="value" id="resBE">0</div>
+                <div class="label">von 15 BE</div>
+            </div>
+            <div class="result-box">
+                <div class="value" id="resProzent">0%</div>
+                <div class="label">erreicht</div>
+            </div>
+        </div>
+
+        <div class="grade-display">
+            <div class="grade" id="resNote">&ndash;</div>
+            <div class="label">Note (MR Klasse 10)</div>
+        </div>
+
+        <h3>Phasen-Aufschl&uuml;sselung</h3>
+        <table class="phase-breakdown">
+            <tr><th>Phase</th><th>Thema</th><th>erreicht</th><th>max</th></tr>
+            <tr><td>1</td><td>Ph&auml;nomen</td><td id="res-p1">0</td><td>2</td></tr>
+            <tr><td>2</td><td>Hypothese</td><td id="res-p2">0</td><td>2</td></tr>
+            <tr><td>3</td><td>Experiment</td><td id="res-p3">0</td><td>3</td></tr>
+            <tr><td>4</td><td>Auswertung</td><td id="res-p4">0</td><td>3</td></tr>
+            <tr><td>5</td><td>Anwendung</td><td id="res-p5">0</td><td>3</td></tr>
+            <tr><td>6</td><td>Verallgemeinerung</td><td id="res-p6">0</td><td>2</td></tr>
+            <tr style="font-weight:700;"><td></td><td>Gesamt</td><td id="res-total">0</td><td>15</td></tr>
+        </table>
+
+        <h3>Notenspiegel</h3>
+        <table>
+            <tr><th>Note</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+            <tr><td>ab BE</td><td>14</td><td>12</td><td>9</td><td>7</td><td>4</td><td>0</td></tr>
+            <tr><td>ab %</td><td>93</td><td>80</td><td>60</td><td>47</td><td>27</td><td>&lt;27</td></tr>
+        </table>
+
+        <div class="hypo-confrontation" id="hypoFinalBox" style="margin-top: 20px;">
+            <h3 style="color: var(--hypo);">Dein Erkenntnisweg</h3>
+            <div id="hypoFinalContent"></div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; padding: 15px; background: var(--fach-light);">
+            <p>Pr&uuml;fcode: <strong id="resCode">&ndash;</strong></p>
+            <p style="font-size:0.8em; color: var(--text-muted);" id="resTimestamp"></p>
+        </div>
+
+        <div id="resTabInfo" style="margin-top: 10px; font-size: 0.85em; color: var(--text-muted); text-align: center;"></div>
+    </div>
+</div>
+
+<div class="teacher-reset" onclick="teacherReset()">Lehrer-Reset</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// BEWERTETER LERNPFAD: Wellen und Schall
+// ES5 | Physik 10MR | Erkenntnisweg-Bewertung
+// ═══════════════════════════════════════════════════════════════
+
+var LP_ID = 'lp-05b-wellen-bewertet';
+var TOTAL_BE = 15;
+var TOTAL_PHASES = 7; // 0=login, 1-6=phases, 7=result
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+
+var state = {
+    name: '',
+    seed: 0,
+    currentPhase: 0,
+    scores: { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0 },
+    submitted: { p1: false, p2: false, p3: false, p4: false, p5: false, p6: false },
+    hypotheses: { lambda: '', freq: '' },
+    measurements: [null, null, null],
+    completed: false,
+    startTime: null,
+    phaseTimestamps: {}
+};
+
+var tabSwitchCount = 0;
+var tabSwitchStart = 0;
+var tabSwitchSeconds = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// SEED-FUNKTIONEN
+// ═══════════════════════════════════════════════════════════════
+
+function seedFromName(name) {
+    var hash = 0;
+    var str = name.trim().toLowerCase();
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash);
+}
+
+function createRNG(seed) {
+    var s = seed;
+    return {
+        next: function() {
+            s = (s * 9301 + 49297) % 233280;
+            return s / 233280;
+        },
+        nextInt: function(max) {
+            return Math.floor(this.next() * max);
+        }
+    };
+}
+
+function shuffleWithRNG(arr, rng) {
+    var result = arr.slice();
+    for (var i = result.length - 1; i > 0; i--) {
+        var j = rng.nextInt(i + 1);
+        var temp = result[i];
+        result[i] = result[j];
+        result[j] = temp;
+    }
+    return result;
+}
+
+function generateVerification(name, score, date) {
+    var str = name.toLowerCase().trim() + '-' + score + '-' + date;
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36).toUpperCase().substr(0, 6);
+}
+
+function parseNum(val) {
+    if (!val) return NaN;
+    return parseFloat(String(val).replace(',', '.'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WERTE-POOLS
+// ═══════════════════════════════════════════════════════════════
+
+var WAVE_CLASSIFICATION_POOL = [
+    { name: 'Erdbeben-P-Welle', answer: 'long' },
+    { name: 'Gitarrensaite', answer: 'trans' },
+    { name: 'Ultraschall in Luft', answer: 'long' },
+    { name: 'Licht', answer: 'trans' },
+    { name: 'Federkette (zusammendr\u00fccken)', answer: 'long' },
+    { name: 'Seil sch\u00fctteln', answer: 'trans' },
+    { name: 'Wasserwelle (Oberfl\u00e4che)', answer: 'beide' },
+    { name: 'La-Ola-Welle', answer: 'trans' }
+];
+
+// Mess-Schemata: Jeweils 3 Messungen, die lambda- und f-Variation zeigen
+// m0→m1: lambda steigt (f gleich) → v steigt
+// m1→m2: f steigt (lambda gleich) → v steigt
+var MEASUREMENT_SCHEMES = [
+    { m: [{ l: 60, f: 1.0 }, { l: 120, f: 1.0 }, { l: 120, f: 2.0 }] },
+    { m: [{ l: 80, f: 1.0 }, { l: 160, f: 1.0 }, { l: 160, f: 2.0 }] },
+    { m: [{ l: 100, f: 0.5 }, { l: 200, f: 0.5 }, { l: 200, f: 1.0 }] },
+    { m: [{ l: 60, f: 1.5 }, { l: 120, f: 1.5 }, { l: 120, f: 3.0 }] },
+    { m: [{ l: 80, f: 0.5 }, { l: 160, f: 0.5 }, { l: 160, f: 1.5 }] }
+];
+
+// v=lambda*f Rechnungen (alle kopfrechenbar, ganzzahlig)
+var CALC_POOL_V = [
+    { l: 3, f: 4, v: 12 }, { l: 4, f: 2, v: 8 }, { l: 5, f: 3, v: 15 },
+    { l: 2, f: 6, v: 12 }, { l: 6, f: 2, v: 12 }, { l: 3, f: 5, v: 15 },
+    { l: 4, f: 3, v: 12 }, { l: 5, f: 4, v: 20 }, { l: 10, f: 2, v: 20 },
+    { l: 2, f: 8, v: 16 }, { l: 4, f: 5, v: 20 }, { l: 3, f: 3, v: 9 },
+    { l: 6, f: 3, v: 18 }, { l: 5, f: 2, v: 10 }, { l: 2, f: 4, v: 8 },
+    { l: 8, f: 2, v: 16 }, { l: 4, f: 4, v: 16 }, { l: 5, f: 5, v: 25 },
+    { l: 10, f: 3, v: 30 }, { l: 3, f: 2, v: 6 }
+];
+
+// lambda = v/f (alle ganzzahlig)
+var CALC_POOL_LAMBDA = [
+    { v: 12, f: 3, l: 4 }, { v: 18, f: 6, l: 3 }, { v: 20, f: 4, l: 5 },
+    { v: 15, f: 5, l: 3 }, { v: 24, f: 8, l: 3 }, { v: 16, f: 4, l: 4 },
+    { v: 10, f: 2, l: 5 }, { v: 30, f: 6, l: 5 }, { v: 8, f: 4, l: 2 },
+    { v: 12, f: 4, l: 3 }, { v: 20, f: 5, l: 4 }, { v: 6, f: 3, l: 2 },
+    { v: 9, f: 3, l: 3 }, { v: 14, f: 7, l: 2 }, { v: 25, f: 5, l: 5 }
+];
+
+// Blitz-Donner Verzögerungen (Sekunden)
+var BLITZ_POOL = [3, 4, 5, 7, 8, 9, 10, 12, 15];
+
+// MC-Fragen für Phase 5 (Schall)
+var SOUND_MC_POOL = [
+    {
+        text: 'Welche Aussage \u00fcber Ultraschall ist richtig?',
+        options: ['Ultraschall ist leiser als Infraschall', 'Ultraschall hat eine Frequenz \u00fcber 20 000 Hz', 'Ultraschall breitet sich schneller aus als normaler Schall', 'Ultraschall kann nur in Wasser existieren'],
+        correct: 1
+    },
+    {
+        text: 'Ab welcher Lautst\u00e4rke drohen bei Dauerbelastung H\u00f6rsch\u00e4den?',
+        options: ['Ab 60 dB', 'Ab 85 dB', 'Ab 120 dB', 'Ab 140 dB'],
+        correct: 1
+    },
+    {
+        text: 'Schall breitet sich in Stahl schneller aus als in Luft. Was ist der Grund?',
+        options: ['Stahl ist leichter', 'Die Teilchen in Stahl liegen dichter beieinander', 'Stahl hat eine h\u00f6here Temperatur', 'In Stahl gibt es keine Reibung'],
+        correct: 1
+    },
+    {
+        text: 'Im Vakuum (leerer Raum) h\u00f6rst du keinen Schall. Warum?',
+        options: ['Vakuum absorbiert den Schall', 'Im Vakuum gibt es keine Teilchen, die schwingen k\u00f6nnten', 'Die Temperatur ist zu niedrig', 'Schall wird vom Vakuum reflektiert'],
+        correct: 1
+    },
+    {
+        text: 'Welche Wellenart ist Schall in Luft?',
+        options: ['Transversalwelle', 'Longitudinalwelle', 'Elektromagnetische Welle', 'Stehende Welle'],
+        correct: 1
+    }
+];
+
+// Behauptungen für Phase 6
+var CLAIM_POOL = [
+    {
+        claim: 'Max sagt: "Wenn ich die Frequenz einer Schallwelle verdopple, verdoppelt sich auch die Schallgeschwindigkeit."',
+        options: ['Max hat recht', 'Max hat unrecht \u2013 die Geschwindigkeit \u00e4ndert sich nicht, aber die Wellenl\u00e4nge halbiert sich', 'Max hat unrecht \u2013 die Geschwindigkeit halbiert sich'],
+        correct: 1
+    },
+    {
+        claim: 'Lena sagt: "Schall kann sich auch im Vakuum (leerer Raum) ausbreiten."',
+        options: ['Lena hat recht \u2013 Schall geht \u00fcberall', 'Lena hat unrecht \u2013 Schall braucht Teilchen (Medium) zur Ausbreitung', 'Lena hat unrecht \u2013 Schall kann nur in Luft existieren'],
+        correct: 1
+    },
+    {
+        claim: 'Tim sagt: "Bei einer Welle wandern die Teilchen mit der Welle mit."',
+        options: ['Tim hat recht', 'Tim hat unrecht \u2013 die Teilchen schwingen nur um ihre Ruhelage', 'Tim hat unrecht \u2013 die Teilchen bewegen sich entgegen der Wellenrichtung'],
+        correct: 1
+    },
+    {
+        claim: 'Sara sagt: "Wenn die Wellenl\u00e4nge doppelt so gro\u00df wird und die Frequenz gleich bleibt, verdoppelt sich auch die Geschwindigkeit."',
+        options: ['Sara hat recht \u2013 v = \u03bb \u00b7 f, also v verdoppelt sich', 'Sara hat unrecht \u2013 v bleibt immer gleich', 'Sara hat unrecht \u2013 v halbiert sich'],
+        correct: 0
+    }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// PERSONALISIERTE AUFGABEN
+// ═══════════════════════════════════════════════════════════════
+
+var myClassify = [];    // Phase 1: 3 Zuordnungen
+var myScheme = null;    // Phase 3: Messschema
+var myCalcV = null;     // Phase 4: v-Berechnung
+var myCalcL = null;     // Phase 4: lambda-Berechnung
+var myBlitz = 0;        // Phase 5: Blitz-Verzögerung
+var mySoundMC = null;   // Phase 5: MC-Frage
+var myClaim = null;     // Phase 6: Behauptung
+
+function buildPersonalTasks() {
+    var rng1 = createRNG(state.seed + 100);
+    myClassify = shuffleWithRNG(WAVE_CLASSIFICATION_POOL, rng1).slice(0, 3);
+
+    var rng3 = createRNG(state.seed + 300);
+    myScheme = MEASUREMENT_SCHEMES[rng3.nextInt(MEASUREMENT_SCHEMES.length)];
+
+    var rng4 = createRNG(state.seed + 400);
+    myCalcV = CALC_POOL_V[rng4.nextInt(CALC_POOL_V.length)];
+    myCalcL = CALC_POOL_LAMBDA[rng4.nextInt(CALC_POOL_LAMBDA.length)];
+
+    var rng5 = createRNG(state.seed + 500);
+    myBlitz = BLITZ_POOL[rng5.nextInt(BLITZ_POOL.length)];
+    mySoundMC = SOUND_MC_POOL[rng5.nextInt(SOUND_MC_POOL.length)];
+
+    var rng6 = createRNG(state.seed + 600);
+    myClaim = CLAIM_POOL[rng6.nextInt(CLAIM_POOL.length)];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI AUFBAUEN
+// ═══════════════════════════════════════════════════════════════
+
+function buildPhase1() {
+    var container = document.getElementById('assess1-container');
+    container.innerHTML = '';
+    for (var i = 0; i < myClassify.length; i++) {
+        var div = document.createElement('div');
+        div.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;';
+        div.innerHTML = '<span>' + myClassify[i].name + ':</span>' +
+            '<select id="a1-' + i + '" style="min-width:140px;">' +
+            '<option value="">-- w\u00e4hlen --</option>' +
+            '<option value="trans">transversal</option>' +
+            '<option value="long">longitudinal</option>' +
+            '<option value="beide">Mischform</option>' +
+            '</select>';
+        container.appendChild(div);
+    }
+}
+
+function buildPhase3() {
+    for (var i = 0; i < 3; i++) {
+        document.getElementById('m' + (i + 1) + '-lambda').textContent = myScheme.m[i].l;
+        document.getElementById('m' + (i + 1) + '-freq').textContent = myScheme.m[i].f.toFixed(1).replace('.', ',');
+    }
+}
+
+function buildPhase4() {
+    // MC: Formel identifizieren
+    var rng = createRNG(state.seed + 410);
+    var formulaOpts = shuffleWithRNG([
+        { text: 'v = \u03bb \u00b7 f', correct: true },
+        { text: 'v = \u03bb / f', correct: false },
+        { text: 'v = f / \u03bb', correct: false },
+        { text: 'v = \u03bb + f', correct: false }
+    ], rng);
+
+    document.getElementById('assess4-q1').innerHTML = '<strong>1.</strong> Welche Formel beschreibt die Wellengeschwindigkeit?';
+    var mcDiv = document.getElementById('assess4-mc');
+    mcDiv.innerHTML = '';
+    for (var i = 0; i < formulaOpts.length; i++) {
+        var opt = document.createElement('div');
+        opt.className = 'mc-option';
+        opt.setAttribute('data-correct', formulaOpts[i].correct ? '1' : '0');
+        opt.setAttribute('data-index', i);
+        opt.textContent = formulaOpts[i].text;
+        opt.onclick = function() {
+            var siblings = this.parentNode.querySelectorAll('.mc-option');
+            for (var j = 0; j < siblings.length; j++) siblings[j].classList.remove('selected');
+            this.classList.add('selected');
+        };
+        mcDiv.appendChild(opt);
+    }
+
+    // Rechnung 1: v berechnen
+    document.getElementById('assess4-q2').innerHTML = '<strong>2.</strong> Berechne <span class="fz">v</span>: &lambda; = ' + myCalcV.l + ' m, <span class="fz">f</span> = ' + myCalcV.f + ' Hz';
+    document.getElementById('assess4-q2-label').innerHTML = '<span class="fz">v</span> = ';
+    document.getElementById('assess4-q2-unit').textContent = 'm/s';
+
+    // Rechnung 2: lambda berechnen
+    document.getElementById('assess4-q3').innerHTML = '<strong>3.</strong> Berechne &lambda;: <span class="fz">v</span> = ' + myCalcL.v + ' m/s, <span class="fz">f</span> = ' + myCalcL.f + ' Hz';
+    document.getElementById('assess4-q3-label').innerHTML = '&lambda; = ';
+    document.getElementById('assess4-q3-unit').textContent = 'm';
+}
+
+function buildPhase5() {
+    document.getElementById('assess5-blitz-text').innerHTML = '<strong>Blitz und Donner:</strong> Du h\u00f6rst den Donner <strong>' + myBlitz + ' Sekunden</strong> nach dem Blitz. Wie weit ist das Gewitter?';
+
+    document.getElementById('assess5-mc-text').innerHTML = '<strong>Schall-Frage:</strong> ' + mySoundMC.text;
+    var mcDiv = document.getElementById('assess5-mc');
+    mcDiv.innerHTML = '';
+    var rng = createRNG(state.seed + 510);
+    var shuffledOpts = [];
+    for (var i = 0; i < mySoundMC.options.length; i++) {
+        shuffledOpts.push({ text: mySoundMC.options[i], origIdx: i });
+    }
+    shuffledOpts = shuffleWithRNG(shuffledOpts, rng);
+
+    for (var i = 0; i < shuffledOpts.length; i++) {
+        var opt = document.createElement('div');
+        opt.className = 'mc-option';
+        opt.setAttribute('data-correct', shuffledOpts[i].origIdx === mySoundMC.correct ? '1' : '0');
+        opt.textContent = shuffledOpts[i].text;
+        opt.onclick = function() {
+            var siblings = this.parentNode.querySelectorAll('.mc-option');
+            for (var j = 0; j < siblings.length; j++) siblings[j].classList.remove('selected');
+            this.classList.add('selected');
+        };
+        mcDiv.appendChild(opt);
+    }
+}
+
+function buildPhase6() {
+    document.getElementById('gen2-claim').innerHTML = '<em>' + myClaim.claim + '</em>';
+    var mcDiv = document.getElementById('gen2-mc');
+    mcDiv.innerHTML = '';
+    var rng = createRNG(state.seed + 610);
+    var shuffledOpts = [];
+    for (var i = 0; i < myClaim.options.length; i++) {
+        shuffledOpts.push({ text: myClaim.options[i], origIdx: i });
+    }
+    shuffledOpts = shuffleWithRNG(shuffledOpts, rng);
+
+    for (var i = 0; i < shuffledOpts.length; i++) {
+        var opt = document.createElement('div');
+        opt.className = 'mc-option';
+        opt.setAttribute('data-correct', shuffledOpts[i].origIdx === myClaim.correct ? '1' : '0');
+        opt.textContent = shuffledOpts[i].text;
+        opt.onclick = function() {
+            var siblings = this.parentNode.querySelectorAll('.mc-option');
+            for (var j = 0; j < siblings.length; j++) siblings[j].classList.remove('selected');
+            this.classList.add('selected');
+        };
+        mcDiv.appendChild(opt);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION (forward-only)
+// ═══════════════════════════════════════════════════════════════
+
+function goToPhase(n) {
+    if (n < 0 || n > 7) return;
+    // Forward-only (except going to same phase)
+    if (n < state.currentPhase && n !== 0) return;
+
+    var steps = document.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.remove('active');
+    }
+    document.getElementById('step' + n).classList.add('active');
+
+    // Update EW-Nav
+    for (var i = 1; i <= 7; i++) {
+        var el = document.getElementById('ew' + i);
+        el.classList.remove('active', 'done');
+        if (i < n) el.classList.add('done');
+        if (i === n) el.classList.add('active');
+    }
+
+    // Progress
+    var pct = n === 0 ? 0 : ((n - 1) / 6) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+
+    state.currentPhase = n;
+    state.phaseTimestamps['phase' + n] = new Date().toISOString();
+    saveState();
+    window.scrollTo(0, 0);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHASEN-SUBMIT-FUNKTIONEN
+// ═══════════════════════════════════════════════════════════════
+
+function submitPhase1() {
+    if (state.submitted.p1) return;
+    var score = 0;
+    for (var i = 0; i < myClassify.length; i++) {
+        var sel = document.getElementById('a1-' + i);
+        if (!sel) continue;
+        var val = sel.value;
+        if (val === myClassify[i].answer) score++;
+    }
+    // 2 BE: 3 richtig = 2, 2 richtig = 1, sonst 0
+    if (score === 3) state.scores.p1 = 2;
+    else if (score === 2) state.scores.p1 = 1;
+    else state.scores.p1 = 0;
+
+    state.submitted.p1 = true;
+
+    var fb = document.getElementById('fb-assess1');
+    fb.className = 'feedback ' + (score >= 2 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/3 richtig \u2192 ' + state.scores.p1 + ' BE';
+
+    lockZone('assess1');
+    document.getElementById('btn-next1').disabled = false;
+    saveState();
+}
+
+function submitHypothesis() {
+    if (state.submitted.p2) return;
+    var h1 = document.getElementById('hypo1').value;
+    var h2 = document.getElementById('hypo2').value;
+    if (!h1 || !h2) { alert('Bitte beide Vorhersagen ausw\u00e4hlen!'); return; }
+
+    state.hypotheses.lambda = h1;
+    state.hypotheses.freq = h2;
+
+    var score = 0;
+    if (h1 === 'groesser') score++;
+    if (h2 === 'groesser') score++;
+    state.scores.p2 = score;
+    state.submitted.p2 = true;
+
+    var fb = document.getElementById('fb-hypo');
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = 'Hypothese gespeichert (' + score + '/2 BE). Wir pr\u00fcfen sie im Experiment!';
+
+    document.getElementById('hypo1').disabled = true;
+    document.getElementById('hypo2').disabled = true;
+    document.getElementById('btn-hypo').disabled = true;
+    document.getElementById('btn-next2').disabled = false;
+    saveState();
+}
+
+function submitPhase3() {
+    if (state.submitted.p3) return;
+    var score = 0;
+    for (var i = 0; i < 3; i++) {
+        var expected = myScheme.m[i].l * myScheme.m[i].f;
+        var entered = parseNum(document.getElementById('m' + (i + 1) + '-v').value);
+        state.measurements[i] = entered;
+        if (!isNaN(entered) && Math.abs(entered - expected) < expected * 0.1) {
+            score++;
+        }
+    }
+    state.scores.p3 = score;
+    state.submitted.p3 = true;
+
+    var fb = document.getElementById('fb-assess3');
+    fb.className = 'feedback ' + (score >= 2 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/3 Messungen korrekt \u2192 ' + score + ' BE';
+
+    lockZone('assess3');
+
+    // Hypothesen-Konfrontation
+    showHypoConfrontation();
+    document.getElementById('btn-next3').disabled = false;
+    saveState();
+}
+
+function showHypoConfrontation() {
+    var box = document.getElementById('hypoConfront');
+    box.style.display = 'block';
+    var m = myScheme.m;
+    var v1 = m[0].l * m[0].f;
+    var v2 = m[1].l * m[1].f;
+    var v3 = m[2].l * m[2].f;
+
+    var lambdaEffect = v2 > v1 ? 'gr\u00f6\u00dfer' : (v2 < v1 ? 'kleiner' : 'gleich');
+    var freqEffect = v3 > v2 ? 'gr\u00f6\u00dfer' : (v3 < v2 ? 'kleiner' : 'gleich');
+
+    var html = '';
+    html += '<p><strong>Deine Hypothese:</strong></p>';
+    html += '<p>\u2022 "\u03bb gr\u00f6\u00dfer \u2192 v wird <em>' + (state.hypotheses.lambda || '?') + '</em>"</p>';
+    html += '<p>\u2022 "f gr\u00f6\u00dfer \u2192 v wird <em>' + (state.hypotheses.freq || '?') + '</em>"</p>';
+    html += '<p style="margin-top:10px;"><strong>Deine Messdaten:</strong></p>';
+    html += '<p>\u2022 \u03bb: ' + m[0].l + ' \u2192 ' + m[1].l + ' cm (f gleich) \u2192 v: ' + v1 + ' \u2192 ' + v2 + ' cm/s \u2192 v wurde <strong>' + lambdaEffect + '</strong></p>';
+    html += '<p>\u2022 f: ' + m[1].f + ' \u2192 ' + m[2].f + ' Hz (\u03bb gleich) \u2192 v: ' + v2 + ' \u2192 ' + v3 + ' cm/s \u2192 v wurde <strong>' + freqEffect + '</strong></p>';
+
+    var h1correct = state.hypotheses.lambda === 'groesser';
+    var h2correct = state.hypotheses.freq === (v3 > v2 ? 'groesser' : (v3 < v2 ? 'kleiner' : 'gleich'));
+
+    html += '<p style="margin-top:10px;">';
+    html += 'Hypothese 1 (\u03bb): <span class="' + (h1correct ? 'correct' : 'wrong') + '">' + (h1correct ? 'BEST\u00c4TIGT!' : 'WIDERLEGT') + '</span><br>';
+    html += 'Hypothese 2 (f): <span class="' + (h2correct ? 'correct' : 'wrong') + '">' + (h2correct ? 'BEST\u00c4TIGT!' : 'WIDERLEGT') + '</span>';
+    html += '</p>';
+    html += '<p style="margin-top:10px;"><strong>Erkenntnis:</strong> v = \u03bb \u00b7 f \u2013 Die Geschwindigkeit steigt mit \u03bb UND mit f.</p>';
+
+    document.getElementById('hypoConfrontContent').innerHTML = html;
+}
+
+function submitPhase4() {
+    if (state.submitted.p4) return;
+    var score = 0;
+
+    // MC: Formel
+    var selected = document.querySelector('#assess4-mc .mc-option.selected');
+    if (selected && selected.getAttribute('data-correct') === '1') score++;
+
+    // Rechnung v
+    var v1 = parseNum(document.getElementById('assess4-input1').value);
+    if (!isNaN(v1) && Math.abs(v1 - myCalcV.v) < 0.5) score++;
+
+    // Rechnung lambda
+    var v2 = parseNum(document.getElementById('assess4-input2').value);
+    if (!isNaN(v2) && Math.abs(v2 - myCalcL.l) < 0.3) score++;
+
+    state.scores.p4 = score;
+    state.submitted.p4 = true;
+
+    var fb = document.getElementById('fb-assess4');
+    fb.className = 'feedback ' + (score >= 2 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/3 richtig \u2192 ' + score + ' BE';
+
+    lockZone('assess4');
+    document.getElementById('btn-next4').disabled = false;
+    saveState();
+}
+
+function submitPhase5() {
+    if (state.submitted.p5) return;
+    var score = 0;
+    var expectedM = 340 * myBlitz;
+    var expectedKm = expectedM / 1000;
+
+    var mVal = parseNum(document.getElementById('assess5-m').value);
+    var kmVal = parseNum(document.getElementById('assess5-km').value);
+
+    if (!isNaN(mVal) && Math.abs(mVal - expectedM) < expectedM * 0.08) score++;
+    if (!isNaN(kmVal) && Math.abs(kmVal - expectedKm) < 0.3) score++;
+
+    // MC
+    var selected = document.querySelector('#assess5-mc .mc-option.selected');
+    if (selected && selected.getAttribute('data-correct') === '1') score++;
+
+    state.scores.p5 = score;
+    state.submitted.p5 = true;
+
+    var fb = document.getElementById('fb-assess5');
+    fb.className = 'feedback ' + (score >= 2 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/3 richtig \u2192 ' + score + ' BE';
+
+    lockZone('assess5');
+    document.getElementById('btn-next5').disabled = false;
+    saveState();
+}
+
+function submitPhase6() {
+    if (state.submitted.p6) return;
+    var score = 0;
+
+    // Merksatz
+    if (document.getElementById('gen1a').value === 'energie' &&
+        document.getElementById('gen1b').value === 'ort') score++;
+
+    // Behauptung
+    var selected = document.querySelector('#gen2-mc .mc-option.selected');
+    if (selected && selected.getAttribute('data-correct') === '1') score++;
+
+    state.scores.p6 = score;
+    state.submitted.p6 = true;
+
+    var fb = document.getElementById('fb-assess6');
+    fb.className = 'feedback ' + (score === 2 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/2 richtig \u2192 ' + score + ' BE';
+
+    lockZone('assess6');
+    document.getElementById('btn-next6').disabled = false;
+    saveState();
+}
+
+function lockZone(id) {
+    var zone = document.getElementById(id);
+    if (zone) {
+        var inputs = zone.querySelectorAll('input, select, button');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+        var mcOpts = zone.querySelectorAll('.mc-option');
+        for (var i = 0; i < mcOpts.length; i++) {
+            mcOpts[i].classList.add('disabled');
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ERGEBNIS
+// ═══════════════════════════════════════════════════════════════
+
+function showResults() {
+    var total = state.scores.p1 + state.scores.p2 + state.scores.p3 +
+                state.scores.p4 + state.scores.p5 + state.scores.p6;
+    var pct = Math.round((total / TOTAL_BE) * 100);
+    var grade = getGrade(pct);
+    var now = new Date();
+    var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
+
+    state.completed = true;
+    saveState();
+
+    document.getElementById('resultName').textContent = state.name;
+    document.getElementById('resBE').textContent = total;
+    document.getElementById('resProzent').textContent = pct + '%';
+
+    var gradeEl = document.getElementById('resNote');
+    gradeEl.textContent = 'Note: ' + grade;
+    gradeEl.className = 'grade g' + grade;
+
+    for (var i = 1; i <= 6; i++) {
+        document.getElementById('res-p' + i).textContent = state.scores['p' + i];
+    }
+    document.getElementById('res-total').textContent = total;
+
+    document.getElementById('resCode').textContent = code;
+    document.getElementById('resTimestamp').textContent =
+        'Abgabe: ' + now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE');
+
+    // Tab-Info
+    if (tabSwitchCount > 0) {
+        document.getElementById('resTabInfo').textContent =
+            'Tab-Wechsel: ' + tabSwitchCount + '\u00d7 (' + formatDuration(tabSwitchSeconds) + ')';
+    }
+
+    // Hypothesen-Rückblick
+    var hypoHtml = '<p>Du hast vorhergesagt:</p><ul style="margin:5px 0 5px 20px;">';
+    hypoHtml += '<li>\u03bb gr\u00f6\u00dfer \u2192 v wird <em>' + (state.hypotheses.lambda || '?') + '</em> \u2192 ' +
+        (state.hypotheses.lambda === 'groesser' ? '<span class="correct">richtig!</span>' : '<span class="wrong">nicht ganz</span>') + '</li>';
+    hypoHtml += '<li>f gr\u00f6\u00dfer \u2192 v wird <em>' + (state.hypotheses.freq || '?') + '</em> \u2192 ' +
+        (state.hypotheses.freq === 'groesser' ? '<span class="correct">richtig!</span>' : '<span class="wrong">nicht ganz</span>') + '</li>';
+    hypoHtml += '</ul>';
+    hypoHtml += '<p><strong>Die Formel v = \u03bb \u00b7 f best\u00e4tigt:</strong> Beide Gr\u00f6\u00dfen beeinflussen v direkt proportional.</p>';
+    document.getElementById('hypoFinalContent').innerHTML = hypoHtml;
+
+    goToPhase(7);
+}
+
+function getGrade(pct) {
+    if (pct >= 93) return 1;
+    if (pct >= 80) return 2;
+    if (pct >= 60) return 3;
+    if (pct >= 47) return 4;
+    if (pct >= 27) return 5;
+    return 6;
+}
+
+function formatDuration(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ':' + (s < 10 ? '0' : '') + s + ' Min.';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ÜBUNGS-CHECK-FUNKTIONEN (unbewertet)
+// ═══════════════════════════════════════════════════════════════
+
+function checkPracticeWaves() {
+    var w1 = document.getElementById('practice-w1').value;
+    var w2 = document.getElementById('practice-w2').value;
+    var fb = document.getElementById('fb-practice-waves');
+    var ok = (w1 === 'trans') && (w2 === 'long');
+    fb.className = 'feedback ' + (ok ? 'correct' : 'incorrect');
+    fb.textContent = ok ? 'Richtig! Seilwelle = transversal, Schall = longitudinal.' :
+        'Nicht ganz. Tipp: In welche Richtung schwingen die Teilchen relativ zur Ausbreitung?';
+}
+
+function checkPracticeMeasure() {
+    var v = parseNum(document.getElementById('practice-v').value);
+    var fb = document.getElementById('fb-practice-measure');
+    if (Math.abs(v - 150) < 15) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Richtig! v = 100 \u00b7 1,5 = 150 cm/s';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.textContent = 'Versuche es nochmal. Stelle \u03bb=100 und f=1,5 ein und lies v ab.';
+    }
+}
+
+function checkPracticeCalc() {
+    var v = parseNum(document.getElementById('practice-calc').value);
+    var fb = document.getElementById('fb-practice-calc');
+    if (Math.abs(v - 10) < 0.5) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Richtig! v = 2 m \u00b7 5 Hz = 10 m/s';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.textContent = 'v = \u03bb \u00b7 f = 2 \u00b7 5 = ?';
+    }
+}
+
+function checkPracticeBlitz() {
+    var v = parseNum(document.getElementById('practice-blitz').value);
+    var fb = document.getElementById('fb-practice-blitz');
+    if (Math.abs(v - 2040) < 100) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Richtig! s = 340 \u00b7 6 = 2 040 m \u2248 2 km';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.textContent = 's = v \u00b7 t = 340 m/s \u00b7 6 s = ?';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WELLENSIMULATION (Canvas)
+// ═══════════════════════════════════════════════════════════════
+
+var compareTime = 0;
+var compareRunning = true;
+var compareLastTS = 0;
+
+function drawCompareWaves(timestamp) {
+    if (!compareRunning) return;
+    if (compareLastTS === 0) compareLastTS = timestamp;
+    var dt = (timestamp - compareLastTS) / 1000;
+    compareLastTS = timestamp;
+    compareTime += dt;
+
+    var cw = 280, ch = 140;
+    var centerY = ch / 2;
+    var A = 30, lambda = 120, freq = 0.8;
+
+    var transC = document.getElementById('transCanvas');
+    var transCtx = transC ? transC.getContext('2d') : null;
+    var longC = document.getElementById('longCanvas');
+    var longCtx = longC ? longC.getContext('2d') : null;
+
+    if (transCtx) {
+        var ctx = transCtx;
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, cw, ch);
+        ctx.beginPath(); ctx.setLineDash([4, 4]);
+        ctx.moveTo(0, centerY); ctx.lineTo(cw, centerY);
+        ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#999'; ctx.font = '11px sans-serif';
+        ctx.fillText('\u2192 Ausbreitung', cw - 100, 15);
+        ctx.beginPath(); ctx.strokeStyle = '#2c5aa0'; ctx.lineWidth = 2;
+        for (var x = 0; x < cw; x++) {
+            var y = centerY - A * Math.sin(2 * Math.PI * (x / lambda - freq * compareTime));
+            if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        for (var px = 20; px < cw; px += 25) {
+            var py = centerY - A * Math.sin(2 * Math.PI * (px / lambda - freq * compareTime));
+            ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#2c5aa0'; ctx.fill();
+        }
+    }
+
+    if (longCtx) {
+        var lctx = longCtx;
+        lctx.clearRect(0, 0, cw, ch);
+        lctx.fillStyle = '#fafafa'; lctx.fillRect(0, 0, cw, ch);
+        lctx.fillStyle = '#999'; lctx.font = '11px sans-serif';
+        lctx.fillText('\u2192 Ausbreitung', cw - 100, 15);
+        var numP = 35; var spacing = cw / numP;
+        for (var i = 0; i < numP; i++) {
+            var restX = i * spacing + spacing / 2;
+            var dx = 12 * Math.sin(2 * Math.PI * (restX / lambda - freq * compareTime));
+            lctx.beginPath(); lctx.arc(restX + dx, centerY, 5, 0, Math.PI * 2);
+            lctx.fillStyle = '#2c5aa0'; lctx.fill();
+        }
+    }
+
+    requestAnimationFrame(drawCompareWaves);
+}
+
+// Hauptsimulation (Phase 3)
+var waveLambda = 120, waveFreq = 1.0, waveAmp = 30;
+var waveTime = 0, waveRunning = false, wavePaused = false, waveLastTS = 0;
+
+function updateWaveDisplay() {
+    var v = waveLambda * waveFreq;
+    document.getElementById('dispLambda').textContent = waveLambda + ' cm';
+    document.getElementById('dispFreq').textContent = waveFreq.toFixed(1).replace('.', ',') + ' Hz';
+    document.getElementById('dispSpeed').textContent = Math.round(v) + ' cm/s';
+}
+
+function drawMainWave() {
+    var c = document.getElementById('waveCanvas');
+    var ctx = c ? c.getContext('2d') : null;
+    if (!ctx) return;
+    var w = c.width, h = c.height, centerY = h / 2;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, w, h);
+    ctx.beginPath(); ctx.setLineDash([5, 5]);
+    ctx.moveTo(0, centerY); ctx.lineTo(w, centerY);
+    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#999'; ctx.font = '11px sans-serif';
+    ctx.fillText('s (Ort)', w - 45, centerY + 15);
+    ctx.fillText('y', 5, 15);
+
+    ctx.beginPath(); ctx.strokeStyle = '#2c5aa0'; ctx.lineWidth = 2.5;
+    for (var x = 0; x < w; x++) {
+        var y = centerY - waveAmp * Math.sin(2 * Math.PI * (x / waveLambda - waveFreq * waveTime));
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    for (var px = 15; px < w; px += 20) {
+        var py = centerY - waveAmp * Math.sin(2 * Math.PI * (px / waveLambda - waveFreq * waveTime));
+        ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#2c5aa0'; ctx.fill();
+    }
+
+    if (wavePaused) {
+        var firstMax = -1;
+        for (var sx = 0; sx < w - 1; sx++) {
+            var y1 = Math.sin(2 * Math.PI * (sx / waveLambda - waveFreq * waveTime));
+            var y2 = Math.sin(2 * Math.PI * ((sx + 1) / waveLambda - waveFreq * waveTime));
+            if (y1 > 0.99 && y2 < y1) { firstMax = sx; break; }
+        }
+        if (firstMax >= 0 && firstMax + waveLambda < w) {
+            ctx.strokeStyle = '#c62828'; ctx.lineWidth = 2;
+            var yMark = centerY - waveAmp - 15;
+            ctx.beginPath();
+            ctx.moveTo(firstMax, yMark); ctx.lineTo(firstMax + waveLambda, yMark); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(firstMax, yMark - 5); ctx.lineTo(firstMax, yMark + 5);
+            ctx.moveTo(firstMax + waveLambda, yMark - 5); ctx.lineTo(firstMax + waveLambda, yMark + 5);
+            ctx.stroke();
+            ctx.fillStyle = '#c62828'; ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('\u03bb = ' + waveLambda + ' cm', firstMax + waveLambda / 2, yMark - 8);
+            ctx.textAlign = 'start';
+        }
+        ctx.fillStyle = '#c62828'; ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('SNAPSHOT', 10, h - 10);
+    }
+}
+
+function animateWave(timestamp) {
+    if (!waveRunning) return;
+    if (!wavePaused) {
+        var dt = (timestamp - waveLastTS) / 1000;
+        waveTime += dt;
+    }
+    waveLastTS = timestamp;
+    drawMainWave();
+    requestAnimationFrame(animateWave);
+}
+
+function resetWave() {
+    waveRunning = false; wavePaused = false; waveTime = 0;
+    document.getElementById('btnWaveStart').textContent = 'Start';
+    document.getElementById('btnWavePause').style.display = 'none';
+    drawMainWave();
+}
+
+// Hypothesen-Vorschau-Simulation
+var hypoLambda = 120, hypoFreq = 1.0, hypoTime = 0, hypoRunning = true, hypoLastTS = 0;
+
+function drawHypoWave(timestamp) {
+    if (!hypoRunning) return;
+    if (hypoLastTS === 0) hypoLastTS = timestamp;
+    var dt = (timestamp - hypoLastTS) / 1000;
+    hypoLastTS = timestamp;
+    hypoTime += dt;
+
+    var c = document.getElementById('hypoCanvas');
+    var ctx = c ? c.getContext('2d') : null;
+    if (!ctx) return;
+    var w = c.width, h = c.height, cy = h / 2, A = 30;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fafafa'; ctx.fillRect(0, 0, w, h);
+    ctx.beginPath(); ctx.setLineDash([4, 4]);
+    ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+    ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath(); ctx.strokeStyle = '#2c5aa0'; ctx.lineWidth = 2;
+    for (var x = 0; x < w; x++) {
+        var y = cy - A * Math.sin(2 * Math.PI * (x / hypoLambda - hypoFreq * hypoTime));
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    var v = Math.round(hypoLambda * hypoFreq);
+    document.getElementById('hypoSpeed').textContent = v + ' cm/s';
+
+    requestAnimationFrame(drawHypoWave);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANTI-CHEATING
+// ═══════════════════════════════════════════════════════════════
+
+function initTabTracking() {
+    var sc = localStorage.getItem(LP_ID + '-tabswitches');
+    var ss = localStorage.getItem(LP_ID + '-tabseconds');
+    if (sc) tabSwitchCount = parseInt(sc);
+    if (ss) tabSwitchSeconds = parseInt(ss);
+
+    document.addEventListener('visibilitychange', function() {
+        if (state.completed) return;
+        if (document.hidden) {
+            tabSwitchStart = Date.now();
+            tabSwitchCount++;
+            localStorage.setItem(LP_ID + '-tabswitches', tabSwitchCount);
+        } else {
+            if (tabSwitchStart > 0) {
+                var dur = Math.round((Date.now() - tabSwitchStart) / 1000);
+                tabSwitchSeconds += dur;
+                localStorage.setItem(LP_ID + '-tabseconds', tabSwitchSeconds);
+                tabSwitchStart = 0;
+            }
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SPEICHERN / LADEN
+// ═══════════════════════════════════════════════════════════════
+
+function saveState() {
+    localStorage.setItem(LP_ID + '-state', JSON.stringify({
+        name: state.name,
+        seed: state.seed,
+        currentPhase: state.currentPhase,
+        scores: state.scores,
+        submitted: state.submitted,
+        hypotheses: state.hypotheses,
+        measurements: state.measurements,
+        completed: state.completed,
+        startTime: state.startTime,
+        phaseTimestamps: state.phaseTimestamps
+    }));
+}
+
+function loadState() {
+    var saved = localStorage.getItem(LP_ID + '-state');
+    if (!saved) return false;
+    try {
+        var data = JSON.parse(saved);
+        if (!data.name || !data.seed) return false;
+        state.name = data.name;
+        state.seed = data.seed;
+        state.currentPhase = data.currentPhase || 0;
+        state.scores = data.scores || state.scores;
+        state.submitted = data.submitted || state.submitted;
+        state.hypotheses = data.hypotheses || state.hypotheses;
+        state.measurements = data.measurements || state.measurements;
+        state.completed = data.completed || false;
+        state.startTime = data.startTime;
+        state.phaseTimestamps = data.phaseTimestamps || {};
+        return true;
+    } catch (e) { return false; }
+}
+
+function teacherReset() {
+    var code = prompt('Lehrer-Code eingeben:');
+    if (code === '2026') {
+        if (confirm('Wirklich alle Daten l\u00f6schen?')) {
+            localStorage.removeItem(LP_ID + '-state');
+            localStorage.removeItem(LP_ID + '-tabswitches');
+            localStorage.removeItem(LP_ID + '-tabseconds');
+            alert('Zur\u00fcckgesetzt. Seite wird neu geladen.');
+            location.reload();
+        }
+    } else if (code !== null) {
+        alert('Falscher Code!');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// START / INIT
+// ═══════════════════════════════════════════════════════════════
+
+function startLP() {
+    var name = document.getElementById('nameInput').value.trim();
+    if (name.length < 3) { alert('Bitte vollst\u00e4ndigen Namen eingeben!'); return; }
+
+    state.name = name;
+    state.seed = seedFromName(name);
+    state.startTime = new Date().toISOString();
+
+    buildPersonalTasks();
+    buildPhase1();
+    buildPhase3();
+    buildPhase4();
+    buildPhase5();
+    buildPhase6();
+
+    saveState();
+    goToPhase(1);
+}
+
+function restoreSession() {
+    buildPersonalTasks();
+    buildPhase1();
+    buildPhase3();
+    buildPhase4();
+    buildPhase5();
+    buildPhase6();
+
+    // Restore submitted states
+    if (state.submitted.p1) {
+        lockZone('assess1');
+        document.getElementById('btn-next1').disabled = false;
+    }
+    if (state.submitted.p2) {
+        document.getElementById('hypo1').disabled = true;
+        document.getElementById('hypo2').disabled = true;
+        document.getElementById('btn-hypo').disabled = true;
+        document.getElementById('btn-next2').disabled = false;
+    }
+    if (state.submitted.p3) {
+        lockZone('assess3');
+        showHypoConfrontation();
+        document.getElementById('btn-next3').disabled = false;
+    }
+    if (state.submitted.p4) {
+        lockZone('assess4');
+        document.getElementById('btn-next4').disabled = false;
+    }
+    if (state.submitted.p5) {
+        lockZone('assess5');
+        document.getElementById('btn-next5').disabled = false;
+    }
+    if (state.submitted.p6) {
+        lockZone('assess6');
+        document.getElementById('btn-next6').disabled = false;
+    }
+
+    if (state.completed) {
+        showResults();
+    } else {
+        goToPhase(state.currentPhase || 1);
+    }
+}
+
+// Hypothesen-Timer
+var hypoCountdown = 60;
+var hypoTimerInterval = null;
+
+function startHypoTimer() {
+    var timerEl = document.getElementById('hypoTimer');
+    var btnEl = document.getElementById('btn-hypo');
+    hypoTimerInterval = setInterval(function() {
+        hypoCountdown--;
+        if (hypoCountdown <= 0) {
+            clearInterval(hypoTimerInterval);
+            timerEl.textContent = 'Zeit abgelaufen \u2013 gib jetzt deine Hypothese ab!';
+            timerEl.style.color = 'var(--success)';
+            btnEl.disabled = false;
+        } else {
+            timerEl.textContent = 'Erkunde noch: ' + hypoCountdown + 's';
+        }
+    }, 1000);
+}
+
+window.onload = function() {
+    // Name input enable/disable start button
+    var nameInput = document.getElementById('nameInput');
+    nameInput.addEventListener('input', function() {
+        document.getElementById('btnStart').disabled = this.value.trim().length < 3;
+    });
+
+    // Hypothesen-Simulation Slider
+    var hypoLS = document.getElementById('hypoLambdaSlider');
+    var hypoFS = document.getElementById('hypoFreqSlider');
+    if (hypoLS) {
+        hypoLS.addEventListener('input', function() {
+            hypoLambda = parseInt(this.value);
+            document.getElementById('hypoLambdaVal').textContent = hypoLambda;
+        });
+    }
+    if (hypoFS) {
+        hypoFS.addEventListener('input', function() {
+            hypoFreq = parseInt(this.value) / 10;
+            document.getElementById('hypoFreqVal').textContent = hypoFreq.toFixed(1).replace('.', ',');
+        });
+    }
+
+    // Hauptsimulation Slider
+    var lambdaS = document.getElementById('lambdaSlider');
+    var freqS = document.getElementById('freqSlider');
+    if (lambdaS) {
+        lambdaS.addEventListener('input', function() {
+            waveLambda = parseInt(this.value);
+            document.getElementById('lambdaValue').textContent = waveLambda;
+            updateWaveDisplay();
+            if (!waveRunning) drawMainWave();
+        });
+    }
+    if (freqS) {
+        freqS.addEventListener('input', function() {
+            waveFreq = parseInt(this.value) / 10;
+            document.getElementById('freqValue').textContent = waveFreq.toFixed(1).replace('.', ',');
+            updateWaveDisplay();
+            if (!waveRunning) drawMainWave();
+        });
+    }
+
+    // Hauptsimulation Buttons
+    var btnStart = document.getElementById('btnWaveStart');
+    var btnPause = document.getElementById('btnWavePause');
+    if (btnStart) {
+        btnStart.addEventListener('click', function() {
+            if (!waveRunning) {
+                waveRunning = true; wavePaused = false;
+                this.textContent = 'Stop';
+                btnPause.style.display = 'inline-block';
+                waveLastTS = performance.now();
+                requestAnimationFrame(animateWave);
+            } else {
+                waveRunning = false; wavePaused = false;
+                this.textContent = 'Start';
+                btnPause.style.display = 'none';
+            }
+        });
+    }
+    if (btnPause) {
+        btnPause.addEventListener('click', function() {
+            wavePaused = !wavePaused;
+            this.textContent = wavePaused ? 'Weiter' : 'Pause (Snapshot)';
+        });
+    }
+
+    // Tab-Tracking
+    initTabTracking();
+
+    // Animationen starten
+    requestAnimationFrame(drawCompareWaves);
+    requestAnimationFrame(drawHypoWave);
+    drawMainWave();
+    updateWaveDisplay();
+
+    // Session wiederherstellen?
+    if (loadState()) {
+        restoreSession();
+    }
+
+    // Hypo-Timer starten wenn Phase 2 aktiv ist
+    // (wird beim Navigieren zu Phase 2 gestartet)
+    var origGoToPhase = goToPhase;
+    goToPhase = function(n) {
+        origGoToPhase(n);
+        if (n === 2 && !state.submitted.p2 && !hypoTimerInterval) {
+            startHypoTimer();
+        }
+    };
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minitest: Chancen und Risiken der Digitalisierung</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER (Informatik = Orange) === */
+        header {
+            background: #b35c00;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 150px; }
+
+        /* === SZENARIO-BOX === */
+        .scenario-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .scenario-box h3 {
+            color: #b35c00;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+        .scenario-box p {
+            font-style: italic;
+            font-size: 0.95em;
+        }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #b35c00; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-afb { padding: 2px 8px; font-size: 0.75em; font-weight: 600; border-radius: 3px; background: #f0f0f0; color: #666; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #b35c00; }
+        .option.selected { background: #fff3e0; border-color: #b35c00; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* Multi-Select */
+        .multi-select .option { position: relative; padding-left: 40px; }
+        .multi-select .option:before { content: ""; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; border: 2px solid #888; background: white; }
+        .multi-select .option.selected:before { background: #b35c00; border-color: #b35c00; }
+        .multi-select .option.selected:after { content: "\2713"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
+
+        /* Lückentext Dropdown */
+        .luecke-select {
+            padding: 4px 8px;
+            font-size: 0.95em;
+            border: 2px solid #b35c00;
+            background: #fffbf5;
+            min-width: 140px;
+            margin: 0 3px;
+        }
+        select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        /* C/R Tabelle */
+        .cr-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .cr-table th, .cr-table td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
+        .cr-table th { background: #b35c00; color: white; text-align: center; }
+        .cr-table td:first-child { width: 70%; }
+        .cr-table td:last-child { text-align: center; }
+        .cr-table .cr-option { padding: 8px 12px; margin: 0 3px; cursor: pointer; border: 1px solid #ddd; background: #fafafa; display: inline-block; }
+        .cr-table .cr-option:hover { background: #f0f4f8; }
+        .cr-table .cr-option.selected { background: #fff3e0; border-color: #b35c00; font-weight: 600; }
+        .cr-table .cr-option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .cr-table .cr-option.incorrect { background: #ffebee; border-color: #c62828; }
+
+        /* Phishing E-Mail */
+        .email-box {
+            background: #f9f9f9;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: "Courier New", monospace;
+            font-size: 0.9em;
+        }
+        .email-box .email-header { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; }
+        .email-box .email-field { margin: 3px 0; }
+        .email-box .email-field strong { color: #666; }
+        .email-box .email-body { line-height: 1.6; }
+
+        /* Freitext */
+        .freitext { width: 100%; min-height: 80px; padding: 10px; font-family: inherit; font-size: 0.95em; border: 1px solid #ddd; resize: vertical; }
+        .freitext:focus { border-color: #b35c00; outline: none; }
+
+        /* Variante-Auswahl */
+        .variante-choice { background: #f5f5f5; padding: 15px; margin: 15px 0; border: 1px solid #ddd; }
+        .variante-choice h4 { color: #b35c00; margin-bottom: 10px; }
+        .variante-btn { padding: 10px 20px; margin: 5px; cursor: pointer; border: 2px solid #b35c00; background: white; font-size: 0.95em; }
+        .variante-btn:hover { background: #fff3e0; }
+        .variante-btn.selected { background: #b35c00; color: white; }
+        .variante-content { display: none; margin-top: 15px; }
+        .variante-content.active { display: block; }
+
+        /* Strukturierte Eingabe */
+        .struktur-feld { margin: 12px 0; }
+        .struktur-label { font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+
+        /* Musterlösung */
+        .musterloesung {
+            background: #e3f2fd;
+            border: 2px solid #2c5aa0;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .musterloesung.show { display: block; }
+        .musterloesung h4 { color: #2c5aa0; margin-bottom: 8px; font-size: 0.95em; }
+        .musterloesung ul { margin-left: 20px; }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #b35c00; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #8a4700; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        button.btn-success { background: #2a7a4b; }
+        .results { background: white; border: 2px solid #b35c00; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #b35c00; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #b35c00; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.85em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 6px 10px; text-align: center; }
+        .grade-table th { background: #b35c00; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .hidden { display: none; }
+
+        /* === PLATZ-FELD === */
+        .seat-field { padding: 15px; background: #fff; border: 1px solid #ddd; margin: 15px 0; }
+        #seatWarning { background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00; }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container, .seat-field { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Minitest: Chancen und Risiken der Digitalisierung</h1>
+        <div class="header-info">
+            <div class="meta">Informatik 10MR | 32 Minuten | 30 BE (+2 Bonus)</div>
+        </div>
+    </header>
+
+    <!-- PLATZ-AUSWAHL -->
+    <div class="container">
+        <div class="seat-field">
+            <label style="font-weight: 600; font-size: 0.9em; color: #b35c00; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #b35c00; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Platznummer wählen...</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst deine Platznummer</strong>, um die Aufgaben anzuzeigen.
+        </div>
+
+        <!-- FRAGEN-CONTAINER -->
+        <div id="questionsContainer">
+
+        <!-- SZENARIO -->
+        <div class="scenario-box">
+            <h3>Einstiegsszenario: Die Familie</h3>
+            <p>Lena (15) scrollt abends durch TikTok und bestellt später Schuhe online mit PayPal. Ihr Bruder Max (17) gibt jeden Monat 20€ in Clash Royale aus. Ihre Oma Helga (72) hat gerade ihre elektronische Patientenakte eingerichtet und ist unsicher, ob das eine gute Idee war.</p>
+        </div>
+
+        <!-- AUFGABE 1: Lückentext (5 BE) -->
+        <div class="question" id="q1" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 1: Lückentext</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB I</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p><strong>Wortbank:</strong> <em>Algorithmus, Cloud, Datenschutz, Filterblase, Hashtag, Mikrotransaktion, Phishing, Streaming</em></p>
+                <p style="margin-top:15px;">Ergänze die Lücken mit den passenden Begriffen:</p>
+            </div>
+            <div style="line-height: 2.2; margin-top: 10px;">
+                <p>Lena öffnet TikTok. Ein
+                    <select id="q1-1" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    analysiert ihr Verhalten und zeigt ihr immer ähnlichere Videos. So entsteht eine
+                    <select id="q1-2" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    , in der sie andere Meinungen kaum noch sieht.
+                </p>
+                <p>Später hört sie Musik über
+                    <select id="q1-3" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    – die Songs werden direkt abgespielt, ohne sie herunterzuladen.
+                </p>
+                <p>Als sie eine verdächtige E-Mail bekommt, erkennt sie den Betrugsversuch als
+                    <select id="q1-4" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    .
+                </p>
+                <p>Ihr Bruder Max kauft im Spiel kleine Extras – sogenannte
+                    <select id="q1-5" class="luecke-select">
+                        <option value="">-- wählen --</option>
+                        <option value="Algorithmus">Algorithmus</option>
+                        <option value="Cloud">Cloud</option>
+                        <option value="Datenschutz">Datenschutz</option>
+                        <option value="Filterblase">Filterblase</option>
+                        <option value="Hashtag">Hashtag</option>
+                        <option value="Mikrotransaktion">Mikrotransaktion</option>
+                        <option value="Phishing">Phishing</option>
+                        <option value="Streaming">Streaming</option>
+                    </select>
+                    .
+                </p>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Alle Begriffe richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Nicht alle Lücken sind korrekt. Die richtigen Antworten: Algorithmus, Filterblase, Streaming, Phishing, Mikrotransaktion.</div>
+        </div>
+
+        <!-- AUFGABE 2: Zuordnung (5 BE) -->
+        <div class="question" id="q2" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 2: Dienste zuordnen</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB I</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Ordne jeder Beschreibung den passenden Dienst zu:</p>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Kurzvideos im vertikalen Format, personalisierter ‚Für Dich'-Feed, gehört zu ByteDance"</span>
+                    <select id="q2-1" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Server mit verschiedenen Channels, Text- und Sprachchat, beliebt bei Gamern"</span>
+                    <select id="q2-2" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Digitale Gesundheitsakte mit Befunden, Röntgenbildern und Impfungen, seit 2021"</span>
+                    <select id="q2-3" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Online-Bezahldienst mit Käuferschutz, keine IBAN-Eingabe nötig, gehört zu keiner Bank"</span>
+                    <select id="q2-4" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin:12px 0;flex-wrap:wrap;">
+                    <span style="min-width:400px;">„Musik-Streaming mit über 100 Mio. Songs, gegründet 2006 in Schweden"</span>
+                    <select id="q2-5" class="luecke-select" style="min-width:160px;">
+                        <option value="">-- wählen --</option>
+                        <option value="Discord">Discord</option>
+                        <option value="ePA">ePA</option>
+                        <option value="Krankenkassen-App">Krankenkassen-App</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="Snapchat">Snapchat</option>
+                        <option value="Spotify">Spotify</option>
+                        <option value="TeamSpeak">TeamSpeak</option>
+                        <option value="TikTok">TikTok</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Alle Dienste richtig zugeordnet!</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Nicht alle Zuordnungen sind korrekt. Die richtigen Antworten: TikTok, Discord, ePA, PayPal, Spotify.</div>
+        </div>
+
+        <!-- AUFGABE 3: Chance oder Risiko? (6 BE) -->
+        <div class="question" id="q3" data-points="6">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 3: Chance oder Risiko?</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">6 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Bewerte jede Aussage: Ist sie eine <strong>Chance (C)</strong> oder ein <strong>Risiko (R)</strong> der Digitalisierung?</p>
+            </div>
+            <table class="cr-table">
+                <thead>
+                    <tr>
+                        <th>Aussage</th>
+                        <th>Bewertung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>„Ein Algorithmus schlägt mir Jobs vor, die zu meinem Profil passen."</td>
+                        <td>
+                            <span class="cr-option" data-q="q3-1" data-value="C">C</span>
+                            <span class="cr-option" data-q="q3-1" data-value="R">R</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>„Meine Fitness-App teilt automatisch meine Laufdaten mit Freunden."</td>
+                        <td>
+                            <span class="cr-option" data-q="q3-2" data-value="C">C</span>
+                            <span class="cr-option" data-q="q3-2" data-value="R">R</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>„Eine KI erkennt auf Röntgenbildern Krankheiten schneller als Ärzte."</td>
+                        <td>
+                            <span class="cr-option" data-q="q3-3" data-value="C">C</span>
+                            <span class="cr-option" data-q="q3-3" data-value="R">R</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>„Ich kann mit meinem Handy überall auf der Welt bezahlen."</td>
+                        <td>
+                            <span class="cr-option" data-q="q3-4" data-value="C">C</span>
+                            <span class="cr-option" data-q="q3-4" data-value="R">R</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>„Mein Smart-TV zeigt mir Werbung basierend auf meinen Gesprächen."</td>
+                        <td>
+                            <span class="cr-option" data-q="q3-5" data-value="C">C</span>
+                            <span class="cr-option" data-q="q3-5" data-value="R">R</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>„Online-Shops merken sich meine Größe und Vorlieben für den nächsten Einkauf."</td>
+                        <td>
+                            <span class="cr-option" data-q="q3-6" data-value="C">C</span>
+                            <span class="cr-option" data-q="q3-6" data-value="R">R</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="feedback-box correct" id="q3-fb-correct">Alle richtig! Gut erkannt, dass auch vermeintlich praktische Funktionen Risiken sein können.</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Nicht alle richtig. Die Lösungen: R, R, C, C, R, R. Hinweis: Auch wenn etwas praktisch klingt, kann es ein Risiko sein (z.B. Datensammlung).</div>
+        </div>
+
+        <!-- AUFGABE 4: Phishing-Situation (3 BE) -->
+        <div class="question" id="q4" data-points="3">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 4: Phishing erkennen</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Lena erhält folgende E-Mail:</p>
+            </div>
+            <div class="email-box">
+                <div class="email-header">
+                    <div class="email-field"><strong>Von:</strong> service@paypa1.com</div>
+                    <div class="email-field"><strong>Betreff:</strong> Ungewöhnliche Aktivität festgestellt</div>
+                </div>
+                <div class="email-body">
+                    <p>Sehr geehrte Kundin,</p>
+                    <p>wir haben eine Anmeldung aus einem anderen Land bemerkt. Falls Sie das nicht waren, bestätigen Sie bitte Ihre Identität über den sicheren Link unten.</p>
+                    <p>Mit freundlichen Grüßen,<br>Ihr PayPal-Sicherheitsteam</p>
+                </div>
+            </div>
+
+            <p style="margin-top:15px;"><strong>a) Was ist hier passiert? (1 BE)</strong></p>
+            <div class="options" id="q4a-options">
+                <label class="option" data-value="a"><input type="radio" name="q4a" value="a">Lenas Konto wurde wirklich aus dem Ausland gehackt</label>
+                <label class="option" data-value="b"><input type="radio" name="q4a" value="b">Es handelt sich um Phishing – die E-Mail ist gefälscht</label>
+                <label class="option" data-value="c"><input type="radio" name="q4a" value="c">PayPal prüft routinemäßig alle Konten</label>
+                <label class="option" data-value="d"><input type="radio" name="q4a" value="d">Lenas Computer hat einen Virus bekommen</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Welche zwei Reaktionen sind richtig? (2 BE)</strong></p>
+            <div class="options multi-select" id="q4b-options">
+                <label class="option" data-value="a"><input type="checkbox" name="q4b" value="a">Schnell auf den Link klicken, bevor das Konto gesperrt wird</label>
+                <label class="option" data-value="b"><input type="checkbox" name="q4b" value="b">Die E-Mail löschen und paypal.com direkt im Browser eingeben</label>
+                <label class="option" data-value="c"><input type="checkbox" name="q4b" value="c">Die Daten eingeben, um zu prüfen ob es echt ist</label>
+                <label class="option" data-value="d"><input type="checkbox" name="q4b" value="d">Den Absender genau prüfen (hier: paypa1.com statt paypal.com)</label>
+                <label class="option" data-value="e"><input type="checkbox" name="q4b" value="e">Den Link in einem privaten Browser-Tab öffnen</label>
+                <label class="option" data-value="f"><input type="checkbox" name="q4b" value="f">Antworten und fragen, ob die E-Mail echt ist</label>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! Der Absender "paypa1.com" (mit 1 statt l) verrät die Fälschung. Immer direkt die echte Website aufrufen!</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">a) Richtig: Phishing. b) Richtig: E-Mail löschen + direkt auf paypal.com gehen UND Absender prüfen. Ein privater Tab schützt NICHT vor Phishing!</div>
+        </div>
+
+        <!-- AUFGABE 5: Gaming-Fallanalyse (4 BE) -->
+        <div class="question" id="q5" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 5: Gaming-Fallanalyse</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB II</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Max gibt jeden Monat 20€ in Clash Royale aus, um bessere Karten zu bekommen. Er sagt: „Ohne die Käufe gewinne ich nie gegen andere."</p>
+            </div>
+
+            <p style="margin-top:15px;"><strong>a) Welcher Fachbegriff beschreibt dieses Spielprinzip? (1 BE)</strong></p>
+            <div class="options" id="q5a-options">
+                <label class="option" data-value="a"><input type="radio" name="q5a" value="a">Free-to-Play</label>
+                <label class="option" data-value="b"><input type="radio" name="q5a" value="b">Pay-to-Win</label>
+                <label class="option" data-value="c"><input type="radio" name="q5a" value="c">Lootbox</label>
+                <label class="option" data-value="d"><input type="radio" name="q5a" value="d">Season Pass</label>
+            </div>
+
+            <p style="margin-top:20px;"><strong>b) Nenne ein Risiko, das durch dieses Verhalten entsteht. (1 BE)</strong></p>
+            <textarea id="q5b" class="freitext" placeholder="Schreibe hier deine Antwort..."></textarea>
+
+            <p style="margin-top:15px;"><strong>c) Gib Max einen konkreten Tipp, wie er sein Verhalten ändern kann. (2 BE)</strong></p>
+            <textarea id="q5c" class="freitext" placeholder="Schreibe hier deinen Tipp..."></textarea>
+
+            <div class="feedback-box correct" id="q5-fb-correct">a) Richtig: Pay-to-Win.</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">a) Die richtige Antwort ist "Pay-to-Win" – man bezahlt, um Spielvorteile zu haben.</div>
+            <div class="musterloesung" id="q5-ml">
+                <h4>Musterlösungen für b) und c):</h4>
+                <p><strong>b) Mögliche Risiken:</strong></p>
+                <ul>
+                    <li>Die Kosten summieren sich / wird teuer (240€/Jahr!)</li>
+                    <li>Suchtgefahr / Kontrollverlust</li>
+                    <li>Unfair gegenüber anderen Spielern</li>
+                    <li>Frustration ohne Käufe</li>
+                </ul>
+                <p style="margin-top:10px;"><strong>c) Mögliche Tipps:</strong></p>
+                <ul>
+                    <li>Monatliches Budget festlegen und einhalten</li>
+                    <li>Vor jedem Kauf 24 Stunden warten</li>
+                    <li>Eltern um Rat fragen / gemeinsam entscheiden</li>
+                    <li>Kostenlose Alternativen suchen</li>
+                    <li>Zeitlimit setzen / App-Timer nutzen</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- AUFGABE 6: Stellungnahme ePA (7 BE) -->
+        <div class="question" id="q6" data-points="7">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 6: Stellungnahme zur ePA</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB III</span>
+                    <span class="question-points">7 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p>Oma Helga sagt: „Ich bin unsicher, ob die elektronische Patientenakte wirklich gut für mich ist. Was meinst du?"</p>
+                <p style="margin-top:10px;"><strong>Wähle eine Variante:</strong></p>
+            </div>
+
+            <div class="variante-choice">
+                <button class="variante-btn" id="btnVarianteA" onclick="selectVariante('A')">Variante A: Mit Struktur (max. 5 BE)</button>
+                <button class="variante-btn" id="btnVarianteB" onclick="selectVariante('B')">Variante B: Fließtext (max. 7 BE)</button>
+            </div>
+
+            <div class="variante-content" id="varianteA">
+                <div class="struktur-feld">
+                    <label class="struktur-label">1 Argument FÜR die ePA:</label>
+                    <textarea id="q6-pro" class="freitext" style="min-height:60px;" placeholder="Pro-Argument..."></textarea>
+                </div>
+                <div class="struktur-feld">
+                    <label class="struktur-label">1 Argument GEGEN die ePA:</label>
+                    <textarea id="q6-contra" class="freitext" style="min-height:60px;" placeholder="Contra-Argument..."></textarea>
+                </div>
+                <div class="struktur-feld">
+                    <label class="struktur-label">Empfehlung für Helga (1-2 Sätze):</label>
+                    <textarea id="q6-empfehlung" class="freitext" style="min-height:60px;" placeholder="Deine Empfehlung..."></textarea>
+                </div>
+            </div>
+
+            <div class="variante-content" id="varianteB">
+                <p style="margin-bottom:10px;">Schreibe eine zusammenhängende Stellungnahme mit mindestens einem Pro-Argument, einem Contra-Argument und einer begründeten Empfehlung für Helga.</p>
+                <textarea id="q6-fliesstext" class="freitext" style="min-height:150px;" placeholder="Deine Stellungnahme..."></textarea>
+            </div>
+
+            <div class="musterloesung" id="q6-ml">
+                <h4>Erwartungshorizont:</h4>
+                <p><strong>Pro-Argumente (je 1-2 BE):</strong></p>
+                <ul>
+                    <li>Ärzte haben schnell Zugriff auf alle Daten (z.B. im Notfall)</li>
+                    <li>Doppeluntersuchungen werden vermieden</li>
+                    <li>Notfalldaten (Allergien, Medikamente) immer verfügbar</li>
+                    <li>Medikamentenwechselwirkungen erkennbar</li>
+                </ul>
+                <p style="margin-top:10px;"><strong>Contra-Argumente (je 1-2 BE):</strong></p>
+                <ul>
+                    <li>Sensible Daten digital gespeichert (Datenschutz)</li>
+                    <li>Hackerangriffe möglich</li>
+                    <li>Nicht alle Ärzte nutzen das System</li>
+                    <li>Technikprobleme möglich</li>
+                </ul>
+                <p style="margin-top:10px;"><strong>Empfehlung (2-3 BE):</strong></p>
+                <ul>
+                    <li>Abwägung erkennbar</li>
+                    <li>Bezug auf Helgas Situation (Alter, evtl. viele Arztbesuche)</li>
+                    <li>Begründete eigene Meinung</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- BONUS-AUFGABE (+2 BE) -->
+        <div class="question" id="qBonus" data-points="2" data-bonus="true">
+            <div class="question-header">
+                <div class="question-title">Bonus-Aufgabe</div>
+                <div class="question-meta">
+                    <span class="question-afb">AFB III</span>
+                    <span class="question-points">+2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">
+                <p><strong>a) Welcher der folgenden Bereiche ist ein Beispiel für Digitalisierung im Alltag?</strong></p>
+            </div>
+            <div class="options" id="qBonus-a-options">
+                <label class="option" data-value="a"><input type="radio" name="qBonusA" value="a">Tablets im Unterricht</label>
+                <label class="option" data-value="b"><input type="radio" name="qBonusA" value="b">Bücher in der Bibliothek</label>
+                <label class="option" data-value="c"><input type="radio" name="qBonusA" value="c">Briefe per Post versenden</label>
+                <label class="option" data-value="d"><input type="radio" name="qBonusA" value="d">Telefonieren mit Festnetztelefon</label>
+            </div>
+
+            <p style="margin-top:15px;"><strong>b) Erkläre eine Chance dieses Bereichs:</strong></p>
+            <textarea id="qBonus-b" class="freitext" placeholder="Deine Antwort..."></textarea>
+
+            <div class="feedback-box correct" id="qBonus-fb-correct">a) Richtig: Tablets im Unterricht.</div>
+            <div class="feedback-box incorrect" id="qBonus-fb-incorrect">a) Richtig wäre: Tablets im Unterricht – das ist ein Beispiel für Digitalisierung.</div>
+            <div class="musterloesung" id="qBonus-ml">
+                <h4>Musterlösung für b):</h4>
+                <ul>
+                    <li>Interaktives Lernen mit Videos, Simulationen, Quiz</li>
+                    <li>Zugang zu aktuellen Informationen (Internet)</li>
+                    <li>Individuelle Lerngeschwindigkeit möglich</li>
+                    <li>Vorbereitung auf digitale Arbeitswelt</li>
+                    <li>Papierersparnis / Umweltschutz</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- SUBMIT SECTION -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- RESULTS SECTION -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte (automatisch):</div>
+                <div class="score" id="scoreDisplay">0 / 30</div>
+                <div style="font-size:0.9em; color:#888; margin-top:5px;">(Freitext-Aufgaben werden vom Lehrer bewertet)</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>Note</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                </tr>
+                <tr>
+                    <td>ab %</td><td>96</td><td>80</td><td>60</td><td>40</td><td>20</td><td>&lt;20</td>
+                </tr>
+                <tr>
+                    <td>ab BE</td><td id="be1">29</td><td id="be2">24</td><td id="be3">18</td><td id="be4">12</td><td id="be5">6</td><td id="be6">0</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>„Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>„Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        </div><!-- END questionsContainer -->
+    </div>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MT Digitalisierung - JavaScript (ES5!)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    var STORAGE_KEY = 'mt-info-10mr-digitalisierung';
+    var testSubmitted = false;
+    var selectedVariante = '';
+    var TOTAL_POINTS = 30;
+
+    // Tab-Wechsel-Protokoll
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // Korrekte Antworten
+    var answers = {
+        q1: ['Algorithmus', 'Filterblase', 'Streaming', 'Phishing', 'Mikrotransaktion'],
+        q2: ['TikTok', 'Discord', 'ePA', 'PayPal', 'Spotify'],
+        q3: ['R', 'R', 'C', 'C', 'R', 'R'],
+        q4a: 'b',
+        q4b: ['b', 'd'],
+        q5a: 'b',
+        qBonusA: 'a'
+    };
+
+    // ===== PLATZ-FUNKTIONEN =====
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#b35c00;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+            updateProgress();
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    // ===== VARIANTE-AUSWAHL =====
+    function selectVariante(v) {
+        selectedVariante = v;
+        localStorage.setItem(STORAGE_KEY + '-variante', v);
+
+        document.getElementById('btnVarianteA').classList.remove('selected');
+        document.getElementById('btnVarianteB').classList.remove('selected');
+        document.getElementById('varianteA').classList.remove('active');
+        document.getElementById('varianteB').classList.remove('active');
+
+        if (v === 'A') {
+            document.getElementById('btnVarianteA').classList.add('selected');
+            document.getElementById('varianteA').classList.add('active');
+        } else if (v === 'B') {
+            document.getElementById('btnVarianteB').classList.add('selected');
+            document.getElementById('varianteB').classList.add('active');
+        }
+        saveProgress();
+    }
+
+    // ===== OPTIONS SETUP =====
+    function setupOptions() {
+        // Single-select
+        var optionContainers = document.querySelectorAll('.options:not(.multi-select)');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+        // Multi-select
+        var multiOptions = document.querySelectorAll('.multi-select .option');
+        for (var m = 0; m < multiOptions.length; m++) {
+            multiOptions[m].addEventListener('click', function(e) {
+                e.preventDefault();
+                this.classList.toggle('selected');
+                var checkbox = this.querySelector('input');
+                checkbox.checked = this.classList.contains('selected');
+                updateProgress();
+                saveProgress();
+            });
+        }
+        // C/R options
+        var crOptions = document.querySelectorAll('.cr-option');
+        for (var c = 0; c < crOptions.length; c++) {
+            crOptions[c].addEventListener('click', function() {
+                var q = this.dataset.q;
+                var siblings = document.querySelectorAll('.cr-option[data-q="' + q + '"]');
+                for (var s = 0; s < siblings.length; s++) {
+                    siblings[s].classList.remove('selected');
+                }
+                this.classList.add('selected');
+                updateProgress();
+                saveProgress();
+            });
+        }
+        // Dropdowns + Textareas
+        var selects = document.querySelectorAll('.luecke-select');
+        for (var d = 0; d < selects.length; d++) {
+            selects[d].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+        var textareas = document.querySelectorAll('.freitext');
+        for (var t = 0; t < textareas.length; t++) {
+            textareas[t].addEventListener('input', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+    }
+
+    // ===== PROGRESS =====
+    function countAnsweredQuestions() {
+        var answered = 0;
+        var total = 11; // Q1-5 Lücken, Q2-5 Zuordnung, Q3-6 CR, Q4a, Q4b, Q5a, Q5bc, Q6, Bonus
+
+        // Q1: 5 Lücken
+        var q1Filled = true;
+        for (var i = 1; i <= 5; i++) {
+            if (!document.getElementById('q1-' + i).value) q1Filled = false;
+        }
+        if (q1Filled) answered++;
+
+        // Q2: 5 Zuordnungen
+        var q2Filled = true;
+        for (var j = 1; j <= 5; j++) {
+            if (!document.getElementById('q2-' + j).value) q2Filled = false;
+        }
+        if (q2Filled) answered++;
+
+        // Q3: 6 C/R
+        var q3Filled = true;
+        for (var k = 1; k <= 6; k++) {
+            if (!document.querySelector('.cr-option[data-q="q3-' + k + '"].selected')) q3Filled = false;
+        }
+        if (q3Filled) answered++;
+
+        // Q4a
+        if (document.querySelector('input[name="q4a"]:checked')) answered++;
+
+        // Q4b
+        if (document.querySelectorAll('input[name="q4b"]:checked').length >= 2) answered++;
+
+        // Q5a
+        if (document.querySelector('input[name="q5a"]:checked')) answered++;
+
+        // Q5b+c
+        if (document.getElementById('q5b').value.trim() && document.getElementById('q5c').value.trim()) answered++;
+
+        // Q6
+        if (selectedVariante === 'A') {
+            if (document.getElementById('q6-pro').value.trim() &&
+                document.getElementById('q6-contra').value.trim() &&
+                document.getElementById('q6-empfehlung').value.trim()) answered++;
+        } else if (selectedVariante === 'B') {
+            if (document.getElementById('q6-fliesstext').value.trim()) answered++;
+        }
+
+        // Bonus a
+        if (document.querySelector('input[name="qBonusA"]:checked')) answered++;
+
+        return { answered: answered, total: total };
+    }
+
+    function updateProgress() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        if (!seatLocked) {
+            document.getElementById('progressText').textContent = 'Platznummer wählen...';
+            document.getElementById('progressFill').style.width = '0%';
+            return;
+        }
+        var status = countAnsweredQuestions();
+        var percent = status.total > 0 ? (status.answered / status.total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' Aufgaben bearbeitet';
+    }
+
+    // ===== PERSISTENCE =====
+    function saveProgress() {
+        var data = {
+            q1: [
+                document.getElementById('q1-1').value,
+                document.getElementById('q1-2').value,
+                document.getElementById('q1-3').value,
+                document.getElementById('q1-4').value,
+                document.getElementById('q1-5').value
+            ],
+            q2: [
+                document.getElementById('q2-1').value,
+                document.getElementById('q2-2').value,
+                document.getElementById('q2-3').value,
+                document.getElementById('q2-4').value,
+                document.getElementById('q2-5').value
+            ],
+            q3: [],
+            q4a: getRadioValue('q4a'),
+            q4b: getCheckboxValues('q4b'),
+            q5a: getRadioValue('q5a'),
+            q5b: document.getElementById('q5b').value,
+            q5c: document.getElementById('q5c').value,
+            variante: selectedVariante,
+            q6pro: document.getElementById('q6-pro').value,
+            q6contra: document.getElementById('q6-contra').value,
+            q6empfehlung: document.getElementById('q6-empfehlung').value,
+            q6fliesstext: document.getElementById('q6-fliesstext').value,
+            qBonusA: getRadioValue('qBonusA'),
+            qBonusB: document.getElementById('qBonus-b').value,
+            timestamp: new Date().toISOString()
+        };
+        for (var i = 1; i <= 6; i++) {
+            var sel = document.querySelector('.cr-option[data-q="q3-' + i + '"].selected');
+            data.q3.push(sel ? sel.dataset.value : '');
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            // Q1
+            if (data.q1) {
+                for (var i = 0; i < 5; i++) {
+                    document.getElementById('q1-' + (i+1)).value = data.q1[i] || '';
+                }
+            }
+            // Q2
+            if (data.q2) {
+                for (var j = 0; j < 5; j++) {
+                    document.getElementById('q2-' + (j+1)).value = data.q2[j] || '';
+                }
+            }
+            // Q3
+            if (data.q3) {
+                for (var k = 0; k < 6; k++) {
+                    if (data.q3[k]) {
+                        var opt = document.querySelector('.cr-option[data-q="q3-' + (k+1) + '"][data-value="' + data.q3[k] + '"]');
+                        if (opt) opt.classList.add('selected');
+                    }
+                }
+            }
+            // Q4a
+            if (data.q4a) {
+                var radio4a = document.querySelector('input[name="q4a"][value="' + data.q4a + '"]');
+                if (radio4a) { radio4a.checked = true; radio4a.parentNode.classList.add('selected'); }
+            }
+            // Q4b
+            if (data.q4b) {
+                data.q4b.forEach(function(v) {
+                    var cb = document.querySelector('input[name="q4b"][value="' + v + '"]');
+                    if (cb) { cb.checked = true; cb.parentNode.classList.add('selected'); }
+                });
+            }
+            // Q5a
+            if (data.q5a) {
+                var radio5a = document.querySelector('input[name="q5a"][value="' + data.q5a + '"]');
+                if (radio5a) { radio5a.checked = true; radio5a.parentNode.classList.add('selected'); }
+            }
+            // Q5b, Q5c
+            if (data.q5b) document.getElementById('q5b').value = data.q5b;
+            if (data.q5c) document.getElementById('q5c').value = data.q5c;
+            // Variante
+            if (data.variante) selectVariante(data.variante);
+            // Q6
+            if (data.q6pro) document.getElementById('q6-pro').value = data.q6pro;
+            if (data.q6contra) document.getElementById('q6-contra').value = data.q6contra;
+            if (data.q6empfehlung) document.getElementById('q6-empfehlung').value = data.q6empfehlung;
+            if (data.q6fliesstext) document.getElementById('q6-fliesstext').value = data.q6fliesstext;
+            // Bonus
+            if (data.qBonusA) {
+                var radioBonusA = document.querySelector('input[name="qBonusA"][value="' + data.qBonusA + '"]');
+                if (radioBonusA) { radioBonusA.checked = true; radioBonusA.parentNode.classList.add('selected'); }
+            }
+            if (data.qBonusB) document.getElementById('qBonus-b').value = data.qBonusB;
+        }
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    function getCheckboxValues(name) {
+        var checked = document.querySelectorAll('input[name="' + name + '"]:checked');
+        var values = [];
+        for (var i = 0; i < checked.length; i++) values.push(checked[i].value);
+        return values;
+    }
+
+    // ===== SUBMIT TEST =====
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var score = 0;
+
+        // ===== Q1: Lückentext (5 BE) =====
+        var q1Score = 0;
+        for (var i = 1; i <= 5; i++) {
+            var el = document.getElementById('q1-' + i);
+            if (el.value === answers.q1[i-1]) {
+                q1Score++;
+                el.classList.add('correct');
+            } else {
+                el.classList.add('incorrect');
+            }
+        }
+        score += q1Score;
+        showFeedback('q1', q1Score === 5);
+        showQuestionResult('q1', q1Score, 5);
+
+        // ===== Q2: Zuordnung (5 BE) =====
+        var q2Score = 0;
+        for (var j = 1; j <= 5; j++) {
+            var el2 = document.getElementById('q2-' + j);
+            if (el2.value === answers.q2[j-1]) {
+                q2Score++;
+                el2.classList.add('correct');
+            } else {
+                el2.classList.add('incorrect');
+            }
+        }
+        score += q2Score;
+        showFeedback('q2', q2Score === 5);
+        showQuestionResult('q2', q2Score, 5);
+
+        // ===== Q3: C/R (6 BE) =====
+        var q3Score = 0;
+        for (var k = 1; k <= 6; k++) {
+            var crOpts = document.querySelectorAll('.cr-option[data-q="q3-' + k + '"]');
+            var selected = document.querySelector('.cr-option[data-q="q3-' + k + '"].selected');
+            var correctVal = answers.q3[k-1];
+            for (var c = 0; c < crOpts.length; c++) {
+                if (crOpts[c].dataset.value === correctVal) {
+                    crOpts[c].classList.add('correct');
+                } else if (crOpts[c].classList.contains('selected')) {
+                    crOpts[c].classList.add('incorrect');
+                }
+            }
+            if (selected && selected.dataset.value === correctVal) q3Score++;
+        }
+        score += q3Score;
+        showFeedback('q3', q3Score === 6);
+        showQuestionResult('q3', q3Score, 6);
+
+        // ===== Q4: Phishing (3 BE) =====
+        var q4Score = 0;
+        // Q4a (1 BE)
+        var q4aVal = getRadioValue('q4a');
+        markRadioQuestion('q4a', answers.q4a, q4aVal);
+        if (q4aVal === answers.q4a) q4Score++;
+        // Q4b (2 BE)
+        var q4bVals = getCheckboxValues('q4b');
+        var q4bScore = scoreMultiSelect('q4b', answers.q4b, q4bVals, 2);
+        q4Score += q4bScore;
+        score += q4Score;
+        showFeedback('q4', q4Score === 3);
+        showQuestionResult('q4', q4Score, 3);
+
+        // ===== Q5: Gaming (4 BE, nur 1 BE auto) =====
+        var q5Score = 0;
+        var q5aVal = getRadioValue('q5a');
+        markRadioQuestion('q5a', answers.q5a, q5aVal);
+        if (q5aVal === answers.q5a) q5Score++;
+        score += q5Score;
+        showFeedback('q5', q5Score === 1);
+        showQuestionResult('q5', q5Score, 1, false, '(+3 BE Lehrer)');
+        document.getElementById('q5-ml').classList.add('show');
+
+        // ===== Q6: Stellungnahme (7 BE, Lehrer) =====
+        showQuestionResult('q6', 0, (selectedVariante === 'A' ? 5 : 7), false, '(Lehrer)');
+        document.getElementById('q6-ml').classList.add('show');
+
+        // ===== Bonus (2 BE, nur MC auto) =====
+        var bonusScore = 0;
+        var bonusAVal = getRadioValue('qBonusA');
+        markRadioQuestion('qBonusA', answers.qBonusA, bonusAVal, 'qBonus-a-options');
+        if (bonusAVal === answers.qBonusA) bonusScore++;
+        showFeedback('qBonus', bonusScore === 1);
+        showQuestionResult('qBonus', bonusScore, 1, false, '(+1 BE Lehrer)');
+        document.getElementById('qBonus-ml').classList.add('show');
+
+        displayResults(score);
+    }
+
+    function markRadioQuestion(name, correct, selected, containerId) {
+        var cId = containerId || (name + '-options');
+        var options = document.querySelectorAll('#' + cId + ' .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function scoreMultiSelect(name, correctAnswers, userAnswers, maxPoints) {
+        var qOptions = document.querySelectorAll('#' + name + '-options .option');
+        var score = 0;
+        for (var i = 0; i < qOptions.length; i++) {
+            var val = qOptions[i].dataset.value;
+            var isCorrectAnswer = correctAnswers.indexOf(val) !== -1;
+            var wasSelected = userAnswers.indexOf(val) !== -1;
+            if (isCorrectAnswer && wasSelected) { score += 1; qOptions[i].classList.add('correct'); }
+            else if (isCorrectAnswer && !wasSelected) { qOptions[i].classList.add('missed'); }
+            else if (!isCorrectAnswer && wasSelected) { score -= 0.5; qOptions[i].classList.add('incorrect'); }
+        }
+        return Math.max(0, Math.min(score, maxPoints));
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts, notGraded, suffix) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        var text = achieved + '/' + maxPts + ' BE';
+        if (suffix) text += ' ' + suffix;
+        if (notGraded) {
+            result.style.background = '#f0f0f0';
+            result.style.color = '#888';
+        } else {
+            if (achieved === maxPts) result.classList.add('full');
+            else if (achieved > 0) result.classList.add('partial');
+            else result.classList.add('zero');
+        }
+        result.textContent = text;
+        meta.appendChild(result);
+    }
+
+    function displayResults(autoScore) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: ' + platzText;
+        document.getElementById('scoreDisplay').textContent = autoScore + ' / ' + TOTAL_POINTS;
+
+        // MR Klasse 10: 6-Noten-System
+        var percent = (autoScore / TOTAL_POINTS) * 100;
+        var note;
+        if (percent >= 96) note = 1;
+        else if (percent >= 80) note = 2;
+        else if (percent >= 60) note = 3;
+        else if (percent >= 40) note = 4;
+        else if (percent >= 20) note = 5;
+        else note = 6;
+
+        document.getElementById('gradeDisplay').textContent = 'Automatische Bewertung: Note ' + note + ' (ohne Freitext)';
+
+        // BE-Grenzen
+        document.getElementById('be1').textContent = Math.ceil(TOTAL_POINTS * 0.96);
+        document.getElementById('be2').textContent = Math.ceil(TOTAL_POINTS * 0.80);
+        document.getElementById('be3').textContent = Math.ceil(TOTAL_POINTS * 0.60);
+        document.getElementById('be4').textContent = Math.ceil(TOTAL_POINTS * 0.40);
+        document.getElementById('be5').textContent = Math.ceil(TOTAL_POINTS * 0.20);
+        document.getElementById('be6').textContent = '0';
+
+        // Aktuelle Note markieren
+        if (note >= 1 && note <= 6) {
+            var cell = document.getElementById('be' + note);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', autoScore);
+
+        // Zeitstempel + Tab-Wechsel
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        document.getElementById('resultsSection').insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function disableAllInputs() {
+        var radios = document.querySelectorAll('input[type="radio"]');
+        for (var i = 0; i < radios.length; i++) radios[i].disabled = true;
+        var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        for (var j = 0; j < checkboxes.length; j++) checkboxes[j].disabled = true;
+        var selects = document.querySelectorAll('select');
+        for (var k = 0; k < selects.length; k++) selects[k].disabled = true;
+        var textareas = document.querySelectorAll('textarea');
+        for (var t = 0; t < textareas.length; t++) textareas[t].disabled = true;
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+        var varianteBtns = document.querySelectorAll('.variante-btn');
+        for (var v = 0; v < varianteBtns.length; v++) varianteBtns[v].disabled = true;
+    }
+
+    // ===== INIT =====
+    window.onload = function() {
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        generateSeatDropdown();
+        setupOptions();
+        loadProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
+
+        // Bereits abgegeben?
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vergleich: Oxidation und Reduktion</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION: Vergleich Oxidation / Reduktion
+   Chemie Klasse 8 | sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2a7a4b;
+    --accent-light: #e8f5e9;
+    --oxidation: #1565c0;
+    --oxidation-light: #e3f2fd;
+    --reduktion: #2a7a4b;
+    --reduktion-light: #e8f5e9;
+    --silver: #607d8b;
+    --oxygen: #c62828;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOGGLE BUTTONS
+═══════════════════════════════════════════════════════════════ */
+
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.toggle-btn {
+    padding: 12px 24px;
+    border: 2px solid var(--border);
+    background: var(--white);
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.toggle-btn:hover {
+    border-color: var(--accent);
+}
+
+.toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--white);
+}
+
+.toggle-btn.oxidation.active {
+    background: var(--oxidation);
+    border-color: var(--oxidation);
+}
+
+.toggle-btn.reduktion.active {
+    background: var(--reduktion);
+    border-color: var(--reduktion);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPARISON GRID
+═══════════════════════════════════════════════════════════════ */
+
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 700px) {
+    .comparison-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.reaction-card {
+    background: var(--white);
+    border: 2px solid var(--border);
+    transition: all 0.3s;
+    opacity: 0.5;
+}
+
+.reaction-card.active {
+    opacity: 1;
+}
+
+.reaction-card.oxidation.active {
+    border-color: var(--oxidation);
+}
+
+.reaction-card.reduktion.active {
+    border-color: var(--reduktion);
+}
+
+.card-header {
+    padding: 12px 15px;
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.reaction-card.oxidation .card-header {
+    background: var(--oxidation-light);
+    color: var(--oxidation);
+}
+
+.reaction-card.reduktion .card-header {
+    background: var(--reduktion-light);
+    color: var(--reduktion);
+}
+
+.card-content {
+    padding: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION AREA
+═══════════════════════════════════════════════════════════════ */
+
+.anim-area {
+    height: 150px;
+    background: #fafafa;
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: bold;
+    color: white;
+    transition: all 1s ease-in-out;
+}
+
+.particle.ag {
+    width: 40px;
+    height: 40px;
+    background: var(--silver);
+}
+
+.particle.o {
+    width: 30px;
+    height: 30px;
+    background: var(--oxygen);
+}
+
+.particle.ag2o {
+    width: 70px;
+    height: 40px;
+    border-radius: 20px;
+    background: linear-gradient(90deg, var(--silver) 0%, var(--silver) 40%, var(--oxygen) 60%, var(--oxygen) 100%);
+}
+
+.arrow-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EQUATION & INFO
+═══════════════════════════════════════════════════════════════ */
+
+.equation-display {
+    background: var(--bg);
+    padding: 12px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: 500;
+    margin-bottom: 15px;
+}
+
+.equation-display .silver { color: var(--silver); }
+.equation-display .oxygen { color: var(--oxygen); }
+.equation-display sub { font-size: 0.7em; }
+
+.info-row {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    padding: 8px;
+    background: var(--bg);
+}
+
+.info-label {
+    font-weight: 600;
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    flex: 1;
+}
+
+.highlight-box {
+    padding: 10px 15px;
+    margin-top: 15px;
+    font-weight: 500;
+}
+
+.reaction-card.oxidation .highlight-box {
+    background: var(--oxidation-light);
+    border-left: 4px solid var(--oxidation);
+    color: var(--oxidation);
+}
+
+.reaction-card.reduktion .highlight-box {
+    background: var(--reduktion-light);
+    border-left: 4px solid var(--reduktion);
+    color: var(--reduktion);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUMMARY
+═══════════════════════════════════════════════════════════════ */
+
+.summary {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.summary h3 {
+    color: var(--accent);
+    margin-bottom: 15px;
+}
+
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.summary-table th, .summary-table td {
+    padding: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.summary-table th {
+    background: var(--bg);
+    font-weight: 600;
+}
+
+.summary-table th.oxidation { color: var(--oxidation); }
+.summary-table th.reduktion { color: var(--reduktion); }
+
+.play-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.play-btn:hover { background: #1e5a35; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Oxidation und Reduktion im Vergleich</h1>
+            <div class="meta">Chemie Klasse 8 | Zwei Seiten einer Medaille</div>
+        </header>
+
+        <div class="toggle-container">
+            <button class="toggle-btn oxidation active" data-view="oxidation">Oxidation</button>
+            <button class="toggle-btn reduktion active" data-view="reduktion">Reduktion</button>
+            <button class="toggle-btn" data-view="beide">Beide vergleichen</button>
+        </div>
+
+        <div class="comparison-grid">
+            <!-- OXIDATION -->
+            <div class="reaction-card oxidation active" id="cardOxidation">
+                <div class="card-header">OXIDATION</div>
+                <div class="card-content">
+                    <div class="anim-area" id="animOxidation">
+                        <div class="particle ag" id="ox-ag1" style="left: 30px; top: 55px;">Ag</div>
+                        <div class="particle ag" id="ox-ag2" style="left: 80px; top: 55px;">Ag</div>
+                        <div class="particle o" id="ox-o1" style="left: 150px; top: 40px;">O</div>
+                        <div class="particle o" id="ox-o2" style="left: 150px; top: 80px;">O</div>
+                        <div class="arrow-indicator">→</div>
+                    </div>
+                    <button class="play-btn" onclick="playOxidation()">Animation abspielen</button>
+
+                    <div class="equation-display">
+                        4 <span class="silver">Ag</span> + <span class="oxygen">O</span><sub>2</sub> → 2 <span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Sauerstoff:</span>
+                        <span class="info-value">wird <strong>aufgenommen</strong></span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Beispiel:</span>
+                        <span class="info-value">Silber + Sauerstoff → Silberoxid</span>
+                    </div>
+
+                    <div class="highlight-box">
+                        Oxidation = Sauerstoff kommt DAZU
+                    </div>
+                </div>
+            </div>
+
+            <!-- REDUKTION -->
+            <div class="reaction-card reduktion active" id="cardReduktion">
+                <div class="card-header">REDUKTION</div>
+                <div class="card-content">
+                    <div class="anim-area" id="animReduktion">
+                        <div class="particle ag2o" id="red-ag2o1" style="left: 30px; top: 40px;">Ag₂O</div>
+                        <div class="particle ag2o" id="red-ag2o2" style="left: 30px; top: 90px;">Ag₂O</div>
+                        <div class="arrow-indicator">→</div>
+                    </div>
+                    <button class="play-btn" onclick="playReduktion()">Animation abspielen</button>
+
+                    <div class="equation-display">
+                        2 <span class="silver">Ag</span><sub>2</sub><span class="oxygen">O</span> → 4 <span class="silver">Ag</span> + <span class="oxygen">O</span><sub>2</sub>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Sauerstoff:</span>
+                        <span class="info-value">wird <strong>abgegeben</strong></span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Beispiel:</span>
+                        <span class="info-value">Silberoxid → Silber + Sauerstoff</span>
+                    </div>
+
+                    <div class="highlight-box">
+                        Reduktion = Sauerstoff geht WEG
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <h3>Zusammenfassung</h3>
+            <table class="summary-table">
+                <tr>
+                    <th></th>
+                    <th class="oxidation">Oxidation</th>
+                    <th class="reduktion">Reduktion</th>
+                </tr>
+                <tr>
+                    <td><strong>Sauerstoff</strong></td>
+                    <td>wird aufgenommen</td>
+                    <td>wird abgegeben</td>
+                </tr>
+                <tr>
+                    <td><strong>Merkhilfe</strong></td>
+                    <td>„O kommt dazu"</td>
+                    <td>„O geht weg"</td>
+                </tr>
+                <tr>
+                    <td><strong>Etymologie</strong></td>
+                    <td>Oxygenium = Sauerstoff</td>
+                    <td>reducere = zurückführen</td>
+                </tr>
+                <tr>
+                    <td><strong>Produkt</strong></td>
+                    <td>Metalloxid</td>
+                    <td>Reines Metall</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIMULATION: Vergleich Oxidation / Reduktion
+// ES5-kompatibel
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var currentView = 'beide';
+
+    // Toggle Buttons
+    var toggleBtns = document.querySelectorAll('.toggle-btn');
+    for (var i = 0; i < toggleBtns.length; i++) {
+        toggleBtns[i].addEventListener('click', function() {
+            var view = this.getAttribute('data-view');
+            setView(view);
+        });
+    }
+
+    function setView(view) {
+        currentView = view;
+
+        // Button-Status aktualisieren
+        for (var i = 0; i < toggleBtns.length; i++) {
+            var btn = toggleBtns[i];
+            var btnView = btn.getAttribute('data-view');
+
+            if (view === 'beide') {
+                btn.classList.toggle('active', btnView === 'oxidation' || btnView === 'reduktion' || btnView === 'beide');
+            } else {
+                btn.classList.toggle('active', btnView === view);
+            }
+        }
+
+        // Cards aktualisieren
+        var cardOx = document.getElementById('cardOxidation');
+        var cardRed = document.getElementById('cardReduktion');
+
+        if (view === 'beide') {
+            cardOx.classList.add('active');
+            cardRed.classList.add('active');
+        } else if (view === 'oxidation') {
+            cardOx.classList.add('active');
+            cardRed.classList.remove('active');
+        } else {
+            cardOx.classList.remove('active');
+            cardRed.classList.add('active');
+        }
+    }
+
+    // Oxidation Animation
+    window.playOxidation = function() {
+        var ag1 = document.getElementById('ox-ag1');
+        var ag2 = document.getElementById('ox-ag2');
+        var o1 = document.getElementById('ox-o1');
+        var o2 = document.getElementById('ox-o2');
+
+        // Reset
+        ag1.style.left = '30px'; ag1.style.top = '55px';
+        ag2.style.left = '80px'; ag2.style.top = '55px';
+        o1.style.left = '150px'; o1.style.top = '40px';
+        o2.style.left = '150px'; o2.style.top = '80px';
+
+        // Animate: Sauerstoff bewegt sich zu Silber
+        setTimeout(function() {
+            o1.style.left = '115px'; o1.style.top = '55px';
+            o2.style.left = '115px'; o2.style.top = '55px';
+            ag1.style.left = '60px';
+            ag2.style.left = '100px';
+        }, 100);
+
+        // Zusammenfügen
+        setTimeout(function() {
+            ag1.innerHTML = 'Ag₂O';
+            ag1.className = 'particle ag2o';
+            ag1.style.left = '50px';
+            ag2.style.opacity = '0';
+            o1.style.opacity = '0';
+            o2.style.opacity = '0';
+        }, 1200);
+
+        // Reset nach 3s
+        setTimeout(function() {
+            ag1.innerHTML = 'Ag';
+            ag1.className = 'particle ag';
+            ag2.style.opacity = '1';
+            o1.style.opacity = '1';
+            o2.style.opacity = '1';
+            ag1.style.left = '30px';
+            ag2.style.left = '80px';
+            o1.style.left = '150px'; o1.style.top = '40px';
+            o2.style.left = '150px'; o2.style.top = '80px';
+        }, 3500);
+    };
+
+    // Reduktion Animation
+    window.playReduktion = function() {
+        var ag2o1 = document.getElementById('red-ag2o1');
+        var ag2o2 = document.getElementById('red-ag2o2');
+        var animArea = document.getElementById('animReduktion');
+
+        // Temporäre Elemente für Produkte
+        var ag1 = document.createElement('div');
+        ag1.className = 'particle ag';
+        ag1.innerHTML = 'Ag';
+        ag1.style.cssText = 'left: 30px; top: 40px; opacity: 0;';
+
+        var ag2 = document.createElement('div');
+        ag2.className = 'particle ag';
+        ag2.innerHTML = 'Ag';
+        ag2.style.cssText = 'left: 70px; top: 40px; opacity: 0;';
+
+        var ag3 = document.createElement('div');
+        ag3.className = 'particle ag';
+        ag3.innerHTML = 'Ag';
+        ag3.style.cssText = 'left: 30px; top: 90px; opacity: 0;';
+
+        var ag4 = document.createElement('div');
+        ag4.className = 'particle ag';
+        ag4.innerHTML = 'Ag';
+        ag4.style.cssText = 'left: 70px; top: 90px; opacity: 0;';
+
+        var o2 = document.createElement('div');
+        o2.className = 'particle o';
+        o2.innerHTML = 'O₂';
+        o2.style.cssText = 'left: 130px; top: 55px; opacity: 0; width: 50px;';
+
+        animArea.appendChild(ag1);
+        animArea.appendChild(ag2);
+        animArea.appendChild(ag3);
+        animArea.appendChild(ag4);
+        animArea.appendChild(o2);
+
+        // Animate: Ag2O zerfällt
+        setTimeout(function() {
+            ag2o1.style.opacity = '0';
+            ag2o2.style.opacity = '0';
+            ag1.style.opacity = '1';
+            ag2.style.opacity = '1';
+            ag3.style.opacity = '1';
+            ag4.style.opacity = '1';
+            o2.style.opacity = '1';
+        }, 100);
+
+        // O2 entweicht nach oben
+        setTimeout(function() {
+            o2.style.top = '-30px';
+            o2.style.opacity = '0';
+        }, 1200);
+
+        // Reset
+        setTimeout(function() {
+            ag2o1.style.opacity = '1';
+            ag2o2.style.opacity = '1';
+            animArea.removeChild(ag1);
+            animArea.removeChild(ag2);
+            animArea.removeChild(ag3);
+            animArea.removeChild(ag4);
+            animArea.removeChild(o2);
+        }, 3500);
+    };
+
+    // Initial: Beide anzeigen
+    setView('beide');
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT-09b: Elektromagnetische Induktion</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header {
+            background: #2c5aa0;
+            color: #fff;
+            padding: 15px 20px;
+            margin: -20px -20px 20px -20px;
+        }
+        .header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        .score-display {
+            background: #fff;
+            color: #2c5aa0;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+        }
+        .score-value { font-size: 1.3em; font-weight: 600; }
+        .task {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .task-title {
+            color: #2c5aa0;
+            font-weight: 600;
+        }
+        .task-points {
+            background: #f0f4f8;
+            padding: 3px 10px;
+            font-size: 0.85em;
+            color: #555;
+        }
+        .mc-option {
+            display: block;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mc-option:hover { background: #f5f5f5; }
+        .mc-option.selected { border-color: #2c5aa0; background: #e3f2fd; }
+        .mc-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .mc-option.wrong { border-color: #c62828; background: #ffebee; }
+        .mc-option.disabled { pointer-events: none; opacity: 0.8; }
+        .matching-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .matching-left, .matching-right {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .matching-item {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            background: #fff;
+        }
+        .matching-item.header {
+            background: #2c5aa0;
+            color: #fff;
+            font-weight: 600;
+            text-align: center;
+        }
+        .matching-select {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ddd;
+            font-size: 0.95em;
+            margin-top: 5px;
+        }
+        .matching-select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .matching-select.wrong { border-color: #c62828; background: #ffebee; }
+        .feedback {
+            padding: 12px;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9em;
+        }
+        .feedback.show { display: block; }
+        .feedback.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback.wrong { background: #ffebee; border-left: 3px solid #c62828; }
+        .feedback.partial { background: #fff3e0; border-left: 3px solid #b35c00; }
+        button {
+            padding: 12px 25px;
+            border: none;
+            background: #2c5aa0;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.95em;
+            margin-top: 10px;
+        }
+        button:hover { background: #1e4a8a; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .submit-section {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .result-section {
+            background: #fff;
+            border: 2px solid #2c5aa0;
+            padding: 25px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        .result-section.show { display: block; }
+        .result-score {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin: 15px 0;
+        }
+        .result-grade {
+            font-size: 1.2em;
+            padding: 10px 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .grade-1 { background: #e8f5e9; color: #2a7a4b; }
+        .grade-2 { background: #e3f2fd; color: #2c5aa0; }
+        .grade-3 { background: #fff3e0; color: #b35c00; }
+        .grade-4 { background: #ffebee; color: #c62828; }
+        .unlock-section {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+        .unlock-section.show { display: block; }
+        .unlock-section input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            margin-right: 10px;
+            width: 120px;
+        }
+        .task-result {
+            display: inline-block;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .task-result.correct { background: #e8f5e9; color: #2a7a4b; }
+        .task-result.wrong { background: #ffebee; color: #c62828; }
+        .task-result.partial { background: #fff3e0; color: #b35c00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mini-Test: Elektromagnetische Induktion</h1>
+            <div class="header-info">
+                <span>Physik Klasse 9 | MT-09b</span>
+                <span>25 BE | ca. 15 Min</span>
+            </div>
+        </div>
+
+        <div class="score-display">
+            <span>Erreichte Punkte:</span>
+            <span class="score-value" id="currentScore">0 / 25 BE</span>
+        </div>
+
+        <!-- AUFGABE 1: Zuordnung Motor vs Generator (5 BE) -->
+        <div class="task" id="task1">
+            <div class="task-header">
+                <span class="task-title">Aufgabe 1: Motor oder Generator?</span>
+                <span class="task-points">5 BE</span>
+            </div>
+            <p>Ordne die Eigenschaften dem Motor oder dem Generator zu.</p>
+
+            <div style="margin-top: 15px;">
+                <div class="matching-item" style="margin-bottom: 10px;">
+                    <span>(a) Strom fließt hinein:</span>
+                    <select class="matching-select" data-correct="motor" id="m1a">
+                        <option value="">-- Auswählen --</option>
+                        <option value="motor">Motor</option>
+                        <option value="generator">Generator</option>
+                    </select>
+                </div>
+                <div class="matching-item" style="margin-bottom: 10px;">
+                    <span>(b) Erzeugt elektrische Energie:</span>
+                    <select class="matching-select" data-correct="generator" id="m1b">
+                        <option value="">-- Auswählen --</option>
+                        <option value="motor">Motor</option>
+                        <option value="generator">Generator</option>
+                    </select>
+                </div>
+                <div class="matching-item" style="margin-bottom: 10px;">
+                    <span>(c) Wird im Kraftwerk verwendet:</span>
+                    <select class="matching-select" data-correct="generator" id="m1c">
+                        <option value="">-- Auswählen --</option>
+                        <option value="motor">Motor</option>
+                        <option value="generator">Generator</option>
+                    </select>
+                </div>
+                <div class="matching-item" style="margin-bottom: 10px;">
+                    <span>(d) Wandelt elektrische Energie in Bewegung um:</span>
+                    <select class="matching-select" data-correct="motor" id="m1d">
+                        <option value="">-- Auswählen --</option>
+                        <option value="motor">Motor</option>
+                        <option value="generator">Generator</option>
+                    </select>
+                </div>
+                <div class="matching-item" style="margin-bottom: 10px;">
+                    <span>(e) Funktioniert durch Induktion:</span>
+                    <select class="matching-select" data-correct="generator" id="m1e">
+                        <option value="">-- Auswählen --</option>
+                        <option value="motor">Motor</option>
+                        <option value="generator">Generator</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="feedback correct" id="fb1c">
+                <strong>Richtig!</strong> Du hast alle Eigenschaften korrekt zugeordnet.
+            </div>
+            <div class="feedback partial" id="fb1p">
+                <strong>Teilweise richtig.</strong> Einige Zuordnungen waren korrekt.
+            </div>
+            <div class="feedback wrong" id="fb1w">
+                <strong>Leider nicht richtig.</strong> Motor: Strom → Bewegung. Generator: Bewegung → Strom.
+            </div>
+        </div>
+
+        <!-- AUFGABE 2: Wann entsteht Induktionsspannung? (4 BE) -->
+        <div class="task" id="task2">
+            <div class="task-header">
+                <span class="task-title">Aufgabe 2: Wann entsteht eine Induktionsspannung?</span>
+                <span class="task-points">4 BE</span>
+            </div>
+            <p>Ein Magnet befindet sich in der Nähe einer Spule. Wann zeigt das Voltmeter eine Spannung an?</p>
+
+            <label class="mc-option" data-value="0">
+                (a) Wenn der Magnet stillsteht und sich nicht bewegt
+            </label>
+            <label class="mc-option" data-value="1">
+                (b) Wenn der Magnet sich relativ zur Spule bewegt
+            </label>
+            <label class="mc-option" data-value="2">
+                (c) Immer, solange der Magnet in der Nähe der Spule ist
+            </label>
+            <label class="mc-option" data-value="3">
+                (d) Nur wenn der Magnet sehr weit von der Spule entfernt ist
+            </label>
+
+            <div class="feedback correct" id="fb2c">
+                <strong>Richtig!</strong> Induktion erfordert eine <em>Änderung</em> – der Magnet muss sich bewegen.
+            </div>
+            <div class="feedback wrong" id="fb2w">
+                <strong>Nicht richtig.</strong> Induktion entsteht nur bei Bewegung (Änderung des Magnetfelds in der Spule). Ein ruhender Magnet induziert keine Spannung.
+            </div>
+        </div>
+
+        <!-- AUFGABE 3: Einflussfaktoren (4 BE) -->
+        <div class="task" id="task3">
+            <div class="task-header">
+                <span class="task-title">Aufgabe 3: Einflussfaktoren</span>
+                <span class="task-points">4 BE</span>
+            </div>
+            <p>Wodurch wird die Induktionsspannung <strong>nicht</strong> größer?</p>
+
+            <label class="mc-option" data-value="0">
+                (a) Schnellere Bewegung des Magneten
+            </label>
+            <label class="mc-option" data-value="1">
+                (b) Mehr Windungen in der Spule
+            </label>
+            <label class="mc-option" data-value="2">
+                (c) Längerer Draht für die Spule (bei gleicher Windungszahl)
+            </label>
+            <label class="mc-option" data-value="3">
+                (d) Stärkerer Magnet
+            </label>
+
+            <div class="feedback correct" id="fb3c">
+                <strong>Richtig!</strong> Die Drahtlänge allein (bei gleicher Windungszahl) erhöht die Spannung nicht. Wichtig sind: Geschwindigkeit, Windungszahl und Magnetstärke.
+            </div>
+            <div class="feedback wrong" id="fb3w">
+                <strong>Nicht richtig.</strong> Die Induktionsspannung wird größer durch: schnellere Bewegung, mehr Windungen, stärkeren Magneten. Die Drahtlänge allein spielt keine Rolle.
+            </div>
+        </div>
+
+        <!-- AUFGABE 4: Energieumwandlung (4 BE) -->
+        <div class="task" id="task4">
+            <div class="task-header">
+                <span class="task-title">Aufgabe 4: Energieumwandlung</span>
+                <span class="task-points">4 BE</span>
+            </div>
+            <p>Welche Energieumwandlung findet in einem Wasserkraftwerk statt?</p>
+
+            <label class="mc-option" data-value="0">
+                (a) Elektrische Energie → Bewegungsenergie → Wärme
+            </label>
+            <label class="mc-option" data-value="1">
+                (b) Bewegungsenergie (Wasser) → Elektrische Energie
+            </label>
+            <label class="mc-option" data-value="2">
+                (c) Wärme → Bewegungsenergie → Licht
+            </label>
+            <label class="mc-option" data-value="3">
+                (d) Chemische Energie → Elektrische Energie
+            </label>
+
+            <div class="feedback correct" id="fb4c">
+                <strong>Richtig!</strong> Im Wasserkraftwerk treibt fließendes Wasser eine Turbine an, die einen Generator dreht: Bewegung → Strom.
+            </div>
+            <div class="feedback wrong" id="fb4w">
+                <strong>Nicht richtig.</strong> Im Wasserkraftwerk: Die Bewegungsenergie des Wassers treibt Turbinen an, die Generatoren drehen → elektrische Energie.
+            </div>
+        </div>
+
+        <!-- AUFGABE 5: Anwendung (4 BE) -->
+        <div class="task" id="task5">
+            <div class="task-header">
+                <span class="task-title">Aufgabe 5: Anwendung</span>
+                <span class="task-points">4 BE</span>
+            </div>
+            <p>Eine Faraday-Lampe (Schütteltaschenlampe) funktioniert ohne Batterien. Wie erzeugt sie Strom?</p>
+
+            <label class="mc-option" data-value="0">
+                (a) Durch Reibung entsteht elektrische Ladung
+            </label>
+            <label class="mc-option" data-value="1">
+                (b) Ein Magnet bewegt sich beim Schütteln durch eine Spule
+            </label>
+            <label class="mc-option" data-value="2">
+                (c) Die Wärme der Hand wird in Strom umgewandelt
+            </label>
+            <label class="mc-option" data-value="3">
+                (d) Sonnenlicht lädt einen Akku auf
+            </label>
+
+            <div class="feedback correct" id="fb5c">
+                <strong>Richtig!</strong> In der Lampe gleitet ein Magnet durch eine Spule – das ist Induktion!
+            </div>
+            <div class="feedback wrong" id="fb5w">
+                <strong>Nicht richtig.</strong> Die Faraday-Lampe nutzt Induktion: Beim Schütteln bewegt sich ein Magnet durch eine Spule und erzeugt so Spannung.
+            </div>
+        </div>
+
+        <!-- AUFGABE 6: Transfer (4 BE) -->
+        <div class="task" id="task6">
+            <div class="task-header">
+                <span class="task-title">Aufgabe 6: Transfer</span>
+                <span class="task-points">4 BE</span>
+            </div>
+            <p>Ein Schüler sagt: „Wenn ich schneller Fahrrad fahre, leuchtet meine Dynamolampe heller."</p>
+            <p><strong>Warum ist das so?</strong></p>
+
+            <label class="mc-option" data-value="0">
+                (a) Weil der Dynamo heißer wird und mehr Strom erzeugt
+            </label>
+            <label class="mc-option" data-value="1">
+                (b) Weil bei schnellerer Drehung eine größere Spannung induziert wird
+            </label>
+            <label class="mc-option" data-value="2">
+                (c) Weil mehr Luft an der Lampe vorbeiströmt
+            </label>
+            <label class="mc-option" data-value="3">
+                (d) Weil die Batterie im Dynamo schneller geladen wird
+            </label>
+
+            <div class="feedback correct" id="fb6c">
+                <strong>Richtig!</strong> Schnellere Bewegung → größere Induktionsspannung → hellere Lampe. Das ist das qualitative Induktionsgesetz!
+            </div>
+            <div class="feedback wrong" id="fb6w">
+                <strong>Nicht richtig.</strong> Der Dynamo hat keine Batterie. Er nutzt Induktion: Schnellere Drehung = schnellere Änderung des Magnetfelds = größere Spannung.
+            </div>
+        </div>
+
+        <!-- Abgabe-Section -->
+        <div class="submit-section" id="submitSection">
+            <p>Hast du alle Aufgaben bearbeitet?</p>
+            <button onclick="submitTest()">Test abgeben</button>
+        </div>
+
+        <!-- Ergebnis-Section -->
+        <div class="result-section" id="resultSection">
+            <h2>Testergebnis</h2>
+            <div class="result-score" id="finalScore">0 / 25 BE</div>
+            <div id="percentDisplay">0%</div>
+            <div class="result-grade" id="gradeDisplay">Note: -</div>
+
+            <div class="unlock-section" id="unlockSection">
+                <p><strong>Lehrkraft-Entsperrung:</strong></p>
+                <input type="password" id="unlockCode" placeholder="Code">
+                <button onclick="unlockSolutions()">Lösungen zeigen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Richtige Antworten
+        var answers = {
+            task1: { a: 'motor', b: 'generator', c: 'generator', d: 'motor', e: 'generator' },
+            task2: 1,
+            task3: 2,
+            task4: 1,
+            task5: 1,
+            task6: 1
+        };
+
+        var UNLOCK_CODE = 'physik2026';
+        var testSubmitted = false;
+        var totalScore = 0;
+
+        // MC-Klick-Handler
+        document.querySelectorAll('.task').forEach(function(task) {
+            var options = task.querySelectorAll('.mc-option');
+            options.forEach(function(option) {
+                option.addEventListener('click', function() {
+                    if (testSubmitted) return;
+
+                    // Nur eine Auswahl pro Aufgabe
+                    options.forEach(function(o) { o.classList.remove('selected'); });
+                    this.classList.add('selected');
+
+                    updateScore();
+                    saveProgress();
+                });
+            });
+        });
+
+        // Select-Handler für Aufgabe 1
+        document.querySelectorAll('.matching-select').forEach(function(select) {
+            select.addEventListener('change', function() {
+                if (testSubmitted) return;
+                updateScore();
+                saveProgress();
+            });
+        });
+
+        function updateScore() {
+            var score = 0;
+
+            // Aufgabe 1: Zuordnung (5 BE)
+            var task1Score = 0;
+            ['a', 'b', 'c', 'd', 'e'].forEach(function(letter) {
+                var select = document.getElementById('m1' + letter);
+                if (select.value === answers.task1[letter]) {
+                    task1Score++;
+                }
+            });
+            score += task1Score;
+
+            // Aufgaben 2-6: MC (je 4 BE)
+            for (var i = 2; i <= 6; i++) {
+                var task = document.getElementById('task' + i);
+                var selected = task.querySelector('.mc-option.selected');
+                if (selected) {
+                    var value = parseInt(selected.dataset.value);
+                    if (value === answers['task' + i]) {
+                        score += 4;
+                    }
+                }
+            }
+
+            totalScore = score;
+            document.getElementById('currentScore').textContent = score + ' / 25 BE';
+        }
+
+        function submitTest() {
+            testSubmitted = true;
+
+            // Aufgabe 1 auswerten
+            var task1Score = 0;
+            ['a', 'b', 'c', 'd', 'e'].forEach(function(letter) {
+                var select = document.getElementById('m1' + letter);
+                select.disabled = true;
+                if (select.value === answers.task1[letter]) {
+                    select.classList.add('correct');
+                    task1Score++;
+                } else {
+                    select.classList.add('wrong');
+                }
+            });
+
+            // Feedback Aufgabe 1
+            if (task1Score === 5) {
+                document.getElementById('fb1c').classList.add('show');
+            } else if (task1Score >= 3) {
+                document.getElementById('fb1p').classList.add('show');
+            } else {
+                document.getElementById('fb1w').classList.add('show');
+            }
+
+            // Aufgaben 2-6 auswerten
+            for (var i = 2; i <= 6; i++) {
+                var task = document.getElementById('task' + i);
+                var options = task.querySelectorAll('.mc-option');
+                var selected = task.querySelector('.mc-option.selected');
+                var correctValue = answers['task' + i];
+
+                options.forEach(function(o) {
+                    o.classList.add('disabled');
+                    var value = parseInt(o.dataset.value);
+                    if (value === correctValue) {
+                        o.classList.add('correct');
+                    }
+                });
+
+                if (selected) {
+                    var selectedValue = parseInt(selected.dataset.value);
+                    if (selectedValue === correctValue) {
+                        document.getElementById('fb' + i + 'c').classList.add('show');
+                    } else {
+                        selected.classList.add('wrong');
+                        document.getElementById('fb' + i + 'w').classList.add('show');
+                    }
+                } else {
+                    document.getElementById('fb' + i + 'w').classList.add('show');
+                }
+            }
+
+            // Ergebnis berechnen
+            updateScore();
+            var percent = Math.round((totalScore / 25) * 100);
+
+            // Note berechnen (14-NP für Sek I)
+            var grade = '';
+            if (percent >= 96) grade = '1 (sehr gut)';
+            else if (percent >= 80) grade = '2 (gut)';
+            else if (percent >= 60) grade = '3 (befriedigend)';
+            else if (percent >= 40) grade = '4 (ausreichend)';
+            else if (percent >= 20) grade = '5 (mangelhaft)';
+            else grade = '6 (ungenügend)';
+
+            // Anzeige
+            document.getElementById('finalScore').textContent = totalScore + ' / 25 BE';
+            document.getElementById('percentDisplay').textContent = percent + '%';
+            document.getElementById('gradeDisplay').textContent = 'Note: ' + grade;
+
+            // Styling
+            var gradeClass = 'grade-3';
+            if (percent >= 80) gradeClass = 'grade-1';
+            else if (percent >= 60) gradeClass = 'grade-2';
+            else if (percent < 40) gradeClass = 'grade-4';
+            document.getElementById('gradeDisplay').className = 'result-grade ' + gradeClass;
+
+            // Sektionen anzeigen
+            document.getElementById('submitSection').style.display = 'none';
+            document.getElementById('resultSection').classList.add('show');
+            document.getElementById('unlockSection').classList.add('show');
+
+            // Speichern
+            localStorage.setItem('mt-09b-submitted', 'true');
+            localStorage.setItem('mt-09b-score', totalScore);
+        }
+
+        function unlockSolutions() {
+            var code = document.getElementById('unlockCode').value;
+            if (code === UNLOCK_CODE) {
+                alert('Lösungen wurden bereits angezeigt.');
+            } else {
+                alert('Falscher Code!');
+            }
+        }
+
+        function saveProgress() {
+            // Aufgabe 1
+            ['a', 'b', 'c', 'd', 'e'].forEach(function(letter) {
+                var select = document.getElementById('m1' + letter);
+                localStorage.setItem('mt-09b-m1' + letter, select.value);
+            });
+
+            // Aufgaben 2-6
+            for (var i = 2; i <= 6; i++) {
+                var task = document.getElementById('task' + i);
+                var selected = task.querySelector('.mc-option.selected');
+                if (selected) {
+                    localStorage.setItem('mt-09b-task' + i, selected.dataset.value);
+                }
+            }
+        }
+
+        function loadProgress() {
+            // Prüfen ob bereits abgegeben
+            if (localStorage.getItem('mt-09b-submitted') === 'true') {
+                submitTest();
+                return;
+            }
+
+            // Aufgabe 1 laden
+            ['a', 'b', 'c', 'd', 'e'].forEach(function(letter) {
+                var saved = localStorage.getItem('mt-09b-m1' + letter);
+                if (saved) {
+                    document.getElementById('m1' + letter).value = saved;
+                }
+            });
+
+            // Aufgaben 2-6 laden
+            for (var i = 2; i <= 6; i++) {
+                var saved = localStorage.getItem('mt-09b-task' + i);
+                if (saved !== null) {
+                    var task = document.getElementById('task' + i);
+                    var options = task.querySelectorAll('.mc-option');
+                    options.forEach(function(o) {
+                        if (o.dataset.value === saved) {
+                            o.classList.add('selected');
+                        }
+                    });
+                }
+            }
+
+            updateScore();
+        }
+
+        // Init
+        loadProgress();
+    </script>
+</body>
+</html>

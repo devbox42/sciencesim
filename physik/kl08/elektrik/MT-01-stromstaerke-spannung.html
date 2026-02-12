@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Stromstärke &amp; Spannung</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════
+           MT Elektrik Klasse 8 - Stromstärke & Spannung
+           ═══════════════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER === */
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        /* === TEIL-HEADER === */
+        .teil-header {
+            background: #e3f2fd;
+            border: 1px solid #2c5aa0;
+            padding: 12px 20px;
+            margin: 20px 0 15px 0;
+            font-weight: 600;
+            color: #2c5aa0;
+        }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-niveau { padding: 2px 8px; font-size: 0.8em; font-weight: 600; }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* Diagram */
+        .diagram { text-align: center; padding: 15px; background: #fafafa; margin: 10px 0; }
+        .diagram img { max-width: 100%; height: auto; }
+
+        /* Berechnungs-Felder */
+        .calc-fields { margin: 15px 0; }
+        .calc-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+        .calc-row label { min-width: 80px; font-weight: 500; }
+        .calc-row input { padding: 8px 12px; border: 1px solid #ddd; width: 100px; font-size: 1em; }
+        .calc-row .unit { color: #666; font-size: 0.9em; }
+
+        /* Umrechnungs-Felder */
+        .convert-fields { margin: 15px 0; }
+        .convert-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+        .convert-row .from { font-weight: 500; min-width: 80px; }
+        .convert-row input { padding: 8px 12px; border: 1px solid #ddd; width: 100px; font-size: 1em; text-align: right; }
+        .convert-row .to-unit { color: #666; font-size: 0.9em; }
+
+        /* Zuordnungs-Felder */
+        .matching-fields { margin: 15px 0; }
+        .matching-row { display: flex; align-items: center; gap: 15px; margin: 10px 0; flex-wrap: wrap; }
+        .matching-row .left { min-width: 180px; font-weight: 500; }
+        .matching-row select { padding: 8px 12px; font-size: 1em; border: 1px solid #ddd; min-width: 150px; }
+
+        /* Dropdown-Auswahl */
+        .dropdown-field { margin: 15px 0; }
+        .dropdown-field select { padding: 10px 15px; font-size: 1em; border: 1px solid #ddd; min-width: 250px; }
+
+        /* Multi-Select Regeln */
+        .multiselect-fields { margin: 15px 0; }
+        .multiselect-row { display: flex; align-items: center; gap: 15px; margin: 12px 0; flex-wrap: wrap; }
+        .multiselect-row .rule-label { min-width: 200px; font-weight: 500; }
+        .multiselect-row select { padding: 8px 12px; font-size: 1em; border: 1px solid #ddd; min-width: 200px; }
+
+        /* Info-Box */
+        .info-box { background: #e3f2fd; border-left: 3px solid #2c5aa0; padding: 10px 15px; margin: 10px 0; font-size: 0.9em; }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* Niveau-Hinweis */
+        .niveau-hinweis { background: #fff3e0; border: 1px solid #b35c00; color: #b35c00; padding: 8px 12px; margin-bottom: 12px; font-size: 0.85em; font-style: italic; }
+        .nicht-gewertet-box { background: #f5f5f5; border: 1px solid #888; color: #666; padding: 10px 15px; margin-top: 12px; text-align: center; font-weight: 600; }
+
+        /* Input-Markierung */
+        input.correct { border-color: #2a7a4b !important; background: #e8f5e9 !important; }
+        input.incorrect { border-color: #c62828 !important; background: #ffebee !important; }
+        select.correct { border-color: #2a7a4b !important; background: #e8f5e9 !important; }
+        select.incorrect { border-color: #c62828 !important; background: #ffebee !important; }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        /* === KLICK-LÜCKENTEXT === */
+        .word-bank { background: #e3f2fd; padding: 12px; margin: 10px 0; display: flex; flex-wrap: wrap; gap: 8px; }
+        .word-bank.teil2 { background: #fff3e0; }
+        .word-btn {
+            padding: 8px 14px; background: white; border: 2px solid #2c5aa0; cursor: pointer;
+            font-size: 0.95em; transition: all 0.15s; user-select: none;
+        }
+        .word-btn:hover { background: #e3f2fd; transform: scale(1.02); }
+        .word-btn.used { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+        .word-btn.distractor { border-color: #888; color: #666; }
+        .word-btn.distractor:hover { background: #f5f5f5; }
+        .gap-slot {
+            display: inline-block; min-width: 100px; padding: 6px 12px; margin: 0 4px;
+            border: none; border-bottom: 2px dashed #2c5aa0; background: #fafafa;
+            cursor: pointer; text-align: center; font-size: 0.95em; transition: all 0.15s;
+        }
+        .gap-slot:hover { background: #e3f2fd; }
+        .gap-slot.selected { background: #bbdefb; border-bottom: 2px solid #2c5aa0; }
+        .gap-slot.filled { background: #e8f5e9; border-bottom: 2px solid #2a7a4b; cursor: pointer; }
+        .gap-slot.filled:hover { background: #c8e6c9; }
+        .gap-slot.correct { background: #e8f5e9 !important; border-color: #2a7a4b !important; }
+        .gap-slot.incorrect { background: #ffebee !important; border-color: #c62828 !important; }
+        .lueckentext-box { background: #fafafa; padding: 15px; border: 1px solid #ddd; margin: 10px 0; line-height: 2.2; }
+        .click-hint { font-size: 0.8em; color: #666; margin-top: 8px; font-style: italic; }
+
+        .hidden { display: none; }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+            .niveau-hinweis { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Stromstärke &amp; Spannung</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 8 | Differenziert (★/★★/★★★)</div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PLATZ + NIVEAU AUSWAHL
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="selection-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 20px;">
+        <!-- Platz-Auswahl -->
+        <div class="seat-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+
+        <!-- Niveau-Auswahl -->
+        <div class="niveau-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px;">Niveau:</label>
+            <div id="niveauWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="niveauRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="niveauSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 180px;">
+                    <option value="">-- wählen --</option>
+                    <option value="1">★ Basis (38 BE)</option>
+                    <option value="2">★★ Standard (54 BE)</option>
+                    <option value="3">★★★ Erweitert (65 BE)</option>
+                </select>
+                <button id="btnNiveauOk" onclick="confirmNiveau()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="niveauConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Niveau wählen...</div>
+    </div>
+
+    <div class="container">
+
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <div id="questionsContainer">
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TEIL I: STROMSTÄRKE
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="teil-header">Teil I: Stromstärke</div>
+
+        <!-- I.1 Definition Stromstärke -->
+        <div class="question" id="qI1" data-niveau="1" data-points="5">
+            <div class="question-header">
+                <div class="question-title">I.1 Definition Stromstärke</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Klicke auf eine Lücke, dann auf das passende Wort:</div>
+            <div class="word-bank" id="wordbank-qI1">
+                <span class="word-btn" data-word="Ladung" data-bank="qI1" onclick="fillSelectedGap(this)">Ladung</span>
+                <span class="word-btn" data-word="Zeit" data-bank="qI1" onclick="fillSelectedGap(this)">Zeit</span>
+                <span class="word-btn" data-word="Querschnitt" data-bank="qI1" onclick="fillSelectedGap(this)">Querschnitt</span>
+                <span class="word-btn" data-word="I" data-bank="qI1" onclick="fillSelectedGap(this)">I</span>
+                <span class="word-btn" data-word="Ampere" data-bank="qI1" onclick="fillSelectedGap(this)">Ampere</span>
+                <span class="word-btn distractor" data-word="Spannung" data-bank="qI1" onclick="fillSelectedGap(this)">Spannung</span>
+                <span class="word-btn distractor" data-word="Energie" data-bank="qI1" onclick="fillSelectedGap(this)">Energie</span>
+                <span class="word-btn distractor" data-word="Widerstand" data-bank="qI1" onclick="fillSelectedGap(this)">Widerstand</span>
+                <span class="word-btn distractor" data-word="U" data-bank="qI1" onclick="fillSelectedGap(this)">U</span>
+                <span class="word-btn distractor" data-word="Volt" data-bank="qI1" onclick="fillSelectedGap(this)">Volt</span>
+            </div>
+            <div class="lueckentext-box">
+                <p>Die elektrische <strong>Stromstärke</strong> gibt an, wie viel
+                    <span class="gap-slot" id="qI1-a" data-bank="qI1" onclick="selectGap(this)">...</span>
+                    pro
+                    <span class="gap-slot" id="qI1-b" data-bank="qI1" onclick="selectGap(this)">...</span>
+                    durch den
+                    <span class="gap-slot" id="qI1-c" data-bank="qI1" onclick="selectGap(this)">...</span>
+                    eines Leiters fließt.
+                </p>
+                <p style="margin-top: 15px;"><strong>Formelzeichen:</strong>
+                    <span class="gap-slot" id="qI1-d" data-bank="qI1" onclick="selectGap(this)" style="min-width:50px;">...</span>
+                    &nbsp;&nbsp;&nbsp;
+                    <strong>Einheit:</strong>
+                    <span class="gap-slot" id="qI1-e" data-bank="qI1" onclick="selectGap(this)">...</span>
+                </p>
+            </div>
+            <div class="click-hint">Tipp: Klicke auf eine gefüllte Lücke, um sie zu leeren.</div>
+        </div>
+
+        <!-- I.2a Umrechnungen A ↔ mA (Niveau 1) -->
+        <div class="question" id="qI2a" data-niveau="1" data-points="3">
+            <div class="question-header">
+                <div class="question-title">I.2a Umrechnungen A ↔ mA</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um:</div>
+            <div class="info-box">1 A = 1000 mA</div>
+            <div class="convert-fields">
+                <div class="convert-row">
+                    <span class="from">2 A =</span>
+                    <input type="text" id="qI2a-1" inputmode="decimal">
+                    <span class="to-unit">mA</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">500 mA =</span>
+                    <input type="text" id="qI2a-2" inputmode="decimal">
+                    <span class="to-unit">A</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">0,3 A =</span>
+                    <input type="text" id="qI2a-3" inputmode="decimal">
+                    <span class="to-unit">mA</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.2b Umrechnungen (schwieriger, Niveau 2) -->
+        <div class="question" id="qI2b" data-niveau="2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">I.2b Umrechnungen (schwieriger)</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um:</div>
+            <div class="info-box">1 A = 1000 mA</div>
+            <div class="convert-fields">
+                <div class="convert-row">
+                    <span class="from">1,5 A =</span>
+                    <input type="text" id="qI2b-1" inputmode="decimal">
+                    <span class="to-unit">mA</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">250 mA =</span>
+                    <input type="text" id="qI2b-2" inputmode="decimal">
+                    <span class="to-unit">A</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">0,08 A =</span>
+                    <input type="text" id="qI2b-3" inputmode="decimal">
+                    <span class="to-unit">mA</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.3 Messgerät zuordnen -->
+        <div class="question" id="qI3" data-niveau="1" data-points="3">
+            <div class="question-header">
+                <div class="question-title">I.3 Messgerät Stromstärke</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Klicke auf eine Lücke, dann auf das passende Wort:</div>
+            <div class="word-bank" id="wordbank-qI3">
+                <span class="word-btn" data-word="Amperemeter" data-bank="qI3" onclick="fillSelectedGap(this)">Amperemeter</span>
+                <span class="word-btn" data-word="Reihe" data-bank="qI3" onclick="fillSelectedGap(this)">Reihe</span>
+                <span class="word-btn" data-word="A" data-bank="qI3" onclick="fillSelectedGap(this)">A</span>
+                <span class="word-btn distractor" data-word="Voltmeter" data-bank="qI3" onclick="fillSelectedGap(this)">Voltmeter</span>
+                <span class="word-btn distractor" data-word="parallel" data-bank="qI3" onclick="fillSelectedGap(this)">parallel</span>
+                <span class="word-btn distractor" data-word="Ohmmeter" data-bank="qI3" onclick="fillSelectedGap(this)">Ohmmeter</span>
+                <span class="word-btn distractor" data-word="V" data-bank="qI3" onclick="fillSelectedGap(this)">V</span>
+            </div>
+            <div class="lueckentext-box">
+                <p>Das Messgerät für die Stromstärke heißt
+                    <span class="gap-slot" id="qI3-a" data-bank="qI3" onclick="selectGap(this)" style="min-width:130px;">...</span>.
+                    Es wird in
+                    <span class="gap-slot" id="qI3-b" data-bank="qI3" onclick="selectGap(this)" style="min-width:70px;">...</span>
+                    geschaltet.
+                </p>
+                <p style="margin-top: 15px;"><strong>Schaltzeichen:</strong>
+                    <span class="gap-slot" id="qI3-c" data-bank="qI3" onclick="selectGap(this)" style="min-width:50px;">...</span>
+                </p>
+            </div>
+            <div class="click-hint">Tipp: Klicke auf eine gefüllte Lücke, um sie zu leeren.</div>
+        </div>
+
+        <!-- I.4 Regel Reihenschaltung (I) -->
+        <div class="question" id="qI4" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.4 Regel Reihenschaltung (I)</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">In der Reihenschaltung gilt für die Stromstärke:</div>
+            <div class="dropdown-field">
+                <select id="qI4-a">
+                    <option value="">-- Auswählen --</option>
+                    <option value="summe">I_ges = I₁ + I₂ + I₃ + ...</option>
+                    <option value="differenz">I_ges = I₁ − I₂</option>
+                    <option value="gleich">I_ges = I₁ = I₂ = I₃ = ...</option>
+                    <option value="produkt">I_ges = I₁ · I₂</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- I.5 Regel Parallelschaltung (I) -->
+        <div class="question" id="qI5" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.5 Regel Parallelschaltung (I)</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">In der Parallelschaltung gilt für die Stromstärke:</div>
+            <div class="dropdown-field">
+                <select id="qI5-a">
+                    <option value="">-- Auswählen --</option>
+                    <option value="differenz">I_ges = I₁ − I₂</option>
+                    <option value="gleich">I_ges = I₁ = I₂ = I₃ = ...</option>
+                    <option value="summe">I_ges = I₁ + I₂ + I₃ + ...</option>
+                    <option value="produkt">I_ges = I₁ · I₂</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- I.6 Reihenschaltung 2 Lampen -->
+        <div class="question" id="qI6" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">I.6 Reihenschaltung 2 Lampen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Bestimme die Stromstärken I₁ und I₂.</div>
+            <div class="diagram">
+                <img src="svg/I6_reihe_2L.svg" alt="Reihenschaltung mit 2 Lampen">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I₁ =</label>
+                    <input type="text" id="qI6-I1" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+                <div class="calc-row">
+                    <label>I₂ =</label>
+                    <input type="text" id="qI6-I2" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.7 Parallelschaltung 2 Lampen -->
+        <div class="question" id="qI7" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.7 Parallelschaltung 2 Lampen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die Gesamtstromstärke.</div>
+            <div class="diagram">
+                <img src="svg/I7_parallel_2L.svg" alt="Parallelschaltung mit 2 Lampen">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I_ges =</label>
+                    <input type="text" id="qI7-Iges" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.8 Parallelschaltung 3 Lampen -->
+        <div class="question" id="qI8" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.8 Parallelschaltung 3 Lampen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die Gesamtstromstärke.</div>
+            <div class="diagram">
+                <img src="svg/I8_parallel_3L.svg" alt="Parallelschaltung mit 3 Lampen">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I_ges =</label>
+                    <input type="text" id="qI8-Iges" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.9 Parallelschaltung - I₂ gesucht (Niveau 2) -->
+        <div class="question" id="qI9" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.9 Parallelschaltung - I₂ gesucht</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die fehlende Teilstromstärke.</div>
+            <div class="diagram">
+                <img src="svg/I9_parallel_I2_gesucht.svg" alt="Parallelschaltung mit gesuchtem I₂">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I₂ =</label>
+                    <input type="text" id="qI9-I2" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.10 Parallelschaltung mit mA (Niveau 2) -->
+        <div class="question" id="qI10" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">I.10 Parallelschaltung mit mA</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die Gesamtstromstärke in mA und in A.</div>
+            <div class="diagram">
+                <img src="svg/I10_parallel_mA.svg" alt="Parallelschaltung mit mA">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I_ges =</label>
+                    <input type="text" id="qI10-mA" inputmode="decimal">
+                    <span class="unit">mA</span>
+                </div>
+                <div class="calc-row">
+                    <label>I_ges =</label>
+                    <input type="text" id="qI10-A" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.11 Berechne I₃ (Niveau 2) -->
+        <div class="question" id="qI11" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">I.11 Berechne I₃</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Gegeben: I_ges = 1,2 A, I₁ = 0,4 A, I₂ = 0,5 A. Berechne I₃ (Parallelschaltung).</div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I₃ =</label>
+                    <input type="text" id="qI11-I3" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.12 Gemischte Schaltung (Niveau 3) -->
+        <div class="question" id="qI12" data-niveau="3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">I.12 Gemischte Schaltung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Zwei Lampen in Reihe sind parallel zu einer dritten geschaltet.</div>
+            <div class="diagram">
+                <img src="svg/I12_gemischt.svg" alt="Gemischte Schaltung">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I₁₂ =</label>
+                    <input type="text" id="qI12-I12" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+                <div class="calc-row">
+                    <label>I₁ = I₂ =</label>
+                    <input type="text" id="qI12-I1" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- I.13 Verschachtelte Schaltung (Niveau 3) -->
+        <div class="question" id="qI13" data-niveau="3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">I.13 Verschachtelte Schaltung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Analysiere die Schaltung und berechne die gesuchten Stromstärken.</div>
+            <div class="diagram">
+                <img src="svg/I13_verschachtelt.svg" alt="Verschachtelte Schaltung">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>I₁ =</label>
+                    <input type="text" id="qI13-I1" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+                <div class="calc-row">
+                    <label>I₇ =</label>
+                    <input type="text" id="qI13-I7" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+                <div class="calc-row">
+                    <label>I_ges =</label>
+                    <input type="text" id="qI13-Iges" inputmode="decimal">
+                    <span class="unit">A</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             TEIL II: SPANNUNG
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="teil-header">Teil II: Spannung</div>
+
+        <!-- II.1 Definition Spannung -->
+        <div class="question" id="qII1" data-niveau="1" data-points="4">
+            <div class="question-header">
+                <div class="question-title">II.1 Definition Spannung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Klicke auf eine Lücke, dann auf das passende Wort:</div>
+            <div class="word-bank teil2" id="wordbank-qII1">
+                <span class="word-btn" data-word="Antriebskraft" data-bank="qII1" onclick="fillSelectedGap(this)">Antriebskraft</span>
+                <span class="word-btn" data-word="elektrischen Stroms" data-bank="qII1" onclick="fillSelectedGap(this)">elektrischen Stroms</span>
+                <span class="word-btn" data-word="U" data-bank="qII1" onclick="fillSelectedGap(this)">U</span>
+                <span class="word-btn" data-word="Volt" data-bank="qII1" onclick="fillSelectedGap(this)">Volt</span>
+                <span class="word-btn distractor" data-word="Ladung" data-bank="qII1" onclick="fillSelectedGap(this)">Ladung</span>
+                <span class="word-btn distractor" data-word="Energie" data-bank="qII1" onclick="fillSelectedGap(this)">Energie</span>
+                <span class="word-btn distractor" data-word="Widerstand" data-bank="qII1" onclick="fillSelectedGap(this)">Widerstand</span>
+                <span class="word-btn distractor" data-word="Zeit" data-bank="qII1" onclick="fillSelectedGap(this)">Zeit</span>
+                <span class="word-btn distractor" data-word="I" data-bank="qII1" onclick="fillSelectedGap(this)">I</span>
+                <span class="word-btn distractor" data-word="Ampere" data-bank="qII1" onclick="fillSelectedGap(this)">Ampere</span>
+            </div>
+            <div class="lueckentext-box">
+                <p>Die elektrische <strong>Spannung</strong> gibt die
+                    <span class="gap-slot" id="qII1-a" data-bank="qII1" onclick="selectGap(this)" style="min-width:130px;">...</span>
+                    des
+                    <span class="gap-slot" id="qII1-b" data-bank="qII1" onclick="selectGap(this)" style="min-width:150px;">...</span>
+                    an.
+                </p>
+                <p style="margin-top: 15px;"><strong>Formelzeichen:</strong>
+                    <span class="gap-slot" id="qII1-c" data-bank="qII1" onclick="selectGap(this)" style="min-width:50px;">...</span>
+                    &nbsp;&nbsp;&nbsp;
+                    <strong>Einheit:</strong>
+                    <span class="gap-slot" id="qII1-d" data-bank="qII1" onclick="selectGap(this)">...</span>
+                </p>
+            </div>
+            <div class="click-hint">Tipp: Klicke auf eine gefüllte Lücke, um sie zu leeren.</div>
+        </div>
+
+        <!-- II.2a Umrechnungen V/mV/kV (Niveau 1) -->
+        <div class="question" id="qII2a" data-niveau="1" data-points="4">
+            <div class="question-header">
+                <div class="question-title">II.2a Umrechnungen V/mV/kV</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um:</div>
+            <div class="info-box">1 kV = 1000 V &nbsp;&nbsp; 1 V = 1000 mV</div>
+            <div class="convert-fields">
+                <div class="convert-row">
+                    <span class="from">12 V =</span>
+                    <input type="text" id="qII2a-1" inputmode="decimal">
+                    <span class="to-unit">mV</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">500 mV =</span>
+                    <input type="text" id="qII2a-2" inputmode="decimal">
+                    <span class="to-unit">V</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">2 kV =</span>
+                    <input type="text" id="qII2a-3" inputmode="decimal">
+                    <span class="to-unit">V</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">3000 V =</span>
+                    <input type="text" id="qII2a-4" inputmode="decimal">
+                    <span class="to-unit">kV</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.2b Umrechnungen (schwieriger, Niveau 2) -->
+        <div class="question" id="qII2b" data-niveau="2" data-points="3">
+            <div class="question-header">
+                <div class="question-title">II.2b Umrechnungen (schwieriger)</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um:</div>
+            <div class="info-box">1 kV = 1000 V &nbsp;&nbsp; 1 V = 1000 mV</div>
+            <div class="convert-fields">
+                <div class="convert-row">
+                    <span class="from">0,23 kV =</span>
+                    <input type="text" id="qII2b-1" inputmode="decimal">
+                    <span class="to-unit">V</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">20000 V =</span>
+                    <input type="text" id="qII2b-2" inputmode="decimal">
+                    <span class="to-unit">kV</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">4500 mV =</span>
+                    <input type="text" id="qII2b-3" inputmode="decimal">
+                    <span class="to-unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.2c Umrechnungen mit MV (Niveau 3) -->
+        <div class="question" id="qII2c" data-niveau="3" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.2c Umrechnungen mit MV</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Rechne um:</div>
+            <div class="info-box">1 MV = 1.000.000 V = 1000 kV</div>
+            <div class="convert-fields">
+                <div class="convert-row">
+                    <span class="from">0,38 MV =</span>
+                    <input type="text" id="qII2c-1" inputmode="decimal">
+                    <span class="to-unit">kV</span>
+                </div>
+                <div class="convert-row">
+                    <span class="from">3 MV =</span>
+                    <input type="text" id="qII2c-2" inputmode="decimal">
+                    <span class="to-unit">kV</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.3 Spannungswerte zuordnen -->
+        <div class="question" id="qII3" data-niveau="1" data-points="4">
+            <div class="question-header">
+                <div class="question-title">II.3 Spannungswerte zuordnen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ordne die typischen Spannungswerte zu:</div>
+            <div class="matching-fields">
+                <div class="matching-row">
+                    <span class="left">Monozelle (Batterie)</span>
+                    <select id="qII3-a">
+                        <option value="">-- Auswählen --</option>
+                        <option value="12V">12 V</option>
+                        <option value="380kV">380 kV</option>
+                        <option value="1.5V">1,5 V</option>
+                        <option value="230V">230 V</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Autobatterie</span>
+                    <select id="qII3-b">
+                        <option value="">-- Auswählen --</option>
+                        <option value="230V">230 V</option>
+                        <option value="12V">12 V</option>
+                        <option value="1.5V">1,5 V</option>
+                        <option value="380kV">380 kV</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Steckdose (Haushalt)</span>
+                    <select id="qII3-c">
+                        <option value="">-- Auswählen --</option>
+                        <option value="380kV">380 kV</option>
+                        <option value="1.5V">1,5 V</option>
+                        <option value="230V">230 V</option>
+                        <option value="12V">12 V</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="left">Hochspannungsleitung</span>
+                    <select id="qII3-d">
+                        <option value="">-- Auswählen --</option>
+                        <option value="230V">230 V</option>
+                        <option value="380kV">380 kV</option>
+                        <option value="12V">12 V</option>
+                        <option value="1.5V">1,5 V</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.4 Messgerät zuordnen -->
+        <div class="question" id="qII4" data-niveau="1" data-points="3">
+            <div class="question-header">
+                <div class="question-title">II.4 Messgerät Spannung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Klicke auf eine Lücke, dann auf das passende Wort:</div>
+            <div class="word-bank teil2" id="wordbank-qII4">
+                <span class="word-btn" data-word="Voltmeter" data-bank="qII4" onclick="fillSelectedGap(this)">Voltmeter</span>
+                <span class="word-btn" data-word="parallel" data-bank="qII4" onclick="fillSelectedGap(this)">parallel</span>
+                <span class="word-btn" data-word="V" data-bank="qII4" onclick="fillSelectedGap(this)">V</span>
+                <span class="word-btn distractor" data-word="Amperemeter" data-bank="qII4" onclick="fillSelectedGap(this)">Amperemeter</span>
+                <span class="word-btn distractor" data-word="Reihe" data-bank="qII4" onclick="fillSelectedGap(this)">Reihe</span>
+                <span class="word-btn distractor" data-word="Ohmmeter" data-bank="qII4" onclick="fillSelectedGap(this)">Ohmmeter</span>
+                <span class="word-btn distractor" data-word="A" data-bank="qII4" onclick="fillSelectedGap(this)">A</span>
+            </div>
+            <div class="lueckentext-box">
+                <p>Das Messgerät für die Spannung heißt
+                    <span class="gap-slot" id="qII4-a" data-bank="qII4" onclick="selectGap(this)" style="min-width:110px;">...</span>.
+                    Es wird
+                    <span class="gap-slot" id="qII4-b" data-bank="qII4" onclick="selectGap(this)" style="min-width:90px;">...</span>
+                    geschaltet.
+                </p>
+                <p style="margin-top: 15px;"><strong>Schaltzeichen:</strong>
+                    <span class="gap-slot" id="qII4-c" data-bank="qII4" onclick="selectGap(this)" style="min-width:50px;">...</span>
+                </p>
+            </div>
+            <div class="click-hint">Tipp: Klicke auf eine gefüllte Lücke, um sie zu leeren.</div>
+        </div>
+
+        <!-- II.5 Regeln Spannung -->
+        <div class="question" id="qII5" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.5 Regeln Spannung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Wähle die richtigen Regeln:</div>
+            <div class="multiselect-fields">
+                <div class="multiselect-row">
+                    <span class="rule-label">Reihenschaltung: U_ges =</span>
+                    <select id="qII5-reihe">
+                        <option value="">-- Auswählen --</option>
+                        <option value="gleich">U₁ = U₂ = U₃ = ...</option>
+                        <option value="summe">U₁ + U₂ + U₃ + ...</option>
+                    </select>
+                </div>
+                <div class="multiselect-row">
+                    <span class="rule-label">Parallelschaltung: U_ges =</span>
+                    <select id="qII5-parallel">
+                        <option value="">-- Auswählen --</option>
+                        <option value="summe">U₁ + U₂ + U₃ + ...</option>
+                        <option value="gleich">U₁ = U₂ = U₃ = ...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.6 Reihenschaltung 2 Lampen -->
+        <div class="question" id="qII6" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">II.6 Reihenschaltung 2 Lampen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die fehlende Teilspannung.</div>
+            <div class="diagram">
+                <img src="svg/II6_reihe_2L_U.svg" alt="Reihenschaltung mit 2 Lampen (Spannung)">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₂ =</label>
+                    <input type="text" id="qII6-U2" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.7 Parallelschaltung 2 Lampen -->
+        <div class="question" id="qII7" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.7 Parallelschaltung 2 Lampen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Bestimme die Spannungen an den beiden Lampen.</div>
+            <div class="diagram">
+                <img src="svg/II7_parallel_2L_U.svg" alt="Parallelschaltung mit 2 Lampen (Spannung)">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₁ =</label>
+                    <input type="text" id="qII7-U1" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+                <div class="calc-row">
+                    <label>U₂ =</label>
+                    <input type="text" id="qII7-U2" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.8 Reihenschaltung 3 Lampen -->
+        <div class="question" id="qII8" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">II.8 Reihenschaltung 3 Lampen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die fehlende Teilspannung.</div>
+            <div class="diagram">
+                <img src="svg/II8_reihe_3L_U.svg" alt="Reihenschaltung mit 3 Lampen (Spannung)">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₃ =</label>
+                    <input type="text" id="qII8-U3" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.9 Gemischt: 1 + 2 parallel (Niveau 2) -->
+        <div class="question" id="qII9" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.9 Gemischt: 1 + 2 parallel</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Eine Lampe (4 V) in Reihe mit zwei parallelen. Berechne die Spannung an den parallelen Lampen.</div>
+            <div class="diagram">
+                <img src="svg/II9_gemischt_I.svg" alt="Gemischte Schaltung (Spannung)">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₂ =</label>
+                    <input type="text" id="qII9-U2" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+                <div class="calc-row">
+                    <label>U₃ =</label>
+                    <input type="text" id="qII9-U3" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.10 Zwei Reihen parallel (Niveau 2) -->
+        <div class="question" id="qII10" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.10 Zwei Reihen parallel</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Zwei Reihenschaltungen sind parallel geschaltet.</div>
+            <div class="diagram">
+                <img src="svg/II10_zwei_reihen.svg" alt="Zwei Reihen parallel">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₂ (oben) =</label>
+                    <input type="text" id="qII10-U2" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+                <div class="calc-row">
+                    <label>U₄ (unten) =</label>
+                    <input type="text" id="qII10-U4" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.11 Gemischt: 2 parallel + 1 (Niveau 2) -->
+        <div class="question" id="qII11" data-niveau="2" data-points="2">
+            <div class="question-header">
+                <div class="question-title">II.11 Gemischt: 2 parallel + 1</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Zwei parallele Lampen in Reihe mit einer (6 V).</div>
+            <div class="diagram">
+                <img src="svg/II11_gemischt_II.svg" alt="Gemischte Schaltung II">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₁ =</label>
+                    <input type="text" id="qII11-U1" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+                <div class="calc-row">
+                    <label>U₂ =</label>
+                    <input type="text" id="qII11-U2" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.12 Lichterkette (Niveau 3) -->
+        <div class="question" id="qII12" data-niveau="3" data-points="1">
+            <div class="question-header">
+                <div class="question-title">II.12 Lichterkette</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <div class="question-text">20 gleiche Lampen in Reihe an 230 V. Berechne die Spannung pro Lampe.</div>
+            <div class="diagram">
+                <img src="svg/II12_lichterkette.svg" alt="Lichterkette">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U_Lampe =</label>
+                    <input type="text" id="qII12-UL" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- II.13 Profi-Schaltung (Niveau 3) -->
+        <div class="question" id="qII13" data-niveau="3" data-points="3">
+            <div class="question-header">
+                <div class="question-title">II.13 Profi-Schaltung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">3 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Analysiere die komplexe Schaltung.</div>
+            <div class="diagram">
+                <img src="svg/II13_profi.svg" alt="Profi-Schaltung">
+            </div>
+            <div class="calc-fields">
+                <div class="calc-row">
+                    <label>U₁ =</label>
+                    <input type="text" id="qII13-U1" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+                <div class="calc-row">
+                    <label>U₃ =</label>
+                    <input type="text" id="qII13-U3" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+                <div class="calc-row">
+                    <label>U₅ =</label>
+                    <input type="text" id="qII13-U5" inputmode="decimal">
+                    <span class="unit">V</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin:10px 0;font-size:0.9em;" id="niveauDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 0</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>100</td><td>96</td><td>90,7</td><td>86</td><td>80</td><td>73,3</td><td>66,7</td><td>60</td><td>53,3</td><td>46,7</td><td>40</td><td>33,3</td><td>26,7</td><td>20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be14">-</td><td id="be13">-</td><td id="be12">-</td><td id="be11">-</td><td id="be10">-</td><td id="be9">-</td><td id="be8">-</td><td id="be7">-</td><td id="be6">-</td><td id="be5">-</td><td id="be4">-</td><td id="be3">-</td><td id="be2">-</td><td id="be1">-</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        </div><!-- END questionsContainer -->
+    </div>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MT Elektrik Klasse 8 - JavaScript (ES5!)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    // ===== KONFIGURATION =====
+    var STORAGE_KEY = 'mt-physik-8-01-stromstaerke-spannung';
+    var selectedNiveau = 0;
+    var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll (Anti-Betrug)
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // BE pro Niveau
+    var niveauPoints = {
+        1: 38,
+        2: 54,
+        3: 65
+    };
+
+    // ===== KLICK-LÜCKENTEXT =====
+    var selectedGapId = null;
+    var gapValues = {}; // Speichert: gapId -> word
+
+    function selectGap(el) {
+        if (testSubmitted) return;
+        var gapId = el.id;
+        // Wenn bereits gefüllt, leeren
+        if (el.classList.contains('filled')) {
+            clearGap(gapId);
+            return;
+        }
+        // Alle Gaps deselektieren
+        var allGaps = document.querySelectorAll('.gap-slot');
+        for (var i = 0; i < allGaps.length; i++) {
+            allGaps[i].classList.remove('selected');
+        }
+        // Diesen Gap selektieren
+        el.classList.add('selected');
+        selectedGapId = gapId;
+    }
+
+    function fillSelectedGap(wordBtn) {
+        if (testSubmitted) return;
+        if (!selectedGapId) {
+            alert('Klicke zuerst auf eine Lücke!');
+            return;
+        }
+        var word = wordBtn.getAttribute('data-word');
+        var bank = wordBtn.getAttribute('data-bank');
+        var gap = document.getElementById(selectedGapId);
+        if (!gap || gap.getAttribute('data-bank') !== bank) {
+            alert('Klicke zuerst auf eine Lücke in diesem Abschnitt!');
+            return;
+        }
+        // Wenn Wort schon verwendet, nicht nochmal
+        if (wordBtn.classList.contains('used')) return;
+        // Gap füllen
+        gap.textContent = word;
+        gap.classList.remove('selected');
+        gap.classList.add('filled');
+        gap.setAttribute('data-value', word);
+        gapValues[selectedGapId] = word;
+        // Wort als verwendet markieren
+        wordBtn.classList.add('used');
+        // Nächste leere Lücke in diesem Abschnitt selektieren
+        selectedGapId = null;
+        var nextGaps = document.querySelectorAll('.gap-slot[data-bank="' + bank + '"]:not(.filled)');
+        if (nextGaps.length > 0) {
+            selectGap(nextGaps[0]);
+        }
+        saveProgress();
+        updateProgressBar();
+    }
+
+    function clearGap(gapId) {
+        var gap = document.getElementById(gapId);
+        if (!gap) return;
+        var word = gap.getAttribute('data-value');
+        var bank = gap.getAttribute('data-bank');
+        // Wort-Button wieder aktivieren
+        if (word) {
+            var btns = document.querySelectorAll('.word-btn[data-bank="' + bank + '"][data-word="' + word + '"]');
+            for (var i = 0; i < btns.length; i++) {
+                btns[i].classList.remove('used');
+            }
+        }
+        // Gap leeren
+        gap.textContent = '...';
+        gap.classList.remove('filled', 'selected');
+        gap.removeAttribute('data-value');
+        delete gapValues[gapId];
+        // Diese Lücke selektieren
+        selectGap(gap);
+        saveProgress();
+        updateProgressBar();
+    }
+
+    function getGapValue(gapId) {
+        var gap = document.getElementById(gapId);
+        if (gap && gap.classList.contains('filled')) {
+            return gap.getAttribute('data-value') || '';
+        }
+        return '';
+    }
+
+    // Korrekte Antworten
+    var answers = {
+        // Teil I: Stromstärke
+        'qI1-a': ['Ladung', 'ladung'],
+        'qI1-b': ['Zeit', 'Sekunde', 'zeit', 'sekunde'],
+        'qI1-c': ['Querschnitt', 'querschnitt'],
+        'qI1-d': ['I', 'i'],
+        'qI1-e': ['Ampere', 'A', 'ampere', '1 Ampere', '1 A'],
+        'qI2a-1': 2000,
+        'qI2a-2': 0.5,
+        'qI2a-3': 300,
+        'qI2b-1': 1500,
+        'qI2b-2': 0.25,
+        'qI2b-3': 80,
+        'qI3-a': ['Amperemeter', 'amperemeter', 'Strommessgerät'],
+        'qI3-b': ['Reihe', 'reihe', 'Serie', 'serie'],
+        'qI3-c': ['A', 'a'],
+        'qI4-a': 'gleich',
+        'qI5-a': 'summe',
+        'qI6-I1': 0.4,
+        'qI6-I2': 0.4,
+        'qI7-Iges': 0.5,
+        'qI8-Iges': 0.6,
+        'qI9-I2': 0.3,
+        'qI10-mA': 600,
+        'qI10-A': 0.6,
+        'qI11-I3': 0.3,
+        'qI12-I12': 0.3,
+        'qI12-I1': 0.3,
+        'qI13-I1': 5,
+        'qI13-I7': 2,
+        'qI13-Iges': 14,
+        // Teil II: Spannung
+        'qII1-a': ['Antriebskraft', 'antriebskraft'],
+        'qII1-b': ['elektrischen Stroms', 'elektrischen stroms', 'Stroms', 'stroms', 'Stromes'],
+        'qII1-c': ['U', 'u'],
+        'qII1-d': ['Volt', 'V', 'volt', '1 Volt', '1 V'],
+        'qII2a-1': 12000,
+        'qII2a-2': 0.5,
+        'qII2a-3': 2000,
+        'qII2a-4': 3,
+        'qII2b-1': 230,
+        'qII2b-2': 20,
+        'qII2b-3': 4.5,
+        'qII2c-1': 380,
+        'qII2c-2': 3000,
+        'qII3-a': '1.5V',
+        'qII3-b': '12V',
+        'qII3-c': '230V',
+        'qII3-d': '380kV',
+        'qII4-a': ['Voltmeter', 'voltmeter', 'Spannungsmessgerät'],
+        'qII4-b': ['parallel', 'Parallel'],
+        'qII4-c': ['V', 'v'],
+        'qII5-reihe': 'summe',
+        'qII5-parallel': 'gleich',
+        'qII6-U2': 7,
+        'qII7-U1': 9,
+        'qII7-U2': 9,
+        'qII8-U3': 4,
+        'qII9-U2': 8,
+        'qII9-U3': 8,
+        'qII10-U2': 7,
+        'qII10-U4': 8,
+        'qII11-U1': 12,
+        'qII11-U2': 12,
+        'qII12-UL': 11.5,
+        'qII13-U1': 42,
+        'qII13-U3': 18,
+        'qII13-U5': 40
+    };
+
+    // Fragen-Konfiguration: ID -> { niveau, points, fields }
+    var questionConfig = {
+        'qI1':   { niveau: 1, points: 5, fields: ['qI1-a', 'qI1-b', 'qI1-c', 'qI1-d', 'qI1-e'], perField: [1, 1, 1, 1, 1] },
+        'qI2a':  { niveau: 1, points: 3, fields: ['qI2a-1', 'qI2a-2', 'qI2a-3'], perField: [1, 1, 1] },
+        'qI2b':  { niveau: 2, points: 3, fields: ['qI2b-1', 'qI2b-2', 'qI2b-3'], perField: [1, 1, 1] },
+        'qI3':   { niveau: 1, points: 3, fields: ['qI3-a', 'qI3-b', 'qI3-c'], perField: [1, 1, 1] },
+        'qI4':   { niveau: 1, points: 1, fields: ['qI4-a'], perField: [1] },
+        'qI5':   { niveau: 1, points: 1, fields: ['qI5-a'], perField: [1] },
+        'qI6':   { niveau: 1, points: 2, fields: ['qI6-I1', 'qI6-I2'], perField: [1, 1] },
+        'qI7':   { niveau: 1, points: 1, fields: ['qI7-Iges'], perField: [1] },
+        'qI8':   { niveau: 1, points: 1, fields: ['qI8-Iges'], perField: [1] },
+        'qI9':   { niveau: 2, points: 1, fields: ['qI9-I2'], perField: [1] },
+        'qI10':  { niveau: 2, points: 2, fields: ['qI10-mA', 'qI10-A'], perField: [1, 1] },
+        'qI11':  { niveau: 2, points: 1, fields: ['qI11-I3'], perField: [1] },
+        'qI12':  { niveau: 3, points: 2, fields: ['qI12-I12', 'qI12-I1'], perField: [1, 1] },
+        'qI13':  { niveau: 3, points: 3, fields: ['qI13-I1', 'qI13-I7', 'qI13-Iges'], perField: [1, 1, 1] },
+        'qII1':  { niveau: 1, points: 4, fields: ['qII1-a', 'qII1-b', 'qII1-c', 'qII1-d'], perField: [1, 1, 1, 1] },
+        'qII2a': { niveau: 1, points: 4, fields: ['qII2a-1', 'qII2a-2', 'qII2a-3', 'qII2a-4'], perField: [1, 1, 1, 1] },
+        'qII2b': { niveau: 2, points: 3, fields: ['qII2b-1', 'qII2b-2', 'qII2b-3'], perField: [1, 1, 1] },
+        'qII2c': { niveau: 3, points: 2, fields: ['qII2c-1', 'qII2c-2'], perField: [1, 1] },
+        'qII3':  { niveau: 1, points: 4, fields: ['qII3-a', 'qII3-b', 'qII3-c', 'qII3-d'], perField: [1, 1, 1, 1] },
+        'qII4':  { niveau: 1, points: 3, fields: ['qII4-a', 'qII4-b', 'qII4-c'], perField: [1, 1, 1] },
+        'qII5':  { niveau: 1, points: 2, fields: ['qII5-reihe', 'qII5-parallel'], perField: [1, 1] },
+        'qII6':  { niveau: 1, points: 1, fields: ['qII6-U2'], perField: [1] },
+        'qII7':  { niveau: 1, points: 2, fields: ['qII7-U1', 'qII7-U2'], perField: [1, 1] },
+        'qII8':  { niveau: 1, points: 1, fields: ['qII8-U3'], perField: [1] },
+        'qII9':  { niveau: 2, points: 2, fields: ['qII9-U2', 'qII9-U3'], perField: [1, 1] },
+        'qII10': { niveau: 2, points: 2, fields: ['qII10-U2', 'qII10-U4'], perField: [1, 1] },
+        'qII11': { niveau: 2, points: 2, fields: ['qII11-U1', 'qII11-U2'], perField: [1, 1] },
+        'qII12': { niveau: 3, points: 1, fields: ['qII12-UL'], perField: [1] },
+        'qII13': { niveau: 3, points: 3, fields: ['qII13-U1', 'qII13-U3', 'qII13-U5'], perField: [1, 1, 1] }
+    };
+
+    // ===== HILFSFUNKTION: Dezimalkomma =====
+    function parseNumber(value) {
+        if (value === '' || value === null || value === undefined) return NaN;
+        var normalized = String(value).replace(',', '.');
+        return parseFloat(normalized);
+    }
+
+    function isCorrectNumeric(userVal, correctVal, tolerance) {
+        tolerance = tolerance || 0.01;
+        var user = parseNumber(userVal);
+        if (isNaN(user)) return false;
+        return Math.abs(user - correctVal) <= tolerance;
+    }
+
+    // ===== PLATZ-FUNKTIONEN =====
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i < 10 ? '0' + i : '' + i;
+            option.textContent = 'P' + (i < 10 ? '0' + i : i);
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#2c5aa0;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== NIVEAU-FUNKTIONEN =====
+    function restoreNiveauDropdown() {
+        var saved = localStorage.getItem(STORAGE_KEY + '-niveau');
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (saved && niveauLocked === 'true') {
+            selectedNiveau = parseInt(saved);
+            showLockedNiveau(saved);
+            selectNiveau(selectedNiveau);
+        } else if (saved) {
+            document.getElementById('niveauSelect').value = saved;
+        }
+    }
+
+    function confirmNiveau() {
+        var select = document.getElementById('niveauSelect');
+        var val = select.value;
+        if (!val) { alert('Bitte wähle zuerst ein Niveau!'); return; }
+        var niveauStars = ['', '★ Basis', '★★ Standard', '★★★ Erweitert'][parseInt(val)];
+        var ok = confirm('Niveau "' + niveauStars + '" bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-niveau', val);
+        localStorage.setItem(STORAGE_KEY + '-niveau-locked', 'true');
+        selectedNiveau = parseInt(val);
+        showLockedNiveau(val);
+        selectNiveau(selectedNiveau);
+        checkUnlocked();
+    }
+
+    function showLockedNiveau(val) {
+        var niveauStars = ['', '★ Basis (' + niveauPoints[1] + ' BE)', '★★ Standard (' + niveauPoints[2] + ' BE)', '★★★ Erweitert (' + niveauPoints[3] + ' BE)'][parseInt(val)];
+        document.getElementById('niveauWarning').style.display = 'none';
+        document.getElementById('niveauRow').style.display = 'none';
+        document.getElementById('niveauConfirmed').style.display = 'block';
+        document.getElementById('niveauConfirmed').innerHTML = 'Niveau: <strong style="color:#2c5aa0;">' + niveauStars + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+
+        if (seatLocked && niveauLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function selectNiveau(niveau) {
+        selectedNiveau = niveau;
+        var questions = document.querySelectorAll('.question');
+        for (var j = 0; j < questions.length; j++) {
+            var qNiveau = parseInt(questions[j].dataset.niveau);
+            var qId = questions[j].id;
+            var existingHint = document.getElementById(qId + '-niveau-hinweis');
+            if (qNiveau > niveau) {
+                if (!existingHint) {
+                    var hint = document.createElement('div');
+                    hint.className = 'niveau-hinweis';
+                    hint.id = qId + '-niveau-hinweis';
+                    hint.innerHTML = 'Diese Aufgabe wird bei deinem Niveau <strong>nicht gewertet</strong>.';
+                    var header = questions[j].querySelector('.question-header');
+                    if (header && header.nextSibling) header.parentNode.insertBefore(hint, header.nextSibling);
+                }
+            } else if (existingHint) {
+                existingHint.remove();
+            }
+        }
+        updateProgress();
+        saveProgress();
+    }
+
+    // ===== PROGRESS =====
+    function countAnsweredFields() {
+        if (selectedNiveau === 0) return { answered: 0, total: 0 };
+        var answered = 0, total = 0;
+        for (var qId in questionConfig) {
+            var cfg = questionConfig[qId];
+            if (cfg.niveau <= selectedNiveau) {
+                total += cfg.fields.length;
+                for (var i = 0; i < cfg.fields.length; i++) {
+                    var el = document.getElementById(cfg.fields[i]);
+                    if (el && el.value && el.value !== '') answered++;
+                }
+            }
+        }
+        return { answered: answered, total: total };
+    }
+
+    function updateProgress() {
+        if (selectedNiveau === 0) {
+            document.getElementById('progressText').textContent = 'Niveau wählen...';
+            document.getElementById('progressFill').style.width = '0%';
+            return;
+        }
+        var status = countAnsweredFields();
+        var percent = status.total > 0 ? (status.answered / status.total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' Felder ausgefüllt (' + niveauPoints[selectedNiveau] + ' BE)';
+    }
+
+    // ===== PERSISTENCE =====
+    function saveProgress() {
+        var data = { answers: collectAllAnswers(), timestamp: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+        }
+    }
+
+    function collectAllAnswers() {
+        var result = {};
+        for (var fieldId in answers) {
+            var el = document.getElementById(fieldId);
+            if (el) result[fieldId] = el.value;
+        }
+        return result;
+    }
+
+    function restoreAnswers(saved) {
+        for (var fieldId in saved) {
+            var el = document.getElementById(fieldId);
+            if (el && saved[fieldId]) el.value = saved[fieldId];
+        }
+        updateProgress();
+    }
+
+    // ===== SUBMIT TEST =====
+    function submitTest() {
+        if (testSubmitted) return;
+
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (niveauLocked !== 'true' || selectedNiveau === 0) { alert('Bitte bestätige zuerst dein Niveau!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var totalScore = 0;
+        var maxPoints = niveauPoints[selectedNiveau];
+
+        // Alle Fragen auswerten
+        for (var qId in questionConfig) {
+            var cfg = questionConfig[qId];
+            var notGraded = cfg.niveau > selectedNiveau;
+            var qScore = 0;
+
+            for (var i = 0; i < cfg.fields.length; i++) {
+                var fieldId = cfg.fields[i];
+                var el = document.getElementById(fieldId);
+                if (!el) continue;
+
+                // Wert ermitteln: Klick-Lücke (span) oder Input/Select
+                var userVal;
+                if (el.classList.contains('gap-slot')) {
+                    userVal = el.getAttribute('data-value') || '';
+                } else {
+                    userVal = el.value;
+                }
+                var correctVal = answers[fieldId];
+                var fieldPoints = cfg.perField[i];
+                var isCorrect = false;
+
+                // Prüfen ob numerisch, Array oder String
+                if (typeof correctVal === 'number') {
+                    isCorrect = isCorrectNumeric(userVal, correctVal, 0.01);
+                } else if (Array.isArray(correctVal)) {
+                    // Array von akzeptierten Antworten (für Lückentexte)
+                    var userLower = (userVal || '').toLowerCase().trim();
+                    for (var j = 0; j < correctVal.length; j++) {
+                        if (userLower === correctVal[j].toLowerCase()) {
+                            isCorrect = true;
+                            break;
+                        }
+                    }
+                } else {
+                    isCorrect = userVal === correctVal;
+                }
+
+                if (isCorrect) {
+                    el.classList.add('correct');
+                    qScore += fieldPoints;
+                } else {
+                    el.classList.add('incorrect');
+                }
+            }
+
+            if (!notGraded) {
+                totalScore += qScore;
+            }
+            showQuestionResult(qId, qScore, cfg.points, notGraded);
+        }
+
+        markNichtGewertet();
+        displayResults(totalScore, maxPoints);
+    }
+
+    function showQuestionResult(qId, achieved, maxPts, notGraded) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (notGraded) {
+            result.style.background = '#f0f0f0';
+            result.style.color = '#888';
+            result.textContent = '(' + achieved + ')/' + maxPts + ' BE';
+        } else {
+            if (achieved === maxPts) result.classList.add('full');
+            else if (achieved > 0) result.classList.add('partial');
+            else result.classList.add('zero');
+            result.textContent = achieved + '/' + maxPts + ' BE';
+        }
+        meta.appendChild(result);
+    }
+
+    function markNichtGewertet() {
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            var qId = questions[i].id;
+            if (qNiveau > selectedNiveau) {
+                var hint = document.getElementById(qId + '-niveau-hinweis');
+                if (hint) hint.remove();
+                var existingBox = document.getElementById(qId + '-nicht-gewertet');
+                if (!existingBox) {
+                    var box = document.createElement('div');
+                    box.className = 'nicht-gewertet-box';
+                    box.id = qId + '-nicht-gewertet';
+                    box.textContent = 'Nicht gewertet, nur informativ';
+                    questions[i].appendChild(box);
+                }
+            }
+        }
+    }
+
+    function displayResults(score, maxPoints) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+        var niveauStars = ['', '\u2605', '\u2605\u2605', '\u2605\u2605\u2605'][selectedNiveau];
+
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: ' + platzText;
+        document.getElementById('niveauDisplay').textContent = 'Niveau: ' + niveauStars + ' (' + maxPoints + ' BE)';
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPoints;
+
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        var npIds = ['be14', 'be13', 'be12', 'be11', 'be10', 'be9', 'be8', 'be7', 'be6', 'be5', 'be4', 'be3', 'be2', 'be1'];
+        for (var i = 0; i < thresholds.length; i++) {
+            var beExact = maxPoints * thresholds[i] / 100;
+            var be = Math.ceil(beExact * 2) / 2;
+            document.getElementById(npIds[i]).textContent = be;
+        }
+
+        var percent = (score / maxPoints) * 100;
+        var np = 0;
+        if (percent >= 100) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 86) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+
+        document.getElementById('gradeDisplay').textContent = np + ' Notenpunkte';
+        if (np > 0) {
+            var cellId = 'be' + np;
+            var cell = document.getElementById(cellId);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel anzeigen (Anti-Betrug)
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('resultsSection');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function disableAllInputs() {
+        var inputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].disabled = true;
+        }
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+        var btnNiveauOk = document.getElementById('btnNiveauOk');
+        if (btnNiveauOk) btnNiveauOk.disabled = true;
+    }
+
+    // ===== CHANGE LISTENER =====
+    function setupChangeListeners() {
+        var inputs = document.querySelectorAll('input[type="text"], select');
+        for (var i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener('input', function() {
+                updateProgress();
+                saveProgress();
+            });
+            inputs[i].addEventListener('change', function() {
+                updateProgress();
+                saveProgress();
+            });
+        }
+    }
+
+    // ===== INIT =====
+    window.onload = function() {
+        // Startzeit beim ersten Aufruf speichern (Anti-Betrug)
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) {
+            localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+        }
+
+        // Tab-Wechsel-Tracking initialisieren
+        initTabSwitchTracking();
+
+        generateSeatDropdown();
+        restoreNiveauDropdown();
+        setupChangeListeners();
+        loadProgress();
+        updateProgress();
+        checkUnlocked();
+
+        // Bereits abgegeben?
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') {
+            testSubmitted = true;
+            submitTest();
+        }
+    };
+    </script>
+</body>
+</html>

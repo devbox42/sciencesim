@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Oxidation von Metallen</title>
+    <style>
+        :root {
+            --chemie: #2a7a4b;
+            --chemie-light: #e8f5e9;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --hot: #ff4444;
+            --warm: #ff8844;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--chemie);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 { font-size: 1.2em; font-weight: 600; }
+
+        .fullscreen-btn {
+            background: white;
+            color: var(--chemie);
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .simulation-area {
+            flex: 1;
+            background: var(--white);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            width: 100%;
+            flex: 1;
+            display: block;
+        }
+
+        .controls {
+            padding: 15px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .control-row:last-child { margin-bottom: 0; }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        select {
+            padding: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.9em;
+            min-width: 140px;
+        }
+
+        .btn {
+            background: var(--chemie);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-burner {
+            background: #666;
+            min-width: 140px;
+        }
+        .btn-burner.active {
+            background: var(--hot);
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .btn-reset { background: #666; }
+
+        .temperature-display {
+            background: #222;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.4em;
+            padding: 8px 15px;
+            min-width: 100px;
+            text-align: center;
+        }
+        .temperature-display.hot {
+            color: var(--hot);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: var(--chemie);
+            font-size: 1em;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--chemie);
+        }
+
+        .info-box {
+            background: var(--chemie-light);
+            border-left: 3px solid var(--chemie);
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+
+        .equation {
+            background: var(--bg);
+            padding: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .ignition-info {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+        .ignition-temp {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--hot);
+        }
+
+        .oxide-info {
+            background: #e3f2fd;
+            border: 1px solid #64b5f6;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+        .oxide-type {
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        .oxide-type.porous { color: #ff8844; }
+        .oxide-type.dense { color: #2196f3; }
+
+        .stoichiometry {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.85em;
+        }
+        .stoichiometry-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+
+        .legend {
+            margin-top: 15px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+            font-size: 0.85em;
+        }
+        .legend-symbol {
+            width: 50px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--bg);
+            text-align: center;
+        }
+        .progress-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--chemie);
+        }
+
+        .status-message {
+            background: var(--chemie);
+            color: white;
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        .status-message.warning {
+            background: var(--warm);
+        }
+        .status-message.success {
+            background: var(--chemie);
+        }
+
+        @media (max-width: 900px) {
+            .main-container { flex-direction: column; }
+            .sidebar { width: 100%; }
+        }
+
+        body.fullscreen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+        }
+        body.fullscreen .main-container {
+            max-width: none;
+            height: calc(100vh - 60px);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Simulation: Oxidation von Metallen</h1>
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">Vollbild</button>
+</header>
+
+<div class="main-container">
+
+    <div class="simulation-area">
+        <canvas id="canvas"></canvas>
+        <div class="controls">
+            <div class="control-row">
+                <label>Metall:</label>
+                <select id="metalSelect" onchange="selectMetal()">
+                    <option value="mg">Magnesium (Mg)</option>
+                    <option value="fe">Eisen (Fe)</option>
+                    <option value="al">Aluminium (Al)</option>
+                    <option value="cu">Kupfer (Cu)</option>
+                </select>
+
+                <button class="btn btn-burner" id="burnerBtn" onclick="toggleBurner()">🔥 Brenner AN</button>
+
+                <div class="temperature-display" id="tempDisplay">20°C</div>
+
+                <button class="btn btn-reset" onclick="resetSimulation()">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h2>Reaktionsgleichung</h2>
+
+        <div class="equation" id="equation">
+            2 Mg + O₂ → 2 MgO
+        </div>
+
+        <div class="info-box" id="info">
+            <strong>Magnesium</strong><br>
+            Verbrennt mit hellem Licht.
+        </div>
+
+        <h2>Zündtemperatur</h2>
+        <div class="ignition-info">
+            <div>Reaktion startet bei:</div>
+            <div class="ignition-temp" id="ignitionTemp">475°C</div>
+            <div id="ignitionHint" style="margin-top: 5px; font-size: 0.8em;">
+                Erhitze das Metall mit dem Brenner!
+            </div>
+        </div>
+
+        <h2>Oxidschicht</h2>
+        <div class="oxide-info">
+            <div id="oxideDesc">MgO ist <strong>porös</strong> – Sauerstoff kann hindurch diffundieren.</div>
+            <div class="oxide-type porous" id="oxideType">→ Vollständige Oxidation möglich</div>
+        </div>
+
+        <h2>Reaktionsverlauf</h2>
+        <div class="stoichiometry">
+            <div class="stoichiometry-row">
+                <span>Metall verbraucht:</span>
+                <strong id="metalUsed">0</strong>
+            </div>
+            <div class="stoichiometry-row">
+                <span>O₂ verbraucht:</span>
+                <strong id="o2Used">0</strong>
+            </div>
+            <div class="stoichiometry-row">
+                <span>Oxid entstanden:</span>
+                <strong id="oxideFormed">0</strong>
+            </div>
+        </div>
+
+        <h2>Legende</h2>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-symbol">
+                    <canvas id="legendMetal" width="40" height="30"></canvas>
+                </div>
+                <span id="legendMetalLabel">Mg-Atom</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol">
+                    <canvas id="legendO2" width="50" height="30"></canvas>
+                </div>
+                <span>O₂-Molekül</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol">
+                    <canvas id="legendOxide" width="50" height="30"></canvas>
+                </div>
+                <span id="legendOxideLabel">MgO (Oxidschicht)</span>
+            </div>
+        </div>
+
+        <div class="progress-info">
+            <div>Reaktionsfortschritt</div>
+            <div class="progress-value" id="progressValue">0%</div>
+        </div>
+
+        <div class="status-message" id="statusMessage" style="display: none;"></div>
+
+    </div>
+
+</div>
+
+<script>
+    var canvas = document.getElementById('canvas');
+    var ctx = canvas.getContext('2d');
+
+    var metals = {
+        mg: {
+            name: 'Magnesium',
+            symbol: 'Mg',
+            color: '#a8a8a8',
+            oxideColor: '#e0e0e0',
+            equation: '2 Mg + O₂ → 2 MgO',
+            oxideFormula: 'MgO',
+            info: '<strong>Magnesium</strong><br>Verbrennt mit hellem weißem Licht. Stark exotherm!',
+            brightness: 1.0,
+            ignitionTemp: 475,
+            porous: true,
+            porosity: 0.9,
+            oxideDesc: 'MgO ist <strong>porös</strong> – Sauerstoff diffundiert hindurch.',
+            oxideType: '→ Exotherme Kettenreaktion!',
+            oxideTypeClass: 'porous',
+            // Reaktionskinetik
+            baseReactionRate: 0.8,
+            exothermic: true,
+            heatPerReaction: 15,
+            maxLayers: 999,
+            kinetikDesc: 'Exotherme Kettenreaktion – beschleunigt sich selbst',
+            // Flammenfarbe: gleißend weiß
+            glowColor: { r: 255, g: 255, b: 255 },
+            glowColorAlt: { r: 255, g: 250, b: 220 },
+            // Stöchiometrie: 2 Mg + O₂ → 2 MgO
+            stoich: { metal: 2, o2: 1, oxide: 2 }
+        },
+        fe: {
+            name: 'Eisen',
+            symbol: 'Fe',
+            color: '#7a7a7a',
+            oxideColor: '#8b4513',
+            equation: '4 Fe + 3 O₂ → 2 Fe₂O₃',
+            oxideFormula: 'Fe₂O₃',
+            info: '<strong>Eisen</strong><br>Eisenwolle glüht rot-orange. Rost blättert ab.',
+            brightness: 0.5,
+            ignitionTemp: 315,
+            porous: true,
+            porosity: 0.7,
+            oxideDesc: 'Fe₂O₃ (Rost) ist <strong>porös</strong> und blättert ab.',
+            oxideType: '→ Fortschreitende Korrosion',
+            oxideTypeClass: 'porous',
+            // Reaktionskinetik
+            baseReactionRate: 0.5,
+            exothermic: false,
+            heatPerReaction: 3,
+            maxLayers: 999,
+            kinetikDesc: 'Gleichmäßige Korrosion – Rost blättert ab',
+            // Flammenfarbe: rot-orange (Glut)
+            glowColor: { r: 255, g: 120, b: 50 },
+            glowColorAlt: { r: 255, g: 80, b: 30 },
+            // Stöchiometrie: 4 Fe + 3 O₂ → 2 Fe₂O₃
+            stoich: { metal: 4, o2: 3, oxide: 2 }
+        },
+        al: {
+            name: 'Aluminium',
+            symbol: 'Al',
+            color: '#c0c0c0',
+            oxideColor: '#d4d4d4',
+            equation: '4 Al + 3 O₂ → 2 Al₂O₃',
+            oxideFormula: 'Al₂O₃',
+            info: '<strong>Aluminium</strong><br>Bildet dichte Schutzschicht (Passivierung).',
+            brightness: 0.8,
+            ignitionTemp: 650,
+            porous: false,
+            porosity: 0.0,
+            oxideDesc: 'Al₂O₃ ist <strong>dicht</strong> – kein Sauerstoff kann hindurch!',
+            oxideType: '→ PASSIVIERUNG (Schutzschicht)',
+            oxideTypeClass: 'dense',
+            // Reaktionskinetik
+            baseReactionRate: 0.7,
+            exothermic: false,
+            heatPerReaction: 2,
+            maxLayers: 1,
+            kinetikDesc: 'Passivierung – nur Oberflächenoxidation',
+            // Flammenfarbe: silber-weiß
+            glowColor: { r: 240, g: 245, b: 255 },
+            glowColorAlt: { r: 220, g: 230, b: 250 },
+            // Stöchiometrie: 4 Al + 3 O₂ → 2 Al₂O₃
+            stoich: { metal: 4, o2: 3, oxide: 2 }
+        },
+        cu: {
+            name: 'Kupfer',
+            symbol: 'Cu',
+            color: '#b87333',
+            oxideColor: '#2a2a2a',
+            equation: '2 Cu + O₂ → 2 CuO',
+            oxideFormula: 'CuO',
+            info: '<strong>Kupfer</strong><br>Oxidiert langsam – schwarzes CuO an der Oberfläche.',
+            brightness: 0.3,
+            ignitionTemp: 500,
+            porous: true,
+            porosity: 0.3,
+            oxideDesc: 'CuO ist <strong>mäßig porös</strong> – langsame Diffusion.',
+            oxideType: '→ Langsame Oberflächenoxidation',
+            oxideTypeClass: 'porous',
+            // Reaktionskinetik
+            baseReactionRate: 0.15,
+            exothermic: false,
+            heatPerReaction: 1,
+            maxLayers: 2,
+            kinetikDesc: 'Langsame Oberflächenoxidation',
+            // Flammenfarbe: grün-blau (Kupferflamme)
+            glowColor: { r: 100, g: 200, b: 150 },
+            glowColorAlt: { r: 80, g: 180, b: 130 },
+            // Stöchiometrie: 2 Cu + O₂ → 2 CuO
+            stoich: { metal: 2, o2: 1, oxide: 2 }
+        }
+    };
+
+    var currentMetal = 'mg';
+    var latticeAtoms = [];
+    var oxygenMolecules = [];
+    var oxideLayer = [];
+    var energyParticles = [];
+    var burnerOn = false;
+    var temperature = 20;
+    var reactionStarted = false;
+    var animationId = null;
+    var reactionMultiplier = 1.0;  // Für exotherme Beschleunigung (Mg)
+    var reactionCount = 0;          // Zählt Reaktionen für Beschleunigung
+
+    var stats = { metalUsed: 0, o2Used: 0, oxideFormed: 0 };
+
+    var ATOM_RADIUS = 10;
+    var OXYGEN_RADIUS = 8;
+    var LATTICE_SPACING = 22;
+    var METAL_ROWS = 6;      // Quadratischer Block: 6x8
+    var METAL_COLS = 8;
+    var NUM_O2 = 80;         // Mehr O₂ rundherum
+    var BASE_SPEED = 0.25;
+
+    function resizeCanvas() {
+        var rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height - 80;
+    }
+
+    function selectMetal() {
+        currentMetal = document.getElementById('metalSelect').value;
+        var metal = metals[currentMetal];
+        document.getElementById('equation').textContent = metal.equation;
+        document.getElementById('info').innerHTML = metal.info;
+        document.getElementById('legendMetalLabel').textContent = metal.symbol + '-Atom';
+        document.getElementById('legendOxideLabel').textContent = metal.oxideFormula + ' (Oxidschicht)';
+        document.getElementById('ignitionTemp').textContent = metal.ignitionTemp + '°C';
+        document.getElementById('oxideDesc').innerHTML = metal.oxideDesc;
+        document.getElementById('oxideType').textContent = metal.oxideType;
+        document.getElementById('oxideType').className = 'oxide-type ' + metal.oxideTypeClass;
+        resetSimulation();
+        drawLegend();
+    }
+
+    function initParticles() {
+        latticeAtoms = [];
+        oxygenMolecules = [];
+        oxideLayer = [];
+        energyParticles = [];
+        stats = { metalUsed: 0, o2Used: 0, oxideFormed: 0 };
+        temperature = 20;
+        reactionStarted = false;
+        reactionMultiplier = 1.0;
+        reactionCount = 0;
+        burnerOn = false;
+        document.getElementById('burnerBtn').classList.remove('active');
+        document.getElementById('burnerBtn').textContent = '🔥 Brenner AN';
+        document.getElementById('ignitionHint').innerHTML = 'Erhitze das Metall mit dem Brenner!';
+        updateTemperatureDisplay();
+
+        var metal = metals[currentMetal];
+
+        // Metal lattice in CENTER - quadratisch
+        var totalWidth = METAL_COLS * LATTICE_SPACING;
+        var totalHeight = METAL_ROWS * LATTICE_SPACING * 0.866;
+        var startX = (canvas.width - totalWidth) / 2;
+        var startY = (canvas.height - totalHeight) / 2;
+
+        for (var row = 0; row < METAL_ROWS; row++) {
+            var offset = (row % 2) * (LATTICE_SPACING / 2);
+            for (var col = 0; col < METAL_COLS; col++) {
+                latticeAtoms.push({
+                    x: startX + col * LATTICE_SPACING + offset,
+                    y: startY + row * (LATTICE_SPACING * 0.866),
+                    baseX: startX + col * LATTICE_SPACING + offset,
+                    baseY: startY + row * (LATTICE_SPACING * 0.866),
+                    radius: ATOM_RADIUS,
+                    reacted: false,
+                    row: row,
+                    col: col
+                });
+            }
+        }
+
+        // Sauerstoff rundherum verteilt (nicht in der Mitte!)
+        for (var i = 0; i < NUM_O2; i++) {
+            oxygenMolecules.push(createO2MoleculeAround(startX, startY, totalWidth, totalHeight));
+        }
+
+        updateStats();
+        hideStatusMessage();
+    }
+
+    // Metall-Bereich für Kollisionsprüfung
+    var metalBounds = { x: 0, y: 0, w: 0, h: 0 };
+
+    function updateMetalBounds() {
+        var totalWidth = METAL_COLS * LATTICE_SPACING;
+        var totalHeight = METAL_ROWS * LATTICE_SPACING * 0.866;
+        metalBounds.x = (canvas.width - totalWidth) / 2 - 20;
+        metalBounds.y = (canvas.height - totalHeight) / 2 - 20;
+        metalBounds.w = totalWidth + 40;
+        metalBounds.h = totalHeight + 40;
+    }
+
+    function createO2MoleculeAround(startX, startY, totalWidth, totalHeight) {
+        var margin = 25;
+        var x, y;
+        var centerX = startX + totalWidth / 2;
+        var centerY = startY + totalHeight / 2;
+
+        // Zufällige Position AUSSERHALB des Metallblocks
+        var side = Math.floor(Math.random() * 4);
+        switch (side) {
+            case 0: // Oben
+                x = margin + Math.random() * (canvas.width - 2 * margin);
+                y = margin + Math.random() * (startY - margin - 30);
+                break;
+            case 1: // Unten
+                x = margin + Math.random() * (canvas.width - 2 * margin);
+                y = startY + totalHeight + 30 + Math.random() * (canvas.height - startY - totalHeight - margin - 30);
+                break;
+            case 2: // Links
+                x = margin + Math.random() * (startX - margin - 30);
+                y = margin + Math.random() * (canvas.height - 2 * margin);
+                break;
+            case 3: // Rechts
+                x = startX + totalWidth + 30 + Math.random() * (canvas.width - startX - totalWidth - margin - 30);
+                y = margin + Math.random() * (canvas.height - 2 * margin);
+                break;
+        }
+
+        // Fallback für ungültige Positionen
+        if (isNaN(x) || x < margin) x = margin + Math.random() * 50;
+        if (isNaN(y) || y < margin) y = margin + Math.random() * 50;
+        if (x > canvas.width - margin) x = canvas.width - margin - Math.random() * 50;
+        if (y > canvas.height - margin) y = canvas.height - margin - Math.random() * 50;
+
+        return {
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * BASE_SPEED * 2,
+            vy: (Math.random() - 0.5) * BASE_SPEED * 2,
+            rotation: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.03,
+            reacted: false
+        };
+    }
+
+    function spawnNewO2() {
+        // Spawn new O2 am Rand to maintain "infinite" atmosphere
+        if (oxygenMolecules.filter(function(o) { return !o.reacted; }).length < NUM_O2) {
+            var totalWidth = METAL_COLS * LATTICE_SPACING;
+            var totalHeight = METAL_ROWS * LATTICE_SPACING * 0.866;
+            var startX = (canvas.width - totalWidth) / 2;
+            var startY = (canvas.height - totalHeight) / 2;
+            var o = createO2MoleculeAround(startX, startY, totalWidth, totalHeight);
+            oxygenMolecules.push(o);
+        }
+    }
+
+    function toggleBurner() {
+        burnerOn = !burnerOn;
+        var btn = document.getElementById('burnerBtn');
+        if (burnerOn) {
+            btn.classList.add('active');
+            btn.textContent = '🔥 Brenner AUS';
+            if (!animationId) {
+                animate();
+            }
+        } else {
+            btn.classList.remove('active');
+            btn.textContent = '🔥 Brenner AN';
+        }
+    }
+
+    function resetSimulation() {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        initParticles();
+        draw();
+    }
+
+    function updateTemperatureDisplay() {
+        var display = document.getElementById('tempDisplay');
+        display.textContent = Math.round(temperature) + '°C';
+        var metal = metals[currentMetal];
+        if (temperature >= metal.ignitionTemp) {
+            display.classList.add('hot');
+        } else {
+            display.classList.remove('hot');
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('metalUsed').textContent = stats.metalUsed;
+        // Dezimalwerte auf 2 Stellen für Stöchiometrie (0.5, 0.75)
+        document.getElementById('o2Used').textContent = stats.o2Used % 1 === 0 ? stats.o2Used : stats.o2Used.toFixed(2);
+        document.getElementById('oxideFormed').textContent = stats.oxideFormed % 1 === 0 ? stats.oxideFormed : stats.oxideFormed.toFixed(2);
+
+        var total = latticeAtoms.length;
+        var reacted = latticeAtoms.filter(function(a) { return a.reacted; }).length;
+        var percent = Math.round((reacted / total) * 100);
+        document.getElementById('progressValue').textContent = percent + '%';
+    }
+
+    function showStatusMessage(text, type) {
+        var msg = document.getElementById('statusMessage');
+        msg.textContent = text;
+        msg.className = 'status-message ' + (type || '');
+        msg.style.display = 'block';
+    }
+
+    function hideStatusMessage() {
+        document.getElementById('statusMessage').style.display = 'none';
+    }
+
+    function animate() {
+        var metal = metals[currentMetal];
+
+        // Temperature changes - schnelles Aufheizen (ca. 10 Sekunden bis Zündtemperatur)
+        if (burnerOn && temperature < 900) {
+            temperature += 8;  // Schneller aufheizen
+        } else if (!burnerOn && temperature > 20) {
+            // Abkühlen, aber Mg bleibt heiß durch exotherme Reaktion
+            var coolingRate = metal.exothermic && reactionStarted ? 0.2 : 1.5;
+            temperature -= coolingRate;
+        }
+        updateTemperatureDisplay();
+
+        // Update hint when ignition temperature reached
+        if (temperature >= metal.ignitionTemp && !reactionStarted) {
+            document.getElementById('ignitionHint').innerHTML = '<strong style="color: #ff4444;">Zündtemperatur erreicht!</strong>';
+            reactionStarted = true;
+            showStatusMessage('Reaktion gestartet!', 'success');
+        }
+
+        // Spawn new O2 to maintain atmosphere
+        spawnNewO2();
+
+        // Update oxygen positions - speed increases much faster with temperature
+        updateOxygenPositions();
+
+        // Thermal vibration of metal atoms
+        updateMetalVibration();
+
+        // Try reactions if temperature is high enough
+        if (temperature >= metal.ignitionTemp) {
+            tryReaction();
+        }
+
+        // Update energy particles
+        updateEnergyParticles();
+
+        draw();
+
+        // Check completion and show appropriate status
+        var allReacted = latticeAtoms.every(function(a) { return a.reacted; });
+        var passivated = checkPassivation();
+        var reacted = latticeAtoms.filter(function(a) { return a.reacted; }).length;
+        var total = latticeAtoms.length;
+        var percent = Math.round((reacted / total) * 100);
+
+        if (allReacted) {
+            showStatusMessage('Reaktion vollständig! Alles oxidiert.', 'success');
+        } else if (passivated) {
+            showStatusMessage('PASSIVIERUNG: ' + metal.symbol + '-Oxidschicht blockiert O₂!', 'warning');
+        } else if (currentMetal === 'mg' && reactionStarted && reactionMultiplier > 2) {
+            showStatusMessage('Kettenreaktion! Temperatur: ' + Math.round(temperature) + '°C', 'success');
+        } else if (currentMetal === 'cu' && percent > 20 && percent < 100) {
+            showStatusMessage('Langsame Oberflächenoxidation...', '');
+        } else if (currentMetal === 'fe' && percent > 10 && percent < 100) {
+            showStatusMessage('Korrosion schreitet fort (' + percent + '%)', '');
+        }
+
+        animationId = requestAnimationFrame(animate);
+    }
+
+    function isSurfaceAtom(atom) {
+        // Prüft ob Atom am Rand des Blocks liegt
+        return atom.row === 0 ||                          // Oberste Reihe
+               atom.row === METAL_ROWS - 1 ||             // Unterste Reihe
+               atom.col === 0 ||                          // Linke Spalte
+               atom.col === METAL_COLS - 1;               // Rechte Spalte
+    }
+
+    function checkPassivation() {
+        var metal = metals[currentMetal];
+
+        // Al: dichte Schicht = echte Passivierung (Oberfläche komplett oxidiert)
+        if (!metal.porous) {
+            var surfaceAtoms = latticeAtoms.filter(isSurfaceAtom);
+            var surfaceReacted = surfaceAtoms.filter(function(a) { return a.reacted; }).length;
+            return surfaceReacted >= surfaceAtoms.length * 0.85;
+        }
+
+        // Cu: quasi-Passivierung (Oberfläche + 1 Schicht)
+        if (metal.maxLayers < 999) {
+            var accessibleAtoms = latticeAtoms.filter(function(a) {
+                // Oberfläche oder direkt darunter
+                return isSurfaceAtom(a) ||
+                       a.row === 1 || a.row === METAL_ROWS - 2 ||
+                       a.col === 1 || a.col === METAL_COLS - 2;
+            });
+            var reactedAccessible = accessibleAtoms.filter(function(a) { return a.reacted; }).length;
+            if (reactedAccessible >= accessibleAtoms.length * 0.9) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function updateOxygenPositions() {
+        var metal = metals[currentMetal];
+        // Speed increases with temperature
+        var tempFactor = Math.pow((temperature - 20) / 100, 1.5);
+        var speedMultiplier = 1 + tempFactor * 0.8;
+
+        // Metall-Bereich berechnen
+        var totalWidth = METAL_COLS * LATTICE_SPACING;
+        var totalHeight = METAL_ROWS * LATTICE_SPACING * 0.866;
+        var metalX = (canvas.width - totalWidth) / 2;
+        var metalY = (canvas.height - totalHeight) / 2;
+
+        oxygenMolecules.forEach(function(o) {
+            if (o.reacted) return;
+
+            // Brownian motion
+            var brownian = BASE_SPEED * 0.5 * speedMultiplier;
+            o.vx += (Math.random() - 0.5) * brownian;
+            o.vy += (Math.random() - 0.5) * brownian;
+
+            // Leichte Anziehung zum Metallblock-RAND (nicht Mitte!)
+            var centerX = metalX + totalWidth / 2;
+            var centerY = metalY + totalHeight / 2;
+            var dx = centerX - o.x;
+            var dy = centerY - o.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 80) {
+                o.vx += dx / dist * 0.012;
+                o.vy += dy / dist * 0.012;
+            }
+
+            // Damping
+            o.vx *= 0.97;
+            o.vy *= 0.97;
+
+            // Speed limit
+            var maxSpeed = BASE_SPEED * 3.5 * speedMultiplier;
+            var speed = Math.sqrt(o.vx * o.vx + o.vy * o.vy);
+            if (speed > maxSpeed) {
+                o.vx = (o.vx / speed) * maxSpeed;
+                o.vy = (o.vy / speed) * maxSpeed;
+            }
+
+            var newX = o.x + o.vx;
+            var newY = o.y + o.vy;
+
+            // KRITISCH: Bei Al und Cu - O₂ darf NICHT in den Metallblock eindringen!
+            // Nur Oberflächenreaktion erlaubt
+            if (!metal.porous || metal.maxLayers < 999) {
+                var blocked = isInsideMetalBlock(newX, newY, metalX, metalY, totalWidth, totalHeight);
+                if (blocked) {
+                    // Komplett abprallen - nicht eindringen!
+                    o.vx *= -0.7 + (Math.random() - 0.5) * 0.2;
+                    o.vy *= -0.7 + (Math.random() - 0.5) * 0.2;
+                    newX = o.x;
+                    newY = o.y;
+                }
+            }
+
+            // Kollision mit Oxidschicht
+            var oxideBlocked = checkOxideCollision(newX, newY, metal);
+            if (oxideBlocked) {
+                if (!metal.porous) {
+                    // Al: dichte Schicht - komplett abprallen
+                    o.vx *= -0.6 + (Math.random() - 0.5) * 0.3;
+                    o.vy *= -0.6 + (Math.random() - 0.5) * 0.3;
+                    newX = o.x;
+                    newY = o.y;
+                } else if (Math.random() > metal.porosity * 0.5) {
+                    // Poröse Schicht - manchmal abprallen
+                    o.vx *= -0.3;
+                    o.vy *= -0.3;
+                    newX = o.x;
+                    newY = o.y;
+                }
+            }
+
+            o.x = newX;
+            o.y = newY;
+            o.rotation += o.rotSpeed * speedMultiplier;
+
+            // Bounce off walls
+            if (o.x < 15) { o.x = 15; o.vx *= -0.8; }
+            if (o.x > canvas.width - 15) { o.x = canvas.width - 15; o.vx *= -0.8; }
+            if (o.y < 15) { o.y = 15; o.vy *= -0.8; }
+            if (o.y > canvas.height - 15) { o.y = canvas.height - 15; o.vy *= -0.8; }
+        });
+    }
+
+    function isInsideMetalBlock(x, y, metalX, metalY, totalWidth, totalHeight) {
+        // Prüft ob Position TIEF im Metallblock liegt (nicht an der Oberfläche!)
+        // Äußere Schicht (ca. 1.5 Atomradien) bleibt durchlässig für Oberflächenreaktionen
+        var surfaceMargin = LATTICE_SPACING * 1.5;  // Oberflächenschicht durchlässig
+        return x > metalX + surfaceMargin &&
+               x < metalX + totalWidth - surfaceMargin &&
+               y > metalY + surfaceMargin &&
+               y < metalY + totalHeight - surfaceMargin;
+    }
+
+    function checkOxideCollision(x, y, metal) {
+        // Prüfe Kollision mit existierendem Oxid
+        for (var i = 0; i < oxideLayer.length; i++) {
+            var ox = oxideLayer[i];
+            var dx = x - ox.x;
+            var dy = y - ox.y;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < ATOM_RADIUS + OXYGEN_RADIUS + 3) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getOxideTopY() {
+        if (oxideLayer.length === 0) return canvas.height;
+        var minY = canvas.height;
+        oxideLayer.forEach(function(ox) {
+            if (ox.y < minY) minY = ox.y;
+        });
+        return minY - ATOM_RADIUS;
+    }
+
+    function updateMetalVibration() {
+        var vibrationAmount = Math.min(4, temperature / 150);
+        latticeAtoms.forEach(function(a) {
+            if (a.reacted) return;
+            a.x = a.baseX + (Math.random() - 0.5) * vibrationAmount;
+            a.y = a.baseY + (Math.random() - 0.5) * vibrationAmount;
+        });
+    }
+
+    function tryReaction() {
+        var metal = metals[currentMetal];
+
+        // Check passivation for Al - full stop after surface
+        if (!metal.porous && checkPassivation()) {
+            return false;
+        }
+
+        // Berechne effektive Reaktionsrate
+        var effectiveRate = metal.baseReactionRate * reactionMultiplier;
+
+        // Temperatur-Einfluss: höhere Temperatur = mehr Reaktionen
+        var tempBonus = (temperature - metal.ignitionTemp) / 200;
+        effectiveRate *= (1 + Math.max(0, tempBonus));
+
+        oxygenMolecules.forEach(function(o) {
+            if (o.reacted) return;
+
+            // Wahrscheinlichkeitscheck basierend auf Rate
+            if (Math.random() > effectiveRate) return;
+
+            // Find atoms that can react (exposed to oxygen)
+            var reactableAtoms = latticeAtoms.filter(function(a) {
+                if (a.reacted) return false;
+
+                // Al: nur Oberflächenatome können reagieren
+                if (!metal.porous) {
+                    // Nur wenn Atom am Rand ODER benachbartes Atom bereits reagiert hat
+                    if (!isSurfaceAtom(a)) {
+                        // Inneres Atom - prüfe ob Nachbar reagiert hat
+                        var hasReactedNeighbor = latticeAtoms.some(function(other) {
+                            if (!other.reacted) return false;
+                            var dx = Math.abs(other.baseX - a.baseX);
+                            var dy = Math.abs(other.baseY - a.baseY);
+                            return dx < LATTICE_SPACING * 1.2 && dy < LATTICE_SPACING * 1.2;
+                        });
+                        if (!hasReactedNeighbor) return false;
+                    }
+                }
+
+                // Cu: nur äußere Schichten
+                if (metal.maxLayers < 999) {
+                    var distFromEdge = Math.min(
+                        a.row, METAL_ROWS - 1 - a.row,
+                        a.col, METAL_COLS - 1 - a.col
+                    );
+                    if (distFromEdge >= metal.maxLayers) return false;
+                }
+
+                // Atom muss von außen erreichbar sein (nicht komplett von unreagiertem Metall umgeben)
+                var surroundedCount = 0;
+                latticeAtoms.forEach(function(other) {
+                    if (other === a || other.reacted) return;
+                    var dx = Math.abs(other.baseX - a.baseX);
+                    var dy = Math.abs(other.baseY - a.baseY);
+                    if (dx < LATTICE_SPACING * 0.8 && dy < LATTICE_SPACING * 0.8) {
+                        surroundedCount++;
+                    }
+                });
+                // Wenn komplett umgeben von unreagiertem Metall, nicht erreichbar
+                if (surroundedCount >= 6) return false;
+
+                return true;
+            });
+
+            // Find closest reactable atom to this O2
+            var closest = null;
+            var closestDist = Infinity;
+
+            reactableAtoms.forEach(function(a) {
+                var dx = a.x - o.x;
+                var dy = a.y - o.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closest = a;
+                }
+            });
+
+            // React if close enough
+            var reactionDist = ATOM_RADIUS + OXYGEN_RADIUS + 15;
+            if (closest && closestDist < reactionDist) {
+                // React this atom
+                closest.reacted = true;
+                o.reacted = true;
+                reactionCount++;
+
+                // Add to oxide layer
+                oxideLayer.push({
+                    x: closest.baseX,
+                    y: closest.baseY,
+                    row: closest.row,
+                    col: closest.col
+                });
+
+                // Energy burst - größer bei exothermen Reaktionen
+                var burstSize = metal.exothermic ? 10 : 5;
+                createEnergyBurst(closest.x, closest.y, burstSize);
+
+                // Exotherme Reaktion: Wärme freisetzen und beschleunigen
+                if (metal.exothermic) {
+                    temperature += metal.heatPerReaction;
+                    // Exponentielles Aufschaukeln bei Mg
+                    reactionMultiplier = 1.0 + (reactionCount * 0.12);
+                    // Cap bei 4x Beschleunigung
+                    reactionMultiplier = Math.min(4.0, reactionMultiplier);
+                }
+
+                // Stöchiometrische Berechnung
+                stats.metalUsed += 1;
+                stats.o2Used += metal.stoich.o2 / metal.stoich.metal;
+                stats.oxideFormed += metal.stoich.oxide / metal.stoich.metal;
+                updateStats();
+            }
+        });
+    }
+
+    function createEnergyBurst(x, y, count) {
+        var metal = metals[currentMetal];
+        var numParticles = count || 5;
+        for (var i = 0; i < numParticles; i++) {
+            var angle = (i / numParticles) * Math.PI * 2 + Math.random() * 0.5;
+            var speed = metal.exothermic ? (1.5 + Math.random() * 1.5) : (1 + Math.random());
+            // Wähle zufällig zwischen Hauptfarbe und Alternativfarbe
+            var useAlt = Math.random() > 0.5;
+            var col = useAlt ? metal.glowColorAlt : metal.glowColor;
+            energyParticles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed - 0.5,
+                radius: metal.exothermic ? (3 + Math.random() * 3) : (2 + Math.random() * 2),
+                life: 1.0,
+                brightness: metal.brightness,
+                glowR: col.r,
+                glowG: col.g,
+                glowB: col.b
+            });
+        }
+    }
+
+    function updateEnergyParticles() {
+        energyParticles.forEach(function(e) {
+            e.x += e.vx;
+            e.y += e.vy;
+            e.vy -= 0.02;
+            e.life -= 0.02;
+        });
+        energyParticles = energyParticles.filter(function(e) { return e.life > 0; });
+    }
+
+    function draw() {
+        var metal = metals[currentMetal];
+
+        // Background - Basis dunkelblau
+        var bgHeat = Math.min(30, temperature / 30);
+        ctx.fillStyle = 'rgb(' + Math.round(25 + bgHeat) + ',' + Math.round(25 + bgHeat * 0.3) + ',' + Math.round(50 - bgHeat * 0.5) + ')';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // REAKTIONS-GLÜHEN: Hintergrund in Flammenfarbe während Verbrennung
+        if (reactionStarted && energyParticles.length > 0) {
+            var glowIntensity = Math.min(0.5, energyParticles.length / 30);
+            var col = metal.glowColor;
+            var reactionGlow = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.7
+            );
+            reactionGlow.addColorStop(0, 'rgba(' + col.r + ', ' + col.g + ', ' + col.b + ', ' + (glowIntensity * 0.6) + ')');
+            reactionGlow.addColorStop(0.5, 'rgba(' + col.r + ', ' + col.g + ', ' + col.b + ', ' + (glowIntensity * 0.3) + ')');
+            reactionGlow.addColorStop(1, 'rgba(' + col.r + ', ' + col.g + ', ' + col.b + ', 0)');
+            ctx.fillStyle = reactionGlow;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Burner glow (unten - bleibt immer orange)
+        if (burnerOn) {
+            var glow = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height + 30, 0,
+                canvas.width / 2, canvas.height + 30, 180
+            );
+            glow.addColorStop(0, 'rgba(255, 80, 0, 0.5)');
+            glow.addColorStop(1, 'rgba(255, 80, 0, 0)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, canvas.height - 180, canvas.width, 180);
+        }
+
+        // Energy glow - metalspezifische Farben
+        energyParticles.forEach(function(e) {
+            var g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, 35 * e.life);
+            var r = e.glowR || 255;
+            var gr = e.glowG || 200;
+            var b = e.glowB || 100;
+            g.addColorStop(0, 'rgba(' + r + ', ' + gr + ', ' + b + ', ' + (e.life * 0.4 * e.brightness) + ')');
+            g.addColorStop(1, 'rgba(' + r + ', ' + gr + ', ' + b + ', 0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(e.x - 35, e.y - 35, 70, 70);
+        });
+
+        // Draw lattice bonds
+        ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
+        ctx.lineWidth = 1.5;
+        latticeAtoms.forEach(function(a) {
+            if (a.reacted) return;
+            latticeAtoms.forEach(function(b) {
+                if (b.reacted || a === b) return;
+                var dx = a.baseX - b.baseX;
+                var dy = a.baseY - b.baseY;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < LATTICE_SPACING * 1.2) {
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                }
+            });
+        });
+
+        // Draw metal atoms
+        latticeAtoms.forEach(function(a) {
+            if (a.reacted) return;
+            var glowColor = temperature > 300 ?
+                'rgba(255, ' + Math.round(80 + (temperature - 300) * 0.4) + ', 30, ' + Math.min(0.6, (temperature - 300) / 400) + ')' :
+                null;
+            drawAtom(a.x, a.y, ATOM_RADIUS, metal.color, metal.symbol, glowColor);
+        });
+
+        // Draw oxide layer with porosity visualization
+        drawOxideLayer();
+
+        // Draw oxygen molecules
+        oxygenMolecules.forEach(function(o) {
+            if (o.reacted) return;
+
+            var dx = Math.cos(o.rotation) * 7;
+            var dy = Math.sin(o.rotation) * 7;
+
+            ctx.strokeStyle = '#b03030';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(o.x - dx, o.y - dy);
+            ctx.lineTo(o.x + dx, o.y + dy);
+            ctx.stroke();
+
+            drawAtom(o.x - dx, o.y - dy, OXYGEN_RADIUS, '#e74c3c', 'O', null);
+            drawAtom(o.x + dx, o.y + dy, OXYGEN_RADIUS, '#e74c3c', 'O', null);
+        });
+
+        // Draw energy particles - metalspezifische Farben
+        energyParticles.forEach(function(e) {
+            var r = e.glowR || 255;
+            var gr = e.glowG || 240;
+            var b = e.glowB || 150;
+            var g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.radius * 2);
+            g.addColorStop(0, 'rgba(' + r + ', ' + gr + ', ' + b + ', ' + e.life + ')');
+            g.addColorStop(1, 'rgba(' + r + ', ' + Math.floor(gr * 0.6) + ', ' + Math.floor(b * 0.3) + ', 0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.radius * e.life * 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Labels
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('O₂ (Atmosphäre)', canvas.width / 2, 14);
+
+        // Metall-Label unter dem Block
+        var totalHeight = METAL_ROWS * LATTICE_SPACING * 0.866;
+        var metalBottom = (canvas.height + totalHeight) / 2 + 20;
+        ctx.fillText(metal.symbol + '-Metallblock', canvas.width / 2, Math.min(metalBottom, canvas.height - 6));
+
+        // Temperature on canvas
+        if (temperature > 80) {
+            ctx.fillStyle = 'rgba(255, 100, 50, 0.9)';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(Math.round(temperature) + '°C', 15, 28);
+        }
+    }
+
+    function drawOxideLayer() {
+        if (oxideLayer.length === 0) return;
+
+        var metal = metals[currentMetal];
+
+        // Sort oxide by row (top to bottom)
+        var sortedOxide = oxideLayer.slice().sort(function(a, b) { return a.row - b.row; });
+
+        sortedOxide.forEach(function(ox) {
+            if (currentMetal === 'mg') {
+                // MgO: KALOTTENMODELL (Mg + O sichtbar)
+                var metalRadius = ATOM_RADIUS * 0.85;
+                var oxygenRadius = OXYGEN_RADIUS * 0.75;
+
+                // O-Atom rechts
+                drawAtom(ox.x + metalRadius + oxygenRadius - 3, ox.y, oxygenRadius, '#e74c3c', '', null);
+                // Mg-Atom (leicht getönt)
+                var blendedColor = blendColors(metal.color, metal.oxideColor, 0.3);
+                drawAtom(ox.x, ox.y, metalRadius, blendedColor, '', null);
+            } else {
+                // Fe₂O₃, Al₂O₃, CuO: Vereinfachtes Oxid-Teilchen
+                var oxideRadius = ATOM_RADIUS * 0.9;
+                drawAtom(ox.x, ox.y, oxideRadius, metal.oxideColor, '', null);
+
+                // Bei porösen Schichten: kleine Lücken andeuten
+                if (metal.porous && metal.porosity > 0.5) {
+                    ctx.globalAlpha = 0.35;
+                    ctx.fillStyle = '#1a1a3e';
+                    ctx.beginPath();
+                    ctx.arc(ox.x + 2, ox.y - 1, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+
+                // Bei dichter Schicht (Al): Verbindung zu Nachbarn zeigen
+                if (!metal.porous) {
+                    sortedOxide.forEach(function(other) {
+                        if (other === ox) return;
+                        var ddx = other.x - ox.x;
+                        var ddy = other.y - ox.y;
+                        var dist = Math.sqrt(ddx * ddx + ddy * ddy);
+                        if (dist < LATTICE_SPACING * 1.3) {
+                            ctx.strokeStyle = 'rgba(180, 180, 180, 0.5)';
+                            ctx.lineWidth = 3;
+                            ctx.beginPath();
+                            ctx.moveTo(ox.x, ox.y);
+                            ctx.lineTo(other.x, other.y);
+                            ctx.stroke();
+                        }
+                    });
+                }
+            }
+        });
+
+        // Label oxide layer
+        if (oxideLayer.length > 5) {
+            var minY = getOxideTopY() + ATOM_RADIUS;
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            var label = metal.porous ? '(porös)' : '(dicht)';
+            ctx.fillText(metal.symbol + '-Oxid ' + label, canvas.width / 2, minY - 15);
+        }
+    }
+
+    function blendColors(color1, color2, ratio) {
+        var num1 = parseInt(color1.replace('#', ''), 16);
+        var num2 = parseInt(color2.replace('#', ''), 16);
+        var r1 = (num1 >> 16), g1 = ((num1 >> 8) & 0xFF), b1 = (num1 & 0xFF);
+        var r2 = (num2 >> 16), g2 = ((num2 >> 8) & 0xFF), b2 = (num2 & 0xFF);
+        var r = Math.round(r1 * (1 - ratio) + r2 * ratio);
+        var g = Math.round(g1 * (1 - ratio) + g2 * ratio);
+        var b = Math.round(b1 * (1 - ratio) + b2 * ratio);
+        return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+    }
+
+    function drawAtom(x, y, radius, baseColor, label, glowColor) {
+        if (glowColor) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius + 3, 0, Math.PI * 2);
+            ctx.fillStyle = glowColor;
+            ctx.fill();
+        }
+
+        var gradient = ctx.createRadialGradient(
+            x - radius * 0.3, y - radius * 0.3, radius * 0.1,
+            x, y, radius
+        );
+        gradient.addColorStop(0, lightenColor(baseColor, 70));
+        gradient.addColorStop(0.4, baseColor);
+        gradient.addColorStop(1, darkenColor(baseColor, 50));
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        if (label) {
+            ctx.fillStyle = getContrastColor(baseColor);
+            ctx.font = 'bold ' + Math.max(6, radius * 0.65) + 'px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, x, y);
+        }
+    }
+
+    function drawLegend() {
+        var metal = metals[currentMetal];
+
+        var c1 = document.getElementById('legendMetal').getContext('2d');
+        c1.clearRect(0, 0, 40, 30);
+        drawAtomOn(c1, 20, 15, 9, metal.color, metal.symbol);
+
+        var c2 = document.getElementById('legendO2').getContext('2d');
+        c2.clearRect(0, 0, 50, 30);
+        c2.strokeStyle = '#b03030';
+        c2.lineWidth = 2;
+        c2.beginPath();
+        c2.moveTo(14, 15);
+        c2.lineTo(36, 15);
+        c2.stroke();
+        drawAtomOn(c2, 14, 15, 7, '#e74c3c', 'O');
+        drawAtomOn(c2, 36, 15, 7, '#e74c3c', 'O');
+
+        var c3 = document.getElementById('legendOxide').getContext('2d');
+        c3.clearRect(0, 0, 50, 30);
+
+        if (currentMetal === 'mg') {
+            // MgO: KALOTTENMODELL (Mg + O sichtbar)
+            var metalRadius = 8;
+            var oxygenRadius = 6;
+            var blendedColor = blendColors(metal.color, metal.oxideColor, 0.3);
+            drawAtomOn(c3, 32, 15, oxygenRadius, '#e74c3c', '');
+            drawAtomOn(c3, 20, 15, metalRadius, blendedColor, '');
+        } else {
+            // Fe₂O₃, Al₂O₃, CuO: Vereinfachtes Oxid-Teilchen
+            drawAtomOn(c3, 25, 15, 9, metal.oxideColor, '');
+
+            // Porosität andeuten
+            if (metal.porous && metal.porosity > 0.5) {
+                c3.fillStyle = '#333';
+                c3.globalAlpha = 0.4;
+                c3.beginPath();
+                c3.arc(23, 13, 1.5, 0, Math.PI * 2);
+                c3.fill();
+                c3.globalAlpha = 1;
+            }
+        }
+    }
+
+    function drawAtomOn(context, x, y, radius, baseColor, label) {
+        var gradient = context.createRadialGradient(
+            x - radius * 0.3, y - radius * 0.3, radius * 0.1,
+            x, y, radius
+        );
+        gradient.addColorStop(0, lightenColor(baseColor, 70));
+        gradient.addColorStop(0.4, baseColor);
+        gradient.addColorStop(1, darkenColor(baseColor, 50));
+
+        context.beginPath();
+        context.arc(x, y, radius, 0, Math.PI * 2);
+        context.fillStyle = gradient;
+        context.fill();
+
+        if (label) {
+            context.fillStyle = getContrastColor(baseColor);
+            context.font = 'bold ' + Math.max(5, radius * 0.65) + 'px sans-serif';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(label, x, y);
+        }
+    }
+
+    function lightenColor(color, percent) {
+        var num = parseInt(color.replace('#', ''), 16);
+        var r = Math.min(255, (num >> 16) + percent);
+        var g = Math.min(255, ((num >> 8) & 0x00FF) + percent);
+        var b = Math.min(255, (num & 0x0000FF) + percent);
+        return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+    }
+
+    function darkenColor(color, percent) {
+        var num = parseInt(color.replace('#', ''), 16);
+        var r = Math.max(0, (num >> 16) - percent);
+        var g = Math.max(0, ((num >> 8) & 0x00FF) - percent);
+        var b = Math.max(0, (num & 0x0000FF) - percent);
+        return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+    }
+
+    function getContrastColor(color) {
+        var num = parseInt(color.replace('#', ''), 16);
+        var r = (num >> 16);
+        var g = ((num >> 8) & 0x00FF);
+        var b = (num & 0x0000FF);
+        var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminance > 0.5 ? '#333333' : '#ffffff';
+    }
+
+    function toggleFullscreen() {
+        document.body.classList.toggle('fullscreen');
+        setTimeout(function() {
+            resizeCanvas();
+            initParticles();
+            draw();
+            drawLegend();
+        }, 100);
+    }
+
+    window.addEventListener('resize', function() {
+        resizeCanvas();
+        initParticles();
+        draw();
+    });
+
+    resizeCanvas();
+    selectMetal();
+    drawLegend();
+</script>
+
+</body>
+</html>

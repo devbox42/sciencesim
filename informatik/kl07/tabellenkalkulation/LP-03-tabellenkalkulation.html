@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabellenkalkulation Grundlagen | Informatik 7</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #b35c00;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        header .subtitle { font-size: 0.9em; opacity: 0.9; }
+
+        .progress-bar { background: #ddd; height: 8px; margin-bottom: 10px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { text-align: center; font-size: 0.85em; color: #555; margin-bottom: 10px; }
+
+        .step-indicators { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .step-dot {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85em; font-weight: 600;
+            border: 2px solid #ddd; background: #fff; color: #888;
+            cursor: not-allowed; transition: all 0.15s;
+        }
+        .step-dot.unlocked { cursor: pointer; border-color: #b35c00; color: #b35c00; }
+        .step-dot.unlocked:hover { background: #fff3e0; }
+        .step-dot.completed { background: #2a7a4b; border-color: #2a7a4b; color: #fff; cursor: pointer; }
+        .step-dot.current { border-color: #b35c00; border-width: 3px; background: #fff3e0; color: #b35c00; }
+
+        .section { background: #fff; border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; display: none; }
+        .section.active { display: block; }
+        .section h2 { font-size: 1.15em; font-weight: 600; color: #b35c00; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #b35c00; }
+        .section p { margin-bottom: 15px; }
+
+        .info-box { background: #fff3e0; border: 1px solid #b35c00; padding: 15px; margin: 15px 0; }
+        .info-box strong { color: #b35c00; }
+        .merke-box { background: #e8f5e9; border: 1px solid #2a7a4b; padding: 15px; margin: 15px 0; }
+        .merke-box::before { content: "Merke: "; font-weight: 600; color: #2a7a4b; }
+
+        .hefter-hinweis {
+            background: #fff3e0; border: 2px solid #b35c00;
+            padding: 12px 15px; margin: 20px 0; font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "📓 Arbeitsblatt"; display: inline-block;
+            background: #b35c00; color: white;
+            font-size: 0.75em; font-weight: 600;
+            padding: 2px 8px; margin-bottom: 8px;
+        }
+
+        .exercise { background: #fafafa; border: 1px solid #ddd; padding: 15px; margin: 15px 0; }
+        .exercise-title { font-weight: 600; color: #b35c00; margin-bottom: 10px; }
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 10px 15px; margin: 5px 0; background: #fff; border: 1px solid #ddd; cursor: pointer; }
+        .option:hover { background: #fff3e0; border-color: #b35c00; }
+        .option.selected { background: #fff3e0; border-color: #b35c00; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .feedback { padding: 10px 15px; margin-top: 10px; display: none; font-size: 0.9em; }
+        .feedback.show { display: block; }
+        .feedback.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        button { background: #b35c00; color: white; border: none; padding: 10px 25px; font-size: 1em; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #8a4700; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+
+        .spreadsheet { border-collapse: collapse; margin: 15px 0; font-family: "SF Mono", Consolas, monospace; font-size: 0.9em; }
+        .spreadsheet th, .spreadsheet td { border: 1px solid #888; padding: 6px 12px; text-align: center; min-width: 70px; }
+        .spreadsheet th { background: #666; color: white; font-weight: 600; }
+        .spreadsheet .row-header { background: #666; color: white; font-weight: 600; }
+        .spreadsheet td { background: #fff; }
+        .spreadsheet .highlight { background: #ffe0b2; border: 2px solid #b35c00; }
+        .spreadsheet .formula { background: #fff3e0; }
+
+        code { background: #f0f0f0; padding: 2px 6px; font-family: "SF Mono", Consolas, monospace; }
+
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        .btn-back { background: #666; }
+
+        .story-box { background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 15px 0; }
+        .story-box .icon { font-size: 1.5em; float: left; margin-right: 10px; }
+
+        .inline-select { padding: 4px 8px; font-size: 1em; border: 1px solid #b35c00; }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .section { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📊 Tabellenkalkulation Grundlagen</h1>
+        <div class="subtitle">Informatik Klasse 7 | Lernpfad</div>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Schritt 1 von 10</div>
+        <div class="step-indicators" id="stepIndicators"></div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 1: Einführung / Story
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section active" id="step1">
+            <h2>1. Das Schülercafé</h2>
+
+            <div class="story-box">
+                <span class="icon">☕</span>
+                <p><strong>Leon</strong> führt die Kasse des Schülercafés. Er verkauft Brezeln, Äpfel, Säfte und Kekse.</p>
+                <p>Bisher hat er alles mit dem <strong>Taschenrechner</strong> berechnet – aber das dauert lange und Fehler schleichen sich ein!</p>
+            </div>
+
+            <p>Die Lehrerin zeigt Leon eine bessere Lösung: <strong>Apple Numbers</strong> (oder Excel) – ein Tabellenkalkulationsprogramm!</p>
+
+            <div class="info-box">
+                <strong>Was ist Tabellenkalkulation?</strong><br>
+                Ein Programm, das mit <strong>Tabellen</strong> arbeitet und automatisch <strong>rechnen</strong> kann.
+            </div>
+
+            <p>In diesem Lernpfad lernst du die Grundlagen – damit du Leon helfen kannst!</p>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="nextStep()">Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 2: Was ist eine Zelle?
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step2">
+            <h2>2. Was ist eine Zelle?</h2>
+
+            <p>Eine Tabelle besteht aus vielen kleinen <strong>Kästchen</strong>. Jedes Kästchen heißt <strong>Zelle</strong>.</p>
+
+            <table class="spreadsheet">
+                <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+                <tr><td class="row-header">1</td><td class="highlight">Zelle</td><td>Zelle</td><td>Zelle</td></tr>
+                <tr><td class="row-header">2</td><td>Zelle</td><td>Zelle</td><td>Zelle</td></tr>
+            </table>
+
+            <div class="merke-box">
+                Eine <strong>Zelle</strong> ist ein einzelnes Kästchen, in das du Daten (Text, Zahlen, Formeln) eingeben kannst.
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Was ist eine Zelle?</div>
+                <div class="options" id="ex2-options">
+                    <label class="option" data-value="a">Ein einzelnes Kästchen in der Tabelle</label>
+                    <label class="option" data-value="b">Eine waagerechte Reihe</label>
+                    <label class="option" data-value="c">Eine senkrechte Reihe</label>
+                </div>
+                <div class="feedback correct" id="ex2-correct">✅ Richtig! Eine Zelle ist ein einzelnes Kästchen.</div>
+                <div class="feedback incorrect" id="ex2-incorrect">Nicht ganz. Eine Zelle ist ein einzelnes Kästchen – nicht eine ganze Reihe.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Übertrage die Definition einer <strong>Zelle</strong> in Kasten 1 auf deinem Arbeitsblatt.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn2" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 3: Spalten und Zeilen
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step3">
+            <h2>3. Spalten und Zeilen</h2>
+
+            <p>Die Zellen sind in <strong>Spalten</strong> und <strong>Zeilen</strong> organisiert:</p>
+
+            <table class="spreadsheet">
+                <tr><th></th><th style="background:#b35c00;">A</th><th style="background:#b35c00;">B</th><th style="background:#b35c00;">C</th></tr>
+                <tr><td class="row-header" style="background:#2a7a4b;">1</td><td></td><td></td><td></td></tr>
+                <tr><td class="row-header" style="background:#2a7a4b;">2</td><td></td><td></td><td></td></tr>
+                <tr><td class="row-header" style="background:#2a7a4b;">3</td><td></td><td></td><td></td></tr>
+            </table>
+
+            <div class="info-box">
+                <strong style="color:#b35c00;">Spalten</strong> = <strong>S</strong>enkrecht (↓) = <strong>Buchstaben</strong> (A, B, C, ...)<br><br>
+                <strong style="color:#2a7a4b;">Zeilen</strong> = Waagerecht (→) = <strong>Nummern</strong> (1, 2, 3, ...)
+            </div>
+
+            <div class="merke-box">
+                Merkhilfe: <strong>S</strong>palte = <strong>S</strong>enkrecht
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Wie verläuft eine Spalte?</div>
+                <div class="options" id="ex3-options">
+                    <label class="option" data-value="a">senkrecht (↓ von oben nach unten)</label>
+                    <label class="option" data-value="b">waagerecht (→ von links nach rechts)</label>
+                </div>
+                <div class="feedback correct" id="ex3-correct">✅ Richtig! Spalte = Senkrecht</div>
+                <div class="feedback incorrect" id="ex3-incorrect">Denk an die Merkhilfe: <strong>S</strong>palte = <strong>S</strong>enkrecht</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Trage in Kasten 2 ein: Spalte = _____, Zeile = _____
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn3" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 4: Zelladressen
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step4">
+            <h2>4. Zelladressen</h2>
+
+            <p>Jede Zelle hat eine eindeutige <strong>Adresse</strong>: Erst die <strong>Spalte</strong>, dann die <strong>Zeile</strong>.</p>
+
+            <table class="spreadsheet">
+                <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+                <tr><td class="row-header">1</td><td>A1</td><td>B1</td><td>C1</td></tr>
+                <tr><td class="row-header">2</td><td>A2</td><td class="highlight">B2</td><td>C2</td></tr>
+                <tr><td class="row-header">3</td><td>A3</td><td>B3</td><td>C3</td></tr>
+            </table>
+
+            <div class="merke-box">
+                Die Zelladresse besteht aus: <strong>Spaltenbuchstabe + Zeilennummer</strong><br>
+                Beispiel: Die markierte Zelle hat die Adresse <strong>B2</strong>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Welche Adresse hat die Zelle mit "0,80"?</div>
+                <table class="spreadsheet" style="margin-bottom:15px;">
+                    <tr><th></th><th>A</th><th>B</th><th>C</th></tr>
+                    <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Verkauft</td></tr>
+                    <tr><td class="row-header">2</td><td>Brezel</td><td class="highlight">0,80</td><td>12</td></tr>
+                </table>
+                <div class="options" id="ex4-options">
+                    <label class="option" data-value="a">2B</label>
+                    <label class="option" data-value="b">B2</label>
+                    <label class="option" data-value="c">0,80</label>
+                </div>
+                <div class="feedback correct" id="ex4-correct">✅ Richtig! Erst Spalte (B), dann Zeile (2) = <strong>B2</strong></div>
+                <div class="feedback incorrect" id="ex4-incorrect">Die Adresse ist <strong>B2</strong> – erst Spalte, dann Zeile.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Bearbeite Aufgabe 1 auf dem Arbeitsblatt (Zelladressen bestimmen).
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn4" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 5: Formeln beginnen mit =
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step5">
+            <h2>5. Formeln eingeben</h2>
+
+            <p>Leon will, dass Numbers automatisch rechnet. Dafür braucht er <strong>Formeln</strong>.</p>
+
+            <div class="info-box">
+                <strong>Problem:</strong> Leon tippt <code>B2*C2</code> ein – aber Numbers zeigt nur den Text "B2*C2" an, statt zu rechnen!
+            </div>
+
+            <p>Der Trick: Jede Formel muss mit dem <strong>Gleichheitszeichen</strong> beginnen!</p>
+
+            <div class="merke-box">
+                Formeln beginnen <strong>immer</strong> mit <code>=</code><br>
+                Beispiel: <code>=B2*C2</code>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Was hat Leon vergessen?</div>
+                <div class="options" id="ex5-options">
+                    <label class="option" data-value="a">Einen Buchstaben am Anfang</label>
+                    <label class="option" data-value="b">Das Gleichheitszeichen <code>=</code> am Anfang</label>
+                    <label class="option" data-value="c">Eine Zahl am Anfang</label>
+                </div>
+                <div class="feedback correct" id="ex5-correct">✅ Genau! Formeln beginnen mit <code>=</code></div>
+                <div class="feedback incorrect" id="ex5-incorrect">Formeln müssen mit <code>=</code> beginnen, damit Numbers rechnet.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Übertrage die Regel für Formeln in Kasten 3.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn5" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 6: Rechenzeichen
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step6">
+            <h2>6. Rechenzeichen in Formeln</h2>
+
+            <p>In Formeln verwendet man spezielle <strong>Tasten</strong> für die Rechenarten:</p>
+
+            <table class="spreadsheet" style="text-align:left;">
+                <tr><th style="text-align:center;">Mathe</th><th style="text-align:center;">Taste</th><th>Beispiel</th></tr>
+                <tr><td style="text-align:center;">+</td><td style="text-align:center;"><code>+</code></td><td><code>=A1+B1</code> (Addition)</td></tr>
+                <tr><td style="text-align:center;">−</td><td style="text-align:center;"><code>-</code></td><td><code>=A1-B1</code> (Subtraktion)</td></tr>
+                <tr><td style="text-align:center;">×</td><td style="text-align:center;"><code>*</code></td><td><code>=A1*B1</code> (Multiplikation)</td></tr>
+                <tr><td style="text-align:center;">÷</td><td style="text-align:center;"><code>/</code></td><td><code>=A1/B1</code> (Division)</td></tr>
+            </table>
+
+            <div class="merke-box">
+                <code>*</code> bedeutet "mal" (Multiplikation)<br>
+                <code>/</code> bedeutet "geteilt durch" (Division)
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Welches Zeichen steht für "mal"?</div>
+                <div class="options" id="ex6-options">
+                    <label class="option" data-value="a"><code>+</code></label>
+                    <label class="option" data-value="b"><code>*</code></label>
+                    <label class="option" data-value="c"><code>/</code></label>
+                </div>
+                <div class="feedback correct" id="ex6-correct">✅ Richtig! <code>*</code> = Multiplikation</div>
+                <div class="feedback incorrect" id="ex6-incorrect"><code>*</code> steht für Multiplikation, <code>/</code> für Division.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Übertrage die Rechenzeichen in Kasten 4 auf dem Arbeitsblatt.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn6" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 7: Formel verstehen
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step7">
+            <h2>7. Was berechnet eine Formel?</h2>
+
+            <p>Leon trägt die Formel <code>=B2*C2</code> in Zelle D2 ein:</p>
+
+            <table class="spreadsheet">
+                <tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th></tr>
+                <tr><td class="row-header">1</td><td>Produkt</td><td>Preis</td><td>Verkauft</td><td>Umsatz</td></tr>
+                <tr><td class="row-header">2</td><td>Brezel</td><td>0,80</td><td>12</td><td class="formula">=B2*C2</td></tr>
+            </table>
+
+            <p>Die Formel nimmt den Wert aus B2 (0,80) und multipliziert ihn mit C2 (12).</p>
+
+            <div class="info-box">
+                <strong>Ergebnis:</strong> 0,80 × 12 = <strong>9,60 €</strong>
+            </div>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Was berechnet <code>=B2*C2</code>?</div>
+                <div class="options" id="ex7-options">
+                    <label class="option" data-value="a">Sie zeigt den Text "B2*C2" an</label>
+                    <label class="option" data-value="b">Sie multipliziert 0,80 × 12 = 9,60</label>
+                    <label class="option" data-value="c">Sie addiert 0,80 + 12 = 12,80</label>
+                </div>
+                <div class="feedback correct" id="ex7-correct">✅ Richtig! <code>*</code> = Multiplikation</div>
+                <div class="feedback incorrect" id="ex7-incorrect">Die Formel multipliziert (*) die Werte: 0,80 × 12 = 9,60</div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn7" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 8: SUMME-Funktion
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step8">
+            <h2>8. Die SUMME-Funktion</h2>
+
+            <p>Leon möchte den <strong>Gesamtumsatz</strong> berechnen. Statt <code>=B1+B2+B3+B4</code> gibt es einen kürzeren Weg:</p>
+
+            <div class="merke-box">
+                <code>=SUMME(B1:B4)</code> addiert alle Zellen von B1 bis B4.
+            </div>
+
+            <p>Der <strong>Doppelpunkt</strong> <code>:</code> bedeutet "von ... bis":</p>
+
+            <div class="info-box">
+                <code>B1:B4</code> = B1, B2, B3 <strong>und</strong> B4 (alle Zellen dazwischen!)
+            </div>
+
+            <table class="spreadsheet">
+                <tr><th></th><th>A</th><th>B</th></tr>
+                <tr><td class="row-header">1</td><td>Brezel</td><td>9,60</td></tr>
+                <tr><td class="row-header">2</td><td>Apfel</td><td>4,00</td></tr>
+                <tr><td class="row-header">3</td><td>Saft</td><td>6,00</td></tr>
+                <tr><td class="row-header">4</td><td>Keks</td><td>4,00</td></tr>
+                <tr><td class="row-header">5</td><td><strong>Gesamt</strong></td><td class="formula">=SUMME(B1:B4)</td></tr>
+            </table>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Was bedeutet der Doppelpunkt in <code>=SUMME(B1:B4)</code>?</div>
+                <div class="options" id="ex8-options">
+                    <label class="option" data-value="a">Nur B1 und B4 (zwei Zellen)</label>
+                    <label class="option" data-value="b">Von B1 bis B4 (alle Zellen dazwischen)</label>
+                    <label class="option" data-value="c">B1 geteilt durch B4</label>
+                </div>
+                <div class="feedback correct" id="ex8-correct">✅ Richtig! Der Doppelpunkt bedeutet "von ... bis" (Bereich)</div>
+                <div class="feedback incorrect" id="ex8-incorrect">Der <code>:</code> bedeutet "von ... bis" – also B1, B2, B3 und B4.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Übertrage die SUMME-Formel in Kasten 5 auf dem Arbeitsblatt.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn8" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 9: Referenzprinzip
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step9">
+            <h2>9. Das Referenzprinzip</h2>
+
+            <p>Was passiert, wenn Leon einen Preis ändert?</p>
+
+            <div class="info-box">
+                <strong>Beispiel:</strong> Leon ändert den Brezel-Preis von 0,80 € auf 1,00 €.
+            </div>
+
+            <p>Die Formel <code>=B2*C2</code> berechnet sich <strong>automatisch neu</strong>!</p>
+
+            <div class="merke-box">
+                <strong>Referenzprinzip:</strong> Ändert sich der Wert einer Zelle, werden alle Formeln, die diese Zelle verwenden, automatisch neu berechnet.
+            </div>
+
+            <p>Das ist die große Stärke von Tabellenkalkulation:</p>
+            <ul style="margin: 10px 0 10px 25px;">
+                <li>Ein Wert ändern → alles wird neu berechnet</li>
+                <li>Keine manuellen Neuberechnungen nötig</li>
+                <li>Keine Rechenfehler durch Vergessen</li>
+            </ul>
+
+            <div class="exercise">
+                <div class="exercise-title">Übung: Was passiert, wenn du einen Eingabewert änderst?</div>
+                <div class="options" id="ex9-options">
+                    <label class="option" data-value="a">Nichts – die Formel zeigt den alten Wert</label>
+                    <label class="option" data-value="b">Die Formel berechnet sich automatisch neu</label>
+                    <label class="option" data-value="c">Die Formel wird gelöscht</label>
+                </div>
+                <div class="feedback correct" id="ex9-correct">✅ Genau! Das ist das <strong>Referenzprinzip</strong>!</div>
+                <div class="feedback incorrect" id="ex9-incorrect">Das Referenzprinzip: Formeln berechnen sich automatisch neu, wenn sich Eingabewerte ändern.</div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Übertrage das Referenzprinzip in Kasten 6 auf dem Arbeitsblatt.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="nextStep()" id="btn9" disabled>Weiter →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SCHRITT 10: Zusammenfassung
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step10">
+            <h2>10. Zusammenfassung</h2>
+
+            <div class="story-box">
+                <span class="icon">🎉</span>
+                <p><strong>Geschafft!</strong> Du kennst jetzt die Grundlagen der Tabellenkalkulation und kannst Leon bei seiner Abrechnung helfen!</p>
+            </div>
+
+            <div class="merke-box" style="background:#fff;">
+                <strong style="color:#b35c00;">Was du gelernt hast:</strong>
+                <ul style="margin: 10px 0 0 20px; list-style: none;">
+                    <li>✅ <strong>Zelle</strong> = einzelnes Kästchen</li>
+                    <li>✅ <strong>Spalte</strong> = senkrecht (Buchstaben A, B, C...)</li>
+                    <li>✅ <strong>Zeile</strong> = waagerecht (Nummern 1, 2, 3...)</li>
+                    <li>✅ <strong>Zelladresse</strong> = Spalte + Zeile (z.B. B2)</li>
+                    <li>✅ Formeln beginnen mit <code>=</code></li>
+                    <li>✅ Rechenzeichen: <code>*</code> (mal), <code>/</code> (geteilt)</li>
+                    <li>✅ <code>=SUMME(B1:B4)</code> addiert einen Bereich</li>
+                    <li>✅ <strong>Referenzprinzip</strong>: automatische Neuberechnung</li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis">
+                Vervollständige dein Arbeitsblatt und hefte es ab!<br>
+                Bereite dich auf die <strong>Stundenleistung</strong> vor.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-back" onclick="prevStep()">← Zurück</button>
+                <button onclick="window.print()">🖨️ Drucken</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var STORAGE_KEY = 'lp-info-7-03-tabellenkalkulation';
+    var totalSteps = 10;
+    var currentStep = 1;
+    var completedSteps = [];
+
+    var correctAnswers = {
+        ex2: 'a', ex3: 'a', ex4: 'b', ex5: 'b',
+        ex6: 'b', ex7: 'b', ex8: 'b', ex9: 'b'
+    };
+
+    function init() {
+        loadProgress();
+        renderStepIndicators();
+        setupExercises();
+        showStep(currentStep);
+        updateProgress();
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            currentStep = data.currentStep || 1;
+            completedSteps = data.completedSteps || [];
+        }
+    }
+
+    function saveProgress() {
+        var data = { currentStep: currentStep, completedSteps: completedSteps };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function renderStepIndicators() {
+        var container = document.getElementById('stepIndicators');
+        container.innerHTML = '';
+        for (var i = 1; i <= totalSteps; i++) {
+            var dot = document.createElement('div');
+            dot.className = 'step-dot';
+            dot.textContent = i;
+            dot.dataset.step = i;
+            if (completedSteps.indexOf(i) !== -1) {
+                dot.classList.add('completed');
+                dot.onclick = (function(s) { return function() { goToStep(s); }; })(i);
+            } else if (i === currentStep) {
+                dot.classList.add('current');
+            } else if (i <= currentStep) {
+                dot.classList.add('unlocked');
+                dot.onclick = (function(s) { return function() { goToStep(s); }; })(i);
+            }
+            container.appendChild(dot);
+        }
+    }
+
+    function updateProgress() {
+        var percent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = 'Schritt ' + currentStep + ' von ' + totalSteps;
+        renderStepIndicators();
+    }
+
+    function showStep(n) {
+        for (var i = 1; i <= totalSteps; i++) {
+            var section = document.getElementById('step' + i);
+            if (section) section.classList.remove('active');
+        }
+        var target = document.getElementById('step' + n);
+        if (target) target.classList.add('active');
+        currentStep = n;
+        updateProgress();
+        saveProgress();
+        window.scrollTo(0, 0);
+    }
+
+    function goToStep(n) {
+        if (n <= currentStep || completedSteps.indexOf(n) !== -1) {
+            showStep(n);
+        }
+    }
+
+    function nextStep() {
+        if (completedSteps.indexOf(currentStep) === -1) {
+            completedSteps.push(currentStep);
+        }
+        if (currentStep < totalSteps) {
+            showStep(currentStep + 1);
+        }
+        saveProgress();
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            showStep(currentStep - 1);
+        }
+    }
+
+    function setupExercises() {
+        var exercises = ['ex2', 'ex3', 'ex4', 'ex5', 'ex6', 'ex7', 'ex8', 'ex9'];
+        for (var i = 0; i < exercises.length; i++) {
+            setupExercise(exercises[i]);
+        }
+    }
+
+    function setupExercise(exId) {
+        var container = document.getElementById(exId + '-options');
+        if (!container) return;
+        var options = container.querySelectorAll('.option');
+        for (var j = 0; j < options.length; j++) {
+            (function(opt) {
+                opt.addEventListener('click', function() {
+                    // Clear previous selections
+                    var siblings = container.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected', 'correct', 'incorrect');
+                    }
+                    // Select this option
+                    opt.classList.add('selected');
+                    // Check answer
+                    var value = opt.dataset.value;
+                    var isCorrect = value === correctAnswers[exId];
+                    if (isCorrect) {
+                        opt.classList.add('correct');
+                        document.getElementById(exId + '-correct').classList.add('show');
+                        document.getElementById(exId + '-incorrect').classList.remove('show');
+                    } else {
+                        opt.classList.add('incorrect');
+                        document.getElementById(exId + '-incorrect').classList.add('show');
+                        document.getElementById(exId + '-correct').classList.remove('show');
+                    }
+                    // Enable next button
+                    var stepNum = parseInt(exId.replace('ex', ''));
+                    var btn = document.getElementById('btn' + stepNum);
+                    if (btn && isCorrect) btn.disabled = false;
+                });
+            })(options[j]);
+        }
+    }
+
+    window.onload = init;
+    </script>
+</body>
+</html>

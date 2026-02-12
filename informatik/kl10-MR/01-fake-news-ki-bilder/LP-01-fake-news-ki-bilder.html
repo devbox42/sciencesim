@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Fake News & KI-Bilder erkennen | Informatik Klasse 10MR</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #222;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        :root {
+            --fach: #b35c00;
+            --fach-light: #fff3e0;
+            --success: #2a7a4b;
+            --success-light: #e8f5e9;
+            --warning: #b35c00;
+            --warning-light: #fff3e0;
+            --error: #c62828;
+            --error-light: #ffebee;
+            --gray: #666;
+            --border: #ddd;
+        }
+
+        header {
+            background: var(--fach);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        header .meta {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: #ddd;
+            height: 8px;
+            width: 100%;
+        }
+
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 15px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #666;
+        }
+
+        .step-dot:hover { border-color: var(--fach); }
+        .step-dot.active { background: var(--fach); border-color: var(--fach); color: white; font-weight: 700; }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
+        .step-dot.warmup { background: #ffd700; border-color: #e6c200; color: #333; }
+        .step-dot.warmup.active { background: #ffc107; border-color: #ff9800; }
+        .step-dot.warmup.completed { background: #32cd32; border-color: #28a745; color: white; }
+
+        .step {
+            display: none;
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .step.active { display: block; }
+
+        .step h2 {
+            color: var(--fach);
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach-light);
+        }
+
+        .step h3 {
+            font-size: 1.1em;
+            margin: 20px 0 10px 0;
+            color: #333;
+        }
+
+        .warmup-container {
+            background: linear-gradient(135deg, #fffde7 0%, #fff8e1 100%);
+            border: 2px solid #ffd54f;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .warmup-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .warmup-header .icon { font-size: 2em; }
+
+        .warmup-header h2 {
+            color: #f57c00;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .warmup-intro {
+            background: white;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 1.05em;
+        }
+
+        .warmup-question {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffd54f;
+        }
+
+        .warmup-question.answered { border-left-color: #4caf50; }
+        .warmup-question.answered.wrong { border-left-color: #f44336; }
+
+        .warmup-question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .warmup-question-number {
+            background: #ffd54f;
+            color: #333;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .warmup-question-type {
+            font-size: 0.8em;
+            color: var(--gray);
+        }
+
+        .warmup-question p { font-weight: 500; margin-bottom: 12px; }
+
+        .warmup-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .warmup-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .warmup-option:hover { background: #fff3e0; }
+        .warmup-option.selected { border-color: var(--fach); background: var(--fach-light); }
+        .warmup-option.correct { border-color: #4caf50; background: #e8f5e9; }
+        .warmup-option.incorrect { border-color: #f44336; background: #ffebee; }
+        .warmup-option.disabled { pointer-events: none; opacity: 0.7; }
+        .warmup-option input { margin-right: 10px; }
+
+        .warmup-feedback {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .warmup-feedback.visible { display: block; }
+        .warmup-feedback.correct { background: #e8f5e9; border-left: 4px solid #4caf50; }
+        .warmup-feedback.incorrect { background: #fff3e0; border-left: 4px solid #ff9800; }
+        .warmup-feedback .answer-reveal { font-weight: 600; margin-bottom: 5px; }
+        .warmup-feedback .explanation { font-size: 0.95em; color: #333; }
+
+        .warmup-score {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .warmup-score-display { font-size: 2.5em; font-weight: bold; color: var(--fach); }
+        .warmup-score-text { margin-top: 10px; font-size: 1.1em; }
+        .warmup-skip-info { margin-top: 15px; font-size: 0.9em; color: var(--gray); }
+
+        .info-box {
+            background: var(--fach-light);
+            border-left: 4px solid var(--fach);
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .merksatz {
+            background: var(--success-light);
+            border-left: 4px solid var(--success);
+            padding: 15px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .warning-box {
+            background: #ffebee;
+            border-left: 4px solid #c62828;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .example-box {
+            background: #f5f5f5;
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .image-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .image-card {
+            background: white;
+            border: 2px solid var(--border);
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-card:hover { border-color: var(--fach); }
+        .image-card.selected-real { border-color: #4caf50; background: #e8f5e9; }
+        .image-card.selected-fake { border-color: #f44336; background: #ffebee; }
+        .image-card img { max-width: 100%; height: 150px; object-fit: cover; background: #eee; }
+        .image-card .label { margin-top: 8px; font-weight: 500; }
+
+        .checklist {
+            background: #fafafa;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .checklist-item:last-child { border-bottom: none; }
+        .checklist-item input[type="checkbox"] { margin-top: 4px; }
+
+        .exercise {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .exercise-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .exercise-title { font-weight: 600; color: var(--fach); }
+
+        .afb-badge {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 3px;
+            background: var(--fach-light);
+            color: var(--fach);
+        }
+
+        .afb-badge.afb3 { background: #e8f5e9; color: #2a7a4b; }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 1em;
+            resize: vertical;
+        }
+
+        textarea:focus { outline: 2px solid var(--fach); border-color: var(--fach); }
+
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            display: none;
+        }
+
+        .feedback.correct { display: block; background: var(--success-light); border-left: 4px solid var(--success); }
+        .feedback.incorrect { display: block; background: var(--error-light); border-left: 4px solid var(--error); }
+        .feedback.hint { display: block; background: var(--warning-light); border-left: 4px solid var(--warning); }
+
+        .research-task {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #1976d2;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .research-task h3 { color: #1976d2; margin-bottom: 15px; }
+
+        .research-form { margin-top: 15px; }
+
+        .research-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .research-form input, .research-form textarea {
+            margin-bottom: 15px;
+        }
+
+        .research-form input[type="text"], .research-form input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            font-size: 1em;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            background: var(--fach);
+            color: white;
+        }
+
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: white; color: var(--fach); border: 2px solid var(--fach); }
+        .btn-success { background: var(--success); }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .tool-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--fach);
+            color: white;
+            text-decoration: none;
+            margin: 5px;
+            border-radius: 4px;
+        }
+
+        .tool-link:hover { opacity: 0.9; }
+
+        .summary-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .summary-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .summary-list li::before {
+            content: "\2713";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .face-option img:hover {
+            border-color: var(--fach) !important;
+            transform: scale(1.02);
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .step { padding: 15px; }
+            .image-compare { grid-template-columns: 1fr; }
+            .face-option img { width: 150px !important; height: 150px !important; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Fake News & KI-Bilder erkennen</h1>
+    <div class="meta">Informatik 10MR | Einzelstunde | 45 Minuten</div>
+</header>
+
+<div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<div class="step-indicator" id="stepIndicator"></div>
+
+<div class="container">
+
+    <!-- SCHRITT 0: WARM-UP -->
+    <div class="step active" id="step0">
+        <div class="warmup-container">
+            <div class="warmup-header">
+                <span class="icon">🧠</span>
+                <h2>Warm-up: Echt oder Fake?</h2>
+            </div>
+
+            <div class="warmup-intro">
+                <p>Teste dein Wissen zu Fake News und KI-generierten Bildern! Diese Fragen zeigen dir, was du vielleicht schon weißt.</p>
+                <p style="color: var(--gray); font-size: 0.9em; margin-top: 10px;">
+                    <strong>Hinweis:</strong> Du kannst jederzeit weitermachen. Falsche Antworten sind kein Problem!
+                </p>
+            </div>
+
+            <!-- WARM-UP FRAGE 1 -->
+            <div class="warmup-question" id="warmup-q1">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 1</span>
+                    <span class="warmup-question-type">Funfact</span>
+                </div>
+                <p>Wie viel Prozent der Jugendlichen sind laut Studien schon einmal auf Fake News hereingefallen?</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'a')">
+                        <input type="radio" name="warmup1" value="a">
+                        <span>Etwa 10%</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'b')">
+                        <input type="radio" name="warmup1" value="b">
+                        <span>Etwa 30%</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'c')">
+                        <input type="radio" name="warmup1" value="c">
+                        <span>Etwa 50%</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(1, 'd')">
+                        <input type="radio" name="warmup1" value="d">
+                        <span>Etwa 70%</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb1">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">Studien zeigen, dass etwa die Hälfte aller Jugendlichen schon einmal Falschinformationen geglaubt hat. Das zeigt, wie wichtig Medienkompetenz ist!</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 2 -->
+            <div class="warmup-question" id="warmup-q2">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 2</span>
+                    <span class="warmup-question-type">Technik</span>
+                </div>
+                <p>Was bedeutet "Deepfake"?</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'a')">
+                        <input type="radio" name="warmup2" value="a">
+                        <span>Ein besonders tiefer Fake im Internet</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'b')">
+                        <input type="radio" name="warmup2" value="b">
+                        <span>KI-generierte Videos, die echte Personen zeigen</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'c')">
+                        <input type="radio" name="warmup2" value="c">
+                        <span>Gefälschte Websites im Dark Web</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(2, 'd')">
+                        <input type="radio" name="warmup2" value="d">
+                        <span>Gelöschte Social-Media-Posts</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb2">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">"Deep" kommt von "Deep Learning" - einer KI-Technik. Deepfakes sind KI-generierte Videos oder Bilder, die echte Personen täuschend echt darstellen.</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 3 -->
+            <div class="warmup-question" id="warmup-q3">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 3</span>
+                    <span class="warmup-question-type">Alltagsbezug</span>
+                </div>
+                <p>Wo begegnen dir Fake News am häufigsten?</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'a')">
+                        <input type="radio" name="warmup3" value="a">
+                        <span>In Schulbüchern</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'b')">
+                        <input type="radio" name="warmup3" value="b">
+                        <span>In Tageszeitungen (Print)</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'c')">
+                        <input type="radio" name="warmup3" value="c">
+                        <span>In sozialen Medien</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(3, 'd')">
+                        <input type="radio" name="warmup3" value="d">
+                        <span>Im Fernsehen (öffentlich-rechtlich)</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb3">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">Soziale Medien sind der Hauptverbreitungsweg fürFake News, weil dort jeder ohne Prüfung Inhalte teilen kann und Algorithmen emotionale Inhalte bevorzugen.</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 4 -->
+            <div class="warmup-question" id="warmup-q4">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 4</span>
+                    <span class="warmup-question-type">Schätzfrage</span>
+                </div>
+                <p>Wie lange braucht eine KI heute ungefähr, um ein fotorealistisches Bild zu erstellen?</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'a')">
+                        <input type="radio" name="warmup4" value="a">
+                        <span>Mehrere Stunden</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'b')">
+                        <input type="radio" name="warmup4" value="b">
+                        <span>Etwa 30 Minuten</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'c')">
+                        <input type="radio" name="warmup4" value="c">
+                        <span>Wenige Sekunden</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(4, 'd')">
+                        <input type="radio" name="warmup4" value="d">
+                        <span>Mehrere Tage</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb4">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">Moderne KI-Systeme wie DALL-E, Midjourney oder Stable Diffusion erstellen fotorealistische Bilder in wenigen Sekunden. Das macht es so gefährlich!</div>
+                </div>
+            </div>
+
+            <!-- WARM-UP FRAGE 5 -->
+            <div class="warmup-question" id="warmup-q5">
+                <div class="warmup-question-header">
+                    <span class="warmup-question-number">Frage 5</span>
+                    <span class="warmup-question-type">Vorwissen</span>
+                </div>
+                <p>Woran kann man KI-generierte Gesichter oft erkennen?</p>
+                <div class="warmup-options">
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'a')">
+                        <input type="radio" name="warmup5" value="a">
+                        <span>Die Augen sind immer rot</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'b')">
+                        <input type="radio" name="warmup5" value="b">
+                        <span>Fehler bei Händen, Ohren, Zähnen oder Hintergrund</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'c')">
+                        <input type="radio" name="warmup5" value="c">
+                        <span>Das Bild ist immer unscharf</span>
+                    </label>
+                    <label class="warmup-option" onclick="selectWarmupOption(5, 'd')">
+                        <input type="radio" name="warmup5" value="d">
+                        <span>Es gibt einen sichtbaren Wasserzeichen</span>
+                    </label>
+                </div>
+                <div class="warmup-feedback" id="warmup-fb5">
+                    <div class="answer-reveal"></div>
+                    <div class="explanation">KI hat oft Probleme mit Details: Hände haben zu viele/wenige Finger, Ohrringe passen nicht zusammen, Zähne sehen seltsam aus, Hintergrunde verschwimmen.</div>
+                </div>
+            </div>
+
+            <div class="warmup-score" id="warmupScore" style="display: none;">
+                <div class="warmup-score-display"><span id="warmupScoreValue">0</span> / <span id="warmupScoreMax">5</span></div>
+                <div class="warmup-score-text" id="warmupScoreText">Gut gemacht!</div>
+            </div>
+
+            <p class="warmup-skip-info">
+                Du kannst jederzeit auf "Weiter" klicken - auch ohne alle Fragen zu beantworten.
+            </p>
+        </div>
+
+        <div class="nav-buttons">
+            <span></span>
+            <button onclick="finishWarmup(); nextStep();">Weiter zum Lernpfad</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 1: WAS SIND FAKE NEWS? -->
+    <div class="step" id="step1">
+        <h2>1. Was sind Fake News?</h2>
+
+        <div class="info-box">
+            <strong>Definition:</strong>
+            <p style="margin-top: 10px;">
+                <strong>Fake News</strong> sind absichtlich verbreitete Falschinformationen, die wie echte Nachrichten aussehen. Sie sollen täuschen, manipulieren oder Aufmerksamkeit erzeugen.
+            </p>
+        </div>
+
+        <h3>Warum werden Fake News verbreitet?</h3>
+        <ul style="margin: 15px 0 15px 25px;">
+            <li><strong>Geld:</strong> Klicks = Werbeeinnahmen</li>
+            <li><strong>Politik:</strong> Meinungen beeinflussen, Wahlen manipulieren</li>
+            <li><strong>Chaos:</strong> Vertrauen in Medien zerstören</li>
+            <li><strong>Spaß:</strong> Manche finden es "lustig" (ist es nicht)</li>
+        </ul>
+
+        <div class="warning-box">
+            <strong>Achtung!</strong> Fake News verbreiten sich auf Social Media 6x schneller als echte Nachrichten. Emotionale Inhalte (Wut, Angst, Überraschung) werden besonders oft geteilt.
+        </div>
+
+        <h3>Arten von Falschinformationen</h3>
+        <div class="example-box">
+            <p><strong>1. Satire/Parodie:</strong> Als Witz gemeint, aber manchmal falsch verstanden</p>
+            <p><strong>2. Irreführende Inhalte:</strong> Echte Infos aus dem Kontext gerissen</p>
+            <p><strong>3. Manipulierte Inhalte:</strong> Echte Bilder/Videos verändert</p>
+            <p><strong>4. Erfundene Inhalte:</strong> Komplett frei erfunden (100% Fake)</p>
+            <p><strong>5. KI-generierte Inhalte:</strong> Von künstlicher Intelligenz erstellt</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">Zurück</button>
+            <button onclick="nextStep()">Weiter</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 2: KI-BILDER ERKENNEN -->
+    <div class="step" id="step2">
+        <h2>2. KI-generierte Bilder erkennen</h2>
+
+        <p>Moderne KI kann in Sekunden fotorealistische Bilder erstellen. Aber sie macht noch Fehler! Lerne, diese zu erkennen.</p>
+
+        <div class="merksatz">
+            <strong>Die 5 Schwachstellen der Bild-KI:</strong>
+            <ol style="margin-top: 10px; margin-left: 20px;">
+                <li><strong>Hände:</strong> Zu viele/wenige Finger, seltsame Positionen</li>
+                <li><strong>Ohren/Schmuck:</strong> Asymmetrisch, Ohrringe passen nicht zusammen</li>
+                <li><strong>Zähne:</strong> Ungleichmäßig, zu perfekt oder verschwommen</li>
+                <li><strong>Hintergrund:</strong> Verschwommen, unlogische Übergänge</li>
+                <li><strong>Text im Bild:</strong> Buchstaben oft falsch oder unleserlich</li>
+            </ol>
+        </div>
+
+        <h3>Live-Beispiel: KI-generiertes Gesicht</h3>
+        <div class="exercise">
+            <p>Dieses Gesicht wurde von einer KI erstellt - die Person existiert nicht!</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <img id="ki-face" src="https://thispersondoesnotexist.com" alt="KI-generiertes Gesicht" style="max-width: 300px; border: 3px solid var(--fach); border-radius: 8px;">
+                <br>
+                <button onclick="document.getElementById('ki-face').src='https://thispersondoesnotexist.com?' + Date.now();" style="margin-top: 15px;">Neues Gesicht laden</button>
+            </div>
+            <div class="info-box" style="text-align: left;">
+                <strong>Schau genau hin:</strong>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                    <li>Sind die Ohrringe symmetrisch?</li>
+                    <li>Wie sieht der Hintergrund aus? Verschwommen?</li>
+                    <li>Stimmen Haare und Kleidung an den Rändern?</li>
+                    <li>Gibt es seltsame Artefakte (Flecken, Verzerrungen)?</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Übung: Echt oder Fake?</h3>
+        <div class="exercise">
+            <p><strong>Trainiere dein Auge!</strong> Klicke auf das Bild, das du für ECHT hältst:</p>
+
+            <div id="face-game" style="margin: 20px 0;">
+                <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                    <div class="face-option" id="face-left" onclick="checkFace('left')" style="cursor: pointer; text-align: center;">
+                        <img id="img-left" src="" alt="Gesicht A" style="width: 200px; height: 200px; object-fit: cover; border: 4px solid #ddd; border-radius: 8px;">
+                        <p style="margin-top: 8px; font-weight: 600;">A</p>
+                    </div>
+                    <div class="face-option" id="face-right" onclick="checkFace('right')" style="cursor: pointer; text-align: center;">
+                        <img id="img-right" src="" alt="Gesicht B" style="width: 200px; height: 200px; object-fit: cover; border: 4px solid #ddd; border-radius: 8px;">
+                        <p style="margin-top: 8px; font-weight: 600;">B</p>
+                    </div>
+                </div>
+
+                <div id="face-feedback" style="text-align: center; margin-top: 15px; padding: 15px; display: none; border-radius: 8px;"></div>
+
+                <div style="text-align: center; margin-top: 20px;">
+                    <div id="face-score" style="font-size: 1.2em; margin-bottom: 10px;">Runde: <span id="round-num">1</span>/5 | Richtig: <span id="correct-num">0</span></div>
+                    <button id="next-round-btn" onclick="loadNewRound()" style="display: none;">Nächste Runde</button>
+                </div>
+            </div>
+
+            <div id="game-complete" style="display: none; text-align: center; padding: 20px; background: var(--success-light); border: 2px solid var(--success); border-radius: 8px; margin-top: 15px;">
+                <p style="font-size: 1.3em; font-weight: 600; color: var(--success);">Übung abgeschlossen!</p>
+                <p style="margin-top: 10px;">Ergebnis: <span id="final-score">0</span>/5 richtig erkannt</p>
+            </div>
+
+            <div class="info-box" style="background: #e3f2fd; border-color: #1976d2; margin-top: 20px;">
+                <strong>📝 Aufgabe auf dem Arbeitsblatt:</strong><br>
+                Notiere, welche Merkmale dir geholfen haben, das KI-Bild zu erkennen!
+            </div>
+
+            <details style="margin-top: 15px;">
+                <summary style="cursor: pointer; color: var(--gray);">Alternative: Externes Spiel öffnen</summary>
+                <div style="margin-top: 10px;">
+                    <a href="https://whichfaceisreal.com" target="_blank" class="tool-link">Which Face Is Real? (extern)</a>
+                </div>
+            </details>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">Zurück</button>
+            <button onclick="nextStep()">Weiter</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 3: QUELLENKRITIK -->
+    <div class="step" id="step3">
+        <h2>3. Quellen prüfen: Die CRAAP-Methode</h2>
+
+        <p>Nicht nur Bilder können fake sein. Auch Texte und ganze Websites. So prüfst du Quellen:</p>
+
+        <div class="info-box">
+            <strong>CRAAP-Check für Quellen:</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li><strong>C</strong>urrency (Aktualität): Wann wurde es veröffentlicht?</li>
+                <li><strong>R</strong>elevance (Relevanz): Passt es zum Thema?</li>
+                <li><strong>A</strong>uthority (Autorität): Wer ist der Autor? Experte?</li>
+                <li><strong>A</strong>ccuracy (Genauigkeit): Gibt es Quellen/Belege?</li>
+                <li><strong>P</strong>urpose (Zweck): Will jemand verkaufen/überzeugen?</li>
+            </ul>
+        </div>
+
+        <h3>Praktische Prüf-Schritte</h3>
+        <div class="checklist">
+            <div class="checklist-item">
+                <input type="checkbox" id="check1">
+                <label for="check1"><strong>Impressum prüfen:</strong> Wer betreibt die Seite? Gibt es eine Adresse?</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check2">
+                <label for="check2"><strong>Autor recherchieren:</strong> Existiert die Person? Hat sie Expertise?</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check3">
+                <label for="check3"><strong>Andere Quellen suchen:</strong> Berichten seriöse Medien darüber?</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check4">
+                <label for="check4"><strong>Bilder-Rückwärtssuche:</strong> Woher stammt das Bild wirklich?</label>
+            </div>
+            <div class="checklist-item">
+                <input type="checkbox" id="check5">
+                <label for="check5"><strong>Faktencheck-Seiten:</strong> Wurde es schon überprüft?</label>
+            </div>
+        </div>
+
+        <h3>Nützliche Werkzeuge</h3>
+        <div style="margin: 15px 0;">
+            <a href="https://images.google.com" target="_blank" class="tool-link">Google Bilder-Rückwärtssuche</a>
+            <a href="https://tineye.com" target="_blank" class="tool-link">TinEye</a>
+            <a href="https://correctiv.org/faktencheck/" target="_blank" class="tool-link">Correctiv Faktencheck</a>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">Zurück</button>
+            <button onclick="nextStep()">Weiter</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 4: RECHERCHEAUFGABE -->
+    <div class="step" id="step4">
+        <h2>4. Deine Recherche-Aufgabe</h2>
+
+        <div class="research-task">
+            <h3>Auftrag: Finde ein Beispiel!</h3>
+            <p>Suche im Internet nach <strong>einem Beispiel</strong> für:</p>
+            <ul style="margin: 10px 0 10px 20px;">
+                <li>Eine entlarvte Fake News</li>
+                <li>ODER ein KI-generiertes Bild</li>
+                <li>ODER einen Deepfake</li>
+            </ul>
+
+            <h3>Hilfreiche Quellen:</h3>
+            <div style="margin: 15px 0;">
+                <a href="https://correctiv.org/faktencheck/" target="_blank" class="tool-link">Correctiv Faktencheck</a>
+                <a href="https://www.mimikama.org/" target="_blank" class="tool-link">Mimikama</a>
+                <a href="https://www.br.de/nachrichten/faktenfuchs-faktencheck,QzSIzl3" target="_blank" class="tool-link">BR Faktenfuchs</a>
+            </div>
+
+            <div class="info-box" style="background: #e3f2fd; border-color: #1976d2;">
+                <strong>📝 Dokumentiere auf dem Arbeitsblatt:</strong>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                    <li>Was hast du gefunden?</li>
+                    <li>Wo hast du es gefunden? (URL)</li>
+                    <li>Woran hast du erkannt, dass es fake ist?</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Für die Präsentation am 06.02.:</strong>
+            <p style="margin-top: 10px;">Bereite eine kurze Präsentation (2 Min.) vor:</p>
+            <ol style="margin-left: 20px;">
+                <li>Zeige dein Beispiel</li>
+                <li>Erkläre, woran du es erkannt hast</li>
+                <li>Gib einen Tipp, wie andere es erkennen können</li>
+            </ol>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">Zurück</button>
+            <button onclick="nextStep()">Weiter</button>
+        </div>
+    </div>
+
+    <!-- SCHRITT 5: ZUSAMMENFASSUNG -->
+    <div class="step" id="step5">
+        <h2>5. Zusammenfassung</h2>
+
+        <div class="merksatz">
+            <strong>Das Wichtigste:</strong><br>
+            Nicht alles im Internet ist wahr. Prüfe Bilder auf KI-Fehler, hinterfrage Quellen und teile nichts, was du nicht überprüft hast!
+        </div>
+
+        <h3>Das hast du gelernt:</h3>
+        <ul class="summary-list">
+            <li>Was Fake News sind und warum sie verbreitet werden</li>
+            <li>Wie du KI-generierte Bilder an typischen Fehlern erkennst</li>
+            <li>Die CRAAP-Methode zur Quellenprüfung</li>
+            <li>Werkzeuge zur Bilder-Rückwärtssuche</li>
+            <li>Wie du ein Beispiel recherchierst und präsentierst</li>
+        </ul>
+
+        <div class="info-box" style="background: #e3f2fd; border-color: #1976d2;">
+            <strong>📝 Reflexion auf dem Arbeitsblatt:</strong><br>
+            Beantworte die Frage: <em>Warum ist es gefährlich, wenn immer mehr Menschen Fake News nicht erkennen können?</em>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--success-light); border: 2px solid var(--success);">
+            <p style="font-size: 1.2em; color: var(--success);">Geschafft!</p>
+            <p style="margin-top: 10px;">Du hast den Lernpfad "Fake News & KI-Bilder erkennen" abgeschlossen.</p>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);">Vergiss nicht: Am 06.02. präsentierst du dein Beispiel!</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">Zurück</button>
+            <button class="btn-success" onclick="finish()">Abschließen</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+var LP_ID = 'informatik-kl10mr-01-fake-news';
+var TOTAL_STEPS = 6;
+var currentStep = 0;
+var WARMUP_QUESTIONS = 5;
+
+var warmupAnswers = {
+    1: 'c',
+    2: 'b',
+    3: 'c',
+    4: 'c',
+    5: 'b'
+};
+
+var warmupState = {};
+
+function init() {
+    var indicator = document.getElementById('stepIndicator');
+    for (var i = 0; i < TOTAL_STEPS; i++) {
+        var dot = document.createElement('div');
+        var classes = 'step-dot';
+        if (i === 0) {
+            classes += ' warmup active';
+            dot.textContent = '?';
+        } else {
+            dot.textContent = i;
+        }
+        dot.className = classes;
+        dot.setAttribute('data-step', i);
+        dot.onclick = (function(step) {
+            return function() { goToStep(step); };
+        })(i);
+        indicator.appendChild(dot);
+    }
+
+    var saved = localStorage.getItem(LP_ID + '-step');
+    if (saved !== null) {
+        currentStep = parseInt(saved);
+        goToStep(currentStep);
+    }
+
+    var warmupSaved = localStorage.getItem(LP_ID + '-warmup');
+    if (warmupSaved) {
+        warmupState = JSON.parse(warmupSaved);
+        restoreWarmupState();
+    }
+
+    loadInputs();
+}
+
+function goToStep(step) {
+    if (step < 0 || step >= TOTAL_STEPS) return;
+
+    var steps = document.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.remove('active');
+    }
+
+    document.getElementById('step' + step).classList.add('active');
+
+    var dots = document.querySelectorAll('.step-dot');
+    for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.remove('active');
+        if (i < step) {
+            dots[i].classList.add('completed');
+        }
+        if (i === step) {
+            dots[i].classList.add('active');
+        }
+    }
+
+    var progress = (step / (TOTAL_STEPS - 1)) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    currentStep = step;
+    localStorage.setItem(LP_ID + '-step', step);
+    window.scrollTo(0, 0);
+}
+
+function nextStep() { goToStep(currentStep + 1); }
+function prevStep() { goToStep(currentStep - 1); }
+
+function finish() {
+    alert('Lernpfad abgeschlossen! Denke an deine Präsentation am 06.02.');
+    localStorage.setItem(LP_ID + '-completed', 'true');
+}
+
+function selectWarmupOption(questionNum, option) {
+    if (warmupState[questionNum] && warmupState[questionNum].answered) return;
+
+    var questionEl = document.getElementById('warmup-q' + questionNum);
+    var options = questionEl.querySelectorAll('.warmup-option');
+    var feedbackEl = document.getElementById('warmup-fb' + questionNum);
+    var correctAnswer = warmupAnswers[questionNum];
+    var isCorrect = (option === correctAnswer);
+
+    for (var i = 0; i < options.length; i++) {
+        options[i].classList.add('disabled');
+        options[i].classList.remove('selected');
+    }
+
+    var selectedIndex = option.charCodeAt(0) - 97;
+    var correctIndex = correctAnswer.charCodeAt(0) - 97;
+
+    options[selectedIndex].classList.add(isCorrect ? 'correct' : 'incorrect');
+    if (!isCorrect) {
+        options[correctIndex].classList.add('correct');
+    }
+
+    feedbackEl.classList.add('visible');
+    feedbackEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+    feedbackEl.querySelector('.answer-reveal').textContent = isCorrect ? 'Richtig!' : 'Nicht ganz.';
+
+    questionEl.classList.add('answered');
+    if (!isCorrect) questionEl.classList.add('wrong');
+
+    warmupState[questionNum] = { answered: true, selected: option, correct: isCorrect };
+    localStorage.setItem(LP_ID + '-warmup', JSON.stringify(warmupState));
+    updateWarmupScore();
+}
+
+function updateWarmupScore() {
+    var correct = 0;
+    var answered = 0;
+    for (var i = 1; i <= WARMUP_QUESTIONS; i++) {
+        if (warmupState[i] && warmupState[i].answered) {
+            answered++;
+            if (warmupState[i].correct) correct++;
+        }
+    }
+
+    if (answered > 0) {
+        var scoreEl = document.getElementById('warmupScore');
+        scoreEl.style.display = 'block';
+        document.getElementById('warmupScoreValue').textContent = correct;
+        document.getElementById('warmupScoreMax').textContent = WARMUP_QUESTIONS;
+
+        var textEl = document.getElementById('warmupScoreText');
+        if (correct === WARMUP_QUESTIONS) {
+            textEl.textContent = 'Perfekt! Du bist bestens vorbereitet!';
+        } else if (correct >= WARMUP_QUESTIONS * 0.6) {
+            textEl.textContent = 'Gut gemacht! Du weißt schon einiges.';
+        } else {
+            textEl.textContent = 'Kein Problem - jetzt lernst du es!';
+        }
+    }
+}
+
+function restoreWarmupState() {
+    for (var i = 1; i <= WARMUP_QUESTIONS; i++) {
+        if (warmupState[i] && warmupState[i].answered) {
+            var questionEl = document.getElementById('warmup-q' + i);
+            var options = questionEl.querySelectorAll('.warmup-option');
+            var feedbackEl = document.getElementById('warmup-fb' + i);
+            var correctAnswer = warmupAnswers[i];
+            var selectedOption = warmupState[i].selected;
+            var isCorrect = warmupState[i].correct;
+
+            for (var j = 0; j < options.length; j++) {
+                options[j].classList.add('disabled');
+            }
+
+            var selectedIndex = selectedOption.charCodeAt(0) - 97;
+            var correctIndex = correctAnswer.charCodeAt(0) - 97;
+
+            options[selectedIndex].classList.add(isCorrect ? 'correct' : 'incorrect');
+            if (!isCorrect) options[correctIndex].classList.add('correct');
+
+            feedbackEl.classList.add('visible');
+            feedbackEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+            feedbackEl.querySelector('.answer-reveal').textContent = isCorrect ? 'Richtig!' : 'Nicht ganz.';
+
+            questionEl.classList.add('answered');
+            if (!isCorrect) questionEl.classList.add('wrong');
+        }
+    }
+    updateWarmupScore();
+}
+
+function finishWarmup() {
+    var dot = document.querySelector('.step-dot.warmup');
+    if (dot) dot.classList.add('completed');
+}
+
+function saveInput(id, value) {
+    localStorage.setItem(LP_ID + '-' + id, value);
+}
+
+function loadInputs() {
+    var inputs = document.querySelectorAll('input[type="text"], input[type="url"], textarea');
+    for (var i = 0; i < inputs.length; i++) {
+        var id = inputs[i].id;
+        if (id) {
+            var saved = localStorage.getItem(LP_ID + '-' + id);
+            if (saved) inputs[i].value = saved;
+            inputs[i].addEventListener('change', function() {
+                saveInput(this.id, this.value);
+            });
+        }
+    }
+}
+
+function checkKiFehler() {
+    var input = document.getElementById('ki-fehler').value.toLowerCase();
+    var fb = document.getElementById('fb-ki-fehler');
+
+    var keywords = ['hand', 'finger', 'ohr', 'zahn', 'hintergrund', 'text', 'verschwommen', 'asymmetrisch', 'seltsam', 'unnatürlich', 'fehler'];
+    var found = 0;
+    for (var i = 0; i < keywords.length; i++) {
+        if (input.indexOf(keywords[i]) > -1) found++;
+    }
+
+    if (found >= 2 && input.length > 20) {
+        fb.className = 'feedback correct';
+        fb.innerHTML = 'Gut erkannt! Du hast typische KI-Fehler identifiziert.';
+    } else if (input.length > 10) {
+        fb.className = 'feedback hint';
+        fb.innerHTML = 'Schau genauer hin: Achte besonders auf Hände, Ohren, Zähne und den Hintergrund.';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.innerHTML = 'Beschreibe genauer, was dir auffällt.';
+    }
+    saveInput('ki-fehler', document.getElementById('ki-fehler').value);
+}
+
+function saveResearch() {
+    var was = document.getElementById('research-was').value;
+    var wo = document.getElementById('research-wo').value;
+    var woran = document.getElementById('research-woran').value;
+    var fb = document.getElementById('fb-research');
+
+    saveInput('research-was', was);
+    saveInput('research-wo', wo);
+    saveInput('research-woran', woran);
+
+    if (was.length > 5 && woran.length > 20) {
+        fb.className = 'feedback correct';
+        fb.innerHTML = 'Super! Deine Recherche wurde gespeichert. Bereite damit deine Präsentation vor!';
+    } else {
+        fb.className = 'feedback hint';
+        fb.innerHTML = 'Fülle bitte alle Felder aus. Beschreibe genauer, woran du den Fake erkannt hast.';
+    }
+}
+
+function checkReflexion() {
+    var input = document.getElementById('reflexion').value;
+    var fb = document.getElementById('fb-reflexion');
+
+    saveInput('reflexion', input);
+
+    if (input.length > 50) {
+        fb.className = 'feedback correct';
+        fb.innerHTML = 'Danke fürdeine Reflexion! Du denkst kritisch uber die Folgen nach.';
+    } else {
+        fb.className = 'feedback hint';
+        fb.innerHTML = 'Denke noch etwas weiter: Was passiert, wenn viele Menschen Falschinformationen glaüben?';
+    }
+}
+
+// Face Game Variables
+var faceGameState = {
+    round: 1,
+    maxRounds: 5,
+    correct: 0,
+    realPosition: null,
+    answered: false
+};
+
+function loadNewRound() {
+    if (faceGameState.round > faceGameState.maxRounds) {
+        document.getElementById('face-game').style.display = 'none';
+        document.getElementById('game-complete').style.display = 'block';
+        document.getElementById('final-score').textContent = faceGameState.correct;
+        return;
+    }
+
+    faceGameState.answered = false;
+    document.getElementById('next-round-btn').style.display = 'none';
+    document.getElementById('face-feedback').style.display = 'none';
+    document.getElementById('round-num').textContent = faceGameState.round;
+
+    // Reset borders
+    document.getElementById('img-left').style.borderColor = '#ddd';
+    document.getElementById('img-right').style.borderColor = '#ddd';
+
+    // Randomly decide which side gets the real face
+    faceGameState.realPosition = Math.random() < 0.5 ? 'left' : 'right';
+
+    var imgLeft = document.getElementById('img-left');
+    var imgRight = document.getElementById('img-right');
+
+    // Load images
+    var timestamp = Date.now();
+    var fakeUrl = 'https://thispersondoesnotexist.com?' + timestamp;
+    var realUrl = 'https://randomuser.me/api/portraits/' + (Math.random() < 0.5 ? 'men' : 'women') + '/' + Math.floor(Math.random() * 99) + '.jpg';
+
+    if (faceGameState.realPosition === 'left') {
+        imgLeft.src = realUrl;
+        imgRight.src = fakeUrl;
+    } else {
+        imgLeft.src = fakeUrl;
+        imgRight.src = realUrl;
+    }
+}
+
+function checkFace(clicked) {
+    if (faceGameState.answered) return;
+    faceGameState.answered = true;
+
+    var feedback = document.getElementById('face-feedback');
+    var isCorrect = (clicked === faceGameState.realPosition);
+
+    if (isCorrect) {
+        faceGameState.correct++;
+        feedback.style.background = '#e8f5e9';
+        feedback.style.border = '2px solid #4caf50';
+        feedback.innerHTML = '<strong style="color: #2e7d32;">Richtig!</strong> Du hast das echte Foto erkannt.';
+    } else {
+        feedback.style.background = '#ffebee';
+        feedback.style.border = '2px solid #f44336';
+        feedback.innerHTML = '<strong style="color: #c62828;">Nicht ganz.</strong> Das andere Bild war echt.';
+    }
+
+    feedback.style.display = 'block';
+    document.getElementById('correct-num').textContent = faceGameState.correct;
+
+    // Highlight correct answer
+    var realImg = faceGameState.realPosition === 'left' ? 'img-left' : 'img-right';
+    var fakeImg = faceGameState.realPosition === 'left' ? 'img-right' : 'img-left';
+    document.getElementById(realImg).style.borderColor = '#4caf50';
+    document.getElementById(fakeImg).style.borderColor = '#f44336';
+
+    faceGameState.round++;
+
+    if (faceGameState.round <= faceGameState.maxRounds) {
+        document.getElementById('next-round-btn').style.display = 'inline-block';
+    } else {
+        setTimeout(function() {
+            document.getElementById('face-game').style.display = 'none';
+            document.getElementById('game-complete').style.display = 'block';
+            document.getElementById('final-score').textContent = faceGameState.correct;
+        }, 1500);
+    }
+}
+
+// Initialize face game when step 2 becomes active
+var originalGoToStep = goToStep;
+goToStep = function(step) {
+    originalGoToStep(step);
+    if (step === 2 && faceGameState.round === 1 && !faceGameState.answered) {
+        loadNewRound();
+    }
+};
+
+window.onload = function() { init(); };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Federspannkraft</title>
+    <style>
+        :root {
+            --physik: #2c5aa0;
+            --physik-light: #e8f0f8;
+            --success: #2a7a4b;
+            --warning: #b35c00;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-secondary: #555555;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 12px 15px;
+        }
+
+        h1 {
+            color: var(--physik);
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--physik);
+        }
+
+        .sim-wrapper {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sim-area {
+            flex: 1;
+            min-width: 320px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+
+        .controls {
+            width: 260px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+        }
+
+        select:focus, button:focus {
+            outline: 2px solid var(--physik);
+            outline-offset: 1px;
+        }
+
+        .btn-primary {
+            background: var(--physik);
+            color: white;
+            border: none;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            margin-top: 5px;
+        }
+
+        .messwert-box {
+            background: var(--physik-light);
+            border: 2px solid var(--physik);
+            padding: 4px 10px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .messwert-label {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            line-height: 1;
+        }
+
+        .messwert-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--physik);
+            font-family: "Courier New", monospace;
+            line-height: 1.1;
+        }
+
+        .messwert-unit {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            line-height: 1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .info-box {
+            background: #fff3e0;
+            border: 1px solid var(--warning);
+            padding: 8px 10px;
+            margin-top: 10px;
+            font-size: 0.8em;
+        }
+
+        .gewichte-anzeige {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+            min-height: 24px;
+        }
+
+        .gewicht-chip {
+            background: var(--physik);
+            color: white;
+            padding: 3px 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .feder-info {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        @media (max-width: 700px) {
+            .sim-wrapper {
+                flex-direction: column;
+            }
+            .controls {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulation: Federspannkraft</h1>
+
+        <div class="sim-wrapper">
+            <div class="sim-area">
+                <canvas id="federCanvas" width="400" height="420"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>Feder wählen:</label>
+                    <select id="federSelect" onchange="wechsleFeder()">
+                        <option value="1">Feder 1 (weich)</option>
+                        <option value="2">Feder 2 (hart)</option>
+                    </select>
+                    <div class="feder-info" id="federInfo">Federkonstante wird ermittelt...</div>
+                </div>
+
+                <div class="control-group">
+                    <label>Gewicht anhängen:</label>
+                    <select id="gewichtSelect">
+                        <option value="100">100 g (≙ 1 N)</option>
+                        <option value="200">200 g (≙ 2 N)</option>
+                        <option value="300">300 g (≙ 3 N)</option>
+                        <option value="400">400 g (≙ 4 N)</option>
+                        <option value="500">500 g (≙ 5 N)</option>
+                    </select>
+                    <button class="btn-primary" onclick="gewichtAnhaengen()">+ Gewicht anhängen</button>
+                    <button class="btn-secondary" onclick="gewichtEntfernen()">− Letztes entfernen</button>
+                </div>
+
+                <div class="gewichte-anzeige" id="gewichteAnzeige"></div>
+
+                <div class="messwert-box">
+                    <div class="messwert-label">Kraft F</div>
+                    <div class="messwert-value" id="kraftWert">0</div>
+                    <div class="messwert-unit">N</div>
+                </div>
+
+                <div class="messwert-box">
+                    <div class="messwert-label">Dehnung s</div>
+                    <div class="messwert-value" id="dehnungWert">0</div>
+                    <div class="messwert-unit">cm</div>
+                </div>
+
+                <div class="info-box">
+                    <strong>Aufgabe:</strong> Hänge nacheinander Gewichte an und notiere Kraft und Dehnung in deiner Tabelle.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // SIMULATION: Federspannkraft (Hooke'sches Gesetz)
+        // Physik Klasse 7 – ES5-kompatibel
+        // ═══════════════════════════════════════════════════════════════
+
+        var canvas = document.getElementById('federCanvas');
+        var ctx = canvas.getContext('2d');
+
+        // Federkonstanten (N/cm) - kopfrechenbar!
+        var federn = {
+            1: { D: 0.5, name: 'weich', farbe: '#2c5aa0' },   // 1 N → 2 cm
+            2: { D: 1.0, name: 'hart', farbe: '#c62828' }     // 1 N → 1 cm
+        };
+
+        var aktuelleFeder = 1;
+        var angehaengteGewichte = [];  // Array mit Massen in g
+
+        // Simulation zeichnen
+        function zeichne() {
+            var width = canvas.width;
+            var height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Hintergrund
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(0, 0, width, height);
+
+            // Aufhängung (oben)
+            ctx.fillStyle = '#555';
+            ctx.fillRect(150, 20, 100, 15);
+
+            // Skala rechts
+            zeichneSkala();
+
+            // Berechne Gesamtkraft und Dehnung
+            var gesamtMasse = 0;
+            for (var i = 0; i < angehaengteGewichte.length; i++) {
+                gesamtMasse += angehaengteGewichte[i];
+            }
+            var kraft = gesamtMasse / 100;  // g → N (mit g = 10 m/s²)
+            var D = federn[aktuelleFeder].D;
+            var dehnung = kraft / D;  // s = F / D
+
+            // Feder zeichnen
+            var federFarbe = federn[aktuelleFeder].farbe;
+            var federStart = 35;
+            var federRuhe = 80;  // Ruhelänge in px
+            var dehnungPx = dehnung * 20;  // 1 cm = 20 px
+            var federEnde = federStart + federRuhe + dehnungPx;
+
+            zeichneFeder(200, federStart, federEnde, federFarbe);
+
+            // Gewichte zeichnen
+            if (angehaengteGewichte.length > 0) {
+                zeichneGewichte(200, federEnde);
+            }
+
+            // Dehnung anzeigen (Pfeil)
+            if (dehnung > 0) {
+                zeichneDehnungspfeil(federStart + federRuhe, federEnde, dehnung);
+            }
+
+            // Werte aktualisieren
+            document.getElementById('kraftWert').textContent = kraft.toFixed(0);
+            document.getElementById('dehnungWert').textContent = dehnung.toFixed(1).replace('.', ',');
+        }
+
+        function zeichneFeder(x, yStart, yEnd, farbe) {
+            var windungen = 12;
+            var amplitude = 15;
+            var laenge = yEnd - yStart;
+
+            ctx.beginPath();
+            ctx.moveTo(x, yStart);
+
+            for (var i = 0; i <= windungen; i++) {
+                var y = yStart + (laenge * i / windungen);
+                var xOffset = (i % 2 === 0) ? -amplitude : amplitude;
+                if (i === 0 || i === windungen) xOffset = 0;
+                ctx.lineTo(x + xOffset, y);
+            }
+
+            ctx.strokeStyle = farbe;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Aufhängepunkt
+            ctx.beginPath();
+            ctx.arc(x, yStart, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#555';
+            ctx.fill();
+        }
+
+        function zeichneGewichte(x, y) {
+            var gewichtHoehe = 30;
+            var gewichtBreite = 50;
+
+            for (var i = 0; i < angehaengteGewichte.length; i++) {
+                var yPos = y + i * (gewichtHoehe + 2);
+
+                // Gewicht-Rechteck
+                ctx.fillStyle = '#555';
+                ctx.fillRect(x - gewichtBreite/2, yPos, gewichtBreite, gewichtHoehe);
+
+                // Beschriftung
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(angehaengteGewichte[i] + ' g', x, yPos + gewichtHoehe/2);
+            }
+
+            // Haken
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+        }
+
+        function zeichneSkala() {
+            var xSkala = 320;
+            var yStart = 115;  // 0 cm (Ruhelage)
+            var pxProCm = 20;
+
+            // Linie
+            ctx.beginPath();
+            ctx.moveTo(xSkala, yStart - 20);
+            ctx.lineTo(xSkala, yStart + 12 * pxProCm);
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Markierungen
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = '#555';
+            ctx.textAlign = 'left';
+
+            for (var cm = 0; cm <= 12; cm += 2) {
+                var y = yStart + cm * pxProCm;
+
+                // Strich
+                ctx.beginPath();
+                ctx.moveTo(xSkala - 5, y);
+                ctx.lineTo(xSkala + 5, y);
+                ctx.stroke();
+
+                // Beschriftung
+                ctx.fillText(cm + ' cm', xSkala + 10, y + 4);
+            }
+
+            // Nulllinie hervorheben
+            ctx.beginPath();
+            ctx.moveTo(xSkala - 10, yStart);
+            ctx.lineTo(xSkala + 8, yStart);
+            ctx.strokeStyle = '#c62828';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('0', xSkala + 10, yStart + 4);
+        }
+
+        function zeichneDehnungspfeil(yRuhe, yGedehnt, dehnung) {
+            var x = 100;
+
+            // Doppelpfeil
+            ctx.beginPath();
+            ctx.moveTo(x, yRuhe);
+            ctx.lineTo(x, yGedehnt);
+            ctx.strokeStyle = '#2a7a4b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Pfeilspitzen
+            ctx.beginPath();
+            ctx.moveTo(x - 5, yRuhe + 8);
+            ctx.lineTo(x, yRuhe);
+            ctx.lineTo(x + 5, yRuhe + 8);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x - 5, yGedehnt - 8);
+            ctx.lineTo(x, yGedehnt);
+            ctx.lineTo(x + 5, yGedehnt - 8);
+            ctx.stroke();
+
+            // Beschriftung
+            ctx.save();
+            ctx.translate(x - 15, (yRuhe + yGedehnt) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillStyle = '#2a7a4b';
+            ctx.textAlign = 'center';
+            ctx.fillText('s = ' + dehnung.toFixed(1).replace('.', ',') + ' cm', 0, 0);
+            ctx.restore();
+        }
+
+        // Steuerungsfunktionen
+        function gewichtAnhaengen() {
+            var gewicht = parseInt(document.getElementById('gewichtSelect').value);
+            angehaengteGewichte.push(gewicht);
+            aktualisiereAnzeige();
+            zeichne();
+        }
+
+        function gewichtEntfernen() {
+            if (angehaengteGewichte.length > 0) {
+                angehaengteGewichte.pop();
+                aktualisiereAnzeige();
+                zeichne();
+            }
+        }
+
+        function alleEntfernen() {
+            angehaengteGewichte = [];
+            aktualisiereAnzeige();
+            zeichne();
+        }
+
+        function wechsleFeder() {
+            aktuelleFeder = parseInt(document.getElementById('federSelect').value);
+            var info = federn[aktuelleFeder];
+            document.getElementById('federInfo').textContent =
+                'Typ: ' + info.name;
+            zeichne();
+        }
+
+        function aktualisiereAnzeige() {
+            var container = document.getElementById('gewichteAnzeige');
+            container.innerHTML = '';
+
+            for (var i = 0; i < angehaengteGewichte.length; i++) {
+                var chip = document.createElement('span');
+                chip.className = 'gewicht-chip';
+                chip.textContent = angehaengteGewichte[i] + ' g';
+                container.appendChild(chip);
+            }
+        }
+
+        // Start
+        wechsleFeder();
+        zeichne();
+    </script>
+</body>
+</html>

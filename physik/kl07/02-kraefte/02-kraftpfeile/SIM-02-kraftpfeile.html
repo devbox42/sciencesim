@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kräfte zusammensetzen – Simulation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            font-size: 16px;
+            color: #222;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c5aa0;
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 8px;
+        }
+        .sim-wrapper {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .canvas-container {
+            flex: 1;
+            min-width: 400px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            background: #fff;
+            cursor: crosshair;
+            display: block;
+        }
+        .controls {
+            width: 250px;
+            min-width: 200px;
+        }
+        .info-box {
+            background: #f0f4f8;
+            border: 1px solid #2c5aa0;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .info-box h3 {
+            font-size: 0.95em;
+            color: #2c5aa0;
+            margin-bottom: 8px;
+        }
+        .force-display {
+            font-family: monospace;
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+        .force-f1 { color: #1565c0; }
+        .force-f2 { color: #2e7d32; }
+        .force-res { color: #c62828; font-weight: bold; }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 5px 5px 5px 0;
+        }
+        .btn:hover { background: #1e4a8a; }
+        .btn-secondary {
+            background: #666;
+        }
+        .btn-secondary:hover { background: #444; }
+        .instructions {
+            background: #fff3e0;
+            border: 1px solid #b35c00;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        .instructions strong { color: #b35c00; }
+        .legend {
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 4px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            margin-right: 8px;
+        }
+        .mode-toggle {
+            margin: 10px 0;
+        }
+        .mode-toggle label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .checkbox-container {
+            margin: 10px 0;
+        }
+        .checkbox-container label {
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .presets {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .presets h4 {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .preset-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 6px 10px;
+            margin: 4px 0;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .preset-btn:hover {
+            background: #e8e8e8;
+        }
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(44, 90, 160, 0.9);
+            color: #fff;
+            border: none;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+            z-index: 100;
+        }
+        .fullscreen-btn:hover { background: #1e4a8a; }
+        .canvas-container { position: relative; }
+
+        /* Fullscreen-Modus */
+        .sim-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: #fff !important;
+            z-index: 9999 !important;
+            padding: 20px !important;
+            margin: 0 !important;
+            max-width: none !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .sim-fullscreen .sim-wrapper {
+            flex-wrap: nowrap;
+        }
+        .sim-fullscreen canvas {
+            max-width: 80vh;
+            max-height: 80vh;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Kräfte zusammensetzen – Simulation</h1>
+
+        <div class="instructions">
+            <strong>Anleitung:</strong> Ziehe die <span style="color:#1565c0">blauen</span> und <span style="color:#2e7d32">grünen</span> Pfeilspitzen, um die Kräfte zu ändern. Die <span style="color:#c62828">rote</span> resultierende Kraft wird automatisch berechnet.
+        </div>
+
+        <div class="sim-wrapper">
+            <div class="canvas-container">
+                <button class="fullscreen-btn" onclick="toggleFullscreen()" id="fsBtn">⛶ Vollbild</button>
+                <canvas id="simCanvas" width="550" height="550"></canvas>
+            </div>
+
+            <div class="controls">
+                <div class="info-box">
+                    <h3>Kräfte</h3>
+                    <div class="force-display force-f1">F₁ = <span id="f1-value">3,0</span> N</div>
+                    <div class="force-display force-f2">F₂ = <span id="f2-value">4,0</span> N</div>
+                    <hr style="margin: 8px 0; border: none; border-top: 1px solid #ccc;">
+                    <div class="force-display force-res">F<sub>res</sub> = <span id="fres-value">5,0</span> N</div>
+                </div>
+
+                <div class="checkbox-container">
+                    <label>
+                        <input type="checkbox" id="showParallelogram" checked>
+                        Parallelogramm zeigen
+                    </label>
+                </div>
+                <div class="checkbox-container">
+                    <label>
+                        <input type="checkbox" id="snapToGrid" checked>
+                        An Raster einrasten
+                    </label>
+                </div>
+
+                <button class="btn" onclick="resetSimulation()">Zurücksetzen</button>
+                <button class="btn btn-secondary" onclick="swapForces()">F₁ ↔ F₂ tauschen</button>
+
+                <div class="presets">
+                    <h4>Beispiele:</h4>
+                    <button class="preset-btn" onclick="loadPreset('same')">→ Gleiche Richtung (3N + 4N)</button>
+                    <button class="preset-btn" onclick="loadPreset('opposite')">→ Entgegengesetzt (5N vs 3N)</button>
+                    <button class="preset-btn" onclick="loadPreset('tauziehen')">→ Tauziehen (4N vs 4N)</button>
+                    <button class="preset-btn" onclick="loadPreset('right')">→ Rechtwinklig (3N + 4N = 5N)</button>
+                    <button class="preset-btn" onclick="loadPreset('angle')">→ Schräg (45°)</button>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #1565c0;"></div>
+                        <span>F₁ (Kraft 1)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2e7d32;"></div>
+                        <span>F₂ (Kraft 2)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #c62828;"></div>
+                        <span>F<sub>res</sub> (Resultierende)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // KRÄFTE-SIMULATION (ES5)
+        // ============================================================
+
+        var canvas = document.getElementById('simCanvas');
+        var ctx = canvas.getContext('2d');
+
+        // Konfiguration
+        var gridSize = 25;  // 1 Kästchen = 25px = 1 N
+        var originX = 275;  // Mittelpunkt (550/2)
+        var originY = 275;
+        var arrowHeadSize = 15;
+
+        // Kräfte (in Rastereinheiten, also Newton)
+        var f1 = { x: 3, y: 0 };   // 3 N nach rechts
+        var f2 = { x: 0, y: -4 };  // 4 N nach oben (y ist invertiert im Canvas)
+
+        // Drag-State
+        var dragging = null;  // 'f1' oder 'f2'
+        var dragOffset = { x: 0, y: 0 };
+
+        // ============================================================
+        // ZEICHENFUNKTIONEN
+        // ============================================================
+
+        function drawGrid() {
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+
+            // Vertikale Linien
+            for (var x = 0; x <= canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Horizontale Linien
+            for (var y = 0; y <= canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Achsen (dicker)
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 2;
+
+            // X-Achse
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvas.width, originY);
+            ctx.stroke();
+
+            // Y-Achse
+            ctx.beginPath();
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvas.height);
+            ctx.stroke();
+
+            // Ursprung markieren
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(originX, originY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Maßstab-Beschriftung
+            ctx.fillStyle = '#666';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('1 Kästchen = 1 N', canvas.width / 2, canvas.height - 8);
+        }
+
+        function drawArrow(fromX, fromY, toX, toY, color, lineWidth) {
+            var headlen = arrowHeadSize;
+            var dx = toX - fromX;
+            var dy = toY - fromY;
+            var angle = Math.atan2(dy, dx);
+
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = lineWidth || 3;
+
+            // Linie
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+
+            // Pfeilspitze
+            drawArrowHead(toX, toY, angle, color);
+        }
+
+        function drawArrowHead(toX, toY, angle, color) {
+            var headlen = arrowHeadSize;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawDragHandle(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, 8, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawParallelogram() {
+            if (!document.getElementById('showParallelogram').checked) return;
+
+            var f1EndX = originX + f1.x * gridSize;
+            var f1EndY = originY + f1.y * gridSize;
+            var f2EndX = originX + f2.x * gridSize;
+            var f2EndY = originY + f2.y * gridSize;
+            var resEndX = originX + (f1.x + f2.x) * gridSize;
+            var resEndY = originY + (f1.y + f2.y) * gridSize;
+
+            ctx.strokeStyle = 'rgba(200, 100, 100, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            // Von F1-Ende zu Resultierende
+            ctx.beginPath();
+            ctx.moveTo(f1EndX, f1EndY);
+            ctx.lineTo(resEndX, resEndY);
+            ctx.stroke();
+
+            // Von F2-Ende zu Resultierende
+            ctx.beginPath();
+            ctx.moveTo(f2EndX, f2EndY);
+            ctx.lineTo(resEndX, resEndY);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawGrid();
+
+            // Resultierende berechnen
+            var resX = f1.x + f2.x;
+            var resY = f1.y + f2.y;
+
+            // F1 zeichnen (blau) - zuerst
+            var f1EndX = originX + f1.x * gridSize;
+            var f1EndY = originY + f1.y * gridSize;
+            if (f1.x !== 0 || f1.y !== 0) {
+                drawArrow(originX, originY, f1EndX, f1EndY, '#1565c0', 3);
+            }
+
+            // F2 zeichnen (grün) - zweite
+            var f2EndX = originX + f2.x * gridSize;
+            var f2EndY = originY + f2.y * gridSize;
+            if (f2.x !== 0 || f2.y !== 0) {
+                drawArrow(originX, originY, f2EndX, f2EndY, '#2e7d32', 3);
+            }
+
+            // Parallelogramm
+            drawParallelogram();
+
+            // Resultierende zeichnen (ZULETZT - überdeckt alle anderen)
+            var resEndX = originX + resX * gridSize;
+            var resEndY = originY + resY * gridSize;
+            if (resX !== 0 || resY !== 0) {
+                drawArrow(originX, originY, resEndX, resEndY, '#c62828', 4);
+            }
+
+            // Drag-Handles
+            if (f1.x !== 0 || f1.y !== 0) {
+                drawDragHandle(f1EndX, f1EndY, '#1565c0');
+            }
+            if (f2.x !== 0 || f2.y !== 0) {
+                drawDragHandle(f2EndX, f2EndY, '#2e7d32');
+            }
+
+            // Pfeilspitzen ÜBER den Drag-Handles nochmal zeichnen
+            if (f1.x !== 0 || f1.y !== 0) {
+                var f1Angle = Math.atan2(f1.y * gridSize, f1.x * gridSize);
+                drawArrowHead(f1EndX, f1EndY, f1Angle, '#1565c0');
+            }
+            if (f2.x !== 0 || f2.y !== 0) {
+                var f2Angle = Math.atan2(f2.y * gridSize, f2.x * gridSize);
+                drawArrowHead(f2EndX, f2EndY, f2Angle, '#2e7d32');
+            }
+            if (resX !== 0 || resY !== 0) {
+                var resAngle = Math.atan2(resY * gridSize, resX * gridSize);
+                drawArrowHead(resEndX, resEndY, resAngle, '#c62828');
+            }
+
+            // Kraft-Labels
+            ctx.font = 'bold 11px sans-serif';
+            if (f1.x !== 0 || f1.y !== 0) {
+                ctx.fillStyle = '#1565c0';
+                ctx.fillText('F₁', f1EndX + 12, f1EndY - 5);
+            }
+            if (f2.x !== 0 || f2.y !== 0) {
+                ctx.fillStyle = '#2e7d32';
+                ctx.fillText('F₂', f2EndX + 12, f2EndY - 5);
+            }
+            if (resX !== 0 || resY !== 0) {
+                ctx.fillStyle = '#c62828';
+                ctx.fillText('Fres', resEndX + 12, resEndY + 12);
+            }
+
+            // Werte aktualisieren
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            var f1Mag = Math.sqrt(f1.x * f1.x + f1.y * f1.y);
+            var f2Mag = Math.sqrt(f2.x * f2.x + f2.y * f2.y);
+            var resX = f1.x + f2.x;
+            var resY = f1.y + f2.y;
+            var resMag = Math.sqrt(resX * resX + resY * resY);
+
+            document.getElementById('f1-value').textContent = f1Mag.toFixed(1).replace('.', ',');
+            document.getElementById('f2-value').textContent = f2Mag.toFixed(1).replace('.', ',');
+            document.getElementById('fres-value').textContent = resMag.toFixed(1).replace('.', ',');
+        }
+
+        // ============================================================
+        // DRAG & DROP
+        // ============================================================
+
+        function getMousePos(e) {
+            var rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function getTouchPos(e) {
+            var rect = canvas.getBoundingClientRect();
+            var touch = e.touches[0];
+            return {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+        }
+
+        function isNearPoint(px, py, x, y, radius) {
+            var dx = px - x;
+            var dy = py - y;
+            return (dx * dx + dy * dy) <= radius * radius;
+        }
+
+        function startDrag(pos) {
+            var f1EndX = originX + f1.x * gridSize;
+            var f1EndY = originY + f1.y * gridSize;
+            var f2EndX = originX + f2.x * gridSize;
+            var f2EndY = originY + f2.y * gridSize;
+
+            if (isNearPoint(pos.x, pos.y, f1EndX, f1EndY, 15)) {
+                dragging = 'f1';
+            } else if (isNearPoint(pos.x, pos.y, f2EndX, f2EndY, 15)) {
+                dragging = 'f2';
+            }
+        }
+
+        function doDrag(pos) {
+            if (!dragging) return;
+
+            var snapToGrid = document.getElementById('snapToGrid').checked;
+            var newX = (pos.x - originX) / gridSize;
+            var newY = (pos.y - originY) / gridSize;
+
+            // Begrenzen auf ±10 N
+            newX = Math.max(-10, Math.min(10, newX));
+            newY = Math.max(-10, Math.min(10, newY));
+
+            // An Raster einrasten
+            if (snapToGrid) {
+                newX = Math.round(newX);
+                newY = Math.round(newY);
+            }
+
+            if (dragging === 'f1') {
+                f1.x = newX;
+                f1.y = newY;
+            } else if (dragging === 'f2') {
+                f2.x = newX;
+                f2.y = newY;
+            }
+
+            draw();
+        }
+
+        function endDrag() {
+            dragging = null;
+        }
+
+        // Mouse Events
+        canvas.addEventListener('mousedown', function(e) {
+            startDrag(getMousePos(e));
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            doDrag(getMousePos(e));
+
+            // Cursor ändern wenn über Handle
+            var pos = getMousePos(e);
+            var f1EndX = originX + f1.x * gridSize;
+            var f1EndY = originY + f1.y * gridSize;
+            var f2EndX = originX + f2.x * gridSize;
+            var f2EndY = originY + f2.y * gridSize;
+
+            if (isNearPoint(pos.x, pos.y, f1EndX, f1EndY, 15) ||
+                isNearPoint(pos.x, pos.y, f2EndX, f2EndY, 15)) {
+                canvas.style.cursor = 'grab';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        });
+
+        canvas.addEventListener('mouseup', endDrag);
+        canvas.addEventListener('mouseleave', endDrag);
+
+        // Touch Events
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            startDrag(getTouchPos(e));
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            doDrag(getTouchPos(e));
+        });
+
+        canvas.addEventListener('touchend', endDrag);
+
+        // ============================================================
+        // STEUERUNG
+        // ============================================================
+
+        function resetSimulation() {
+            f1 = { x: 3, y: 0 };
+            f2 = { x: 0, y: -4 };
+            draw();
+        }
+
+        function swapForces() {
+            var temp = { x: f1.x, y: f1.y };
+            f1 = { x: f2.x, y: f2.y };
+            f2 = temp;
+            draw();
+        }
+
+        function loadPreset(preset) {
+            switch (preset) {
+                case 'same':
+                    f1 = { x: 3, y: 0 };
+                    f2 = { x: 4, y: 0 };
+                    break;
+                case 'opposite':
+                    f1 = { x: 5, y: 0 };
+                    f2 = { x: -3, y: 0 };
+                    break;
+                case 'tauziehen':
+                    f1 = { x: 4, y: 0 };
+                    f2 = { x: -4, y: 0 };
+                    break;
+                case 'right':
+                    f1 = { x: 3, y: 0 };
+                    f2 = { x: 0, y: -4 };
+                    break;
+                case 'angle':
+                    f1 = { x: 3, y: 0 };
+                    f2 = { x: 2, y: -2 };
+                    break;
+            }
+            draw();
+        }
+
+        // Checkbox-Events
+        document.getElementById('showParallelogram').addEventListener('change', draw);
+        document.getElementById('snapToGrid').addEventListener('change', draw);
+
+        // ============================================================
+        // FULLSCREEN
+        // ============================================================
+
+        var isFullscreen = false;
+
+        function toggleFullscreen() {
+            var container = document.querySelector('.container');
+            var btn = document.getElementById('fsBtn');
+            isFullscreen = !isFullscreen;
+
+            if (isFullscreen) {
+                container.classList.add('sim-fullscreen');
+                btn.textContent = '✕ Schließen';
+                document.body.style.overflow = 'hidden';
+            } else {
+                container.classList.remove('sim-fullscreen');
+                btn.textContent = '⛶ Vollbild';
+                document.body.style.overflow = '';
+            }
+        }
+
+        // ESC zum Schließen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && isFullscreen) {
+                toggleFullscreen();
+            }
+        });
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        draw();
+    </script>
+</body>
+</html>

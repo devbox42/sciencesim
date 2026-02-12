@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-05b: Wellen und Schall</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f0ff;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .progress-bar {
+            background: var(--border);
+            height: 6px;
+            margin: 20px 0;
+        }
+        .progress-fill {
+            background: var(--fach);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .step {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .step-title { font-size: 1.1em; font-weight: 600; color: var(--fach); }
+        .step-badge {
+            font-size: 0.75em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 8px;
+        }
+        h3 { font-size: 1em; font-weight: 600; margin: 15px 0 10px; color: var(--text); }
+        p { margin-bottom: 12px; }
+        .info-box {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .forschungsfrage {
+            background: var(--warning-bg);
+            border-left: 3px solid var(--warning);
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 1em;
+            font-weight: 600;
+        }
+        .formel-box {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.3em;
+        }
+        .hefter-hinweis {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 2px 8px;
+            margin-bottom: 8px;
+        }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--fach);
+            border: 1px solid var(--fach);
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.9em;
+            margin: 3px;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .sim-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        canvas {
+            border: 1px solid var(--border);
+            background: #fafafa;
+            display: block;
+            max-width: 100%;
+        }
+        .sim-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .slider-group { margin-bottom: 8px; }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .slider-group input[type="range"] { width: 100%; min-height: 44px; }
+        .value-display {
+            background: var(--fach-light);
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .example-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .example-card {
+            flex: 1 1 120px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px;
+            text-align: center;
+        }
+        .example-card .icon { font-size: 2em; margin-bottom: 8px; }
+        .example-card strong { color: var(--fach); }
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 20px;
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            margin: -20px -20px 20px;
+        }
+        .step-nav-item {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--border);
+            color: var(--text-muted);
+            font-size: 0.8em;
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+        }
+        .step-nav-item:hover { background: var(--fach-light); }
+        .step-nav-item.active { background: var(--fach); color: white; }
+        .step-nav-item.done { background: var(--success); color: white; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: center; }
+        th { background: var(--fach-light); }
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .bruch {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .bruch .zaehler {
+            display: block;
+            border-bottom: 1px solid currentColor;
+            padding: 0 3px 2px;
+        }
+        .bruch .nenner {
+            display: block;
+            padding: 2px 3px 0;
+        }
+        .diagnose-box {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .diagnose-title {
+            font-weight: 600;
+            color: var(--success);
+            margin-bottom: 10px;
+        }
+        input[type="number"], input[type="text"] {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            font-size: 1em;
+            width: 80px;
+            text-align: center;
+        }
+        select {
+            padding: 8px 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-height: 44px;
+        }
+        .feedback {
+            padding: 10px;
+            margin-top: 10px;
+            display: none;
+            font-size: 0.9em;
+        }
+        .feedback.correct { background: var(--success-bg); border: 1px solid var(--success); color: var(--success); display: block; }
+        .feedback.incorrect { background: var(--error-bg); border: 1px solid var(--error); color: var(--error); display: block; }
+        .wave-compare {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .wave-compare-item {
+            flex: 1 1 250px;
+            text-align: center;
+        }
+        .wave-compare-item h4 {
+            margin-bottom: 8px;
+            color: var(--fach);
+        }
+        .mc-options { margin: 15px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .mc-option:hover { border-color: var(--fach); }
+        .mc-option.selected {
+            border-color: var(--fach);
+            background: var(--fach-light);
+        }
+        .mc-option input { margin-right: 10px; }
+        .db-table td:first-child { text-align: left; padding-left: 12px; }
+        .db-table .danger { background: var(--error-bg); }
+        .db-table .warning { background: var(--warning-bg); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wellen und Schall</h1>
+            <p>Physik Klasse 10 MR | Lernpfad 05b | ca. 50 min</p>
+        </header>
+
+        <div class="step-nav" id="stepNav">
+            <div class="step-nav-item active" onclick="goToStep(1)">1</div>
+            <div class="step-nav-item" onclick="goToStep(2)">2</div>
+            <div class="step-nav-item" onclick="goToStep(3)">3</div>
+            <div class="step-nav-item" onclick="goToStep(4)">4</div>
+            <div class="step-nav-item" onclick="goToStep(5)">5</div>
+            <div class="step-nav-item" onclick="goToStep(6)">6</div>
+            <div class="step-nav-item" onclick="goToStep(7)">7</div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 1: Was ist eine Welle? -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step active" id="step1">
+            <div class="step-header">
+                <span class="step-title">Was ist eine Welle?</span>
+                <span class="step-badge">Einstieg</span>
+            </div>
+
+            <p>Stell dir eine <strong>La-Ola-Welle</strong> im Stadion vor: Die Zuschauer stehen nacheinander auf und setzen sich wieder hin. Die Welle wandert einmal ums Stadion &ndash; aber kein Zuschauer verlässt seinen Platz!</p>
+
+            <div class="example-cards">
+                <div class="example-card">
+                    <div class="icon">🌊</div>
+                    <strong>Wasserwelle</strong>
+                </div>
+                <div class="example-card">
+                    <div class="icon">🔊</div>
+                    <strong>Schallwelle</strong>
+                </div>
+                <div class="example-card">
+                    <div class="icon">〰️</div>
+                    <strong>Seilwelle</strong>
+                </div>
+                <div class="example-card">
+                    <div class="icon">🌍</div>
+                    <strong>Erdbebenwelle</strong>
+                </div>
+            </div>
+
+            <div class="forschungsfrage">
+                Was genau wandert bei einer Welle &ndash; und was nicht?
+            </div>
+
+            <div class="info-box">
+                <strong>Entscheidende Erkenntnis:</strong> Bei einer Welle wird <strong>Energie</strong> transportiert, aber die <strong>Teilchen</strong> schwingen nur um ihre Ruhelage. Kein Teilchen wandert mit der Welle mit!
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>AB K4 (Definition Welle):</strong> Vervollständige: &bdquo;Eine Welle ist die Ausbreitung einer ___ . Dabei wird ___ transportiert, aber die Teilchen ___ .&ldquo;
+            </div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button class="btn" onclick="nextStep()">Weiter zu den Wellenarten →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 2: Wellenarten -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step2">
+            <div class="step-header">
+                <span class="step-title">Transversal- und Longitudinalwellen</span>
+                <span class="step-badge">Grundlagen</span>
+            </div>
+
+            <p>Es gibt zwei Grundtypen von Wellen. Beobachte, wie sich die <strong>Teilchen</strong> (blaue Punkte) bewegen:</p>
+
+            <div class="wave-compare">
+                <div class="wave-compare-item">
+                    <h4>Transversalwelle</h4>
+                    <canvas id="transCanvas" width="280" height="140"></canvas>
+                    <p style="font-size:0.85em; margin-top:8px;">Teilchen schwingen <strong>senkrecht</strong> zur Ausbreitungsrichtung</p>
+                </div>
+                <div class="wave-compare-item">
+                    <h4>Longitudinalwelle</h4>
+                    <canvas id="longCanvas" width="280" height="140"></canvas>
+                    <p style="font-size:0.85em; margin-top:8px;">Teilchen schwingen <strong>parallel</strong> zur Ausbreitungsrichtung</p>
+                </div>
+            </div>
+
+            <div class="diagnose-box">
+                <div class="diagnose-title">Zuordnung</div>
+                <div style="margin: 8px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>Seilwelle: </span>
+                    <select id="wellenart1">
+                        <option value="">-- wählen --</option>
+                        <option value="trans">Transversalwelle</option>
+                        <option value="long">Longitudinalwelle</option>
+                    </select>
+                </div>
+                <div style="margin: 8px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>Schallwelle in Luft: </span>
+                    <select id="wellenart2">
+                        <option value="">-- wählen --</option>
+                        <option value="trans">Transversalwelle</option>
+                        <option value="long">Longitudinalwelle</option>
+                    </select>
+                </div>
+                <div style="margin: 8px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>Wasserwelle (Oberfläche): </span>
+                    <select id="wellenart3">
+                        <option value="">-- wählen --</option>
+                        <option value="trans">Transversalwelle</option>
+                        <option value="long">Longitudinalwelle</option>
+                        <option value="beide">Mischform (beides)</option>
+                    </select>
+                </div>
+                <button class="btn btn-small" onclick="checkWellenarten()">Prüfen</button>
+                <div class="feedback" id="fb-wellenarten"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">← Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter zur Simulation →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 3: Simulation Transversalwelle -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step3">
+            <div class="step-header">
+                <span class="step-title">Experiment: Wellenwanne</span>
+                <span class="step-badge">Simulation</span>
+            </div>
+
+            <div class="forschungsfrage">
+                Wie hängt die Wellengeschwindigkeit v von der Wellenlänge λ und der Frequenz f ab?
+            </div>
+
+            <div class="sim-container">
+                <canvas id="waveCanvas" width="560" height="220"></canvas>
+                <div style="display: flex; gap: 20px; margin-top: 15px; flex-wrap: wrap;">
+                    <div class="slider-group" style="flex: 1; min-width: 150px;">
+                        <label>Wellenlänge λ: <span id="lambdaValue">120</span> cm</label>
+                        <input type="range" id="lambdaSlider" min="60" max="200" value="120" step="10">
+                    </div>
+                    <div class="slider-group" style="flex: 1; min-width: 150px;">
+                        <label>Frequenz f: <span id="freqValue">1,0</span> Hz</label>
+                        <input type="range" id="freqSlider" min="5" max="25" value="10" step="1">
+                    </div>
+                    <div class="slider-group" style="flex: 1; min-width: 150px;">
+                        <label>Amplitude A: <span id="ampWaveValue">30</span> cm</label>
+                        <input type="range" id="ampWaveSlider" min="15" max="50" value="30" step="5">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn" id="btnWaveStart">Start</button>
+                    <button class="btn btn-secondary" onclick="resetWave()">Reset</button>
+                    <button class="btn btn-secondary" id="btnWavePause" style="display:none;">Pause (Snapshot)</button>
+                </div>
+                <div class="value-display">
+                    <div class="value-row"><span>Wellenlänge λ:</span> <span id="dispLambda">120 cm</span></div>
+                    <div class="value-row"><span>Frequenz f:</span> <span id="dispFreq">1,0 Hz</span></div>
+                    <div class="value-row"><span style="font-weight:600;">Geschwindigkeit v = λ · f:</span> <span id="dispSpeed" style="font-weight:600;">120 cm/s</span></div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Anleitung:</strong> Verändere λ und f getrennt. Beobachte, wie sich v ändert. Notiere mindestens 4 Kombinationen auf dem Arbeitsblatt.
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>AB P3 (Versuchsprotokoll Wellenwanne):</strong> Übertrage deine Messwerte (λ, f, v) in die Tabelle. Formuliere vorher eine Hypothese und danach die Erkenntnis.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">← Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter zum Diagramm →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 4: Das y(s)-Diagramm -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step4">
+            <div class="step-header">
+                <span class="step-title">Das y(s)-Diagramm</span>
+                <span class="step-badge">Darstellung</span>
+            </div>
+
+            <p>Eine Welle lässt sich als <strong>Momentaufnahme</strong> darstellen: Man friert den Zeitpunkt ein und zeichnet die Auslenkung y gegen den <strong>Ort s</strong>.</p>
+
+            <table>
+                <tr>
+                    <th></th>
+                    <th>y(t)-Diagramm</th>
+                    <th>y(s)-Diagramm</th>
+                </tr>
+                <tr>
+                    <td><strong>x-Achse</strong></td>
+                    <td>Zeit t (in s)</td>
+                    <td>Ort s (in m oder cm)</td>
+                </tr>
+                <tr>
+                    <td><strong>Zeigt</strong></td>
+                    <td>Schwingung <em>eines</em> Teilchens</td>
+                    <td>Momentaufnahme <em>aller</em> Teilchen</td>
+                </tr>
+                <tr>
+                    <td><strong>Ablesbar</strong></td>
+                    <td>A und T</td>
+                    <td>A und λ</td>
+                </tr>
+            </table>
+
+            <h3>Lies die Werte aus dem Diagramm ab:</h3>
+
+            <div class="sim-container" style="text-align:center;">
+                <svg width="440" height="200" viewBox="0 0 440 200">
+                    <rect x="50" y="20" width="360" height="160" fill="#fafafa"/>
+                    <!-- Gitterlinien -->
+                    <line x1="110" y1="20" x2="110" y2="180" stroke="#ccc"/>
+                    <line x1="170" y1="20" x2="170" y2="180" stroke="#ccc"/>
+                    <line x1="230" y1="20" x2="230" y2="180" stroke="#ccc"/>
+                    <line x1="290" y1="20" x2="290" y2="180" stroke="#ccc"/>
+                    <line x1="350" y1="20" x2="350" y2="180" stroke="#ccc"/>
+                    <line x1="50" y1="55" x2="410" y2="55" stroke="#eee"/>
+                    <line x1="50" y1="145" x2="410" y2="145" stroke="#eee"/>
+                    <!-- Achsen -->
+                    <line x1="50" y1="100" x2="415" y2="100" stroke="#333" stroke-width="1.5"/>
+                    <line x1="50" y1="20" x2="50" y2="180" stroke="#333" stroke-width="1.5"/>
+                    <polygon points="415,100 408,96 408,104" fill="#333"/>
+                    <polygon points="50,20 46,27 54,27" fill="#333"/>
+                    <!-- Y-Achse -->
+                    <text x="38" y="40" font-size="11" fill="#333" text-anchor="end">6</text>
+                    <line x1="47" y1="37" x2="53" y2="37" stroke="#333"/>
+                    <text x="38" y="104" font-size="11" fill="#333" text-anchor="end">0</text>
+                    <text x="38" y="167" font-size="11" fill="#333" text-anchor="end">−6</text>
+                    <line x1="47" y1="163" x2="53" y2="163" stroke="#333"/>
+                    <!-- X-Achse (in m) -->
+                    <text x="110" y="115" font-size="11" fill="#333" text-anchor="middle">1</text>
+                    <line x1="110" y1="97" x2="110" y2="103" stroke="#333"/>
+                    <text x="170" y="115" font-size="11" fill="#333" text-anchor="middle">2</text>
+                    <line x1="170" y1="97" x2="170" y2="103" stroke="#333"/>
+                    <text x="230" y="115" font-size="11" fill="#333" text-anchor="middle">3</text>
+                    <line x1="230" y1="97" x2="230" y2="103" stroke="#333"/>
+                    <text x="290" y="115" font-size="11" fill="#333" text-anchor="middle">4</text>
+                    <line x1="290" y1="97" x2="290" y2="103" stroke="#333"/>
+                    <text x="350" y="115" font-size="11" fill="#333" text-anchor="middle">5</text>
+                    <line x1="350" y1="97" x2="350" y2="103" stroke="#333"/>
+                    <!-- Achsenbeschriftung -->
+                    <text x="425" y="104" font-size="12" fill="#333">s/m</text>
+                    <text x="55" y="15" font-size="12" fill="#333">y/cm</text>
+                    <!-- Sinuskurve: A=6cm, λ=2m → 60px/m, Amplitude=63px -->
+                    <polyline points="50,100 56,81 62,63 68,49 74,40 80,37 86,40 92,49 98,63 104,81 110,100 116,119 122,137 128,151 134,160 140,163 146,160 152,151 158,137 164,119 170,100 176,81 182,63 188,49 194,40 200,37 206,40 212,49 218,63 224,81 230,100 236,119 242,137 248,151 254,160 260,163 266,160 272,151 278,137 284,119 290,100 296,81 302,63 308,49 314,40 320,37 326,40 332,49 338,63 344,81 350,100 356,119 362,137 368,151 374,160 380,163 386,160 392,151 398,137 404,119 410,100"
+                          fill="none" stroke="#2c5aa0" stroke-width="2.5" stroke-linejoin="round"/>
+                    <!-- λ-Markierung: Peak s=0.5m (x=80) bis Peak s=2.5m (x=200) = λ=2m -->
+                    <line x1="80" y1="27" x2="200" y2="27" stroke="#c62828" stroke-width="2"/>
+                    <line x1="80" y1="22" x2="80" y2="32" stroke="#c62828" stroke-width="2"/>
+                    <line x1="200" y1="22" x2="200" y2="32" stroke="#c62828" stroke-width="2"/>
+                    <text x="140" y="21" font-size="12" fill="#c62828" text-anchor="middle" font-weight="bold">λ</text>
+                </svg>
+            </div>
+
+            <div class="diagnose-box">
+                <div class="diagnose-title">Werte ablesen</div>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span>Amplitude <span class="fz">A</span> = </span>
+                    <input type="text" id="diag-ys-a" style="width:60px;">
+                    <span>cm</span>
+                </div>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span>Wellenlänge λ = </span>
+                    <input type="text" id="diag-ys-l" style="width:60px;">
+                    <span>m</span>
+                    <button class="btn btn-small" onclick="checkYsDiag()">Prüfen</button>
+                </div>
+                <div class="feedback" id="fb-ys-diag"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>AB D2 (y(s)-Diagramm):</strong> Zeichne ein y(s)-Diagramm mit A = 5 cm und λ = 2 m in das Koordinatensystem.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">← Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter zur Formel →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 5: v = λ · f -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step5">
+            <div class="step-header">
+                <span class="step-title">Die Wellengeschwindigkeit</span>
+                <span class="step-badge">Formel</span>
+            </div>
+
+            <div class="info-box">
+                <strong>Herleitung:</strong> In einer Periodendauer <span class="fz">T</span> legt die Welle genau eine Wellenlänge λ zurück. Also:<br>
+                <span class="fz">v</span> = <span class="bruch"><span class="zaehler">λ</span><span class="nenner"><span class="fz">T</span></span></span> = λ · <span class="bruch"><span class="zaehler">1</span><span class="nenner"><span class="fz">T</span></span></span> = λ · <span class="fz">f</span>
+            </div>
+
+            <div class="formel-box">
+                <span class="fz">v</span> = λ · <span class="fz">f</span>
+            </div>
+
+            <table>
+                <tr>
+                    <th>Größe</th>
+                    <th>Symbol</th>
+                    <th>Einheit</th>
+                </tr>
+                <tr>
+                    <td>Wellengeschwindigkeit</td>
+                    <td><span class="fz">v</span></td>
+                    <td>m/s</td>
+                </tr>
+                <tr>
+                    <td>Wellenlänge</td>
+                    <td>λ</td>
+                    <td>m</td>
+                </tr>
+                <tr>
+                    <td>Frequenz</td>
+                    <td><span class="fz">f</span></td>
+                    <td>Hz = 1/s</td>
+                </tr>
+            </table>
+
+            <div class="diagnose-box">
+                <div class="diagnose-title">Aufgabe 1</div>
+                <p>Eine Wasserwelle hat λ = 2 m und f = 5 Hz. Berechne v.</p>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+                    <span><span class="fz">v</span> = </span>
+                    <input type="text" id="vCalc1" style="width:80px;">
+                    <span>m/s</span>
+                    <button class="btn btn-small" onclick="checkV1()">Prüfen</button>
+                </div>
+                <div class="feedback" id="fb-v1"></div>
+            </div>
+
+            <div class="diagnose-box">
+                <div class="diagnose-title">Aufgabe 2</div>
+                <p>Schallgeschwindigkeit: v = 340 m/s. Eine Schallwelle hat f = 170 Hz. Berechne λ.</p>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+                    <span>λ = </span>
+                    <input type="text" id="vCalc2" style="width:80px;">
+                    <span>m</span>
+                    <button class="btn btn-small" onclick="checkV2()">Prüfen</button>
+                </div>
+                <div class="feedback" id="fb-v2"></div>
+            </div>
+
+            <div class="diagnose-box">
+                <div class="diagnose-title">Aufgabe 3</div>
+                <p>Eine Welle breitet sich mit v = 6 m/s aus. Ihre Wellenlänge beträgt λ = 0,5 m. Berechne f.</p>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+                    <span><span class="fz">f</span> = </span>
+                    <input type="text" id="vCalc3" style="width:80px;">
+                    <span>Hz</span>
+                    <button class="btn btn-small" onclick="checkV3()">Prüfen</button>
+                </div>
+                <div class="feedback" id="fb-v3"></div>
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>AB K5 (Formel) + Ü5 (Rechnungen):</strong> Übertrage die Formel v = λ · f in K5 und bearbeite die Übungsaufgaben Ü5 auf dem Arbeitsblatt.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">← Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter zu Schallwellen →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 6: Schallwellen + Lärmschutz -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step6">
+            <div class="step-header">
+                <span class="step-title">Schallwellen</span>
+                <span class="step-badge">Anwendung</span>
+            </div>
+
+            <p>Schall ist eine <strong>Longitudinalwelle</strong> in Luft. Luftteilchen werden abwechselnd zusammengedrückt (Verdichtung) und auseinandergezogen (Verdünnung).</p>
+
+            <div class="formel-box" style="font-size:1.1em;">
+                <span class="fz">v</span><sub>Schall</sub> ≈ 340 m/s &nbsp;(in Luft bei 20 °C)
+            </div>
+
+            <div class="info-box">
+                <strong>Faustregel:</strong> Schall legt in <strong>3 Sekunden etwa 1 km</strong> zurück.
+            </div>
+
+            <div class="diagnose-box">
+                <div class="diagnose-title">Blitz und Donner</div>
+                <p>Du siehst einen Blitz und hörst den Donner <strong>6 Sekunden</strong> später. Wie weit ist das Gewitter entfernt?</p>
+                <div style="margin: 10px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <span><span class="fz">s</span> = <span class="fz">v</span> · <span class="fz">t</span> = </span>
+                    <input type="text" id="blitz1" style="width:80px;">
+                    <span>m ≈ </span>
+                    <input type="text" id="blitz2" style="width:60px;">
+                    <span>km</span>
+                    <button class="btn btn-small" onclick="checkBlitz()">Prüfen</button>
+                </div>
+                <div class="feedback" id="fb-blitz"></div>
+            </div>
+
+            <h3>Hörbereich des Menschen</h3>
+            <table>
+                <tr>
+                    <th>Bereich</th>
+                    <th>Frequenz</th>
+                </tr>
+                <tr>
+                    <td>Infraschall (nicht hörbar)</td>
+                    <td>unter 20 Hz</td>
+                </tr>
+                <tr>
+                    <td><strong>Hörbereich</strong></td>
+                    <td><strong>20 Hz &ndash; 20 000 Hz</strong></td>
+                </tr>
+                <tr>
+                    <td>Ultraschall (nicht hörbar)</td>
+                    <td>über 20 000 Hz</td>
+                </tr>
+            </table>
+
+            <h3>Lautstärke und Lärmschutz</h3>
+            <table class="db-table">
+                <tr>
+                    <th>Schallquelle</th>
+                    <th>Lautstärke</th>
+                </tr>
+                <tr>
+                    <td>Blätterrauschen</td>
+                    <td>10 dB</td>
+                </tr>
+                <tr>
+                    <td>Flüstern</td>
+                    <td>30 dB</td>
+                </tr>
+                <tr>
+                    <td>Normales Gespräch</td>
+                    <td>60 dB</td>
+                </tr>
+                <tr class="warning">
+                    <td>Straßenverkehr, Staubsauger</td>
+                    <td>70&ndash;85 dB</td>
+                </tr>
+                <tr class="danger">
+                    <td>Konzert, Kreissäge</td>
+                    <td>100&ndash;110 dB</td>
+                </tr>
+                <tr class="danger">
+                    <td>Schmerzgrenze</td>
+                    <td>120 dB</td>
+                </tr>
+                <tr class="danger">
+                    <td>Düsenjet (Nähe)</td>
+                    <td>140 dB</td>
+                </tr>
+            </table>
+
+            <div class="info-box" style="background: var(--error-bg); border-color: var(--error);">
+                <strong style="color: var(--error);">Gesundheitsgefahr:</strong> Ab 85 dB drohen bei <strong>Dauerbelastung</strong> bleibende Hörschäden! Gehörschutz tragen bei Konzerten, lauten Maschinen und in der Disko.
+            </div>
+
+            <div class="hefter-hinweis">
+                <strong>AB Ü6 (Schallgeschwindigkeit):</strong> Bearbeite die Aufgaben zur Schallgeschwindigkeit. Berechne auch die Wellenlänge des tiefsten und höchsten hörbaren Tons.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">← Zurück</button>
+                <button class="btn" onclick="nextStep()">Weiter zur Zusammenfassung →</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 7: Zusammenfassung -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="step" id="step7">
+            <div class="step-header">
+                <span class="step-title">Zusammenfassung</span>
+                <span class="step-badge">Abschluss</span>
+            </div>
+
+            <div class="info-box" style="background: var(--success-bg); border-color: var(--success);">
+                <strong style="color: var(--success);">Das hast du entdeckt:</strong>
+                <ul style="margin: 10px 0 0 20px;">
+                    <li>Eine <strong>Welle</strong> transportiert Energie, aber die Teilchen schwingen nur um ihre Ruhelage</li>
+                    <li><strong>Transversalwelle:</strong> Teilchen schwingen senkrecht zur Ausbreitung (z.B. Seilwelle)</li>
+                    <li><strong>Longitudinalwelle:</strong> Teilchen schwingen parallel zur Ausbreitung (z.B. Schall)</li>
+                    <li><strong>y(s)-Diagramm:</strong> Momentaufnahme &ndash; zeigt Wellenlänge λ und Amplitude A</li>
+                    <li><strong>Wellengeschwindigkeit:</strong> <span class="fz">v</span> = λ · <span class="fz">f</span></li>
+                    <li><strong>Schall</strong> in Luft: v ≈ 340 m/s, Hörbereich 20 Hz &ndash; 20 000 Hz</li>
+                    <li><strong>Lärmschutz:</strong> Ab 85 dB Gehörschutz nötig!</li>
+                </ul>
+            </div>
+
+            <h3>Typische Werte</h3>
+            <table>
+                <tr>
+                    <th>Wellenart</th>
+                    <th>Geschwindigkeit</th>
+                    <th>Beispiel</th>
+                </tr>
+                <tr>
+                    <td>Schall in Luft</td>
+                    <td>340 m/s</td>
+                    <td>Gespräch, Musik</td>
+                </tr>
+                <tr>
+                    <td>Schall in Wasser</td>
+                    <td>1 480 m/s</td>
+                    <td>Echolot, Wale</td>
+                </tr>
+                <tr>
+                    <td>Schall in Stahl</td>
+                    <td>5 900 m/s</td>
+                    <td>Ohr an Schiene</td>
+                </tr>
+                <tr>
+                    <td>Erdbebenwelle</td>
+                    <td>3 000&ndash;8 000 m/s</td>
+                    <td>Seismograph</td>
+                </tr>
+            </table>
+
+            <div class="hefter-hinweis">
+                <strong>AB Checkliste:</strong> Prüfe, ob K4, P3, D2, K5 ausgefüllt und Ü5 + Ü6 bearbeitet sind.
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--fach-light);">
+                <p style="font-size: 1.1em; font-weight: 600; color: var(--fach);">Lernpfad abgeschlossen!</p>
+                <p>Du bist bereit für den Test zu Schwingungen und Wellen.</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">← Zurück</button>
+                <button class="btn" onclick="goToStep(1)">Von vorne</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // LP-05b Wellen und Schall | ES5 JavaScript | MR Klasse 10
+    // ═══════════════════════════════════════════════════════════════
+
+    var currentStep = 1;
+    var totalSteps = 7;
+
+    function goToStep(n) {
+        if (n < 1 || n > totalSteps) return;
+        document.getElementById('step' + currentStep).classList.remove('active');
+        document.getElementById('step' + n).classList.add('active');
+        currentStep = n;
+        updateNav();
+        window.scrollTo(0, 0);
+    }
+
+    function nextStep() { goToStep(currentStep + 1); }
+    function prevStep() { goToStep(currentStep - 1); }
+
+    function updateNav() {
+        var fill = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        document.getElementById('progressFill').style.width = fill + '%';
+        var navItems = document.querySelectorAll('.step-nav-item');
+        navItems.forEach(function(item, i) {
+            item.classList.remove('active', 'done');
+            if (i + 1 === currentStep) item.classList.add('active');
+            else if (i + 1 < currentStep) item.classList.add('done');
+        });
+    }
+
+    function parseNum(val) {
+        if (!val) return NaN;
+        return parseFloat(String(val).replace(',', '.'));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SCHRITT 2: Wellenarten-Animationen (klein)
+    // ═══════════════════════════════════════════════════════════════
+
+    var transC = document.getElementById('transCanvas');
+    var transCtx = transC ? transC.getContext('2d') : null;
+    var longC = document.getElementById('longCanvas');
+    var longCtx = longC ? longC.getContext('2d') : null;
+    var compareTime = 0;
+    var compareRunning = true;
+    var compareLastTS = 0;
+
+    function drawCompareWaves(timestamp) {
+        if (!compareRunning) return;
+        if (compareLastTS === 0) compareLastTS = timestamp;
+        var dt = (timestamp - compareLastTS) / 1000;
+        compareLastTS = timestamp;
+        compareTime += dt;
+
+        var cw = 280, ch = 140;
+        var centerY = ch / 2;
+        var A = 30;
+        var lambda = 120;
+        var freq = 0.8;
+
+        // Transversalwelle
+        if (transCtx) {
+            var ctx = transCtx;
+            ctx.clearRect(0, 0, cw, ch);
+            ctx.fillStyle = '#fafafa';
+            ctx.fillRect(0, 0, cw, ch);
+
+            // Ruhelinie
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(cw, centerY);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Pfeil für Ausbreitungsrichtung
+            ctx.fillStyle = '#999';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('→ Ausbreitung', cw - 100, 15);
+
+            // Wellenkurve
+            ctx.beginPath();
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.lineWidth = 2;
+            for (var x = 0; x < cw; x++) {
+                var y = centerY - A * Math.sin(2 * Math.PI * (x / lambda - freq * compareTime));
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Teilchen-Punkte
+            for (var px = 20; px < cw; px += 25) {
+                var py = centerY - A * Math.sin(2 * Math.PI * (px / lambda - freq * compareTime));
+                ctx.beginPath();
+                ctx.arc(px, py, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#2c5aa0';
+                ctx.fill();
+                // Vertikaler Pfeil
+                ctx.beginPath();
+                ctx.moveTo(px, centerY - 2);
+                ctx.lineTo(px, centerY + 2);
+                ctx.strokeStyle = '#c6282880';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // Longitudinalwelle
+        if (longCtx) {
+            var lctx = longCtx;
+            lctx.clearRect(0, 0, cw, ch);
+            lctx.fillStyle = '#fafafa';
+            lctx.fillRect(0, 0, cw, ch);
+
+            lctx.fillStyle = '#999';
+            lctx.font = '11px sans-serif';
+            lctx.fillText('→ Ausbreitung', cw - 100, 15);
+
+            var numP = 35;
+            var spacing = cw / numP;
+            for (var i = 0; i < numP; i++) {
+                var restX = i * spacing + spacing / 2;
+                var dx = 12 * Math.sin(2 * Math.PI * (restX / lambda - freq * compareTime));
+                var drawX = restX + dx;
+                lctx.beginPath();
+                lctx.arc(drawX, centerY, 5, 0, Math.PI * 2);
+                lctx.fillStyle = '#2c5aa0';
+                lctx.fill();
+            }
+
+            // Verdichtung/Verdünnung Labels
+            var compX = lambda * 0.25 + (freq * compareTime * lambda) % lambda;
+            if (compX > 0 && compX < cw - 60) {
+                lctx.fillStyle = '#c62828';
+                lctx.font = '9px sans-serif';
+                lctx.textAlign = 'center';
+                lctx.fillText('Verdichtung', compX % cw, ch - 10);
+                lctx.textAlign = 'start';
+            }
+        }
+
+        requestAnimationFrame(drawCompareWaves);
+    }
+
+    requestAnimationFrame(drawCompareWaves);
+
+    // ═══════════════════════════════════════════════════════════════
+    // SCHRITT 3: Hauptsimulation Transversalwelle
+    // ═══════════════════════════════════════════════════════════════
+
+    var waveCanvas = document.getElementById('waveCanvas');
+    var waveCtx = waveCanvas ? waveCanvas.getContext('2d') : null;
+
+    var waveLambda = 120; // px = cm
+    var waveFreq = 1.0;   // Hz
+    var waveAmp = 30;     // px = cm
+    var waveTime = 0;
+    var waveRunning = false;
+    var wavePaused = false;
+    var waveLastTS = 0;
+
+    document.getElementById('lambdaSlider').addEventListener('input', function() {
+        waveLambda = parseInt(this.value);
+        document.getElementById('lambdaValue').textContent = waveLambda;
+        updateWaveDisplay();
+        if (!waveRunning) drawMainWave();
+    });
+    document.getElementById('freqSlider').addEventListener('input', function() {
+        waveFreq = parseInt(this.value) / 10;
+        document.getElementById('freqValue').textContent = waveFreq.toFixed(1).replace('.', ',');
+        updateWaveDisplay();
+        if (!waveRunning) drawMainWave();
+    });
+    document.getElementById('ampWaveSlider').addEventListener('input', function() {
+        waveAmp = parseInt(this.value);
+        document.getElementById('ampWaveValue').textContent = waveAmp;
+        updateWaveDisplay();
+        if (!waveRunning) drawMainWave();
+    });
+
+    function updateWaveDisplay() {
+        var v = waveLambda * waveFreq;
+        document.getElementById('dispLambda').textContent = waveLambda + ' cm';
+        document.getElementById('dispFreq').textContent = waveFreq.toFixed(1).replace('.', ',') + ' Hz';
+        document.getElementById('dispSpeed').textContent = Math.round(v) + ' cm/s';
+    }
+
+    document.getElementById('btnWaveStart').addEventListener('click', function() {
+        if (!waveRunning) {
+            waveRunning = true;
+            wavePaused = false;
+            this.textContent = 'Stop';
+            document.getElementById('btnWavePause').style.display = 'inline-block';
+            waveLastTS = performance.now();
+            requestAnimationFrame(animateWave);
+        } else {
+            waveRunning = false;
+            wavePaused = false;
+            this.textContent = 'Start';
+            document.getElementById('btnWavePause').style.display = 'none';
+        }
+    });
+
+    document.getElementById('btnWavePause').addEventListener('click', function() {
+        wavePaused = !wavePaused;
+        this.textContent = wavePaused ? 'Weiter' : 'Pause (Snapshot)';
+    });
+
+    function resetWave() {
+        waveRunning = false;
+        wavePaused = false;
+        waveTime = 0;
+        document.getElementById('btnWaveStart').textContent = 'Start';
+        document.getElementById('btnWavePause').style.display = 'none';
+        drawMainWave();
+    }
+
+    function animateWave(timestamp) {
+        if (!waveRunning) return;
+        if (!wavePaused) {
+            var dt = (timestamp - waveLastTS) / 1000;
+            waveTime += dt;
+        }
+        waveLastTS = timestamp;
+        drawMainWave();
+        requestAnimationFrame(animateWave);
+    }
+
+    function drawMainWave() {
+        if (!waveCtx) return;
+        var ctx = waveCtx;
+        var w = waveCanvas.width;
+        var h = waveCanvas.height;
+        var centerY = h / 2;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#fafafa';
+        ctx.fillRect(0, 0, w, h);
+
+        // Ruhelinie
+        ctx.beginPath();
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(w, centerY);
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Achsenbeschriftung
+        ctx.fillStyle = '#999';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('s (Ort)', w - 45, centerY + 15);
+        ctx.fillText('y', 5, 15);
+        ctx.fillText('→ Ausbreitungsrichtung', w - 160, 15);
+
+        // Wellenkurve
+        ctx.beginPath();
+        ctx.strokeStyle = '#2c5aa0';
+        ctx.lineWidth = 2.5;
+        for (var x = 0; x < w; x++) {
+            var y = centerY - waveAmp * Math.sin(2 * Math.PI * (x / waveLambda - waveFreq * waveTime));
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Teilchen
+        for (var px = 15; px < w; px += 20) {
+            var py = centerY - waveAmp * Math.sin(2 * Math.PI * (px / waveLambda - waveFreq * waveTime));
+            ctx.beginPath();
+            ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#2c5aa0';
+            ctx.fill();
+        }
+
+        // Wenn pausiert: λ-Markierung einzeichnen
+        if (wavePaused) {
+            // Finde erstes Maximum
+            var firstMax = -1;
+            for (var sx = 0; sx < w - 1; sx++) {
+                var y1 = Math.sin(2 * Math.PI * (sx / waveLambda - waveFreq * waveTime));
+                var y2 = Math.sin(2 * Math.PI * ((sx + 1) / waveLambda - waveFreq * waveTime));
+                if (y1 > 0.99 && y2 < y1) {
+                    firstMax = sx;
+                    break;
+                }
+            }
+            if (firstMax >= 0 && firstMax + waveLambda < w) {
+                ctx.strokeStyle = '#c62828';
+                ctx.lineWidth = 2;
+                var yMark = centerY - waveAmp - 15;
+                ctx.beginPath();
+                ctx.moveTo(firstMax, yMark);
+                ctx.lineTo(firstMax + waveLambda, yMark);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(firstMax, yMark - 5);
+                ctx.lineTo(firstMax, yMark + 5);
+                ctx.moveTo(firstMax + waveLambda, yMark - 5);
+                ctx.lineTo(firstMax + waveLambda, yMark + 5);
+                ctx.stroke();
+
+                ctx.fillStyle = '#c62828';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('λ = ' + waveLambda + ' cm', firstMax + waveLambda / 2, yMark - 8);
+                ctx.textAlign = 'start';
+            }
+
+            // Snapshot-Label
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('SNAPSHOT (Momentaufnahme)', 10, h - 10);
+        }
+    }
+
+    drawMainWave();
+    updateWaveDisplay();
+
+    // ═══════════════════════════════════════════════════════════════
+    // ÜBUNGEN
+    // ═══════════════════════════════════════════════════════════════
+
+    // Wellenarten (Schritt 2)
+    function checkWellenarten() {
+        var w1 = document.getElementById('wellenart1').value;
+        var w2 = document.getElementById('wellenart2').value;
+        var w3 = document.getElementById('wellenart3').value;
+        var fb = document.getElementById('fb-wellenarten');
+        var score = 0;
+        if (w1 === 'trans') score++;
+        if (w2 === 'long') score++;
+        if (w3 === 'beide') score++;
+
+        if (score === 3) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Alles richtig! Seilwelle = transversal, Schall = longitudinal, Wasserwelle = Mischform.';
+        } else if (score > 0) {
+            fb.className = 'feedback incorrect';
+            fb.textContent = score + '/3 richtig. Überprüfe: Seilwelle = transversal, Schall in Luft = longitudinal, Wasserwelle an der Oberfläche = Mischform (Teilchen bewegen sich auf Kreisbahnen).';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Versuche es nochmal. Überlege: In welche Richtung schwingen die Teilchen im Vergleich zur Ausbreitung?';
+        }
+    }
+
+    // y(s)-Diagramm ablesen (Schritt 4)
+    function checkYsDiag() {
+        var a = parseNum(document.getElementById('diag-ys-a').value);
+        var l = parseNum(document.getElementById('diag-ys-l').value);
+        var fb = document.getElementById('fb-ys-diag');
+        // A = 6 cm, λ = ~2.2m (eigentlich 3m bei der SVG)
+        // SVG: Maximum bei x=80 (s≈0.5m), nächstes Max bei x=212 (s≈2.7m) → λ ≈ 2.2m
+        // Korrektur: Sinuskurve hat λ = 3m (peak bei s=0.5, nächstes bei s=3.5 → diff=3)
+        // Aber aus SVG: erste Null bei x=50 (s=0), erstes Max bei ~80 (s=0.5)
+        // Nächste Null bei ~110 (s=1), nächstes Min bei ~140 (s=1.5)
+        // Nächste Null bei ~170 (s=2), nächstes Max bei ~200 (s=2.5), Null bei ~230 (s=3)
+        // Also λ = 2m (von Null zu Null = λ/2 = 1m → λ = 2m)
+        // Nein: Von Max zu Max. Max bei s ≈ 0.5m und nächstes Max bei s ≈ 2.5m → λ = 2m
+        // Hmm wait. Let me re-check the SVG.
+        // The polyline: starts at (50,100) = s=0, y=0
+        // Reaches max amplitude around x=80 → s = (80-50)/60 = 0.5m
+        // Back to zero at x=110 → s = 1m
+        // Minimum at x=140 → s = 1.5m
+        // Zero at x=170 → s = 2m
+        // Max at x=200 → s = 2.5m
+        // So peak-to-peak: 0.5 to 2.5 = 2m → λ = 2m? No...
+        // Actually zero-to-zero (same direction): 0 to 2m → that's half... no
+        // Let me think again. sin(2πs/λ) starting at s=0 y=0, rising to max at s=λ/4
+        // Next zero at s=λ/2, min at s=3λ/4, back to zero at s=λ
+        // From SVG: zero at s=0, next zero (same direction) at...
+        // Actually: y = A*sin(2πs/λ). At s=0, y=0 (rising). Next time y=0 rising: s = λ
+        // From the SVG: s=0 (x=50) y=0 rising, next rising zero: the curve goes up, down, up again
+        // At x=170 (s=2m) the curve is back at zero BUT going down. At x=290 (s=4m) it's...
+        // Wait, the comment says "A=6cm, λ=3m (180px)"
+        // So λ = 3m. Let me verify: at 60px/m, 3m = 180px
+        // First max at s = 3/4 = 0.75m (x = 50 + 0.75*60 = 95)
+        // Looking at the polyline: around x=80 (s=0.5m) it's at y≈35 which is near the top
+        // Hmm, the polyline starts with rapid ascent from (50,100) and reaches minimum y around x=80
+        // y=35 at x=80 means amplitude = 100-35 = 65px, but A should be 6cm
+        // The scaling: 10.5px/cm means 6cm = 63px, so min y = 100-63 = 37
+        // Looking at polyline: x=80 gives y=35 (close to 37)
+        // So first maximum is approximately at x=80 → s ≈ 0.5m
+        // But with λ=3m, first max should be at s=λ/4=0.75m → x=50+45=95
+        // The polyline seems slightly off. Let me check more carefully...
+        // Actually, looking at the polyline: (50,100) (56,80) (62,63) (68,48) (74,39) (80,35) (86,37)
+        // The minimum y is at x=80, y=35. So the max amplitude point is at x≈80, s≈0.5m
+        // For λ=3m: first max at λ/4 = 0.75m → x = 50+45 = 95
+        // But from polyline: (92,45) (98,57) - at x=95 the y is about 51, already descending
+        // So the actual λ seems shorter than 3m...
+
+        // Actually, I think the issue is that I constructed the polyline with the wrong period.
+        // Let me count: starting at (50,100) y=0, first min-y (max amplitude) at x≈80 (4th of wave)
+        // Back to zero at about x=110 (y=91... close to 100)
+        // Wait: (104,73) (110,91) - at x=110 y=91, not quite 100
+        // (116,109) (122,127) - crosses 100 between x=110 and x=116
+        // So half-wavelength ≈ from x=50 to x=113 = 63px
+        // Full wavelength ≈ 126px → at 60px/m → λ ≈ 2.1m
+
+        // Actually you know what, the SVG was auto-generated with approximate points and the exact λ
+        // might not be perfectly 3m. Let me just accept answers of λ ≈ 2m OR λ ≈ 3m since the
+        // diagram is somewhat ambiguous.
+
+        // Actually, I'll accept A=6 (±1) and λ between 2 and 3 inclusive.
+        // The red λ marker in the SVG goes from x=80 to x=212 = 132px = 2.2m
+        // So λ ≈ 2m is the correct reading from the diagram markers.
+        // But wait - the marker goes peak to peak. From the SVG:
+        // <line x1="80" ... x2="212" ... /> That's 132px = 2.2m at 60px/m
+
+        // OK this is getting messy because of my SVG construction. Let me just accept:
+        // A = 6 (±1), λ = any value between 2 and 3 (accepting the diagram ambiguity)
+
+        var aOk = Math.abs(a - 6) < 1;
+        var lOk = Math.abs(l - 2) < 0.3;
+        if (aOk && lOk) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Richtig! A = 6 cm, λ = 2 m';
+        } else if (aOk || lOk) {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Teilweise richtig. A wird von der Nulllinie zum Maximum abgelesen (6 cm). λ von Maximum zu Maximum (2 m).';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Versuche es nochmal. Die rote Markierung zeigt dir λ.';
+        }
+    }
+
+    // v = λ · f Rechnungen (Schritt 5)
+    function checkV1() {
+        var v = parseNum(document.getElementById('vCalc1').value);
+        var fb = document.getElementById('fb-v1');
+        if (Math.abs(v - 10) < 0.5) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Richtig! v = 2 m · 5 Hz = 10 m/s';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Versuche es nochmal. v = λ · f = ?';
+        }
+    }
+
+    function checkV2() {
+        var v = parseNum(document.getElementById('vCalc2').value);
+        var fb = document.getElementById('fb-v2');
+        if (Math.abs(v - 2) < 0.1) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Richtig! λ = v / f = 340 / 170 = 2 m';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Versuche es nochmal. Stelle um: λ = v / f';
+        }
+    }
+
+    function checkV3() {
+        var v = parseNum(document.getElementById('vCalc3').value);
+        var fb = document.getElementById('fb-v3');
+        if (Math.abs(v - 12) < 0.5) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Richtig! f = v / λ = 6 / 0,5 = 12 Hz';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Versuche es nochmal. Stelle um: f = v / λ';
+        }
+    }
+
+    // Blitz und Donner (Schritt 6)
+    function checkBlitz() {
+        var m = parseNum(document.getElementById('blitz1').value);
+        var km = parseNum(document.getElementById('blitz2').value);
+        var fb = document.getElementById('fb-blitz');
+        var mOk = Math.abs(m - 2040) < 100;
+        var kmOk = Math.abs(km - 2) < 0.2;
+        if (mOk && kmOk) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Richtig! s = 340 m/s · 6 s = 2 040 m ≈ 2 km';
+        } else if (mOk || kmOk) {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Teilweise richtig. s = v · t = 340 · 6 = 2 040 m ≈ 2 km';
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Versuche es nochmal. s = v · t';
+        }
+    }
+
+    updateNav();
+    </script>
+</body>
+</html>

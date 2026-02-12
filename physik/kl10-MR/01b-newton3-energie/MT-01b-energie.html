@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Mechanische Energie</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f0ff;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .platz-field select {
+            padding: 5px 10px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-width: 80px;
+        }
+        .aufgabe {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .aufgabe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .aufgabe-title { font-weight: 600; color: var(--fach); }
+        .aufgabe-punkte {
+            font-size: 0.85em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 10px;
+        }
+        .operator { font-weight: 600; color: var(--fach); }
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        p { margin-bottom: 10px; }
+        .mc-options { margin: 15px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .mc-option:hover { border-color: var(--fach); }
+        .mc-option.selected {
+            border-color: var(--fach);
+            background: var(--fach-light);
+        }
+        .mc-option.correct-answer {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+        .mc-option.wrong-answer {
+            border-color: var(--error);
+            background: var(--error-bg);
+        }
+        .mc-option input { margin-right: 10px; }
+        .matching-container { margin: 15px 0; }
+        .matching-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        .matching-left {
+            width: 80px;
+            font-weight: 600;
+            font-family: "Times New Roman", serif;
+            font-style: italic;
+        }
+        .matching-select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-width: 180px;
+        }
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .calc-input {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            font-size: 1em;
+            width: 100px;
+            text-align: center;
+        }
+        .calc-input:focus {
+            outline: 2px solid var(--fach);
+            border-color: var(--fach);
+        }
+        .calc-input.correct { border-color: var(--success); background: var(--success-bg); }
+        .calc-input.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .unit-select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+        }
+        .unit-select.correct { border-color: var(--success); background: var(--success-bg); }
+        .unit-select.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .feedback {
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .feedback.correct {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            color: var(--success);
+            display: block;
+        }
+        .feedback.partial {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            display: block;
+        }
+        .feedback.incorrect {
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            color: var(--error);
+            display: block;
+        }
+        .solution-box {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-left: 3px solid var(--fach);
+            font-size: 0.9em;
+            display: none;
+        }
+        .solution-box.visible { display: block; }
+        .solution-box strong { color: var(--fach); }
+        .results {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .results h2 { color: var(--fach); margin-bottom: 15px; }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .result-box {
+            text-align: center;
+            padding: 15px;
+            background: var(--fach-light);
+        }
+        .result-box .value { font-size: 1.8em; font-weight: 600; color: var(--fach); }
+        .result-box .label { font-size: 0.85em; color: var(--text-muted); }
+        .grade-display {
+            text-align: center;
+            padding: 20px;
+            background: var(--fach);
+            color: var(--white);
+        }
+        .grade-display .grade { font-size: 3em; font-weight: 700; }
+        .grade-display .label { font-size: 0.9em; opacity: 0.9; }
+        .grading-table {
+            margin-top: 15px;
+            font-size: 0.8em;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .grading-table th, .grading-table td {
+            border: 1px solid var(--border);
+            padding: 5px 8px;
+            text-align: center;
+        }
+        .grading-table th { background: var(--bg); }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--fach);
+            border: 1px solid var(--fach);
+        }
+        .btn-print {
+            background: var(--text-muted);
+        }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .hinweis {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        .teil { margin-top: 15px; }
+        .teil-label { font-weight: 600; margin-bottom: 5px; }
+        .schwierigkeit {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+        .locked-notice {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .locked-notice.visible { display: block; }
+        @media print {
+            body { background: white; font-size: 11pt; }
+            .container { max-width: 100%; padding: 10px; }
+            .btn, .button-row { display: none !important; }
+            .aufgabe { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ccc; }
+            .results { border: 2px solid #333; }
+            .grade-display { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .locked-notice { display: none !important; }
+            header { background: #2c5aa0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Stundenleistung: Mechanische Energie</h1>
+            <p>Physik Klasse 10 MR | MT-01b | 20 Minuten | 26 BE</p>
+        </header>
+
+        <div class="locked-notice" id="lockedNotice">
+            <strong>Test bereits abgegeben!</strong> Ergebnisse werden unten angezeigt.
+        </div>
+
+        <div class="info-bar">
+            <div class="platz-field">
+                Platz: <select id="platzNummer">
+                    <option value="">-- wählen --</option>
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                    <option value="P3">P3</option>
+                    <option value="P4">P4</option>
+                    <option value="P5">P5</option>
+                    <option value="P6">P6</option>
+                    <option value="P7">P7</option>
+                    <option value="P8">P8</option>
+                    <option value="P9">P9</option>
+                    <option value="P10">P10</option>
+                    <option value="P11">P11</option>
+                    <option value="P12">P12</option>
+                    <option value="P13">P13</option>
+                    <option value="P14">P14</option>
+                    <option value="P15">P15</option>
+                    <option value="P16">P16</option>
+                    <option value="P17">P17</option>
+                    <option value="P18">P18</option>
+                    <option value="P19">P19</option>
+                    <option value="P20">P20</option>
+                    <option value="P21">P21</option>
+                    <option value="P22">P22</option>
+                    <option value="P23">P23</option>
+                    <option value="P24">P24</option>
+                </select>
+            </div>
+            <div>Datum: <span id="currentDate"></span></div>
+        </div>
+
+        <div class="hinweis">
+            <strong>Hinweise:</strong> g = 10 m/s². Kein Taschenrechner. Formeln auf Arbeitsblatt nutzbar.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 1: MC Energie-Definition (1 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe1">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 1</span>
+                <span class="aufgabe-punkte" id="punkte1">__/1 BE</span>
+            </div>
+            <p><span class="operator">Kreuze an</span>, welche Aussage Energie korrekt beschreibt.</p>
+            <div class="mc-options" id="mc1-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc1" value="0">
+                    Energie ist die Kraft, die auf einen Körper wirkt.
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc1" value="1">
+                    Energie ist die Fähigkeit, Arbeit zu verrichten oder Wärme abzugeben.
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc1" value="2">
+                    Energie ist die Geschwindigkeit eines Körpers.
+                </label>
+                <label class="mc-option" data-value="3">
+                    <input type="radio" name="mc1" value="3">
+                    Energie kann erzeugt und vernichtet werden.
+                </label>
+            </div>
+            <div class="feedback" id="fb1"></div>
+            <div class="solution-box" id="sol1">
+                <strong>Lösung:</strong> Energie ist die Fähigkeit, Arbeit zu verrichten oder Wärme abzugeben.
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 2: Zuordnung Einheiten (4 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe2">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 2</span>
+                <span class="aufgabe-punkte" id="punkte2">__/4 BE</span>
+            </div>
+            <p><span class="operator">Ordne zu</span>: Welche Einheit gehört zu welcher Größe?</p>
+            <div class="matching-container">
+                <div class="matching-row">
+                    <span class="matching-left"><span class="fz">E</span> (Energie)</span>
+                    <select class="matching-select" id="match1">
+                        <option value="">-- wählen --</option>
+                        <option value="J">J (Joule)</option>
+                        <option value="kg">kg</option>
+                        <option value="m">m</option>
+                        <option value="m/s">m/s</option>
+                        <option value="m/s²">m/s²</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="matching-left"><span class="fz">m</span> (Masse)</span>
+                    <select class="matching-select" id="match2">
+                        <option value="">-- wählen --</option>
+                        <option value="J">J (Joule)</option>
+                        <option value="kg">kg</option>
+                        <option value="m">m</option>
+                        <option value="m/s">m/s</option>
+                        <option value="m/s²">m/s²</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="matching-left"><span class="fz">v</span> (Geschw.)</span>
+                    <select class="matching-select" id="match3">
+                        <option value="">-- wählen --</option>
+                        <option value="J">J (Joule)</option>
+                        <option value="kg">kg</option>
+                        <option value="m">m</option>
+                        <option value="m/s">m/s</option>
+                        <option value="m/s²">m/s²</option>
+                    </select>
+                </div>
+                <div class="matching-row">
+                    <span class="matching-left"><span class="fz">h</span> (Höhe)</span>
+                    <select class="matching-select" id="match4">
+                        <option value="">-- wählen --</option>
+                        <option value="J">J (Joule)</option>
+                        <option value="kg">kg</option>
+                        <option value="m">m</option>
+                        <option value="m/s">m/s</option>
+                        <option value="m/s²">m/s²</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb2"></div>
+            <div class="solution-box" id="sol2">
+                <strong>Lösung:</strong> E → J, m → kg, v → m/s, h → m
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 3: E_pot berechnen (2 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe3">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 3</span>
+                <span class="aufgabe-punkte" id="punkte3">__/2 BE</span>
+            </div>
+            <p>Ein Stein (<span class="fz">m</span> = 4 kg) liegt auf einem Dach in <span class="fz">h</span> = 5 m Höhe.</p>
+            <p><span class="operator">Berechne</span> die Lageenergie.</p>
+            <div class="calc-row">
+                <span><span class="fz">E</span><sub>pot</sub> = </span>
+                <input type="text" class="calc-input" id="calc3" inputmode="decimal">
+                <select class="unit-select" id="unit3">
+                    <option value="">Einheit</option>
+                    <option value="J">J</option>
+                    <option value="kg">kg</option>
+                    <option value="N">N</option>
+                    <option value="W">W</option>
+                </select>
+            </div>
+            <div class="feedback" id="fb3"></div>
+            <div class="solution-box" id="sol3">
+                <strong>Lösung:</strong> E<sub>pot</sub> = m·g·h = 4·10·5 = <strong>200 J</strong><br>
+                <span id="sol3-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 4: E_kin berechnen (2 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe4">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 4</span>
+                <span class="aufgabe-punkte" id="punkte4">__/2 BE</span>
+            </div>
+            <p>Ein Ball (<span class="fz">m</span> = 2 kg) fliegt mit <span class="fz">v</span> = 5 m/s.</p>
+            <p><span class="operator">Berechne</span> die Bewegungsenergie.</p>
+            <div class="calc-row">
+                <span><span class="fz">E</span><sub>kin</sub> = </span>
+                <input type="text" class="calc-input" id="calc4" inputmode="decimal">
+                <select class="unit-select" id="unit4">
+                    <option value="">Einheit</option>
+                    <option value="J">J</option>
+                    <option value="kg">kg</option>
+                    <option value="N">N</option>
+                    <option value="W">W</option>
+                </select>
+            </div>
+            <div class="feedback" id="fb4"></div>
+            <div class="solution-box" id="sol4">
+                <strong>Lösung:</strong> E<sub>kin</sub> = ½·m·v² = ½·2·25 = <strong>25 J</strong><br>
+                <span id="sol4-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 5: MC v² (1 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe5">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 5</span>
+                <span class="aufgabe-punkte" id="punkte5">__/1 BE</span>
+            </div>
+            <p>Ein Ball hat bei <span class="fz">v</span> = 4 m/s eine Bewegungsenergie von 16 J.</p>
+            <p><span class="operator">Gib an</span>: Wie groß ist <span class="fz">E</span><sub>kin</sub>, wenn sich die Geschwindigkeit auf <span class="fz">v</span> = 8 m/s verdoppelt?</p>
+            <div class="mc-options" id="mc5-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc5" value="0">
+                    32 J (doppelt so groß)
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc5" value="1">
+                    64 J (viermal so groß)
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc5" value="2">
+                    48 J (dreimal so groß)
+                </label>
+                <label class="mc-option" data-value="3">
+                    <input type="radio" name="mc5" value="3">
+                    8 J (halb so groß)
+                </label>
+            </div>
+            <div class="feedback" id="fb5"></div>
+            <div class="solution-box" id="sol5">
+                <strong>Lösung:</strong> 64 J (viermal so groß). E<sub>kin</sub> ~ v², also (2v)² = 4·v² → 4·16 = 64 J
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 6: Energieerhaltung (3 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe6">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 6</span>
+                <span class="aufgabe-punkte" id="punkte6">__/3 BE</span>
+            </div>
+            <p>Ein Stein (<span class="fz">m</span> = 2 kg) fällt aus <span class="fz">h</span> = 10 m Höhe.</p>
+            <div class="teil">
+                <p class="teil-label">a) <span class="operator">Berechne</span> <span class="fz">E</span><sub>pot</sub> oben.</p>
+                <div class="calc-row">
+                    <span><span class="fz">E</span><sub>pot</sub> = </span>
+                    <input type="text" class="calc-input" id="calc6a" inputmode="decimal">
+                    <span>J</span>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">b) <span class="operator">Gib an</span>, wie groß <span class="fz">E</span><sub>kin</sub> kurz vor dem Aufprall ist.</p>
+                <div class="calc-row">
+                    <span><span class="fz">E</span><sub>kin</sub> = </span>
+                    <input type="text" class="calc-input" id="calc6b" inputmode="decimal">
+                    <span>J</span>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">c) <span class="operator">Kreuze an</span>, warum das so ist:</p>
+                <div class="mc-options" id="mc6c-options">
+                    <label class="mc-option" data-value="0">
+                        <input type="radio" name="mc6c" value="0">
+                        Weil die Masse konstant bleibt.
+                    </label>
+                    <label class="mc-option" data-value="1">
+                        <input type="radio" name="mc6c" value="1">
+                        Weil die gesamte Lageenergie in Bewegungsenergie umgewandelt wird.
+                    </label>
+                    <label class="mc-option" data-value="2">
+                        <input type="radio" name="mc6c" value="2">
+                        Weil die Höhe abnimmt.
+                    </label>
+                </div>
+            </div>
+            <div class="feedback" id="fb6"></div>
+            <div class="solution-box" id="sol6">
+                <strong>Lösung:</strong><br>
+                a) E<sub>pot</sub> = 2·10·10 = <strong>200 J</strong><br>
+                b) E<sub>kin</sub> = <strong>200 J</strong> (Energieerhaltung)<br>
+                c) Weil die gesamte Lageenergie in Bewegungsenergie umgewandelt wird.<br>
+                <span id="sol6-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 7: MC Reibung (1 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe7">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 7</span>
+                <span class="aufgabe-punkte" id="punkte7">__/1 BE</span>
+            </div>
+            <p>Ein Kind rutscht eine Rutsche hinunter und kommt unten langsamer an als berechnet.</p>
+            <p><span class="operator">Gib an</span>: Was passiert mit der "fehlenden" Energie?</p>
+            <div class="mc-options" id="mc7-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc7" value="0">
+                    Die Energie geht verloren (verschwindet).
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc7" value="1">
+                    Die Energie wird durch Reibung in Wärme umgewandelt.
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc7" value="2">
+                    Die Energie bleibt als Lageenergie erhalten.
+                </label>
+            </div>
+            <div class="feedback" id="fb7"></div>
+            <div class="solution-box" id="sol7">
+                <strong>Lösung:</strong> Die Energie wird durch Reibung in Wärme umgewandelt. Energie kann nie verschwinden!
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 8: Vergleich (2 BE) -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe8">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 8</span>
+                <span class="aufgabe-punkte" id="punkte8">__/2 BE</span>
+            </div>
+            <p>Zwei Bälle fliegen:</p>
+            <ul style="margin: 10px 0 10px 25px;">
+                <li>Ball A: <span class="fz">m</span> = 1 kg, <span class="fz">v</span> = 6 m/s</li>
+                <li>Ball B: <span class="fz">m</span> = 3 kg, <span class="fz">v</span> = 4 m/s</li>
+            </ul>
+            <p><span class="operator">Berechne</span> beide Energien und <span class="operator">kreuze an</span>, welcher Ball mehr hat.</p>
+            <div class="calc-row">
+                <span>E<sub>kin,A</sub> = </span>
+                <input type="text" class="calc-input" id="calc8a" inputmode="decimal" style="width:60px;">
+                <span>J</span>
+                <span style="margin-left:20px;">E<sub>kin,B</sub> = </span>
+                <input type="text" class="calc-input" id="calc8b" inputmode="decimal" style="width:60px;">
+                <span>J</span>
+            </div>
+            <div class="mc-options" style="margin-top:10px;" id="mc8-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc8" value="0">
+                    Ball A hat mehr E<sub>kin</sub>
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc8" value="1">
+                    Ball B hat mehr E<sub>kin</sub>
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc8" value="2">
+                    Beide haben gleich viel E<sub>kin</sub>
+                </label>
+            </div>
+            <div class="feedback" id="fb8"></div>
+            <div class="solution-box" id="sol8">
+                <strong>Lösung:</strong><br>
+                E<sub>kin,A</sub> = ½·1·36 = <strong>18 J</strong><br>
+                E<sub>kin,B</sub> = ½·3·16 = <strong>24 J</strong><br>
+                → Ball B hat mehr E<sub>kin</sub><br>
+                <span id="sol8-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 9: Transfer - Auto bergauf (3 BE) ★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe9">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 9 <span class="schwierigkeit">★★</span></span>
+                <span class="aufgabe-punkte" id="punkte9">__/3 BE</span>
+            </div>
+            <p>Ein Auto (<span class="fz">m</span> = 800 kg) rollt mit <span class="fz">v</span> = 10 m/s auf einen Berg zu. Der Motor ist aus.</p>
+            <p><span class="operator">Berechne</span>, wie hoch das Auto maximal kommt.</p>
+            <div class="teil">
+                <p class="teil-label">a) <span class="fz">E</span><sub>kin</sub> am Fuß des Berges:</p>
+                <div class="calc-row">
+                    <span><span class="fz">E</span><sub>kin</sub> = </span>
+                    <input type="text" class="calc-input" id="calc9a" inputmode="decimal">
+                    <span>J</span>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">b) Maximale Höhe <span class="fz">h</span> (E<sub>kin</sub> → E<sub>pot</sub>):</p>
+                <div class="calc-row">
+                    <span><span class="fz">h</span> = </span>
+                    <input type="text" class="calc-input" id="calc9b" inputmode="decimal">
+                    <select class="unit-select" id="unit9b">
+                        <option value="">Einheit</option>
+                        <option value="m">m</option>
+                        <option value="J">J</option>
+                        <option value="kg">kg</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb9"></div>
+            <div class="solution-box" id="sol9">
+                <strong>Lösung:</strong><br>
+                a) E<sub>kin</sub> = ½·800·100 = <strong>40.000 J</strong><br>
+                b) h = E/(m·g) = 40.000/(800·10) = <strong>5 m</strong><br>
+                <span id="sol9-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 10: Transfer - Fallgeschwindigkeit (3 BE) ★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe10">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 10 <span class="schwierigkeit">★★</span></span>
+                <span class="aufgabe-punkte" id="punkte10">__/3 BE</span>
+            </div>
+            <p>Ein Stein (<span class="fz">m</span> = 0,5 kg) fällt aus <span class="fz">h</span> = 20 m Höhe.</p>
+            <p><span class="operator">Berechne</span>, wie schnell der Stein kurz vor dem Aufprall ist.</p>
+            <p class="hinweis" style="margin:10px 0;font-size:0.85em;">Tipp: v = √(2·E<sub>kin</sub>/m)</p>
+            <div class="teil">
+                <p class="teil-label">a) <span class="fz">E</span><sub>pot</sub> oben = <span class="fz">E</span><sub>kin</sub> unten:</p>
+                <div class="calc-row">
+                    <span><span class="fz">E</span> = </span>
+                    <input type="text" class="calc-input" id="calc10a" inputmode="decimal">
+                    <span>J</span>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">b) Geschwindigkeit <span class="fz">v</span> unten:</p>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> = </span>
+                    <input type="text" class="calc-input" id="calc10b" inputmode="decimal">
+                    <select class="unit-select" id="unit10b">
+                        <option value="">Einheit</option>
+                        <option value="m/s">m/s</option>
+                        <option value="m">m</option>
+                        <option value="J">J</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb10"></div>
+            <div class="solution-box" id="sol10">
+                <strong>Lösung:</strong><br>
+                a) E = 0,5·10·20 = <strong>100 J</strong><br>
+                b) v = √(2·100/0,5) = √400 = <strong>20 m/s</strong><br>
+                <span id="sol10-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUFGABE 11: Transfer - Rutsche mit Reibung (4 BE) ★★★ -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="aufgabe" id="aufgabe11">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 11 <span class="schwierigkeit">★★★</span></span>
+                <span class="aufgabe-punkte" id="punkte11">__/4 BE</span>
+            </div>
+            <p>Ein Kind (<span class="fz">m</span> = 40 kg) rutscht eine Rutsche (<span class="fz">h</span> = 2 m) hinunter.</p>
+            <p>Unten misst man nur <span class="fz">E</span><sub>kin</sub> = 720 J (statt der erwarteten Menge).</p>
+            <div class="teil">
+                <p class="teil-label">a) <span class="operator">Berechne</span> <span class="fz">E</span><sub>pot</sub> oben:</p>
+                <div class="calc-row">
+                    <span><span class="fz">E</span><sub>pot</sub> = </span>
+                    <input type="text" class="calc-input" id="calc11a" inputmode="decimal">
+                    <span>J</span>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">b) <span class="operator">Berechne</span> die Wärmeenergie durch Reibung:</p>
+                <div class="calc-row">
+                    <span><span class="fz">E</span><sub>Wärme</sub> = E<sub>pot</sub> − E<sub>kin</sub> = </span>
+                    <input type="text" class="calc-input" id="calc11b" inputmode="decimal">
+                    <span>J</span>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">c) <span class="operator">Berechne</span> die tatsächliche Geschwindigkeit unten:</p>
+                <div class="calc-row">
+                    <span><span class="fz">v</span> = √(2·720/40) = </span>
+                    <input type="text" class="calc-input" id="calc11c" inputmode="decimal">
+                    <select class="unit-select" id="unit11c">
+                        <option value="">Einheit</option>
+                        <option value="m/s">m/s</option>
+                        <option value="m">m</option>
+                        <option value="J">J</option>
+                    </select>
+                </div>
+            </div>
+            <div class="teil">
+                <p class="teil-label">d) <span class="operator">Prüfe</span>: E<sub>pot</sub> = E<sub>kin</sub> + E<sub>Wärme</sub>?</p>
+                <div class="mc-options" style="margin-top:5px;" id="mc11d-options">
+                    <label class="mc-option" data-value="0">
+                        <input type="radio" name="mc11d" value="0">
+                        Nein, Energie geht verloren.
+                    </label>
+                    <label class="mc-option" data-value="1">
+                        <input type="radio" name="mc11d" value="1">
+                        Ja, die Gesamtenergie ist erhalten (nur umgewandelt).
+                    </label>
+                </div>
+            </div>
+            <div class="feedback" id="fb11"></div>
+            <div class="solution-box" id="sol11">
+                <strong>Lösung:</strong><br>
+                a) E<sub>pot</sub> = 40·10·2 = <strong>800 J</strong><br>
+                b) E<sub>Wärme</sub> = 800 − 720 = <strong>80 J</strong><br>
+                c) v = √(2·720/40) = √36 = <strong>6 m/s</strong><br>
+                d) Ja, die Gesamtenergie ist erhalten (800 = 720 + 80)<br>
+                <span id="sol11-student"></span>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- AUSWERTUNG -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <div class="button-row" id="submitButtons">
+            <button class="btn" id="btnSubmit" onclick="submitTest()">Abgeben</button>
+            <button class="btn btn-secondary" onclick="resetTest()">Zurücksetzen</button>
+        </div>
+
+        <div class="results" id="results">
+            <h2>Ergebnis</h2>
+            <div class="results-grid">
+                <div class="result-box">
+                    <div class="value" id="resPunkte">0</div>
+                    <div class="label">von 26 BE</div>
+                </div>
+                <div class="result-box">
+                    <div class="value" id="resProzent">0%</div>
+                    <div class="label">erreicht</div>
+                </div>
+                <div class="result-box">
+                    <div class="value" id="resRichtig">0</div>
+                    <div class="label">von 11 Aufgaben</div>
+                </div>
+            </div>
+            <div class="grade-display">
+                <div class="grade" id="resNote">–</div>
+                <div class="label">Note (MR Klasse 10)</div>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-print" onclick="window.print()">Drucken / PDF</button>
+            </div>
+            <table class="grading-table">
+                <tr>
+                    <th>Note</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>
+                </tr>
+                <tr>
+                    <th>ab %</th><td>≥96</td><td>≥80</td><td>≥60</td><td>≥40</td><td>≥20</td><td>&lt;20</td>
+                </tr>
+                <tr>
+                    <th>ab BE</th><td>≥25</td><td>≥21</td><td>≥16</td><td>≥11</td><td>≥6</td><td>&lt;6</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // MT-01b Energie | ES5 JavaScript | 26 BE | MR Klasse 10
+    // ═══════════════════════════════════════════════════════════════
+
+    var TOTAL_POINTS = 26;
+    var QUIZ_ID = 'mt01b-energie-v4';
+    var testSubmitted = false;
+
+    // Korrekte Antworten für MC-Fragen
+    var CORRECT_ANSWERS = {
+        mc1: '1',
+        mc5: '1',
+        mc6c: '1',
+        mc7: '1',
+        mc8: '1',
+        mc11d: '1'
+    };
+
+    // 6-Noten-Skala MR Klasse 10
+    function getNote(percent) {
+        if (percent >= 96) return '1';
+        if (percent >= 80) return '2';
+        if (percent >= 60) return '3';
+        if (percent >= 40) return '4';
+        if (percent >= 20) return '5';
+        return '6';
+    }
+
+    function parseNumber(val) {
+        if (val === '' || val === null || val === undefined) return NaN;
+        return parseFloat(String(val).replace(',', '.'));
+    }
+
+    // Datum setzen
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('de-DE');
+
+    // MC-Optionen klickbar machen
+    document.querySelectorAll('.mc-option').forEach(function(opt) {
+        opt.addEventListener('click', function() {
+            if (testSubmitted) return;
+            var input = this.querySelector('input');
+            var name = input.name;
+            document.querySelectorAll('input[name="' + name + '"]').forEach(function(inp) {
+                inp.closest('.mc-option').classList.remove('selected');
+            });
+            this.classList.add('selected');
+            input.checked = true;
+            saveProgress();
+        });
+    });
+
+    // Alle Eingaben speichern
+    document.querySelectorAll('input, select').forEach(function(el) {
+        el.addEventListener('change', function() {
+            if (!testSubmitted) saveProgress();
+        });
+        el.addEventListener('input', function() {
+            if (!testSubmitted) saveProgress();
+        });
+    });
+
+    function saveProgress() {
+        if (testSubmitted) return;
+        var data = {};
+        document.querySelectorAll('input[type="text"], select').forEach(function(el) {
+            if (el.id) data[el.id] = el.value;
+        });
+        document.querySelectorAll('input[type="radio"]:checked').forEach(function(el) {
+            data[el.name] = el.value;
+        });
+        localStorage.setItem(QUIZ_ID, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(QUIZ_ID);
+        if (!saved) return;
+        try {
+            var data = JSON.parse(saved);
+            for (var key in data) {
+                var el = document.getElementById(key);
+                if (el) el.value = data[key];
+                var radio = document.querySelector('input[name="' + key + '"][value="' + data[key] + '"]');
+                if (radio) {
+                    radio.checked = true;
+                    radio.closest('.mc-option').classList.add('selected');
+                }
+            }
+        } catch (e) {
+            console.error('Fehler beim Laden:', e);
+        }
+    }
+
+    function getRadio(name) {
+        var sel = document.querySelector('input[name="' + name + '"]:checked');
+        return sel ? sel.value : null;
+    }
+
+    function markMcCorrect(containerId, correctValue) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.querySelectorAll('.mc-option').forEach(function(opt) {
+            var val = opt.getAttribute('data-value');
+            if (val === correctValue) {
+                opt.classList.add('correct-answer');
+            }
+            var input = opt.querySelector('input');
+            if (input && input.checked && val !== correctValue) {
+                opt.classList.add('wrong-answer');
+            }
+        });
+    }
+
+    function markInputCorrect(inputId, isCorrect) {
+        var el = document.getElementById(inputId);
+        if (el) {
+            el.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+    }
+
+    function showSolutionBox(id) {
+        var box = document.getElementById(id);
+        if (box) box.classList.add('visible');
+    }
+
+    function setStudentAnswer(solId, text) {
+        var el = document.getElementById(solId);
+        if (el) el.innerHTML = '<em>Deine Antwort: ' + text + '</em>';
+    }
+
+    function disableAllInputs() {
+        document.querySelectorAll('input, select').forEach(function(el) {
+            if (el.id !== 'platzNummer') {
+                el.disabled = true;
+            }
+        });
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+
+        // Platz muss gewählt sein
+        var platz = document.getElementById('platzNummer').value;
+        if (!platz) {
+            alert('Bitte wähle zuerst deinen Platz aus!');
+            return;
+        }
+
+        var total = 0;
+        var richtig = 0;
+        var studentAnswers = {};
+
+        // Aufgabe 1: MC Energie-Definition (1 BE)
+        var mc1 = getRadio('mc1');
+        studentAnswers.mc1 = mc1;
+        var p1 = mc1 === '1' ? 1 : 0;
+        var fb1 = document.getElementById('fb1');
+        if (p1 === 1) {
+            fb1.className = 'feedback correct';
+            fb1.textContent = 'Richtig! (1/1 BE)';
+            richtig++;
+        } else {
+            fb1.className = 'feedback incorrect';
+            fb1.textContent = 'Falsch. (0/1 BE)';
+        }
+        markMcCorrect('mc1-options', '1');
+        showSolutionBox('sol1');
+        document.getElementById('punkte1').textContent = p1 + '/1 BE';
+        total += p1;
+
+        // Aufgabe 2: Zuordnung (4 BE)
+        var correct2 = {match1: 'J', match2: 'kg', match3: 'm/s', match4: 'm'};
+        var p2 = 0;
+        var ans2 = [];
+        for (var k in correct2) {
+            var val = document.getElementById(k).value;
+            ans2.push(k.replace('match', '') + ':' + val);
+            var isCorr = val === correct2[k];
+            if (isCorr) p2++;
+            markInputCorrect(k, isCorr);
+        }
+        studentAnswers.matching = ans2.join(', ');
+        var fb2 = document.getElementById('fb2');
+        if (p2 === 4) {
+            fb2.className = 'feedback correct';
+            fb2.textContent = 'Alle richtig! (4/4 BE)';
+            richtig++;
+        } else {
+            fb2.className = 'feedback partial';
+            fb2.textContent = p2 + '/4 richtig.';
+        }
+        showSolutionBox('sol2');
+        document.getElementById('punkte2').textContent = p2 + '/4 BE';
+        total += p2;
+
+        // Aufgabe 3: E_pot = 200 J (2 BE)
+        var v3 = parseNumber(document.getElementById('calc3').value);
+        var u3 = document.getElementById('unit3').value;
+        studentAnswers.calc3 = v3 + ' ' + u3;
+        var p3 = 0;
+        var v3Corr = Math.abs(v3 - 200) < 1;
+        var u3Corr = u3 === 'J';
+        if (v3Corr) p3++;
+        if (u3Corr) p3++;
+        markInputCorrect('calc3', v3Corr);
+        markInputCorrect('unit3', u3Corr);
+        var fb3 = document.getElementById('fb3');
+        if (p3 === 2) {
+            fb3.className = 'feedback correct';
+            fb3.textContent = 'Richtig! (2/2 BE)';
+            richtig++;
+        } else if (p3 > 0) {
+            fb3.className = 'feedback partial';
+            fb3.textContent = 'Teilweise richtig. (' + p3 + '/2 BE)';
+        } else {
+            fb3.className = 'feedback incorrect';
+            fb3.textContent = 'Falsch. (0/2 BE)';
+        }
+        setStudentAnswer('sol3-student', (isNaN(v3) ? '—' : v3) + ' ' + (u3 || '—'));
+        showSolutionBox('sol3');
+        document.getElementById('punkte3').textContent = p3 + '/2 BE';
+        total += p3;
+
+        // Aufgabe 4: E_kin = 25 J (2 BE)
+        var v4 = parseNumber(document.getElementById('calc4').value);
+        var u4 = document.getElementById('unit4').value;
+        studentAnswers.calc4 = v4 + ' ' + u4;
+        var p4 = 0;
+        var v4Corr = Math.abs(v4 - 25) < 1;
+        var u4Corr = u4 === 'J';
+        if (v4Corr) p4++;
+        if (u4Corr) p4++;
+        markInputCorrect('calc4', v4Corr);
+        markInputCorrect('unit4', u4Corr);
+        var fb4 = document.getElementById('fb4');
+        if (p4 === 2) {
+            fb4.className = 'feedback correct';
+            fb4.textContent = 'Richtig! (2/2 BE)';
+            richtig++;
+        } else if (p4 > 0) {
+            fb4.className = 'feedback partial';
+            fb4.textContent = 'Teilweise richtig. (' + p4 + '/2 BE)';
+        } else {
+            fb4.className = 'feedback incorrect';
+            fb4.textContent = 'Falsch. (0/2 BE)';
+        }
+        setStudentAnswer('sol4-student', (isNaN(v4) ? '—' : v4) + ' ' + (u4 || '—'));
+        showSolutionBox('sol4');
+        document.getElementById('punkte4').textContent = p4 + '/2 BE';
+        total += p4;
+
+        // Aufgabe 5: MC v² (1 BE)
+        var mc5 = getRadio('mc5');
+        studentAnswers.mc5 = mc5;
+        var p5 = mc5 === '1' ? 1 : 0;
+        var fb5 = document.getElementById('fb5');
+        if (p5 === 1) {
+            fb5.className = 'feedback correct';
+            fb5.textContent = 'Richtig! (1/1 BE)';
+            richtig++;
+        } else {
+            fb5.className = 'feedback incorrect';
+            fb5.textContent = 'Falsch. (0/1 BE)';
+        }
+        markMcCorrect('mc5-options', '1');
+        showSolutionBox('sol5');
+        document.getElementById('punkte5').textContent = p5 + '/1 BE';
+        total += p5;
+
+        // Aufgabe 6: Energieerhaltung (3 BE)
+        var v6a = parseNumber(document.getElementById('calc6a').value);
+        var v6b = parseNumber(document.getElementById('calc6b').value);
+        var mc6c = getRadio('mc6c');
+        studentAnswers.calc6 = 'a:' + v6a + ', b:' + v6b + ', c:' + mc6c;
+        var p6 = 0;
+        var v6aCorr = Math.abs(v6a - 200) < 1;
+        var v6bCorr = Math.abs(v6b - 200) < 1;
+        if (v6aCorr) p6++;
+        if (v6bCorr) p6++;
+        if (mc6c === '1') p6++;
+        markInputCorrect('calc6a', v6aCorr);
+        markInputCorrect('calc6b', v6bCorr);
+        markMcCorrect('mc6c-options', '1');
+        var fb6 = document.getElementById('fb6');
+        if (p6 === 3) {
+            fb6.className = 'feedback correct';
+            fb6.textContent = 'Richtig! (3/3 BE)';
+            richtig++;
+        } else if (p6 > 0) {
+            fb6.className = 'feedback partial';
+            fb6.textContent = 'Teilweise richtig. (' + p6 + '/3 BE)';
+        } else {
+            fb6.className = 'feedback incorrect';
+            fb6.textContent = 'Falsch. (0/3 BE)';
+        }
+        setStudentAnswer('sol6-student', 'a: ' + (isNaN(v6a) ? '—' : v6a) + ' J, b: ' + (isNaN(v6b) ? '—' : v6b) + ' J');
+        showSolutionBox('sol6');
+        document.getElementById('punkte6').textContent = p6 + '/3 BE';
+        total += p6;
+
+        // Aufgabe 7: MC Reibung (1 BE)
+        var mc7 = getRadio('mc7');
+        studentAnswers.mc7 = mc7;
+        var p7 = mc7 === '1' ? 1 : 0;
+        var fb7 = document.getElementById('fb7');
+        if (p7 === 1) {
+            fb7.className = 'feedback correct';
+            fb7.textContent = 'Richtig! (1/1 BE)';
+            richtig++;
+        } else {
+            fb7.className = 'feedback incorrect';
+            fb7.textContent = 'Falsch. (0/1 BE)';
+        }
+        markMcCorrect('mc7-options', '1');
+        showSolutionBox('sol7');
+        document.getElementById('punkte7').textContent = p7 + '/1 BE';
+        total += p7;
+
+        // Aufgabe 8: Vergleich (2 BE)
+        var v8a = parseNumber(document.getElementById('calc8a').value);
+        var v8b = parseNumber(document.getElementById('calc8b').value);
+        var mc8 = getRadio('mc8');
+        studentAnswers.calc8 = 'A:' + v8a + ', B:' + v8b + ', MC:' + mc8;
+        var p8 = 0;
+        var v8aCorr = Math.abs(v8a - 18) < 1;
+        var v8bCorr = Math.abs(v8b - 24) < 1;
+        if (v8aCorr && v8bCorr) p8++;
+        if (mc8 === '1') p8++;
+        markInputCorrect('calc8a', v8aCorr);
+        markInputCorrect('calc8b', v8bCorr);
+        markMcCorrect('mc8-options', '1');
+        var fb8 = document.getElementById('fb8');
+        if (p8 === 2) {
+            fb8.className = 'feedback correct';
+            fb8.textContent = 'Richtig! (2/2 BE)';
+            richtig++;
+        } else if (p8 > 0) {
+            fb8.className = 'feedback partial';
+            fb8.textContent = 'Teilweise richtig. (' + p8 + '/2 BE)';
+        } else {
+            fb8.className = 'feedback incorrect';
+            fb8.textContent = 'Falsch. (0/2 BE)';
+        }
+        setStudentAnswer('sol8-student', 'A: ' + (isNaN(v8a) ? '—' : v8a) + ' J, B: ' + (isNaN(v8b) ? '—' : v8b) + ' J');
+        showSolutionBox('sol8');
+        document.getElementById('punkte8').textContent = p8 + '/2 BE';
+        total += p8;
+
+        // Aufgabe 9: Auto bergauf (3 BE)
+        var v9a = parseNumber(document.getElementById('calc9a').value);
+        var v9b = parseNumber(document.getElementById('calc9b').value);
+        var u9b = document.getElementById('unit9b').value;
+        studentAnswers.calc9 = 'a:' + v9a + ', b:' + v9b + ' ' + u9b;
+        var p9 = 0;
+        var v9aCorr = Math.abs(v9a - 40000) < 100;
+        var v9bCorr = Math.abs(v9b - 5) < 0.2;
+        var u9bCorr = u9b === 'm';
+        if (v9aCorr) p9++;
+        if (v9bCorr) p9++;
+        if (u9bCorr) p9++;
+        markInputCorrect('calc9a', v9aCorr);
+        markInputCorrect('calc9b', v9bCorr);
+        markInputCorrect('unit9b', u9bCorr);
+        var fb9 = document.getElementById('fb9');
+        if (p9 === 3) {
+            fb9.className = 'feedback correct';
+            fb9.textContent = 'Richtig! (3/3 BE)';
+            richtig++;
+        } else if (p9 > 0) {
+            fb9.className = 'feedback partial';
+            fb9.textContent = 'Teilweise richtig. (' + p9 + '/3 BE)';
+        } else {
+            fb9.className = 'feedback incorrect';
+            fb9.textContent = 'Falsch. (0/3 BE)';
+        }
+        setStudentAnswer('sol9-student', 'a: ' + (isNaN(v9a) ? '—' : v9a) + ' J, b: ' + (isNaN(v9b) ? '—' : v9b) + ' ' + (u9b || '—'));
+        showSolutionBox('sol9');
+        document.getElementById('punkte9').textContent = p9 + '/3 BE';
+        total += p9;
+
+        // Aufgabe 10: Fallgeschwindigkeit (3 BE)
+        var v10a = parseNumber(document.getElementById('calc10a').value);
+        var v10b = parseNumber(document.getElementById('calc10b').value);
+        var u10b = document.getElementById('unit10b').value;
+        studentAnswers.calc10 = 'a:' + v10a + ', b:' + v10b + ' ' + u10b;
+        var p10 = 0;
+        var v10aCorr = Math.abs(v10a - 100) < 1;
+        var v10bCorr = Math.abs(v10b - 20) < 0.5;
+        var u10bCorr = u10b === 'm/s';
+        if (v10aCorr) p10++;
+        if (v10bCorr) p10++;
+        if (u10bCorr) p10++;
+        markInputCorrect('calc10a', v10aCorr);
+        markInputCorrect('calc10b', v10bCorr);
+        markInputCorrect('unit10b', u10bCorr);
+        var fb10 = document.getElementById('fb10');
+        if (p10 === 3) {
+            fb10.className = 'feedback correct';
+            fb10.textContent = 'Richtig! (3/3 BE)';
+            richtig++;
+        } else if (p10 > 0) {
+            fb10.className = 'feedback partial';
+            fb10.textContent = 'Teilweise richtig. (' + p10 + '/3 BE)';
+        } else {
+            fb10.className = 'feedback incorrect';
+            fb10.textContent = 'Falsch. (0/3 BE)';
+        }
+        setStudentAnswer('sol10-student', 'a: ' + (isNaN(v10a) ? '—' : v10a) + ' J, b: ' + (isNaN(v10b) ? '—' : v10b) + ' ' + (u10b || '—'));
+        showSolutionBox('sol10');
+        document.getElementById('punkte10').textContent = p10 + '/3 BE';
+        total += p10;
+
+        // Aufgabe 11: Rutsche mit Reibung (4 BE)
+        var v11a = parseNumber(document.getElementById('calc11a').value);
+        var v11b = parseNumber(document.getElementById('calc11b').value);
+        var v11c = parseNumber(document.getElementById('calc11c').value);
+        var u11c = document.getElementById('unit11c').value;
+        var mc11d = getRadio('mc11d');
+        studentAnswers.calc11 = 'a:' + v11a + ', b:' + v11b + ', c:' + v11c + ' ' + u11c + ', d:' + mc11d;
+        var p11 = 0;
+        var v11aCorr = Math.abs(v11a - 800) < 1;
+        var v11bCorr = Math.abs(v11b - 80) < 1;
+        var v11cCorr = Math.abs(v11c - 6) < 0.1;
+        var u11cCorr = u11c === 'm/s';
+        if (v11aCorr) p11++;
+        if (v11bCorr) p11++;
+        if (v11cCorr && u11cCorr) p11++;
+        if (mc11d === '1') p11++;
+        markInputCorrect('calc11a', v11aCorr);
+        markInputCorrect('calc11b', v11bCorr);
+        markInputCorrect('calc11c', v11cCorr);
+        markInputCorrect('unit11c', u11cCorr);
+        markMcCorrect('mc11d-options', '1');
+        var fb11 = document.getElementById('fb11');
+        if (p11 === 4) {
+            fb11.className = 'feedback correct';
+            fb11.textContent = 'Perfekt! (4/4 BE)';
+            richtig++;
+        } else if (p11 > 0) {
+            fb11.className = 'feedback partial';
+            fb11.textContent = 'Teilweise richtig. (' + p11 + '/4 BE)';
+        } else {
+            fb11.className = 'feedback incorrect';
+            fb11.textContent = 'Falsch. (0/4 BE)';
+        }
+        setStudentAnswer('sol11-student', 'a: ' + (isNaN(v11a) ? '—' : v11a) + ' J, b: ' + (isNaN(v11b) ? '—' : v11b) + ' J, c: ' + (isNaN(v11c) ? '—' : v11c) + ' ' + (u11c || '—'));
+        showSolutionBox('sol11');
+        document.getElementById('punkte11').textContent = p11 + '/4 BE';
+        total += p11;
+
+        // Ergebnis anzeigen
+        var prozent = Math.round((total / TOTAL_POINTS) * 100);
+        document.getElementById('resPunkte').textContent = total;
+        document.getElementById('resProzent').textContent = prozent + '%';
+        document.getElementById('resRichtig').textContent = richtig;
+        document.getElementById('resNote').textContent = getNote(prozent);
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('btnSubmit').disabled = true;
+        document.getElementById('lockedNotice').classList.add('visible');
+        testSubmitted = true;
+
+        // Alle Eingaben deaktivieren
+        disableAllInputs();
+
+        // Ergebnis speichern (inkl. aller Antworten)
+        var resultData = {
+            platz: platz,
+            total: total,
+            percent: prozent,
+            note: getNote(prozent),
+            richtig: richtig,
+            answers: studentAnswers,
+            submitted: true,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(QUIZ_ID + '-result', JSON.stringify(resultData));
+
+        // Progress auch nochmal speichern
+        saveProgress();
+
+        document.getElementById('results').scrollIntoView({behavior: 'smooth'});
+    }
+
+    function resetTest() {
+        if (!confirm('Alle Eingaben löschen und neu starten? Dies kann nicht rückgängig gemacht werden!')) return;
+        localStorage.removeItem(QUIZ_ID);
+        localStorage.removeItem(QUIZ_ID + '-result');
+        location.reload();
+    }
+
+    function restoreSubmittedState() {
+        var resultSaved = localStorage.getItem(QUIZ_ID + '-result');
+        if (!resultSaved) return false;
+        try {
+            var result = JSON.parse(resultSaved);
+            if (result.submitted) {
+                // Lade zuerst alle Eingaben
+                loadProgress();
+                // Dann führe submitTest aus um Feedback anzuzeigen
+                testSubmitted = false; // Reset damit submitTest funktioniert
+                submitTest();
+                return true;
+            }
+        } catch(e) {
+            console.error('Fehler beim Wiederherstellen:', e);
+        }
+        return false;
+    }
+
+    // Beim Laden
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prüfen ob bereits abgegeben
+        if (!restoreSubmittedState()) {
+            // Nur Progress laden wenn nicht abgegeben
+            loadProgress();
+        }
+    });
+    </script>
+</body>
+</html>

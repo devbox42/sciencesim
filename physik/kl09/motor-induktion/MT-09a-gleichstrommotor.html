@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Gleichstrommotor</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════
+           MT-09a Gleichstrommotor - Nach MINT-Minitest Template
+           ═══════════════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        /* === HEADER === */
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        /* === PROGRESS === */
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 140px; }
+
+        /* === FRAGEN === */
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-niveau { padding: 2px 8px; font-size: 0.8em; font-weight: 600; }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        /* === OPTIONEN === */
+        .options { margin: 10px 0; }
+        .option { display: block; padding: 12px 15px; margin: 6px 0; background: #fafafa; border: 1px solid #ddd; cursor: pointer; transition: all 0.15s; }
+        .option:hover { background: #f0f4f8; border-color: #2c5aa0; }
+        .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .option input { display: none; }
+        .option.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .option.incorrect { background: #ffebee; border-color: #c62828; }
+        .option.missed { background: #fff8e1; border-color: #b35c00; }
+
+        /* Zuordnung */
+        .matching-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .matching-item { display: flex; align-items: center; gap: 10px; }
+        .matching-label { min-width: 80px; font-weight: 500; }
+        .matching-select { flex: 1; padding: 8px; border: 1px solid #ddd; font-size: 0.9em; }
+        .matching-select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .matching-select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        /* === FEEDBACK === */
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        /* Niveau-Hinweis */
+        .niveau-hinweis { background: #fff3e0; border: 1px solid #b35c00; color: #b35c00; padding: 8px 12px; margin-bottom: 12px; font-size: 0.85em; font-style: italic; }
+        .nicht-gewertet-box { background: #f5f5f5; border: 1px solid #888; color: #666; padding: 10px 15px; margin-top: 12px; text-align: center; font-weight: 600; }
+
+        /* === SUBMIT + RESULTS === */
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        /* Bilder */
+        .img-container { text-align: center; margin: 15px 0; }
+        .img-container img { max-width: 100%; height: auto; border: 1px solid #ddd; }
+        .img-container p { font-size: 0.75em; color: #666; margin-top: 5px; }
+
+        /* Wordbank */
+        .wordbank { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: #f0f4f8; border: 1px solid #ddd; margin-bottom: 15px; }
+        .wordbank-item { background: white; border: 2px solid #2c5aa0; padding: 6px 12px; cursor: pointer; font-size: 0.9em; transition: all 0.2s; }
+        .wordbank-item:hover { background: #e3f2fd; }
+        .wordbank-item.used { opacity: 0.4; cursor: not-allowed; border-style: dashed; }
+        .wordbank-item.selected { background: #2c5aa0; color: white; }
+        .cloze-text { line-height: 2.2; font-size: 0.95em; }
+        .cloze-gap { display: inline-block; min-width: 120px; border-bottom: 2px solid #2c5aa0; padding: 2px 8px; margin: 0 2px; cursor: pointer; text-align: center; background: #fafafa; }
+        .cloze-gap:hover { background: #e3f2fd; }
+        .cloze-gap.filled { background: #e3f2fd; font-weight: 500; }
+        .cloze-gap.correct { background: #e8f5e9; border-color: #2a7a4b; }
+        .cloze-gap.incorrect { background: #ffebee; border-color: #c62828; }
+
+        .hidden { display: none; }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        /* Farblegende */
+        .color-legend { display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.8em; margin: 8px 0; }
+        .color-legend span { display: flex; align-items: center; gap: 4px; }
+        .color-box { width: 14px; height: 14px; border: 1px solid #999; }
+
+        @media print {
+            button, .progress-container, .selection-row { display: none; }
+            .question { page-break-inside: avoid; }
+            .niveau-hinweis { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Der Gleichstrommotor</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 9 | Differenziert (★/★★/★★★)</div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         PLATZ + NIVEAU AUSWAHL
+         ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="selection-row" style="display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 20px;">
+        <!-- Platz-Auswahl -->
+        <div class="seat-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px;">Platznummer:</label>
+            <div id="seatWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="seatSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px;">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button id="btnSeatOk" onclick="confirmSeat()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="seatConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+            <input type="hidden" id="seatNumber" value="">
+        </div>
+
+        <!-- Niveau-Auswahl -->
+        <div class="niveau-field" style="flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd;">
+            <label style="font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px;">Niveau:</label>
+            <div id="niveauWarning" style="background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00;">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="niveauRow" style="display: flex; align-items: center; gap: 8px;">
+                <select id="niveauSelect" style="padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 180px;">
+                    <option value="">-- wählen --</option>
+                    <option value="1">★ Basis (9 BE)</option>
+                    <option value="2">★★ Standard (33 BE)</option>
+                    <option value="3">★★★ Erweitert (37 BE)</option>
+                </select>
+                <button id="btnNiveauOk" onclick="confirmNiveau()" style="padding: 8px 15px; font-size: 0.9em;">OK</button>
+            </div>
+            <div id="niveauConfirmed" style="display: none; font-size: 1em; color: #2a7a4b; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Niveau wählen...</div>
+    </div>
+
+    <div class="container">
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte bestätige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             FRAGEN-CONTAINER
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div id="questionsContainer">
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             NIVEAU 1 (★) FRAGEN - Basis
+             ═══════════════════════════════════════════════════════════════════════ -->
+
+        <!-- Q1: Zuordnung Bauteile (5 BE) -->
+        <div class="question" id="q1" data-niveau="1" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 1: Bauteile des Motors</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Ordne zu:</strong> Welche Beschreibung passt zu welchem Bauteil?</p>
+
+            <div class="img-container" style="position:relative; max-width:450px; margin:15px auto;">
+                <img src="leifi/img/elektromotor-aufbau-leifi.png" alt="Aufbau Elektromotor" style="width:100%; display:block;">
+                <span style="position:absolute; top:23%; left:48%; transform:translateX(-50%); background:white; border:2px solid #333; padding:2px 6px; font-weight:bold; font-size:12px;">(A)</span>
+                <span style="position:absolute; top:35%; left:70%; background:white; border:2px solid #333; padding:2px 6px; font-weight:bold; font-size:12px;">(B)</span>
+                <span style="position:absolute; top:50%; left:12%; background:white; border:2px solid #333; padding:2px 6px; font-weight:bold; font-size:12px;">(C)</span>
+                <span style="position:absolute; top:37%; left:18%; background:white; border:2px solid #333; padding:2px 6px; font-weight:bold; font-size:12px;">(D)</span>
+                <span style="position:absolute; top:2%; left:54.5%; transform:translateX(-50%); background:white; border:2px solid #333; padding:2px 6px; font-weight:bold; font-size:12px;">(E)</span>
+                <p>Bild: LEIFIphysik (CC BY-NC 4.0)</p>
+            </div>
+
+            <div class="matching-container">
+                <div class="matching-item">
+                    <span class="matching-label">(A)</span>
+                    <select class="matching-select" id="q1-a">
+                        <option value="">-- wählen --</option>
+                        <option value="stator">Stator (Magnet)</option>
+                        <option value="rotor">Rotor (Spule)</option>
+                        <option value="kommutator">Kommutator</option>
+                        <option value="buersten">Bürsten</option>
+                        <option value="achse">Drehachse</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">(B)</span>
+                    <select class="matching-select" id="q1-b">
+                        <option value="">-- wählen --</option>
+                        <option value="stator">Stator (Magnet)</option>
+                        <option value="rotor">Rotor (Spule)</option>
+                        <option value="kommutator">Kommutator</option>
+                        <option value="buersten">Bürsten</option>
+                        <option value="achse">Drehachse</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">(C)</span>
+                    <select class="matching-select" id="q1-c">
+                        <option value="">-- wählen --</option>
+                        <option value="stator">Stator (Magnet)</option>
+                        <option value="rotor">Rotor (Spule)</option>
+                        <option value="kommutator">Kommutator</option>
+                        <option value="buersten">Bürsten</option>
+                        <option value="achse">Drehachse</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">(D)</span>
+                    <select class="matching-select" id="q1-d">
+                        <option value="">-- wählen --</option>
+                        <option value="stator">Stator (Magnet)</option>
+                        <option value="rotor">Rotor (Spule)</option>
+                        <option value="kommutator">Kommutator</option>
+                        <option value="buersten">Bürsten</option>
+                        <option value="achse">Drehachse</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">(E)</span>
+                    <select class="matching-select" id="q1-e">
+                        <option value="">-- wählen --</option>
+                        <option value="stator">Stator (Magnet)</option>
+                        <option value="rotor">Rotor (Spule)</option>
+                        <option value="kommutator">Kommutator</option>
+                        <option value="buersten">Bürsten</option>
+                        <option value="achse">Drehachse</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Alle richtig! (A) Rotor, (B) Stator, (C) Bürsten, (D) Kommutator, (E) Achse.</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Lösung: (A) Rotor, (B) Stator, (C) Bürsten, (D) Kommutator, (E) Achse.</div>
+        </div>
+
+        <!-- Q4: MC Kommutator (4 BE) - jetzt als ★ -->
+        <div class="question" id="q4" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 2: Aufgabe des Kommutators</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Nenne</strong> die Hauptaufgabe des Kommutators im Gleichstrommotor.</p>
+            <div class="options" id="q4-options">
+                <label class="option" data-value="a"><input type="radio" name="q4" value="a">(a) Er verstärkt das Magnetfeld</label>
+                <label class="option" data-value="b"><input type="radio" name="q4" value="b">(b) Er kehrt die Stromrichtung in der Spule bei jeder halben Umdrehung um</label>
+                <label class="option" data-value="c"><input type="radio" name="q4" value="c">(c) Er erhöht die Drehzahl des Motors</label>
+                <label class="option" data-value="d"><input type="radio" name="q4" value="d">(d) Er kühlt die Spule während des Betriebs</label>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! Der Kommutator kehrt die Stromrichtung alle 180° um, damit die Drehung weitergehen kann.</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">Die richtige Antwort ist (b): Der Kommutator kehrt die Stromrichtung in der Spule bei jeder halben Umdrehung um.</div>
+        </div>
+
+        <!-- Q7: Energieumwandlung (3 BE) -->
+        <div class="question" id="q7" data-niveau="1" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 3: Energieumwandlung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Nenne:</strong> Welche Energieumwandlung findet im Gleichstrommotor statt?</p>
+            <div class="options" id="q7-options">
+                <label class="option" data-value="a"><input type="radio" name="q7" value="a">(a) Wärmeenergie → Elektrische Energie</label>
+                <label class="option" data-value="b"><input type="radio" name="q7" value="b">(b) Elektrische Energie → Bewegungsenergie (kinetische Energie)</label>
+                <label class="option" data-value="c"><input type="radio" name="q7" value="c">(c) Bewegungsenergie → Elektrische Energie</label>
+                <label class="option" data-value="d"><input type="radio" name="q7" value="d">(d) Lichtenergie → Wärmeenergie</label>
+            </div>
+            <div class="feedback-box correct" id="q7-fb-correct">Richtig! Der Motor wandelt elektrische Energie in Bewegungsenergie um.</div>
+            <div class="feedback-box incorrect" id="q7-fb-incorrect">Die richtige Antwort ist (b): Elektrische Energie → Bewegungsenergie. (c) wäre ein Generator!</div>
+        </div>
+
+        <!-- Q17: Punkt/Kreuz-Schreibweise (3 BE) -->
+        <div class="question" id="q17" data-niveau="1" data-points="2">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 4: Punkt/Kreuz-Symbole</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">★</span>
+                    <span class="question-points">2 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Ordne zu:</strong> Was bedeuten die Symbole für Strom oder Magnetfeld senkrecht zur Zeichenebene?</p>
+            <div style="display:flex; justify-content:center; gap:40px; margin:15px 0; font-size:2em;">
+                <span style="border:2px solid #333; border-radius:50%; width:50px; height:50px; display:flex; align-items:center; justify-content:center;">⊙</span>
+                <span style="border:2px solid #333; border-radius:50%; width:50px; height:50px; display:flex; align-items:center; justify-content:center;">⊗</span>
+            </div>
+            <div class="matching-container" style="grid-template-columns: auto 1fr;">
+                <div class="matching-item">
+                    <span class="matching-label" style="font-size:1.3em;">⊙ →</span>
+                    <select class="matching-select" id="q17-a">
+                        <option value="">-- wählen --</option>
+                        <option value="heraus">aus der Ebene heraus (zu dir)</option>
+                        <option value="hinein">in die Ebene hinein (von dir weg)</option>
+                        <option value="kein">kein Strom</option>
+                        <option value="wechsel">Wechselstrom</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label" style="font-size:1.3em;">⊗ →</span>
+                    <select class="matching-select" id="q17-b">
+                        <option value="">-- wählen --</option>
+                        <option value="heraus">aus der Ebene heraus (zu dir)</option>
+                        <option value="hinein">in die Ebene hinein (von dir weg)</option>
+                        <option value="kein">kein Strom</option>
+                        <option value="wechsel">Wechselstrom</option>
+                    </select>
+                </div>
+            </div>
+            <p style="font-size:0.85em; color:#555; margin:10px 0;"><strong>Merkhilfe:</strong> ⊙ = Pfeilspitze von vorne, ⊗ = Pfeilende (Federn) von hinten</p>
+            <div class="feedback-box correct" id="q17-fb-correct">Richtig! ⊙ = heraus (Pfeilspitze), ⊗ = hinein (Pfeilende).</div>
+            <div class="feedback-box incorrect" id="q17-fb-incorrect">Lösung: ⊙ = aus der Ebene heraus, ⊗ = in die Ebene hinein.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             NIVEAU 2 (★★) FRAGEN - Standard
+             ═══════════════════════════════════════════════════════════════════════ -->
+
+        <!-- Q2: MC Lorentzkraft (4 BE) -->
+        <div class="question" id="q2" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 5: Ursache der Drehung</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Nenne</strong> den Grund, warum sich die Rotorspule im Magnetfeld dreht.</p>
+            <div class="options" id="q2-options">
+                <label class="option" data-value="a"><input type="radio" name="q2" value="a">(a) Das Magnetfeld zieht die Spule an wie einen Eisennagel</label>
+                <label class="option" data-value="b"><input type="radio" name="q2" value="b">(b) Die Lorentzkraft wirkt auf die stromdurchflossenen Leiter der Spule</label>
+                <label class="option" data-value="c"><input type="radio" name="q2" value="c">(c) Die Bürsten schieben die Spule mechanisch an</label>
+                <label class="option" data-value="d"><input type="radio" name="q2" value="d">(d) Der Strom erwärmt die Spule und sie dehnt sich aus</label>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Richtig! Die Lorentzkraft wirkt auf stromdurchflossene Leiter im Magnetfeld und erzeugt die Drehbewegung.</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Die richtige Antwort ist (b): Die Lorentzkraft wirkt auf die stromdurchflossenen Leiter.</div>
+        </div>
+
+        <!-- Q3: MC Kraftrichtung (4 BE) -->
+        <div class="question" id="q3" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 6: Kraftrichtung bestimmen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Bestimme:</strong> Ein Leiter wird von Strom durchflossen, der aus der Zeichenebene herauszeigt (⊙). Das Magnetfeld zeigt nach rechts. In welche Richtung wirkt die Lorentzkraft?</p>
+            <div class="img-container">
+                <svg viewBox="0 0 300 150" width="300" height="150">
+                    <defs>
+                        <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#2e7d32"/>
+                        </marker>
+                    </defs>
+                    <line x1="30" y1="50" x2="120" y2="50" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+                    <line x1="30" y1="75" x2="120" y2="75" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+                    <line x1="30" y1="100" x2="120" y2="100" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+                    <line x1="180" y1="50" x2="270" y2="50" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+                    <line x1="180" y1="75" x2="270" y2="75" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+                    <line x1="180" y1="100" x2="270" y2="100" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowG)"/>
+                    <text x="280" y="80" fill="#2e7d32" font-size="14" font-weight="bold">B</text>
+                    <circle cx="150" cy="75" r="18" fill="white" stroke="#333" stroke-width="2"/>
+                    <circle cx="150" cy="75" r="5" fill="#c62828"/>
+                    <text x="150" y="115" text-anchor="middle" fill="#c62828" font-size="12" font-weight="bold">I (⊙)</text>
+                    <text x="150" y="140" text-anchor="middle" fill="#2c5aa0" font-size="14" font-weight="bold">F = ?</text>
+                </svg>
+            </div>
+            <div class="color-legend">
+                <span><span class="color-box" style="background:#2e7d32"></span> Magnetfeld B</span>
+                <span><span class="color-box" style="background:#c62828"></span> Strom I (⊙ = heraus)</span>
+            </div>
+            <div class="options" id="q3-options">
+                <label class="option" data-value="a"><input type="radio" name="q3" value="a">(a) Nach oben (↑)</label>
+                <label class="option" data-value="b"><input type="radio" name="q3" value="b">(b) Nach unten (↓)</label>
+                <label class="option" data-value="c"><input type="radio" name="q3" value="c">(c) Aus der Zeichenebene heraus (zu dir)</label>
+                <label class="option" data-value="d"><input type="radio" name="q3" value="d">(d) In die Zeichenebene hinein (von dir weg)</label>
+            </div>
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! Rechte-Hand-Regel: Daumen zu dir (I ⊙), Zeigefinger nach rechts (B →), Mittelfinger zeigt nach oben (F ↑).</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Die richtige Antwort ist (a): Nach oben. Rechte-Hand-Regel anwenden!</div>
+        </div>
+
+        <!-- Q5: MC Drehrichtung ändern (4 BE) -->
+        <div class="question" id="q5" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 7: Drehrichtung ändern</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Gib an</strong>, wie man die Drehrichtung eines Gleichstrommotors ändern kann.</p>
+            <div class="options" id="q5-options">
+                <label class="option" data-value="a"><input type="radio" name="q5" value="a">(a) Nur durch Austausch des Kommutators</label>
+                <label class="option" data-value="b"><input type="radio" name="q5" value="b">(b) Durch Umpolen der Spannung ODER Umpolen des Magnetfelds</label>
+                <label class="option" data-value="c"><input type="radio" name="q5" value="c">(c) Durch Erhöhen der Spannung</label>
+                <label class="option" data-value="d"><input type="radio" name="q5" value="d">(d) Die Drehrichtung kann nicht geändert werden</label>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">Richtig! Entweder Spannung oder Magnetfeld umpolen ändert die Drehrichtung (aber nicht beides gleichzeitig!).</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Die richtige Antwort ist (b): Spannung ODER Magnetfeld umpolen.</div>
+        </div>
+
+        <!-- Q8: Lorentzkraft Bedingungen (4 BE) -->
+        <div class="question" id="q8" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 8: Maximale Lorentzkraft</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Gib an</strong>, wann die Lorentzkraft auf einen Leiter am stärksten wirkt.</p>
+            <div class="img-container">
+                <img src="leifi/img/fendt-45grad.png" alt="Spule bei 45°" style="max-width:400px;">
+            </div>
+            <div class="options" id="q8-options">
+                <label class="option" data-value="a"><input type="radio" name="q8" value="a">(a) Wenn der Leiter parallel zum Magnetfeld ausgerichtet ist</label>
+                <label class="option" data-value="b"><input type="radio" name="q8" value="b">(b) Wenn der Leiter senkrecht zum Magnetfeld ausgerichtet ist</label>
+                <label class="option" data-value="c"><input type="radio" name="q8" value="c">(c) Wenn kein Strom durch den Leiter fließt</label>
+                <label class="option" data-value="d"><input type="radio" name="q8" value="d">(d) Die Lorentzkraft ist immer gleich stark</label>
+            </div>
+            <div class="feedback-box correct" id="q8-fb-correct">Richtig! Die Lorentzkraft ist maximal, wenn Stromrichtung und Magnetfeld senkrecht zueinander stehen.</div>
+            <div class="feedback-box incorrect" id="q8-fb-incorrect">Die richtige Antwort ist (b): Bei senkrechter Ausrichtung. Bei paralleler Ausrichtung ist F = 0!</div>
+        </div>
+
+        <!-- Q10: Kommutator-Vergleich (4 BE) -->
+        <div class="question" id="q10" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 9: Ohne Kommutator</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Beschreibe</strong>, was mit einer stromdurchflossenen Leiterschleife im Magnetfeld passiert, wenn sie <strong>keinen Kommutator</strong> hat.</p>
+            <div class="options" id="q10-options">
+                <label class="option" data-value="a"><input type="radio" name="q10" value="a">(a) Sie dreht sich kontinuierlich weiter</label>
+                <label class="option" data-value="b"><input type="radio" name="q10" value="b">(b) Sie pendelt nur hin und her (schwingt um die Ruhelage)</label>
+                <label class="option" data-value="c"><input type="radio" name="q10" value="c">(c) Sie dreht bis zum Totpunkt und bleibt nach kurzem Pendeln stehen</label>
+                <label class="option" data-value="d"><input type="radio" name="q10" value="d">(d) Sie dreht sich rückwärts</label>
+            </div>
+            <div class="feedback-box correct" id="q10-fb-correct">Richtig! Ohne Kommutator dreht die Spule bis zum Totpunkt und bleibt nach kurzem Pendeln stehen.</div>
+            <div class="feedback-box incorrect" id="q10-fb-incorrect">Die richtige Antwort ist (c): Die Spule dreht bis zum Totpunkt und bleibt nach kurzem Pendeln stehen.</div>
+        </div>
+
+        <!-- Q12: Stromlos-Häufigkeit (3 BE) -->
+        <div class="question" id="q12" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 10: Stromlose Phasen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Gib an:</strong> Wie oft pro Umdrehung ist die Spule stromlos?</p>
+            <div class="img-container">
+                <img src="leifi/img/fendt-horizontal.png" alt="Spule horizontal, stromlos" style="max-width:400px;">
+            </div>
+            <div class="options" id="q12-options">
+                <label class="option" data-value="a"><input type="radio" name="q12" value="a">(a) 1× pro Umdrehung</label>
+                <label class="option" data-value="b"><input type="radio" name="q12" value="b">(b) 2× pro Umdrehung (alle 180°)</label>
+                <label class="option" data-value="c"><input type="radio" name="q12" value="c">(c) 4× pro Umdrehung</label>
+                <label class="option" data-value="d"><input type="radio" name="q12" value="d">(d) Die Spule ist nie stromlos</label>
+            </div>
+            <div class="feedback-box correct" id="q12-fb-correct">Richtig! 2× pro Umdrehung – bei jeder horizontalen Stellung berühren die Bürsten die Lücke.</div>
+            <div class="feedback-box incorrect" id="q12-fb-incorrect">Die richtige Antwort ist (b): 2× pro Umdrehung (alle 180°).</div>
+        </div>
+
+        <!-- Q13: Stromrichtung nach Umschaltung (3 BE) -->
+        <div class="question" id="q13" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 11: Nach dem Totpunkt</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Gib an:</strong> Was passiert mit der Stromrichtung in der Spule direkt <strong>nach</strong> der horizontalen Position?</p>
+            <div class="img-container">
+                <img src="leifi/img/fendt-horizontal.png" alt="Spule horizontal (Totpunkt)" style="max-width:400px;">
+                <p>Simulation: W. Fendt (LEIFIphysik)</p>
+            </div>
+            <div class="options" id="q13-options">
+                <label class="option" data-value="a"><input type="radio" name="q13" value="a">(a) Die Stromrichtung bleibt gleich</label>
+                <label class="option" data-value="b"><input type="radio" name="q13" value="b">(b) Die Stromrichtung kehrt sich um</label>
+                <label class="option" data-value="c"><input type="radio" name="q13" value="c">(c) Der Strom wird stärker</label>
+                <label class="option" data-value="d"><input type="radio" name="q13" value="d">(d) Es fließt gar kein Strom mehr</label>
+            </div>
+            <div class="feedback-box correct" id="q13-fb-correct">Richtig! Der Kommutator kehrt die Stromrichtung um – das ist seine Hauptaufgabe!</div>
+            <div class="feedback-box incorrect" id="q13-fb-incorrect">Die richtige Antwort ist (b): Die Stromrichtung kehrt sich um. Das macht der Kommutator.</div>
+        </div>
+
+        <!-- Q15: Pole vertauschen (3 BE) -->
+        <div class="question" id="q15" data-niveau="2" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 12: Magnetpole vertauschen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Gib an:</strong> Stell dir vor, du vertauschst gedanklich die Magnetpole (N ↔ S). Was passiert mit der Drehrichtung?</p>
+            <div class="options" id="q15-options">
+                <label class="option" data-value="a"><input type="radio" name="q15" value="a">(a) Die Drehrichtung bleibt gleich</label>
+                <label class="option" data-value="b"><input type="radio" name="q15" value="b">(b) Die Drehrichtung kehrt sich um</label>
+                <label class="option" data-value="c"><input type="radio" name="q15" value="c">(c) Die Spule bleibt stehen</label>
+                <label class="option" data-value="d"><input type="radio" name="q15" value="d">(d) Die Spule dreht sich schneller</label>
+            </div>
+            <div class="feedback-box correct" id="q15-fb-correct">Richtig! Wenn sich das B-Feld umkehrt, kehrt sich auch die Drehrichtung um.</div>
+            <div class="feedback-box incorrect" id="q15-fb-incorrect">Die richtige Antwort ist (b): Die Drehrichtung kehrt sich um.</div>
+        </div>
+
+        <!-- Q16: Rechte-Hand-Regel Zuordnung (5 BE) -->
+        <div class="question" id="q16" data-niveau="2" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 13: Rechte-Hand-Regel</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Ordne zu:</strong> Bei der Rechte-Hand-Regel für die Lorentzkraft zeigt...</p>
+
+            <p style="font-weight:600; margin:15px 0 8px; color:#2c5aa0;">Daumen zeigt in Richtung...</p>
+            <div class="matching-container" style="grid-template-columns: auto 1fr;">
+                <div class="matching-item">
+                    <span class="matching-label">a)</span>
+                    <select class="matching-select" id="q16-a">
+                        <option value="">-- wählen --</option>
+                        <option value="kraft">Lorentzkraft (F)</option>
+                        <option value="strom">technische Stromrichtung (I)</option>
+                        <option value="bfeld">Magnetfeldlinien (B)</option>
+                        <option value="spannung">Spannung (U)</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">b)</span>
+                    <select class="matching-select" id="q16-b">
+                        <option value="">-- wählen --</option>
+                        <option value="bfeld">Magnetfeldlinien (B)</option>
+                        <option value="neg-gegen">entgegen der Bewegung negativer Ladungsträger</option>
+                        <option value="kraft">Lorentzkraft (F)</option>
+                        <option value="neg-mit">in Bewegungsrichtung negativer Ladungsträger</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">c)</span>
+                    <select class="matching-select" id="q16-c">
+                        <option value="">-- wählen --</option>
+                        <option value="pos-gegen">entgegen der Bewegung positiver Ladungsträger</option>
+                        <option value="strom">technische Stromrichtung (I)</option>
+                        <option value="pos-mit">in Bewegungsrichtung positiver Ladungsträger</option>
+                        <option value="bfeld">Magnetfeldlinien (B)</option>
+                    </select>
+                </div>
+            </div>
+
+            <p style="font-weight:600; margin:15px 0 8px; color:#2c5aa0;">Zeigefinger und Mittelfinger:</p>
+            <div class="matching-container" style="grid-template-columns: auto 1fr;">
+                <div class="matching-item">
+                    <span class="matching-label">Zeigefinger →</span>
+                    <select class="matching-select" id="q16-d">
+                        <option value="">-- wählen --</option>
+                        <option value="kraft">Lorentzkraft (F)</option>
+                        <option value="strom">technische Stromrichtung (I)</option>
+                        <option value="bfeld">Richtung der Magnetfeldlinien (B)</option>
+                        <option value="widerstand">Widerstand (R)</option>
+                    </select>
+                </div>
+                <div class="matching-item">
+                    <span class="matching-label">Mittelfinger →</span>
+                    <select class="matching-select" id="q16-e">
+                        <option value="">-- wählen --</option>
+                        <option value="bfeld">Magnetfeldlinien (B)</option>
+                        <option value="strom">technische Stromrichtung (I)</option>
+                        <option value="kraft">Lorentzkraft (F)</option>
+                        <option value="geschwindigkeit">Geschwindigkeit (v)</option>
+                    </select>
+                </div>
+            </div>
+
+            <p style="font-size:0.85em; color:#555; margin:10px 0;"><strong>Tipp:</strong> Die technische Stromrichtung entspricht der Bewegung positiver Ladungsträger und ist entgegengesetzt zur Elektronenbewegung.</p>
+            <div class="feedback-box correct" id="q16-fb-correct">Richtig! Daumen = techn. Stromrichtung = entgegen Elektronen = mit positiven Ladungsträgern. Zeigefinger = B-Feld. Mittelfinger = Kraft.</div>
+            <div class="feedback-box incorrect" id="q16-fb-incorrect">Lösung: Daumen → I (= entgegen neg. / mit pos. Ladungsträgern), Zeigefinger → B, Mittelfinger → F.</div>
+        </div>
+
+        <!-- Q18: Lückentext Elektromagnet (6 BE) -->
+        <div class="question" id="q18" data-niveau="2" data-points="11">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 14: Motor als Elektromagnet</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">★★</span>
+                    <span class="question-points">11 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Ergänze</strong> den Lückentext. Klicke zuerst auf ein Wort, dann auf die passende Lücke.</p>
+
+            <div class="wordbank" id="q18-wordbank">
+                <span class="wordbank-item" data-word="Elektromagnet" onclick="selectWord(this)">Elektromagnet</span>
+                <span class="wordbank-item" data-word="Permanentmagnet" onclick="selectWord(this)">Permanentmagnet</span>
+                <span class="wordbank-item" data-word="anziehen" onclick="selectWord(this)">anziehen</span>
+                <span class="wordbank-item" data-word="stoßen sich ab" onclick="selectWord(this)">stoßen sich ab</span>
+                <span class="wordbank-item" data-word="Südpol" onclick="selectWord(this)">Südpol</span>
+                <span class="wordbank-item" data-word="Nordpol" onclick="selectWord(this)">Nordpol</span>
+                <span class="wordbank-item" data-word="Kommutator" onclick="selectWord(this)">Kommutator</span>
+                <span class="wordbank-item" data-word="umgepolt" onclick="selectWord(this)">umgepolt</span>
+                <span class="wordbank-item" data-word="Totpunkt" onclick="selectWord(this)">Totpunkt</span>
+                <span class="wordbank-item" data-word="weiterdrehen" onclick="selectWord(this)">weiterdrehen</span>
+                <span class="wordbank-item" data-word="stoppen" onclick="selectWord(this)">stoppen</span>
+                <span class="wordbank-item" data-word="gleiche" onclick="selectWord(this)">gleiche</span>
+                <span class="wordbank-item" data-word="ungleiche" onclick="selectWord(this)">ungleiche</span>
+                <span class="wordbank-item" data-word="schneller" onclick="selectWord(this)">schneller</span>
+                <span class="wordbank-item" data-word="langsamer" onclick="selectWord(this)">langsamer</span>
+            </div>
+
+            <div class="cloze-text">
+                <p><strong>Grundprinzip</strong></p>
+                <p>Die stromdurchflossene Rotorspule erzeugt ein Magnetfeld. Sie wirkt wie ein <span class="cloze-gap" data-gap="1" onclick="fillGap(this)"></span>. Der Stator mit seinen festen Polen ist ein <span class="cloze-gap" data-gap="2" onclick="fillGap(this)"></span>.</p>
+
+                <p style="margin-top:12px;"><strong>Phase 1: Anziehung</strong></p>
+                <p>Wenn der Nordpol des Rotors nahe am <span class="cloze-gap" data-gap="3" onclick="fillGap(this)"></span> des Stators liegt, dreht sich der Rotor zum Stator hin, da ungleiche Pole sich <span class="cloze-gap" data-gap="4" onclick="fillGap(this)"></span>.</p>
+
+                <p style="margin-top:12px;"><strong>Phase 2: Totpunkt</strong></p>
+                <p>Wenn die Pole genau gegenüberstehen, ist der <span class="cloze-gap" data-gap="5" onclick="fillGap(this)"></span> erreicht. Ohne Hilfe würde der Motor hier <span class="cloze-gap" data-gap="6" onclick="fillGap(this)"></span>.</p>
+
+                <p style="margin-top:12px;"><strong>Phase 3: Umpolung</strong></p>
+                <p>Genau im Totpunkt wird die Stromrichtung durch den <span class="cloze-gap" data-gap="7" onclick="fillGap(this)"></span> <span class="cloze-gap" data-gap="8" onclick="fillGap(this)"></span>. Die Pole des Elektromagneten tauschen ihre Plätze!</p>
+
+                <p style="margin-top:12px;"><strong>Phase 4: Abstoßung</strong></p>
+                <p>Jetzt liegen plötzlich <span class="cloze-gap" data-gap="9" onclick="fillGap(this)"></span> Pole nebeneinander. Gleiche Pole <span class="cloze-gap" data-gap="10" onclick="fillGap(this)"></span>. Der Rotor wird vom Stator weggedrückt.</p>
+
+                <p style="margin-top:12px;"><strong>Phase 5: Kreislauf</strong></p>
+                <p>Der Rotor kann <span class="cloze-gap" data-gap="11" onclick="fillGap(this)"></span>, bis er den nächsten Totpunkt erreicht. Dort wiederholt sich die Umpolung.</p>
+            </div>
+
+            <div class="feedback-box correct" id="q18-fb-correct">Alle Lücken richtig!</div>
+            <div class="feedback-box incorrect" id="q18-fb-incorrect">Siehe Lösungen oben (rot markiert).</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             NIVEAU 3 (★★★) FRAGEN - Erweitert
+             ═══════════════════════════════════════════════════════════════════════ -->
+
+        <!-- Q6: Transfer doppelt umpolen (4 BE) -->
+        <div class="question" id="q6" data-niveau="3" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 15: Doppelt umpolen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Entscheide:</strong> Ein Schüler polt gleichzeitig die Spannungsquelle um UND dreht die Magnete um (N und S vertauscht). Was passiert mit der Drehrichtung?</p>
+            <div class="options" id="q6-options">
+                <label class="option" data-value="a"><input type="radio" name="q6" value="a">(a) Der Motor dreht sich doppelt so schnell</label>
+                <label class="option" data-value="b"><input type="radio" name="q6" value="b">(b) Der Motor bleibt stehen</label>
+                <label class="option" data-value="c"><input type="radio" name="q6" value="c">(c) Die Drehrichtung bleibt gleich</label>
+                <label class="option" data-value="d"><input type="radio" name="q6" value="d">(d) Die Drehrichtung kehrt sich um</label>
+            </div>
+            <div class="feedback-box correct" id="q6-fb-correct">Richtig! Beide Änderungen heben sich auf: Strom umgekehrt + B-Feld umgekehrt = Kraft bleibt gleich.</div>
+            <div class="feedback-box incorrect" id="q6-fb-incorrect">Die richtige Antwort ist (c): Die Drehrichtung bleibt gleich (beide Änderungen heben sich auf).</div>
+        </div>
+
+        <!-- Q9: Kommutator-Stellung erklären (5 BE) -->
+        <div class="question" id="q9" data-niveau="3" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 16: Stromlos – warum?</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Erkläre:</strong> Die Abbildung zeigt die Spule in horizontaler Stellung. Warum fließt in dieser Position <strong>kein Strom</strong> durch die Spule?</p>
+            <div class="img-container">
+                <img src="leifi/img/fendt-horizontal.png" alt="Spule horizontal, stromlos" style="max-width:400px;">
+                <p>Simulation: W. Fendt (LEIFIphysik)</p>
+            </div>
+            <div class="options" id="q9-options">
+                <label class="option" data-value="a"><input type="radio" name="q9" value="a">(a) Die Bürsten berühren gerade die Lücke zwischen den Kommutatorhälften</label>
+                <label class="option" data-value="b"><input type="radio" name="q9" value="b">(b) Das Magnetfeld ist in dieser Position ausgeschaltet</label>
+                <label class="option" data-value="c"><input type="radio" name="q9" value="c">(c) Die Spannungsquelle liefert keinen Strom mehr</label>
+                <label class="option" data-value="d"><input type="radio" name="q9" value="d">(d) Die Lorentz-Kraft ist in dieser Position null</label>
+            </div>
+            <div class="feedback-box correct" id="q9-fb-correct">Richtig! Die Bürsten berühren die Lücke zwischen den Kommutatorhälften – der Stromkreis ist unterbrochen.</div>
+            <div class="feedback-box incorrect" id="q9-fb-incorrect">Die richtige Antwort ist (a): Die Bürsten berühren die Lücke zwischen den Kommutatorhälften.</div>
+        </div>
+
+        <!-- Q11: Fendt-Simulation Drehrichtung (4 BE) -->
+        <div class="question" id="q11" data-niveau="3" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 17: Drehrichtung bestimmen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Bestimme:</strong> In welche Richtung dreht sich die Spule?</p>
+            <div class="img-container">
+                <img src="leifi/img/fendt-45grad.png" alt="Spule bei 45° mit Stromrichtung" style="max-width:400px;">
+                <p>Simulation: W. Fendt (LEIFIphysik)</p>
+            </div>
+            <p style="font-size:0.85em; color:#555; margin:10px 0;"><strong>Tipp:</strong> Wende die Rechte-Hand-Regel an. Beachte die Stromrichtung in der Spule und das Magnetfeld zwischen N und S.</p>
+            <div class="options" id="q11-options">
+                <label class="option" data-value="a"><input type="radio" name="q11" value="a">(a) Entgegen dem Uhrzeigersinn (von vorne betrachtet)</label>
+                <label class="option" data-value="b"><input type="radio" name="q11" value="b">(b) Im Uhrzeigersinn (von vorne betrachtet)</label>
+                <label class="option" data-value="c"><input type="radio" name="q11" value="c">(c) Die Spule dreht sich nicht (kein Drehmoment)</label>
+                <label class="option" data-value="d"><input type="radio" name="q11" value="d">(d) Die Spule pendelt nur hin und her</label>
+            </div>
+            <div class="feedback-box correct" id="q11-fb-correct">Richtig! Entgegen dem Uhrzeigersinn (von vorne betrachtet).</div>
+            <div class="feedback-box incorrect" id="q11-fb-incorrect">Die richtige Antwort ist (a): Entgegen dem Uhrzeigersinn. Wende die Rechte-Hand-Regel an!</div>
+        </div>
+
+        <!-- Q14: Maximale Lorentz-Kraft begründen (4 BE) -->
+        <div class="question" id="q14" data-niveau="3" data-points="1">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 18: Kraftmaximum</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">★★★</span>
+                    <span class="question-points">1 BE</span>
+                </div>
+            </div>
+            <p class="question-text"><strong>Begründe:</strong> In welcher Stellung der Spule ist die Lorentz-Kraft am <strong>größten</strong>?</p>
+            <div class="img-container">
+                <img src="leifi/img/fendt-horizontal.png" alt="Spule horizontal" style="max-width:400px;">
+            </div>
+            <div class="options" id="q14-options">
+                <label class="option" data-value="a"><input type="radio" name="q14" value="a">(a) Wenn die Spule horizontal steht (wie im Bild)</label>
+                <label class="option" data-value="b"><input type="radio" name="q14" value="b">(b) Wenn die Spule senkrecht steht</label>
+                <label class="option" data-value="c"><input type="radio" name="q14" value="c">(c) Die Kraft ist immer gleich groß</label>
+                <label class="option" data-value="d"><input type="radio" name="q14" value="d">(d) Bei 45° Neigung</label>
+            </div>
+            <div class="feedback-box correct" id="q14-fb-correct">Richtig! Bei senkrechter Stellung (b) stehen Strom und Magnetfeld senkrecht → F maximal. Bei horizontaler Stellung ist sogar F = 0!</div>
+            <div class="feedback-box incorrect" id="q14-fb-incorrect">Die richtige Antwort ist (b): Bei senkrechter Stellung. Dann stehen Strom und B-Feld senkrecht zueinander.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             SUBMIT SECTION
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             RESULTS SECTION
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay" style="font-size:1.8em; font-weight:700; color:#c62828; margin:15px 0;"></div>
+            <div style="margin:10px 0;font-size:0.9em;" id="niveauDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 0</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>100</td><td>96</td><td>90,7</td><td>86</td><td>80</td><td>73,3</td><td>66,7</td><td>60</td><td>53,3</td><td>46,7</td><td>40</td><td>33,3</td><td>26,7</td><td>20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be14">-</td><td id="be13">-</td><td id="be12">-</td><td id="be11">-</td><td id="be10">-</td><td id="be9">-</td><td id="be8">-</td><td id="be7">-</td><td id="be6">-</td><td id="be5">-</td><td id="be4">-</td><td id="be3">-</td><td id="be2">-</td><td id="be1">-</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+            <button class="btn-secondary" onclick="resetTest()" style="margin-left:10px; background:#ffebee; color:#c62828; border-color:#c62828;">Reset (Lehrer)</button>
+        </div>
+
+        </div><!-- END questionsContainer -->
+    </div>
+
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       MT-09a Gleichstrommotor - JavaScript (ES5!)
+       ═══════════════════════════════════════════════════════════════════════════ */
+
+    // ===== KONFIGURATION ===== v5.0 (Init-Reihenfolge Fix)
+    var STORAGE_KEY = 'mt-physik-9-09a-gleichstrommotor';
+    var selectedNiveau = 0;
+    var testSubmitted = false;
+
+    // Tab-Wechsel-Protokoll
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // BE pro Niveau (1 Dropdown/Wort/MC = 1 BE)
+    var niveauPoints = {
+        1: 9,    // ★ Basis (Q1:5 + Q4:1 + Q7:1 + Q17:2)
+        2: 33,   // ★★ Standard (+8 MC + Q16:5 + Q18:11)
+        3: 37    // ★★★ Erweitert (+4 MC)
+    };
+
+    // Korrekte Antworten
+    var answers = {
+        // ★ Niveau 1
+        q1a: 'rotor', q1b: 'stator', q1c: 'buersten', q1d: 'kommutator', q1e: 'achse',
+        q4: 'b',
+        q7: 'b',
+        q17a: 'heraus', q17b: 'hinein',
+        // ★★ Niveau 2
+        q2: 'b',
+        q3: 'a',
+        q5: 'b',
+        q8: 'b',
+        q10: 'c',
+        q12: 'b',
+        q13: 'b',
+        q15: 'b',
+        q16a: 'strom', q16b: 'neg-gegen', q16c: 'pos-mit', q16d: 'bfeld', q16e: 'kraft',
+        q18: { 1: 'Elektromagnet', 2: 'Permanentmagnet', 3: 'Südpol', 4: 'anziehen', 5: 'Totpunkt', 6: 'stoppen', 7: 'Kommutator', 8: 'umgepolt', 9: 'gleiche', 10: 'stoßen sich ab', 11: 'weiterdrehen' },
+        // ★★★ Niveau 3
+        q6: 'c',
+        q9: 'a',
+        q11: 'a',
+        q14: 'b'
+    };
+
+    // Wordbank
+    var selectedWord = null;
+    var clozeAnswers = {};
+
+    // ===== PLATZ-FUNKTIONEN =====
+    function generateSeatDropdown() {
+        var select = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var option = document.createElement('option');
+            option.value = i;
+            option.textContent = 'P' + i;
+            select.appendChild(option);
+        }
+        var saved = localStorage.getItem(STORAGE_KEY + '-seat');
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        if (saved && seatLocked === 'true') showLockedSeat(saved);
+        else if (saved) select.value = saved;
+    }
+
+    function confirmSeat() {
+        var select = document.getElementById('seatSelect');
+        var num = select.value;
+        if (!num) { alert('Bitte wähle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer P' + num + ' bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-seat', num);
+        localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+        document.getElementById('seatNumber').value = num;
+        showLockedSeat(num);
+        checkUnlocked();
+    }
+
+    function showLockedSeat(num) {
+        document.getElementById('seatNumber').value = num;
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatConfirmed').style.display = 'block';
+        document.getElementById('seatConfirmed').innerHTML = 'Platznummer: <strong style="color:#2c5aa0;">P' + num + '</strong> (gesperrt)';
+    }
+
+    // ===== NIVEAU-FUNKTIONEN =====
+    function restoreNiveauDropdown() {
+        var saved = localStorage.getItem(STORAGE_KEY + '-niveau');
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (saved && niveauLocked === 'true') {
+            selectedNiveau = parseInt(saved);
+            showLockedNiveau(saved);
+            selectNiveau(selectedNiveau);
+        } else if (saved) {
+            document.getElementById('niveauSelect').value = saved;
+        }
+    }
+
+    function confirmNiveau() {
+        var select = document.getElementById('niveauSelect');
+        var val = select.value;
+        if (!val) { alert('Bitte wähle zuerst ein Niveau!'); return; }
+        var niveauStars = ['', '★ Basis', '★★ Standard', '★★★ Erweitert'][parseInt(val)];
+        var ok = confirm('Niveau "' + niveauStars + '" bestätigen?\n\nKann NICHT mehr geändert werden!');
+        if (!ok) return;
+        localStorage.setItem(STORAGE_KEY + '-niveau', val);
+        localStorage.setItem(STORAGE_KEY + '-niveau-locked', 'true');
+        selectedNiveau = parseInt(val);
+        showLockedNiveau(val);
+        selectNiveau(selectedNiveau);
+        checkUnlocked();
+    }
+
+    function showLockedNiveau(val) {
+        var niveauStars = ['', '★ Basis (' + niveauPoints[1] + ' BE)', '★★ Standard (' + niveauPoints[2] + ' BE)', '★★★ Erweitert (' + niveauPoints[3] + ' BE)'][parseInt(val)];
+        document.getElementById('niveauWarning').style.display = 'none';
+        document.getElementById('niveauRow').style.display = 'none';
+        document.getElementById('niveauConfirmed').style.display = 'block';
+        document.getElementById('niveauConfirmed').innerHTML = 'Niveau: <strong style="color:#2c5aa0;">' + niveauStars + '</strong> (gesperrt)';
+    }
+
+    // ===== FRAGEN FREISCHALTEN =====
+    function checkUnlocked() {
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+        var container = document.getElementById('questionsContainer');
+        var hint = document.getElementById('unlockHint');
+        if (seatLocked && niveauLocked) {
+            container.classList.add('unlocked');
+            hint.style.display = 'none';
+        } else {
+            container.classList.remove('unlocked');
+            hint.style.display = 'block';
+        }
+    }
+
+    function selectNiveau(niveau) {
+        selectedNiveau = niveau;
+        var questions = document.querySelectorAll('.question');
+        for (var j = 0; j < questions.length; j++) {
+            var qNiveau = parseInt(questions[j].dataset.niveau);
+            var qId = questions[j].id;
+            var existingHint = document.getElementById(qId + '-niveau-hinweis');
+            if (qNiveau > niveau) {
+                if (!existingHint) {
+                    var hint = document.createElement('div');
+                    hint.className = 'niveau-hinweis';
+                    hint.id = qId + '-niveau-hinweis';
+                    hint.innerHTML = 'Diese Aufgabe wird bei deinem Niveau <strong>nicht gewertet</strong>.';
+                    var header = questions[j].querySelector('.question-header');
+                    if (header && header.nextSibling) header.parentNode.insertBefore(hint, header.nextSibling);
+                }
+            } else if (existingHint) {
+                existingHint.remove();
+            }
+        }
+        updateProgress();
+        saveProgress();
+    }
+
+    // ===== OPTIONS SETUP (exakt wie Template) =====
+    function setupOptions() {
+        // Radio-Button Options
+        var optionContainers = document.querySelectorAll('.options:not(.multi-select)');
+        for (var i = 0; i < optionContainers.length; i++) {
+            var options = optionContainers[i].querySelectorAll('.option');
+            for (var j = 0; j < options.length; j++) {
+                options[j].addEventListener('click', function(e) {
+                    if (testSubmitted) return;
+                    e.preventDefault();
+                    var siblings = this.parentNode.querySelectorAll('.option');
+                    for (var k = 0; k < siblings.length; k++) {
+                        siblings[k].classList.remove('selected');
+                        var sibRadio = siblings[k].querySelector('input');
+                        if (sibRadio) sibRadio.checked = false;
+                    }
+                    this.classList.add('selected');
+                    var radio = this.querySelector('input');
+                    if (radio) radio.checked = true;
+                    updateProgress();
+                    saveProgress();
+                });
+            }
+        }
+    }
+
+    // ===== DROPDOWN SETUP =====
+    function setupDropdowns() {
+        var selects = document.querySelectorAll('select');
+        for (var i = 0; i < selects.length; i++) {
+            if (selects[i].id === 'seatSelect' || selects[i].id === 'niveauSelect') continue;
+            selects[i].addEventListener('change', function() {
+                if (testSubmitted) return;
+                updateProgress();
+                saveProgress();
+            });
+        }
+    }
+
+    // ===== WORDBANK =====
+    function selectWord(el) {
+        if (testSubmitted) return;
+        if (el.classList.contains('used')) return;
+        var items = document.querySelectorAll('.wordbank-item');
+        for (var i = 0; i < items.length; i++) items[i].classList.remove('selected');
+        el.classList.add('selected');
+        selectedWord = el.getAttribute('data-word');
+    }
+
+    function fillGap(el) {
+        if (testSubmitted) return;
+        if (!selectedWord) return;
+        var gapNum = el.getAttribute('data-gap');
+        var oldWord = clozeAnswers[gapNum];
+        if (oldWord) {
+            var items = document.querySelectorAll('.wordbank-item');
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].getAttribute('data-word') === oldWord) items[i].classList.remove('used');
+            }
+        }
+        el.textContent = selectedWord;
+        el.classList.add('filled');
+        clozeAnswers[gapNum] = selectedWord;
+        var items = document.querySelectorAll('.wordbank-item');
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].getAttribute('data-word') === selectedWord) {
+                items[i].classList.add('used');
+                items[i].classList.remove('selected');
+            }
+        }
+        selectedWord = null;
+        saveProgress();
+        updateProgress();
+    }
+
+    // ===== PROGRESS =====
+    function isQuestionAnswered(qId) {
+        switch(qId) {
+            case 'q1': return document.getElementById('q1-a').value && document.getElementById('q1-b').value && document.getElementById('q1-c').value && document.getElementById('q1-d').value && document.getElementById('q1-e').value;
+            case 'q17': return document.getElementById('q17-a').value && document.getElementById('q17-b').value;
+            case 'q16': return document.getElementById('q16-a').value && document.getElementById('q16-b').value && document.getElementById('q16-c').value && document.getElementById('q16-d').value && document.getElementById('q16-e').value;
+            case 'q18': return Object.keys(clozeAnswers).length === 11;
+            default: return !!document.querySelector('input[name="' + qId + '"]:checked');
+        }
+    }
+
+    function countAnsweredQuestions() {
+        if (selectedNiveau === 0) return { answered: 0, total: 0 };
+        var answered = 0, total = 0;
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            if (qNiveau <= selectedNiveau) {
+                total++;
+                if (isQuestionAnswered(questions[i].id)) answered++;
+            }
+        }
+        return { answered: answered, total: total };
+    }
+
+    function updateProgress() {
+        if (selectedNiveau === 0) {
+            document.getElementById('progressText').textContent = 'Niveau wählen...';
+            document.getElementById('progressFill').style.width = '0%';
+            return;
+        }
+        var status = countAnsweredQuestions();
+        var percent = status.total > 0 ? (status.answered / status.total) * 100 : 0;
+        document.getElementById('progressFill').style.width = percent + '%';
+        document.getElementById('progressText').textContent = status.answered + ' / ' + status.total + ' beantwortet (' + niveauPoints[selectedNiveau] + ' BE)';
+    }
+
+    // ===== PERSISTENCE =====
+    function saveProgress() {
+        var data = {
+            answers: collectAllAnswers(),
+            cloze: clozeAnswers,
+            timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            var data = JSON.parse(saved);
+            if (data.answers) restoreAnswers(data.answers);
+            if (data.cloze) {
+                clozeAnswers = data.cloze;
+                for (var gapNum in clozeAnswers) {
+                    var word = clozeAnswers[gapNum];
+                    var gap = document.querySelector('.cloze-gap[data-gap="' + gapNum + '"]');
+                    if (gap && word) {
+                        gap.textContent = word;
+                        gap.classList.add('filled');
+                        var items = document.querySelectorAll('.wordbank-item');
+                        for (var i = 0; i < items.length; i++) {
+                            if (items[i].getAttribute('data-word') === word) items[i].classList.add('used');
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function collectAllAnswers() {
+        return {
+            q1a: document.getElementById('q1-a').value,
+            q1b: document.getElementById('q1-b').value,
+            q1c: document.getElementById('q1-c').value,
+            q1d: document.getElementById('q1-d').value,
+            q1e: document.getElementById('q1-e').value,
+            q4: getRadioValue('q4'),
+            q7: getRadioValue('q7'),
+            q17a: document.getElementById('q17-a').value,
+            q17b: document.getElementById('q17-b').value,
+            q2: getRadioValue('q2'),
+            q3: getRadioValue('q3'),
+            q5: getRadioValue('q5'),
+            q8: getRadioValue('q8'),
+            q10: getRadioValue('q10'),
+            q12: getRadioValue('q12'),
+            q13: getRadioValue('q13'),
+            q15: getRadioValue('q15'),
+            q16a: document.getElementById('q16-a').value,
+            q16b: document.getElementById('q16-b').value,
+            q16c: document.getElementById('q16-c').value,
+            q16d: document.getElementById('q16-d').value,
+            q16e: document.getElementById('q16-e').value,
+            q6: getRadioValue('q6'),
+            q9: getRadioValue('q9'),
+            q11: getRadioValue('q11'),
+            q14: getRadioValue('q14')
+        };
+    }
+
+    function restoreAnswers(saved) {
+        // Dropdowns
+        if (saved.q1a) document.getElementById('q1-a').value = saved.q1a;
+        if (saved.q1b) document.getElementById('q1-b').value = saved.q1b;
+        if (saved.q1c) document.getElementById('q1-c').value = saved.q1c;
+        if (saved.q1d) document.getElementById('q1-d').value = saved.q1d;
+        if (saved.q1e) document.getElementById('q1-e').value = saved.q1e;
+        if (saved.q17a) document.getElementById('q17-a').value = saved.q17a;
+        if (saved.q17b) document.getElementById('q17-b').value = saved.q17b;
+        if (saved.q16a) document.getElementById('q16-a').value = saved.q16a;
+        if (saved.q16b) document.getElementById('q16-b').value = saved.q16b;
+        if (saved.q16c) document.getElementById('q16-c').value = saved.q16c;
+        if (saved.q16d) document.getElementById('q16-d').value = saved.q16d;
+        if (saved.q16e) document.getElementById('q16-e').value = saved.q16e;
+        // Radio
+        var radioQs = ['q4', 'q7', 'q2', 'q3', 'q5', 'q8', 'q10', 'q12', 'q13', 'q15', 'q6', 'q9', 'q11', 'q14'];
+        for (var i = 0; i < radioQs.length; i++) {
+            var q = radioQs[i];
+            if (saved[q]) {
+                var radio = document.querySelector('input[name="' + q + '"][value="' + saved[q] + '"]');
+                if (radio) { radio.checked = true; radio.parentNode.classList.add('selected'); }
+            }
+        }
+        updateProgress();
+    }
+
+    function getRadioValue(name) {
+        var checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : '';
+    }
+
+    // ===== SUBMIT TEST =====
+    function submitTest() {
+        if (testSubmitted) return;
+        var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+        var seatNum = document.getElementById('seatNumber').value;
+        if (seatLocked !== 'true' || !seatNum) { alert('Bitte bestätige zuerst deine Platznummer!'); return; }
+        var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked');
+        if (niveauLocked !== 'true' || selectedNiveau === 0) { alert('Bitte bestätige zuerst dein Niveau!'); return; }
+
+        testSubmitted = true;
+        localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+        var userAnswers = collectAllAnswers();
+        var score = 0;
+        var maxPoints = niveauPoints[selectedNiveau];
+
+        // ===== NIVEAU 1 (★) =====
+        if (selectedNiveau >= 1) {
+            // Q1: Zuordnung (5 BE)
+            var q1Score = 0;
+            if (userAnswers.q1a === answers.q1a) { q1Score++; document.getElementById('q1-a').classList.add('correct'); } else { document.getElementById('q1-a').classList.add('incorrect'); }
+            if (userAnswers.q1b === answers.q1b) { q1Score++; document.getElementById('q1-b').classList.add('correct'); } else { document.getElementById('q1-b').classList.add('incorrect'); }
+            if (userAnswers.q1c === answers.q1c) { q1Score++; document.getElementById('q1-c').classList.add('correct'); } else { document.getElementById('q1-c').classList.add('incorrect'); }
+            if (userAnswers.q1d === answers.q1d) { q1Score++; document.getElementById('q1-d').classList.add('correct'); } else { document.getElementById('q1-d').classList.add('incorrect'); }
+            if (userAnswers.q1e === answers.q1e) { q1Score++; document.getElementById('q1-e').classList.add('correct'); } else { document.getElementById('q1-e').classList.add('incorrect'); }
+            score += q1Score;
+            showFeedback('q1', q1Score === 5);
+            showQuestionResult('q1', q1Score, 5);
+
+            // Q4 (1 BE)
+            var q4Correct = userAnswers.q4 === answers.q4;
+            if (q4Correct) score += 1;
+            markRadioQuestion('q4', answers.q4, userAnswers.q4);
+            showFeedback('q4', q4Correct);
+            showQuestionResult('q4', q4Correct ? 1 : 0, 1);
+
+            // Q7 (1 BE)
+            var q7Correct = userAnswers.q7 === answers.q7;
+            if (q7Correct) score += 1;
+            markRadioQuestion('q7', answers.q7, userAnswers.q7);
+            showFeedback('q7', q7Correct);
+            showQuestionResult('q7', q7Correct ? 1 : 0, 1);
+
+            // Q17: Punkt/Kreuz (2 BE = 2 Dropdowns)
+            var q17Score = 0;
+            if (userAnswers.q17a === answers.q17a) { q17Score++; document.getElementById('q17-a').classList.add('correct'); } else { document.getElementById('q17-a').classList.add('incorrect'); }
+            if (userAnswers.q17b === answers.q17b) { q17Score++; document.getElementById('q17-b').classList.add('correct'); } else { document.getElementById('q17-b').classList.add('incorrect'); }
+            score += q17Score;
+            showFeedback('q17', q17Score === 2);
+            showQuestionResult('q17', q17Score, 2);
+        }
+
+        // ===== NIVEAU 2 (★★) =====
+        var niveau2Qs = ['q2', 'q3', 'q5', 'q8', 'q10', 'q12', 'q13', 'q15'];
+        var niveau2Points = [1, 1, 1, 1, 1, 1, 1, 1]; // je 1 MC = 1 BE
+        for (var i = 0; i < niveau2Qs.length; i++) {
+            var qId = niveau2Qs[i];
+            var pts = niveau2Points[i];
+            var notGraded = selectedNiveau < 2;
+            var correct = userAnswers[qId] === answers[qId];
+            var qPts = correct ? pts : 0;
+            if (!notGraded) score += qPts;
+            markRadioQuestion(qId, answers[qId], userAnswers[qId]);
+            showFeedback(qId, correct);
+            showQuestionResult(qId, qPts, pts, notGraded);
+        }
+
+        // Q16: Handregeln (5 BE = 5 Dropdowns)
+        var q16NotGraded = selectedNiveau < 2;
+        var q16Score = 0;
+        if (userAnswers.q16a === answers.q16a) { q16Score++; document.getElementById('q16-a').classList.add('correct'); } else { document.getElementById('q16-a').classList.add('incorrect'); }
+        if (userAnswers.q16b === answers.q16b) { q16Score++; document.getElementById('q16-b').classList.add('correct'); } else { document.getElementById('q16-b').classList.add('incorrect'); }
+        if (userAnswers.q16c === answers.q16c) { q16Score++; document.getElementById('q16-c').classList.add('correct'); } else { document.getElementById('q16-c').classList.add('incorrect'); }
+        if (userAnswers.q16d === answers.q16d) { q16Score++; document.getElementById('q16-d').classList.add('correct'); } else { document.getElementById('q16-d').classList.add('incorrect'); }
+        if (userAnswers.q16e === answers.q16e) { q16Score++; document.getElementById('q16-e').classList.add('correct'); } else { document.getElementById('q16-e').classList.add('incorrect'); }
+        if (!q16NotGraded) score += q16Score;
+        showFeedback('q16', q16Score === 5);
+        showQuestionResult('q16', q16Score, 5, q16NotGraded);
+
+        // Q18: Cloze (11 BE = 11 Lücken, 1 BE pro Lücke)
+        var q18NotGraded = selectedNiveau < 2;
+        var q18Correct = 0;
+        var gaps = document.querySelectorAll('.cloze-gap');
+        for (var g = 0; g < gaps.length; g++) {
+            var gapNum = gaps[g].getAttribute('data-gap');
+            var userAns = clozeAnswers[gapNum] || '';
+            var correctAns = answers.q18[gapNum];
+            if (userAns === correctAns) { gaps[g].classList.add('correct'); q18Correct++; }
+            else { gaps[g].classList.add('incorrect'); if (userAns === '') gaps[g].textContent = correctAns; else gaps[g].textContent = userAns + ' → ' + correctAns; }
+        }
+        if (!q18NotGraded) score += q18Correct;
+        showFeedback('q18', q18Correct === 11);
+        showQuestionResult('q18', q18Correct, 11, q18NotGraded);
+
+        // ===== NIVEAU 3 (★★★) =====
+        var niveau3Qs = ['q6', 'q9', 'q11', 'q14'];
+        var niveau3Points = [1, 1, 1, 1]; // je 1 MC = 1 BE
+        for (var j = 0; j < niveau3Qs.length; j++) {
+            var qId3 = niveau3Qs[j];
+            var pts3 = niveau3Points[j];
+            var notGraded3 = selectedNiveau < 3;
+            var correct3 = userAnswers[qId3] === answers[qId3];
+            var qPts3 = correct3 ? pts3 : 0;
+            if (!notGraded3) score += qPts3;
+            markRadioQuestion(qId3, answers[qId3], userAnswers[qId3]);
+            showFeedback(qId3, correct3);
+            showQuestionResult(qId3, qPts3, pts3, notGraded3);
+        }
+
+        markNichtGewertet();
+        displayResults(score, maxPoints);
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    function markRadioQuestion(name, correct, selected) {
+        var options = document.querySelectorAll('#' + name + '-options .option');
+        for (var i = 0; i < options.length; i++) {
+            var val = options[i].dataset.value;
+            if (val === correct) options[i].classList.add('correct');
+            else if (val === selected && val !== correct) options[i].classList.add('incorrect');
+        }
+    }
+
+    function showFeedback(qId, isCorrect) {
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (isCorrect && fbCorrect) fbCorrect.classList.add('show');
+        else if (!isCorrect && fbIncorrect) fbIncorrect.classList.add('show');
+    }
+
+    function showQuestionResult(qId, achieved, maxPts, notGraded) {
+        var question = document.getElementById(qId);
+        if (!question) return;
+        var meta = question.querySelector('.question-meta');
+        if (!meta) return;
+        var existing = meta.querySelector('.question-result');
+        if (existing) existing.remove();
+        var result = document.createElement('span');
+        result.className = 'question-result';
+        if (notGraded) {
+            result.style.background = '#f0f0f0';
+            result.style.color = '#888';
+            result.textContent = '(' + achieved + ')/' + maxPts + ' BE';
+        } else {
+            if (achieved === maxPts) result.classList.add('full');
+            else if (achieved > 0) result.classList.add('partial');
+            else result.classList.add('zero');
+            result.textContent = achieved + '/' + maxPts + ' BE';
+        }
+        meta.appendChild(result);
+    }
+
+    function markNichtGewertet() {
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].dataset.niveau);
+            var qId = questions[i].id;
+            if (qNiveau > selectedNiveau) {
+                var hint = document.getElementById(qId + '-niveau-hinweis');
+                if (hint) hint.remove();
+                var existingBox = document.getElementById(qId + '-nicht-gewertet');
+                if (!existingBox) {
+                    var box = document.createElement('div');
+                    box.className = 'nicht-gewertet-box';
+                    box.id = qId + '-nicht-gewertet';
+                    box.textContent = 'Nicht gewertet, nur informativ';
+                    questions[i].appendChild(box);
+                }
+            }
+        }
+    }
+
+    function displayResults(score, maxPoints) {
+        document.getElementById('submitSection').classList.add('hidden');
+        document.getElementById('resultsSection').classList.remove('hidden');
+        var seatEl = document.getElementById('seatNumber');
+        var platzText = (seatEl && seatEl.value) ? 'P' + seatEl.value : '—';
+        var niveauStars = ['', '\u2605', '\u2605\u2605', '\u2605\u2605\u2605'][selectedNiveau];
+
+        document.getElementById('studentNameDisplay').textContent = 'Platznummer: ' + platzText;
+        document.getElementById('niveauDisplay').textContent = 'Niveau: ' + niveauStars + ' (' + maxPoints + ' BE)';
+        document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPoints;
+
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        var npIds = ['be14', 'be13', 'be12', 'be11', 'be10', 'be9', 'be8', 'be7', 'be6', 'be5', 'be4', 'be3', 'be2', 'be1'];
+        for (var i = 0; i < thresholds.length; i++) {
+            var beExact = maxPoints * thresholds[i] / 100;
+            var be = Math.ceil(beExact * 2) / 2;
+            document.getElementById(npIds[i]).textContent = be;
+        }
+
+        var percent = (score / maxPoints) * 100;
+        var np = 0;
+        if (percent >= 100) np = 14;
+        else if (percent >= 96) np = 13;
+        else if (percent >= 90.67) np = 12;
+        else if (percent >= 86) np = 11;
+        else if (percent >= 80) np = 10;
+        else if (percent >= 73.33) np = 9;
+        else if (percent >= 66.67) np = 8;
+        else if (percent >= 60) np = 7;
+        else if (percent >= 53.33) np = 6;
+        else if (percent >= 46.67) np = 5;
+        else if (percent >= 40) np = 4;
+        else if (percent >= 33.33) np = 3;
+        else if (percent >= 26.67) np = 2;
+        else if (percent >= 20) np = 1;
+
+        document.getElementById('gradeDisplay').textContent = np + ' Notenpunkte';
+        if (np > 0) {
+            var cellId = 'be' + np;
+            var cell = document.getElementById(cellId);
+            if (cell) cell.classList.add('current');
+        }
+
+        localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+        localStorage.setItem(STORAGE_KEY + '-score', score);
+
+        // Zeitstempel + Tab-Wechsel
+        var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+        var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+        var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+        var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '× (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        document.getElementById('resultsSection').insertAdjacentHTML('beforeend', timestampHtml);
+
+        disableAllInputs();
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '—';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' + (month < 10 ? '0' : '') + month + '.' + year + ' ' + (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // ===== RESET FÜR LEHRER =====
+    function resetTest() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code !== '2024') {
+            alert('Falscher Code.');
+            return;
+        }
+        if (!confirm('Test wirklich zurücksetzen? Alle Eingaben werden gelöscht.')) return;
+        var keysToRemove = [];
+        for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf(STORAGE_KEY) === 0) {
+                keysToRemove.push(key);
+            }
+        }
+        for (var j = 0; j < keysToRemove.length; j++) {
+            localStorage.removeItem(keysToRemove[j]);
+        }
+        location.reload();
+    }
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+        var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (testSubmitted) return;
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function disableAllInputs() {
+        var radios = document.querySelectorAll('input[type="radio"]');
+        for (var i = 0; i < radios.length; i++) radios[i].disabled = true;
+        var selects = document.querySelectorAll('select');
+        for (var k = 0; k < selects.length; k++) selects[k].disabled = true;
+        var btnSeatOk = document.getElementById('btnSeatOk');
+        if (btnSeatOk) btnSeatOk.disabled = true;
+        var btnNiveauOk = document.getElementById('btnNiveauOk');
+        if (btnNiveauOk) btnNiveauOk.disabled = true;
+    }
+
+    // ===== INIT =====
+    window.onload = function() {
+        var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+        if (!startTime) localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+
+        generateSeatDropdown();
+        setupOptions();
+        setupDropdowns();
+
+        // WICHTIG: loadProgress() MUSS vor restoreNiveauDropdown() kommen!
+        // Sonst überschreibt selectNiveau() → saveProgress() die gespeicherten Daten
+        loadProgress();
+
+        restoreNiveauDropdown();
+        updateProgress();
+        checkUnlocked();
+        initTabSwitchTracking();
+
+        var submitted = localStorage.getItem(STORAGE_KEY + '-submitted');
+        if (submitted === 'true') submitTest();
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Redoxreaktion CuO + C</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION: Redoxreaktion CuO + C
+   Chemie Klasse 8 | sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2a7a4b;
+    --accent-light: #e8f5e9;
+    --copper-oxide: #1a1a1a;
+    --copper: #b87333;
+    --copper-light: #d4956a;
+    --carbon: #333333;
+    --oxygen: #c62828;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIMULATION CONTAINER
+═══════════════════════════════════════════════════════════════ */
+
+.sim-container {
+    background: var(--white);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.sim-header {
+    background: var(--accent);
+    color: var(--white);
+    padding: 10px 15px;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.step-indicator {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.sim-canvas-wrapper {
+    padding: 20px;
+    background: #fafafa;
+    border-bottom: 1px solid var(--border);
+}
+
+#simCanvas {
+    display: block;
+    margin: 0 auto;
+    background: var(--white);
+    border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPLANATION BOX
+═══════════════════════════════════════════════════════════════ */
+
+.explanation {
+    padding: 15px 20px;
+    min-height: 100px;
+}
+
+.explanation h3 {
+    color: var(--accent);
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+
+.explanation p {
+    color: var(--text-secondary);
+    font-size: 0.95em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTROLS
+═══════════════════════════════════════════════════════════════ */
+
+.controls {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--accent);
+    color: var(--white);
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.btn:hover { background: #1e5a35; }
+.btn:active { background: #1e5a35; transform: scale(0.98); }
+.btn:disabled { background: #ccc; cursor: not-allowed; }
+.btn-secondary { background: #666; }
+.btn-secondary:hover { background: #444; }
+
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGEND
+═══════════════════════════════════════════════════════════════ */
+
+.legend {
+    background: var(--bg);
+    padding: 12px 15px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--border);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8em;
+}
+
+.legend-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+}
+
+.legend-dot.copper-ion { background: var(--copper-oxide); border: 2px solid #444; }
+.legend-dot.copper { background: var(--copper); border: 2px solid #8b5a2b; }
+.legend-dot.oxygen { background: var(--oxygen); }
+.legend-dot.carbon { background: var(--carbon); }
+
+/* ═══════════════════════════════════════════════════════════════
+   TEMPERATURE DISPLAY
+═══════════════════════════════════════════════════════════════ */
+
+.temp-display {
+    background: var(--bg);
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9em;
+}
+
+.temp-bar {
+    flex: 1;
+    height: 12px;
+    background: #e0e0e0;
+    position: relative;
+    max-width: 200px;
+}
+
+.temp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #ff9800, #f44336);
+    width: 0%;
+    transition: width 0.5s;
+}
+
+.temp-value {
+    font-weight: bold;
+    min-width: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 600px) {
+    #simCanvas { width: 100%; height: auto; }
+    .controls { flex-direction: column; }
+    .nav-buttons { width: 100%; justify-content: space-between; }
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Redoxreaktion: CuO + C</h1>
+            <div class="meta">Chemie Klasse 8 | Thema 2.5 Redoxreaktionen | Sauerstoffübertragung</div>
+        </header>
+
+        <div class="sim-container">
+            <div class="sim-header">
+                <span>Simulation: Was passiert auf Teilchenebene?</span>
+                <span class="step-indicator">Schritt <span id="currentStep">1</span> von 5</span>
+            </div>
+
+            <div class="temp-display">
+                <span>Temperatur:</span>
+                <div class="temp-bar">
+                    <div class="temp-fill" id="tempFill"></div>
+                </div>
+                <span class="temp-value" id="tempValue">20 °C</span>
+            </div>
+
+            <div class="sim-canvas-wrapper">
+                <canvas id="simCanvas" width="650" height="380"></canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot copper-ion"></div>
+                    <span>Cu²⁺ (in CuO)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot copper"></div>
+                    <span>Cu (rein)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot oxygen"></div>
+                    <span>O²⁻ / O</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot carbon"></div>
+                    <span>C (Kohlenstoff)</span>
+                </div>
+            </div>
+
+            <div class="explanation">
+                <h3 id="explanationTitle">Schritt 1: Ausgangsstoffe</h3>
+                <p id="explanationText">
+                    Links: Kupfer(II)-oxid (CuO) – besteht aus Cu²⁺-Ionen und O²⁻-Ionen.
+                    Rechts: Kohlenstoff (C) – Aktivkohle.
+                </p>
+            </div>
+
+            <div class="controls">
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" id="btnPrev" disabled>Zurück</button>
+                    <button class="btn" id="btnNext">Weiter</button>
+                </div>
+                <button class="btn btn-secondary" id="btnReset">Neustart</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIMULATION: Redoxreaktion CuO + C
+// ES5-kompatibel
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var currentStep = 1;
+    var maxSteps = 5;
+    var animationId = null;
+    var cuoParticles = [];
+    var carbonParticles = [];
+    var co2Molecules = [];
+    var copperAtoms = [];
+    var oxygenTransfer = null;
+
+    // Farben
+    var CUO_COLOR = '#1a1a1a';
+    var COPPER_COLOR = '#b87333';
+    var COPPER_LIGHT = '#d4956a';
+    var OXYGEN_COLOR = '#c62828';
+    var CARBON_COLOR = '#333333';
+    var ACCENT = '#2a7a4b';
+
+    // Schritte
+    var steps = [
+        {
+            title: 'Schritt 1: Ausgangsstoffe',
+            text: 'Links: Kupfer(II)-oxid (CuO) – ein schwarzes Pulver aus Cu²⁺-Ionen und O²⁻-Ionen. Rechts: Kohlenstoff (C) – Aktivkohle.',
+            temp: 20,
+            vibration: 0
+        },
+        {
+            title: 'Schritt 2: Erhitzen beginnt',
+            text: 'Die Mischung wird stark erhitzt. Die Teilchen beginnen zu schwingen. Die Energie aktiviert die Reaktion.',
+            temp: 400,
+            vibration: 3
+        },
+        {
+            title: 'Schritt 3: Sauerstoffübertragung!',
+            text: 'JETZT passiert es: Der Sauerstoff löst sich vom Kupfer und verbindet sich mit dem Kohlenstoff! Das ist die REDOXREAKTION – Sauerstoff wird übertragen.',
+            temp: 600,
+            vibration: 2,
+            transfering: true
+        },
+        {
+            title: 'Schritt 4: Reaktionsprodukte entstehen',
+            text: 'CO₂ (Kohlenstoffdioxid) entweicht als Gas nach oben. Kupfer (Cu) bleibt als rötlich-metallischer Stoff zurück.',
+            temp: 700,
+            vibration: 1,
+            reacted: true
+        },
+        {
+            title: 'Schritt 5: Ergebnis – Redoxreaktion verstehen',
+            text: 'CuO wurde REDUZIERT (Sauerstoff abgegeben). C wurde OXIDIERT (Sauerstoff aufgenommen). Der Sauerstoff wurde von CuO auf C ÜBERTRAGEN!',
+            temp: 400,
+            vibration: 0,
+            finalState: true
+        }
+    ];
+
+    // Partikel initialisieren
+    function initParticles() {
+        cuoParticles = [];
+        carbonParticles = [];
+        co2Molecules = [];
+        copperAtoms = [];
+        oxygenTransfer = null;
+
+        // CuO Gitter (links) - 3x4
+        var cuoStartX = 80;
+        var cuoStartY = 100;
+        var spacing = 45;
+
+        for (var row = 0; row < 4; row++) {
+            for (var col = 0; col < 3; col++) {
+                // Cu-Ion
+                cuoParticles.push({
+                    x: cuoStartX + col * spacing,
+                    y: cuoStartY + row * spacing,
+                    baseX: cuoStartX + col * spacing,
+                    baseY: cuoStartY + row * spacing,
+                    radius: 16,
+                    type: 'copper',
+                    hasOxygen: true,
+                    reduced: false
+                });
+            }
+        }
+
+        // Kohlenstoff (rechts) - einzelne C-Atome
+        var cStartX = 450;
+        var cStartY = 120;
+
+        for (var i = 0; i < 6; i++) {
+            carbonParticles.push({
+                x: cStartX + (i % 2) * 50,
+                y: cStartY + Math.floor(i / 2) * 60,
+                baseX: cStartX + (i % 2) * 50,
+                baseY: cStartY + Math.floor(i / 2) * 60,
+                radius: 14,
+                oxidized: false
+            });
+        }
+    }
+
+    // Zeichnen
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        var step = steps[currentStep - 1];
+        var vibration = step.vibration || 0;
+
+        // Hintergrund
+        ctx.fillStyle = '#fafafa';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Reagenzglas/Tiegel (vereinfacht)
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(40, 60);
+        ctx.lineTo(40, 320);
+        ctx.lineTo(280, 320);
+        ctx.lineTo(280, 60);
+        ctx.stroke();
+
+        // Zweiter Bereich für C
+        ctx.beginPath();
+        ctx.moveTo(380, 60);
+        ctx.lineTo(380, 320);
+        ctx.lineTo(580, 320);
+        ctx.lineTo(580, 60);
+        ctx.stroke();
+
+        // Plus-Zeichen zwischen den Bereichen
+        ctx.fillStyle = '#666';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('+', 318, 200);
+
+        // Labels
+        ctx.fillStyle = '#666';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('CuO', 145, 350);
+        ctx.fillText('C', 475, 350);
+
+        // CuO Partikel zeichnen
+        for (var i = 0; i < cuoParticles.length; i++) {
+            var p = cuoParticles[i];
+            var vx = (Math.random() - 0.5) * vibration * 2;
+            var vy = (Math.random() - 0.5) * vibration * 2;
+
+            // Cu-Ion (schwarz wenn mit O, kupferfarben wenn reduziert)
+            ctx.beginPath();
+            ctx.arc(p.x + vx, p.y + vy, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = p.reduced ? COPPER_COLOR : CUO_COLOR;
+            ctx.fill();
+            if (p.reduced) {
+                ctx.strokeStyle = '#8b5a2b';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // O-Ion (nur wenn noch nicht übertragen)
+            if (p.hasOxygen && !p.reduced) {
+                ctx.beginPath();
+                ctx.arc(p.x + vx + 12, p.y + vy - 10, 10, 0, Math.PI * 2);
+                ctx.fillStyle = OXYGEN_COLOR;
+                ctx.fill();
+            }
+        }
+
+        // Kohlenstoff Partikel zeichnen
+        for (var j = 0; j < carbonParticles.length; j++) {
+            var c = carbonParticles[j];
+            var cvx = (Math.random() - 0.5) * vibration * 2;
+            var cvy = (Math.random() - 0.5) * vibration * 2;
+
+            if (!c.oxidized) {
+                ctx.beginPath();
+                ctx.arc(c.x + cvx, c.y + cvy, c.radius, 0, Math.PI * 2);
+                ctx.fillStyle = CARBON_COLOR;
+                ctx.fill();
+            }
+        }
+
+        // O-Transfer Animation
+        if (oxygenTransfer) {
+            ctx.beginPath();
+            ctx.arc(oxygenTransfer.x, oxygenTransfer.y, 12, 0, Math.PI * 2);
+            ctx.fillStyle = OXYGEN_COLOR;
+            ctx.fill();
+
+            // Pfeil für Übertragung
+            ctx.strokeStyle = ACCENT;
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(200, 180);
+            ctx.lineTo(oxygenTransfer.x - 15, oxygenTransfer.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // CO2-Moleküle (aufsteigend)
+        for (var k = 0; k < co2Molecules.length; k++) {
+            var mol = co2Molecules[k];
+            ctx.globalAlpha = mol.opacity;
+
+            // CO2 als C mit zwei O
+            ctx.fillStyle = CARBON_COLOR;
+            ctx.beginPath();
+            ctx.arc(mol.x, mol.y, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = OXYGEN_COLOR;
+            ctx.beginPath();
+            ctx.arc(mol.x - 16, mol.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(mol.x + 16, mol.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.globalAlpha = 1;
+        }
+
+        // Kupfer-Atome (Produkt)
+        for (var m = 0; m < copperAtoms.length; m++) {
+            var cu = copperAtoms[m];
+            ctx.beginPath();
+            ctx.arc(cu.x, cu.y, 16, 0, Math.PI * 2);
+            ctx.fillStyle = COPPER_COLOR;
+            ctx.fill();
+            ctx.strokeStyle = '#8b5a2b';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Glanz-Effekt
+            ctx.beginPath();
+            ctx.arc(cu.x - 5, cu.y - 5, 4, 0, Math.PI * 2);
+            ctx.fillStyle = COPPER_LIGHT;
+            ctx.fill();
+        }
+
+        // Schritt-spezifische Labels
+        if (step.transfering) {
+            ctx.fillStyle = ACCENT;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('O wird übertragen!', 280, 120);
+
+            // Großer Pfeil
+            ctx.strokeStyle = OXYGEN_COLOR;
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(220, 150);
+            ctx.lineTo(380, 150);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(370, 140);
+            ctx.lineTo(385, 150);
+            ctx.lineTo(370, 160);
+            ctx.fill();
+        }
+
+        if (step.finalState) {
+            // Ergebnis-Labels
+            ctx.fillStyle = COPPER_COLOR;
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('Cu (Kupfer)', 100, 355);
+            ctx.fillText('REDUZIERT', 105, 372);
+
+            ctx.fillStyle = OXYGEN_COLOR;
+            ctx.fillText('CO₂ ↑', 480, 50);
+
+            ctx.fillStyle = CARBON_COLOR;
+            ctx.fillText('C → CO₂', 440, 355);
+            ctx.fillText('OXIDIERT', 450, 372);
+
+            // Redox-Schema
+            ctx.strokeStyle = ACCENT;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(320, 200, 60, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = ACCENT;
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('REDOX', 320, 195);
+            ctx.font = '12px sans-serif';
+            ctx.fillText('O-Übertragung', 320, 212);
+            ctx.textAlign = 'left';
+        }
+
+        // Wärme-Symbol
+        if (currentStep >= 2 && currentStep <= 4) {
+            ctx.fillStyle = '#ff9800';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('🔥 Wärme', 290, 340);
+        }
+    }
+
+    // Animation für Sauerstoff-Übertragung
+    function animateTransfer() {
+        var startX = 180;
+        var startY = 150;
+        var endX = 450;
+        var endY = 150;
+        var progress = 0;
+
+        oxygenTransfer = { x: startX, y: startY };
+
+        function animate() {
+            progress += 0.02;
+
+            if (progress <= 1) {
+                oxygenTransfer.x = startX + (endX - startX) * progress;
+                oxygenTransfer.y = startY + Math.sin(progress * Math.PI) * -30;
+                draw();
+                animationId = requestAnimationFrame(animate);
+            } else {
+                oxygenTransfer = null;
+                // Reaktion abgeschlossen - Produkte zeigen
+                showProducts();
+            }
+        }
+
+        animate();
+    }
+
+    function showProducts() {
+        // CuO → Cu (reduziert)
+        for (var i = 0; i < cuoParticles.length; i++) {
+            cuoParticles[i].reduced = true;
+            cuoParticles[i].hasOxygen = false;
+        }
+
+        // C → CO2 (oxidiert)
+        for (var j = 0; j < carbonParticles.length; j++) {
+            carbonParticles[j].oxidized = true;
+
+            // CO2 Molekül erstellen
+            if (j < 3) {
+                co2Molecules.push({
+                    x: carbonParticles[j].x,
+                    y: carbonParticles[j].y,
+                    vy: -1.5 - Math.random(),
+                    opacity: 1
+                });
+            }
+        }
+
+        animateCO2Rising();
+    }
+
+    function animateCO2Rising() {
+        var stillMoving = false;
+
+        for (var i = 0; i < co2Molecules.length; i++) {
+            var mol = co2Molecules[i];
+            if (mol.y > 30) {
+                mol.y += mol.vy;
+                mol.x += (Math.random() - 0.5) * 1;
+                if (mol.y < 100) {
+                    mol.opacity -= 0.01;
+                }
+                stillMoving = true;
+            }
+        }
+
+        draw();
+
+        if (stillMoving) {
+            animationId = requestAnimationFrame(animateCO2Rising);
+        }
+    }
+
+    // UI Updates
+    function updateUI() {
+        var step = steps[currentStep - 1];
+
+        document.getElementById('currentStep').textContent = currentStep;
+        document.getElementById('explanationTitle').textContent = step.title;
+        document.getElementById('explanationText').textContent = step.text;
+
+        // Temperatur
+        var tempPercent = (step.temp - 20) / 680 * 100;
+        document.getElementById('tempFill').style.width = tempPercent + '%';
+        document.getElementById('tempValue').textContent = step.temp + ' °C';
+
+        // Buttons
+        document.getElementById('btnPrev').disabled = currentStep === 1;
+        document.getElementById('btnNext').disabled = currentStep === maxSteps;
+        document.getElementById('btnNext').textContent = currentStep === maxSteps ? 'Fertig!' : 'Weiter';
+    }
+
+    // Navigation
+    function nextStep() {
+        if (currentStep < maxSteps) {
+            currentStep++;
+            updateUI();
+
+            if (steps[currentStep - 1].transfering) {
+                animateTransfer();
+            } else if (steps[currentStep - 1].reacted && co2Molecules.length === 0) {
+                showProducts();
+            } else {
+                draw();
+            }
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            initParticles();
+            updateUI();
+            draw();
+        }
+    }
+
+    function reset() {
+        currentStep = 1;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+        initParticles();
+        updateUI();
+        draw();
+    }
+
+    // Event Listeners (Touch + Click)
+    function addTouchAndClick(element, handler) {
+        var touchHandled = false;
+
+        element.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            touchHandled = true;
+            handler();
+            setTimeout(function() { touchHandled = false; }, 300);
+        });
+
+        element.addEventListener('click', function(e) {
+            if (!touchHandled) {
+                handler();
+            }
+        });
+    }
+
+    addTouchAndClick(document.getElementById('btnNext'), nextStep);
+    addTouchAndClick(document.getElementById('btnPrev'), prevStep);
+    addTouchAndClick(document.getElementById('btnReset'), reset);
+
+    // Init
+    initParticles();
+    updateUI();
+    draw();
+
+    // Kontinuierliches Zeichnen für Vibration
+    setInterval(function() {
+        if (currentStep >= 2 && currentStep <= 3 && !oxygenTransfer) {
+            draw();
+        }
+    }, 50);
+
+})();
+</script>
+</body>
+</html>

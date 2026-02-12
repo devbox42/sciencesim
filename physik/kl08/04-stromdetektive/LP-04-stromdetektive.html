@@ -1,0 +1,2596 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Stromdetektive im Haushalt</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --physik: #2c5aa0;
+            --physik-light: #e8f0fa;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text-primary: #222222;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --success: #2a7a4b;
+            --success-light: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --energy: #ff9800;
+            --money: #4caf50;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 15px; }
+
+        header {
+            background: linear-gradient(135deg, var(--physik) 0%, #1e4080 100%);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+        }
+        header h1 { font-size: 1.4em; font-weight: 600; }
+        header .subtitle { font-size: 0.85em; opacity: 0.9; }
+
+        .progress-container {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            margin-bottom: 15px;
+        }
+        .progress-bar { height: 8px; background: var(--border); margin-bottom: 8px; border-radius: 4px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--physik), var(--success)); transition: width 0.3s; border-radius: 4px; }
+        .progress-text { font-size: 0.85em; color: var(--text-muted); }
+
+        .step-dots { display: flex; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+        .step-dot {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--border);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7em; font-weight: 600; color: var(--text-muted);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .step-dot.completed { background: var(--success); color: white; }
+        .step-dot.current { background: var(--physik); color: white; transform: scale(1.15); }
+        .step-dot.locked { cursor: not-allowed; opacity: 0.4; }
+
+        .slide {
+            display: none;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .slide.active { display: block; }
+        .slide h2 {
+            color: var(--physik);
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--physik);
+        }
+        .slide p { margin-bottom: 10px; }
+
+        /* Interaktive Bereiche - volle Breite */
+        .interactive-area {
+            background: var(--physik-light);
+            border: 2px solid var(--physik);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px -20px;
+            width: calc(100% + 40px);
+        }
+
+        .interactive-area h3 {
+            color: var(--physik);
+            font-size: 1em;
+            margin-bottom: 12px;
+        }
+
+        /* Slider */
+        .slider-container { margin: 20px 0; }
+        .slider-container input[type="range"] {
+            width: 100%;
+            height: 12px;
+            -webkit-appearance: none;
+            background: var(--border);
+            border-radius: 6px;
+            outline: none;
+        }
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px; height: 28px;
+            background: var(--physik);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider-value {
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--physik);
+            margin: 10px 0;
+        }
+
+        /* Drag & Drop Wolke */
+        .word-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            padding: 15px;
+            min-height: 120px;
+        }
+        .word-item {
+            background: white;
+            border: 2px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: grab;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .word-item:hover { border-color: var(--physik); transform: scale(1.05); }
+        .word-item.selected { background: var(--success); color: white; border-color: var(--success); }
+        .word-item.wrong { background: var(--error); color: white; border-color: var(--error); animation: shake 0.3s; }
+        .word-item.correct { background: var(--success); color: white; border-color: var(--success); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .drop-zone {
+            border: 3px dashed var(--physik);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 100px;
+            margin: 15px 0;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .drop-zone.active { background: var(--physik-light); border-style: solid; }
+        .drop-zone .hint { color: var(--text-muted); font-style: italic; }
+
+        /* Ranking-Raster */
+        .ranking-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .ranking-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ranking-slot {
+            width: 220px;
+            height: 44px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+            transition: all 0.2s;
+            background: var(--bg);
+        }
+        .ranking-slot:hover { border-color: var(--physik); }
+        .ranking-slot.drag-over {
+            border-color: var(--physik);
+            background: var(--physik-light);
+            border-style: solid;
+        }
+        .ranking-slot.filled {
+            border-style: solid;
+            border-color: var(--border);
+            background: white;
+        }
+        .ranking-slot.correct {
+            border-color: var(--success);
+            background: var(--success-light);
+        }
+        .ranking-slot.locked {
+            cursor: default;
+        }
+        .ranking-slot .slot-number {
+            background: var(--physik);
+            color: white;
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.85em;
+            flex-shrink: 0;
+        }
+        .ranking-slot.correct .slot-number {
+            background: var(--success);
+        }
+        .ranking-slot .slot-label {
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+
+        .ranking-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 200px;
+            min-height: 380px;
+            padding: 10px;
+            background: var(--bg);
+            border-radius: 8px;
+            border: 2px dashed var(--border);
+        }
+        .ranking-items.drag-over {
+            border-color: var(--physik);
+            background: var(--physik-light);
+        }
+        .ranking-item {
+            background: white;
+            border: 2px solid var(--physik);
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: grab;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .ranking-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .ranking-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        .ranking-item.in-slot {
+            margin: 0;
+            border-color: var(--border);
+        }
+        .ranking-item.locked {
+            cursor: default;
+            background: var(--success-light);
+            border-color: var(--success);
+            color: var(--success);
+        }
+        .ranking-item.locked:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        .ranking-item.touch-dragging {
+            opacity: 0.5;
+        }
+        .touch-clone {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.9;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* Formel-Puzzle */
+        .formula-slots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .formula-slot {
+            width: 60px; height: 60px;
+            border: 3px dashed var(--physik);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--physik);
+            transition: all 0.2s;
+        }
+        .formula-slot.filled {
+            border-style: solid;
+            background: var(--physik-light);
+        }
+        .formula-slot.operator {
+            width: 40px;
+            background: var(--physik);
+            color: white;
+            border: none;
+        }
+
+        .formula-pieces {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .formula-piece {
+            width: 55px; height: 55px;
+            background: var(--energy);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6em;
+            font-weight: bold;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .formula-piece:hover { transform: scale(1.1); }
+        .formula-piece.used { opacity: 0.3; cursor: not-allowed; }
+
+        /* Einheiten-Trainer */
+        .exercise-box {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .exercise-box.correct { border-color: var(--success); background: var(--success-light); }
+        .exercise-box.incorrect { border-color: var(--error); background: #ffebee; }
+
+        .exercise-input {
+            border: 2px solid var(--border);
+            padding: 10px 15px;
+            font-size: 1.1em;
+            width: 120px;
+            text-align: center;
+            border-radius: 6px;
+            margin: 0 8px;
+        }
+        .exercise-input:focus { border-color: var(--physik); outline: none; }
+
+        /* Beispielrechnung Inputs */
+        .calc-input {
+            border: 2px solid var(--border);
+            padding: 6px 8px;
+            font-size: 1em;
+            text-align: center;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+        .calc-input:focus { border-color: var(--physik); outline: none; }
+        .calc-input.correct { border-color: var(--success); background: var(--success-light); }
+        .calc-input.incorrect { border-color: var(--error); background: #fff0f0; }
+
+        /* Typenschild */
+        .device-card {
+            background: linear-gradient(145deg, #f8f8f8, #e8e8e8);
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            display: inline-block;
+            min-width: 180px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+        }
+        .device-card:hover { transform: translateY(-3px); box-shadow: 4px 4px 12px rgba(0,0,0,0.15); }
+        .device-card h4 { font-size: 1em; margin-bottom: 8px; }
+        .device-card .specs { font-size: 0.85em; color: var(--text-secondary); }
+        .device-card .power { font-size: 1.3em; font-weight: bold; color: var(--energy); margin-top: 8px; }
+
+        /* Simulation Container */
+        .sim-container {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            margin: 15px 0;
+        }
+        .sim-container.light-theme {
+            background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #333;
+            border: 2px solid #dee2e6;
+        }
+        .sim-display {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .sim-container.light-theme .sim-display {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            color: #333;
+        }
+        .sim-container.light-theme .sim-display p {
+            color: #333;
+        }
+        .sim-container.light-theme .sim-display .unit {
+            color: #666;
+        }
+        .sim-container.light-theme .sim-display .value {
+            color: var(--physik);
+        }
+        .sim-container.light-theme label,
+        .sim-container.light-theme p {
+            color: #333;
+        }
+        .sim-display .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+        .sim-display .unit { font-size: 1em; opacity: 0.8; }
+        .sim-display .cost { color: var(--money); font-size: 1.5em; margin-top: 10px; }
+
+        .sim-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .sim-btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .sim-btn:hover { background: #1e4080; transform: scale(1.05); }
+        .sim-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .sim-btn.start { background: var(--success); }
+        .sim-btn.stop { background: var(--error); }
+
+        /* Vergleichs-Slider */
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .comparison-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .comparison-item h4 { margin-bottom: 10px; }
+        .comparison-item .icon { font-size: 3em; margin: 10px 0; }
+        .comparison-item .result {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .comparison-item.led { border: 3px solid var(--success); }
+        .comparison-item.led .result { color: var(--success); }
+        .comparison-item.glueh { border: 3px solid var(--error); }
+        .comparison-item.glueh .result { color: var(--error); }
+
+        /* Haus-Simulation */
+        .house-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .house-room {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .house-room:hover { border-color: var(--physik); }
+        .house-room.checked { background: var(--warning-bg); border-color: var(--warning); }
+        .house-room .icon { font-size: 2em; margin-bottom: 5px; }
+        .house-room .name { font-weight: 600; font-size: 0.9em; }
+        .house-room .devices { font-size: 0.8em; color: var(--text-muted); margin-top: 5px; }
+        .house-room .standby-cost {
+            font-weight: bold;
+            color: var(--error);
+            margin-top: 8px;
+            font-size: 0.95em;
+        }
+
+        /* Memory-Spiel */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .memory-card {
+            aspect-ratio: 1;
+            background: var(--physik);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .memory-card.flipped {
+            background: white;
+            color: var(--text-primary);
+            border: 2px solid var(--physik);
+        }
+        .memory-card.matched {
+            color: white;
+            cursor: default;
+            font-weight: 600;
+        }
+        .memory-card.matched.pair-0 { background: #2196F3; }
+        .memory-card.matched.pair-1 { background: #4CAF50; }
+        .memory-card.matched.pair-2 { background: #FF9800; }
+        .memory-card.matched.pair-3 { background: #9C27B0; }
+        .memory-card.matched.pair-4 { background: #F44336; }
+        .memory-card.matched.pair-5 { background: #00BCD4; }
+
+        /* Checkliste */
+        .checklist { list-style: none; margin: 15px 0; }
+        .checklist li {
+            padding: 12px 15px;
+            background: white;
+            border: 2px solid var(--border);
+            margin: 6px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+        .checklist li:hover { border-color: var(--physik); }
+        .checklist li.checked {
+            background: var(--success-light);
+            border-color: var(--success);
+        }
+        .checklist .checkbox {
+            width: 24px; height: 24px;
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .checklist li.checked .checkbox {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        /* Referenztabelle */
+        .ref-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+        .ref-table th {
+            background: var(--physik);
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        .ref-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ref-table tr:nth-child(even) { background: var(--bg); }
+        .ref-table .power-col { font-weight: bold; color: var(--energy); }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+        .search-input:focus { border-color: var(--physik); outline: none; }
+
+        /* Feedback & Buttons */
+        .feedback {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95em;
+            display: none;
+        }
+        .feedback.correct { background: var(--success-light); color: var(--success); display: block; }
+        .feedback.incorrect { background: #ffebee; color: var(--error); display: block; }
+        .feedback.hint { background: var(--warning-bg); color: var(--warning); display: block; }
+
+        .check-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .check-btn:hover { background: #1e5a35; }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .nav-btn {
+            background: var(--physik);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .nav-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+        .nav-btn.next { margin-left: auto; }
+        .lock-message { color: var(--error); font-size: 0.85em; text-align: center; flex: 1; }
+
+        /* Hefter-Hinweis */
+        .hefter-hinweis {
+            background: var(--warning-bg);
+            border: 2px solid var(--warning);
+            padding: 12px 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .hefter-hinweis::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: var(--warning);
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* Merkkasten */
+        .merkkasten {
+            background: var(--bg);
+            border-top: 3px solid var(--physik);
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .merkkasten h3 { color: var(--physik); font-size: 1em; margin-bottom: 10px; }
+
+        /* Highlight-Box */
+        .highlight-box {
+            background: var(--physik-light);
+            border: 2px solid var(--physik);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        /* Score-Anzeige */
+        .score-display {
+            background: var(--success);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        /* Reset */
+        .reset-container { text-align: right; margin-top: 20px; }
+        .reset-btn {
+            background: none;
+            color: var(--text-muted);
+            border: 1px solid var(--text-muted);
+            padding: 6px 12px;
+            font-size: 0.8em;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .comparison-container { grid-template-columns: 1fr; }
+            .house-grid { grid-template-columns: repeat(2, 1fr); }
+            .memory-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stromdetektive im Haushalt</h1>
+        <div class="subtitle">Physik Klasse 8 | Projekt: Energie im Alltag</div>
+    </header>
+
+    <div class="container">
+        <div class="progress-container">
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-text">Schritt <span id="current-step">1</span> von 16</div>
+            <div class="step-dots" id="step-dots"></div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 1: SCHÄTZFRAGE -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-1">
+            <h2>1. Was kostet dein Tag?</h2>
+            <p>Jeden Tag verbraucht dein Haushalt Strom - und das kostet Geld!</p>
+            <p><strong>Aber wie viel eigentlich?</strong></p>
+
+            <div class="interactive-area">
+                <h3>Schätze mal:</h3>
+                <p style="text-align: center;">Wie viel Euro verbraucht ein durchschnittlicher 3-Personen-Haushalt <strong>pro Tag</strong> an Strom?</p>
+
+                <div class="slider-container">
+                    <input type="range" id="estimate-slider" min="0" max="10" step="0.5" value="2">
+                    <div class="slider-value"><span id="estimate-value">2,00</span> Euro/Tag</div>
+                </div>
+
+                <button class="check-btn" onclick="saveEstimate()" style="display: block; margin: 0 auto;">Meine Schätzung speichern</button>
+                <div class="feedback" id="fb1"></div>
+            </div>
+
+            <p style="margin-top: 15px; color: var(--text-secondary); font-style: italic;">Merke dir deine Schätzung - am Ende vergleichen wir!</p>
+
+            <div class="nav-buttons">
+                <span></span>
+                <span class="lock-message" id="lock-1">Gib zuerst deine Schätzung ab!</span>
+                <button class="nav-btn next" id="next-1" onclick="nextSlide()" disabled>Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 2: STROMFRESSER-WOLKE -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-2">
+            <h2>2. Stromfresser-Wolke</h2>
+            <p>Welche Dinge im Haushalt verbrauchen Strom? <strong>Tippe auf alle Stromverbraucher!</strong></p>
+
+            <div class="interactive-area">
+                <div class="word-cloud" id="word-cloud">
+                    <!-- Stromverbraucher -->
+                    <div class="word-item" data-correct="true">Kühlschrank</div>
+                    <div class="word-item" data-correct="true">Fernseher</div>
+                    <div class="word-item" data-correct="true">Waschmaschine</div>
+                    <div class="word-item" data-correct="true">Föhn</div>
+                    <div class="word-item" data-correct="true">Computer</div>
+                    <div class="word-item" data-correct="true">Handy-Ladegerät</div>
+                    <div class="word-item" data-correct="true">Mikrowelle</div>
+                    <div class="word-item" data-correct="true">Staubsauger</div>
+                    <div class="word-item" data-correct="true">LED-Lampe</div>
+                    <div class="word-item" data-correct="true">Toaster</div>
+                    <div class="word-item" data-correct="true">Spielkonsole</div>
+                    <div class="word-item" data-correct="true">Wasserkocher</div>
+                    <div class="word-item" data-correct="true">Durchlauferhitzer</div>
+                    <div class="word-item" data-correct="true">Klimaanlage</div>
+                    <div class="word-item" data-correct="true">Router</div>
+                    <div class="word-item" data-correct="true">Elektroherd</div>
+                    <!-- Distraktoren -->
+                    <div class="word-item" data-correct="false">Fahrrad</div>
+                    <div class="word-item" data-correct="false">Buch</div>
+                    <div class="word-item" data-correct="false">Kerze</div>
+                    <div class="word-item" data-correct="false">Fenster</div>
+                    <div class="word-item" data-correct="false">Kugelschreiber</div>
+                    <div class="word-item" data-correct="false">Teppich</div>
+                    <div class="word-item" data-correct="false">Gasherd</div>
+                    <div class="word-item" data-correct="false">Holzofen</div>
+                    <div class="word-item" data-correct="false">Treppe</div>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <span class="score-display">Gefunden: <span id="cloud-score">0</span>/16</span>
+                </div>
+                <div class="feedback" id="fb2"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-2">Finde mindestens 12 Stromverbraucher!</span>
+                <button class="nav-btn next" id="next-2" onclick="nextSlide()" disabled>Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 3: VERBRAUCHER-RANKING -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-3">
+            <h2>3. Wer frisst am meisten?</h2>
+            <p>Nicht alle Verbraucher sind gleich! <strong>Ziehe die Kategorien in die passenden Felder.</strong></p>
+
+            <div class="interactive-area">
+                <p style="text-align: center; margin-bottom: 15px;">1 = höchster Verbrauch, 8 = niedrigster Verbrauch</p>
+
+                <div class="ranking-container">
+                    <div class="ranking-slots" id="ranking-slots">
+                        <div class="ranking-slot" data-slot="1"><span class="slot-number">1</span><span class="slot-label">höchster Verbrauch</span></div>
+                        <div class="ranking-slot" data-slot="2"><span class="slot-number">2</span><span class="slot-label"></span></div>
+                        <div class="ranking-slot" data-slot="3"><span class="slot-number">3</span><span class="slot-label"></span></div>
+                        <div class="ranking-slot" data-slot="4"><span class="slot-number">4</span><span class="slot-label"></span></div>
+                        <div class="ranking-slot" data-slot="5"><span class="slot-number">5</span><span class="slot-label"></span></div>
+                        <div class="ranking-slot" data-slot="6"><span class="slot-number">6</span><span class="slot-label"></span></div>
+                        <div class="ranking-slot" data-slot="7"><span class="slot-number">7</span><span class="slot-label"></span></div>
+                        <div class="ranking-slot" data-slot="8"><span class="slot-number">8</span><span class="slot-label">niedrigster Verbrauch</span></div>
+                    </div>
+
+                    <div class="ranking-items" id="ranking-items">
+                        <div class="ranking-item" draggable="true" data-correct="5">Kochen & Backen</div>
+                        <div class="ranking-item" draggable="true" data-correct="2">Warmwasser (elektr.)</div>
+                        <div class="ranking-item" draggable="true" data-correct="7">Beleuchtung</div>
+                        <div class="ranking-item" draggable="true" data-correct="4">Waschen & Trocknen</div>
+                        <div class="ranking-item" draggable="true" data-correct="1">Heizen (elektr.)</div>
+                        <div class="ranking-item" draggable="true" data-correct="3">Kühlen & Gefrieren</div>
+                        <div class="ranking-item" draggable="true" data-correct="6">Unterhaltung & IT</div>
+                        <div class="ranking-item" draggable="true" data-correct="8">Standby</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <span class="score-display">Richtig eingerastet: <span id="ranking-score">0</span>/8</span>
+                </div>
+
+                <button class="check-btn" onclick="checkRanking()" style="display: block; margin: 15px auto;">Prüfen</button>
+                <div class="feedback" id="fb3"></div>
+            </div>
+
+            <div class="merkkasten" id="ranking-result" style="display: none;">
+                <h3>Vollständig!</h3>
+                <p><strong>1. Heizen</strong> > <strong>2. Warmwasser</strong> > <strong>3. Kühlen</strong> > <strong>4. Waschen</strong> > <strong>5. Kochen</strong> > <strong>6. Unterhaltung</strong> > <strong>7. Licht</strong> > <strong>8. Standby</strong></p>
+                <p style="margin-top: 8px; font-size: 0.9em; color: var(--text-secondary);">Achtung: Bei Haushalten ohne elektrische Heizung/Warmwasser dominiert oft Kühlen!</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-3"></span>
+                <button class="nav-btn next" id="next-3" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 4: FORMEL-PUZZLE -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-4">
+            <h2>4. Formel-Puzzle: Wiederholung</h2>
+            <p>Aus der letzten Stunde kennst du zwei wichtige Formeln. <strong>Setze sie zusammen!</strong></p>
+
+            <div class="interactive-area">
+                <h3>Formel 1: Elektrische Leistung</h3>
+                <div class="formula-slots" id="formula1-slots">
+                    <div class="formula-slot" data-expect="P" onclick="placeFormulaPiece(this)"></div>
+                    <div class="formula-slot operator">=</div>
+                    <div class="formula-slot" data-expect="U" onclick="placeFormulaPiece(this)"></div>
+                    <div class="formula-slot operator">·</div>
+                    <div class="formula-slot" data-expect="I" onclick="placeFormulaPiece(this)"></div>
+                </div>
+
+                <h3 style="margin-top: 25px;">Formel 2: Elektrische Energie</h3>
+                <div class="formula-slots" id="formula2-slots">
+                    <div class="formula-slot" data-expect="E" onclick="placeFormulaPiece(this)"></div>
+                    <div class="formula-slot operator">=</div>
+                    <div class="formula-slot" data-expect="P" onclick="placeFormulaPiece(this)"></div>
+                    <div class="formula-slot operator">·</div>
+                    <div class="formula-slot" data-expect="t" onclick="placeFormulaPiece(this)"></div>
+                </div>
+
+                <div class="formula-pieces" id="formula-pieces">
+                    <div class="formula-piece" data-value="P" onclick="selectFormulaPiece(this)">P</div>
+                    <div class="formula-piece" data-value="U" onclick="selectFormulaPiece(this)">U</div>
+                    <div class="formula-piece" data-value="I" onclick="selectFormulaPiece(this)">I</div>
+                    <div class="formula-piece" data-value="E" onclick="selectFormulaPiece(this)">E</div>
+                    <div class="formula-piece" data-value="t" onclick="selectFormulaPiece(this)">t</div>
+                    <div class="formula-piece" data-value="P" onclick="selectFormulaPiece(this)">P</div>
+                </div>
+
+                <button class="check-btn" onclick="checkFormulas()" style="display: block; margin: 15px auto;">Formeln prüfen</button>
+                <div class="feedback" id="fb4"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-4">Setze beide Formeln richtig zusammen!</span>
+                <button class="nav-btn next" id="next-4" onclick="nextSlide()" disabled>Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 5: EINHEITEN-TRAINER -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-5">
+            <h2>5. Einheiten-Trainer</h2>
+            <p>Auf Stromrechnungen steht die Energie in <strong>Kilowattstunden (kWh)</strong>. Übe die Umrechnung!</p>
+
+            <div class="merkkasten">
+                <h3>Merke:</h3>
+                <p style="font-size: 1.2em; text-align: center;"><strong>1 kWh = 1000 Wh</strong></p>
+                <p style="text-align: center; font-size: 0.9em; color: var(--text-secondary);">kilo = 1000</p>
+            </div>
+
+            <div class="interactive-area">
+                <h3>Rechne um:</h3>
+
+                <div class="exercise-box" id="unit-ex1">
+                    <strong>1)</strong> 2500 Wh = <input type="text" inputmode="decimal" class="exercise-input" id="unit1" placeholder="?"> kWh
+                    <span class="feedback" id="unit1-fb"></span>
+                </div>
+
+                <div class="exercise-box" id="unit-ex2">
+                    <strong>2)</strong> 0,75 kWh = <input type="text" inputmode="decimal" class="exercise-input" id="unit2" placeholder="?"> Wh
+                    <span class="feedback" id="unit2-fb"></span>
+                </div>
+
+                <div class="exercise-box" id="unit-ex3">
+                    <strong>3)</strong> 4200 Wh = <input type="text" inputmode="decimal" class="exercise-input" id="unit3" placeholder="?"> kWh
+                    <span class="feedback" id="unit3-fb"></span>
+                </div>
+
+                <div class="exercise-box" id="unit-ex4">
+                    <strong>4)</strong> 1,5 kWh = <input type="text" inputmode="decimal" class="exercise-input" id="unit4" placeholder="?"> Wh
+                    <span class="feedback" id="unit4-fb"></span>
+                </div>
+
+                <div class="exercise-box" id="unit-ex5">
+                    <strong>5)</strong> 500 Wh = <input type="text" inputmode="decimal" class="exercise-input" id="unit5" placeholder="?"> kWh
+                    <span class="feedback" id="unit5-fb"></span>
+                </div>
+
+                <button class="check-btn" onclick="checkUnits()" style="display: block; margin: 15px auto;">Alle prüfen</button>
+                <div style="text-align: center; margin-top: 10px;">
+                    <span class="score-display">Richtig: <span id="unit-score">0</span>/5</span>
+                </div>
+                <div class="feedback" id="fb5"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-5">Mindestens 4 von 5 richtig!</span>
+                <button class="nav-btn next" id="next-5" onclick="nextSlide()" disabled>Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 6: TYPENSCHILDER LESEN -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-6">
+            <h2>6. Typenschilder lesen</h2>
+            <p>Jedes Elektrogerät hat ein Typenschild mit wichtigen Infos. <strong>Klicke auf ein Gerät und berechne die Energie für 2 Stunden Betrieb!</strong></p>
+
+            <div class="interactive-area">
+                <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+                    <div class="device-card" onclick="selectDevice(this, 5)" data-power="5">
+                        <h4>LED-Lampe</h4>
+                        <div class="specs">230V ~ 50Hz</div>
+                        <div class="power">5 W</div>
+                    </div>
+                    <div class="device-card" onclick="selectDevice(this, 2000)" data-power="2000">
+                        <h4>Föhn</h4>
+                        <div class="specs">230V ~ 50Hz</div>
+                        <div class="power">2000 W</div>
+                    </div>
+                    <div class="device-card" onclick="selectDevice(this, 800)" data-power="800">
+                        <h4>Mikrowelle</h4>
+                        <div class="specs">230V ~ 50Hz</div>
+                        <div class="power">800 W</div>
+                    </div>
+                </div>
+
+                <div id="device-calc" style="display: none; margin-top: 20px; text-align: center;">
+                    <p>Gewähltes Gerät: <strong id="selected-device-name"></strong> mit <strong id="selected-power"></strong> W</p>
+                    <p style="margin-top: 10px;">Energie nach 2 Stunden: E = P · t = <span id="calc-power"></span> W · 2 h = </p>
+                    <input type="text" inputmode="decimal" class="exercise-input" id="device-energy" style="width: 100px;" placeholder="?"> Wh
+                    <button class="check-btn" onclick="checkDeviceCalc()">Prüfen</button>
+                    <div class="feedback" id="fb6"></div>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <span class="score-display">Geräte berechnet: <span id="device-score">0</span>/3</span>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-6">Berechne alle 3 Geräte!</span>
+                <button class="nav-btn next" id="next-6" onclick="nextSlide()" disabled>Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 7: KÜHLSCHRANK-RÄTSEL -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-7">
+            <h2>7. Das Kühlschrank-Rätsel</h2>
+            <p>Beim Kühlschrank steht oft der <strong>Jahresverbrauch</strong> auf dem Energielabel. Wie rechnest du auf einen Tag um?</p>
+
+            <div class="interactive-area">
+                <div class="sim-container light-theme">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 3em;">🧊</span>
+                        <h3 style="margin-top: 10px; color: #333;">Kühlschrank A+++</h3>
+                        <p>Jahresverbrauch: <strong style="font-size: 1.5em;">150 kWh/Jahr</strong></p>
+                    </div>
+
+                    <div class="sim-display">
+                        <p>Tagesverbrauch:</p>
+                        <p>150 kWh ÷ 365 Tage = <input type="text" inputmode="decimal" class="exercise-input" id="fridge-day" style="background: #f8f9fa; color: black; border: 2px solid #007bff;" placeholder="?"> kWh/Tag</p>
+                    </div>
+
+                    <div class="sim-display" style="margin-top: 10px;">
+                        <p>Kosten pro Jahr (bei 30 ct/kWh):</p>
+                        <p>150 kWh · 0,30 €/kWh = <input type="text" inputmode="decimal" class="exercise-input" id="fridge-cost" style="background: #f8f9fa; color: black; border: 2px solid #007bff;" placeholder="?"> €/Jahr</p>
+                    </div>
+                </div>
+
+                <button class="check-btn" onclick="checkFridge()" style="display: block; margin: 15px auto;">Berechnung prüfen</button>
+                <div class="feedback" id="fb7"></div>
+            </div>
+
+            <div class="merkkasten" id="fridge-tip" style="display: none;">
+                <h3>Tipp:</h3>
+                <p>Ein moderner Kühlschrank verbraucht etwa <strong>0,4 kWh pro Tag</strong> und kostet ca. <strong>45 € pro Jahr</strong>. Das klingt wenig - aber er läuft 24/7!</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-7"></span>
+                <button class="nav-btn next" id="next-7" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 8: FÖHN-SCHOCK -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-8">
+            <h2>8. Der Föhn-Schock</h2>
+            <p>Manche Geräte haben eine <strong>hohe Leistung</strong>, laufen aber nur kurz. Wie teuer ist Föhnen wirklich?</p>
+
+            <div class="interactive-area">
+                <div class="sim-container light-theme">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <span style="font-size: 3em;">💨</span>
+                        <h3 style="margin-top: 10px; color: #333;">Föhn: 2000 W = 2 kW</h3>
+                    </div>
+
+                    <div class="sim-controls" style="margin-bottom: 20px;">
+                        <button class="sim-btn start" id="hairdryer-start" onclick="startHairdryer()">▶ Starten</button>
+                        <button class="sim-btn stop" id="hairdryer-stop" onclick="stopHairdryer()" disabled>◼ Stoppen</button>
+                    </div>
+
+                    <div class="sim-display">
+                        <p>Laufzeit:</p>
+                        <div class="value" id="hairdryer-time">0:00</div>
+                        <div class="unit">Minuten</div>
+                    </div>
+
+                    <div class="sim-display">
+                        <p>Verbrauchte Energie:</p>
+                        <div class="value" style="color: var(--energy);" id="hairdryer-energy">0</div>
+                        <div class="unit">Wh</div>
+                        <div class="cost" id="hairdryer-cost">= 0,00 Cent</div>
+                    </div>
+                </div>
+
+                <div class="feedback" id="fb8" style="display: block; background: var(--physik-light); color: var(--physik);">
+                    <strong>Vergleich:</strong> <span id="hairdryer-compare">Starte den Föhn und stoppe nach 10 Minuten!</span>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 9: LED VS GLÜHBIRNE -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-9">
+            <h2>9. LED vs. Glühbirne</h2>
+            <p>Beide geben gleich viel Licht ab. Aber was kosten sie im Betrieb?</p>
+
+            <div class="interactive-area">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <label for="light-hours"><strong>Brenndauer pro Tag:</strong></label>
+                    <input type="range" id="light-hours" min="1" max="12" value="4" oninput="updateLightComparison()" style="width: 200px; vertical-align: middle;">
+                    <span id="light-hours-display" style="font-size: 1.3em; font-weight: bold; color: var(--physik);">4 Stunden</span>
+                </div>
+
+                <div class="comparison-container">
+                    <div class="comparison-item led">
+                        <div class="icon">💡</div>
+                        <h4>LED-Lampe</h4>
+                        <p><strong>10 W</strong></p>
+                        <div class="result" id="led-cost">4,38 €/Jahr</div>
+                    </div>
+                    <div class="comparison-item glueh">
+                        <div class="icon">💡</div>
+                        <h4>Glühbirne</h4>
+                        <p><strong>60 W</strong></p>
+                        <div class="result" id="glueh-cost">26,28 €/Jahr</div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="background: var(--success-light); border-color: var(--success);">
+                    <p style="font-size: 1.3em;"><strong>Ersparnis mit LED: <span id="savings">21,90 €/Jahr</span></strong></p>
+                    <p style="font-size: 0.9em; color: var(--text-secondary);">Bei 10 Lampen im Haus: <span id="savings-total">219 €/Jahr</span>!</p>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 10: STANDBY-VAMPIR -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-10">
+            <h2>10. Der Standby-Vampir</h2>
+            <p>Viele Geräte verbrauchen Strom, auch wenn sie "aus" sind! <strong>Klicke auf die Räume und entdecke die versteckten Verbraucher.</strong></p>
+
+            <div class="interactive-area">
+                <div class="house-grid">
+                    <div class="house-room" onclick="toggleRoom(this)" data-cost="18">
+                        <div class="icon">📺</div>
+                        <div class="name">Wohnzimmer</div>
+                        <div class="devices">TV, Receiver, Soundbar</div>
+                        <div class="standby-cost" style="display: none;">ca. 18 €/Jahr</div>
+                    </div>
+                    <div class="house-room" onclick="toggleRoom(this)" data-cost="12">
+                        <div class="icon">🖥️</div>
+                        <div class="name">Arbeitszimmer</div>
+                        <div class="devices">PC, Monitor, Drucker</div>
+                        <div class="standby-cost" style="display: none;">ca. 12 €/Jahr</div>
+                    </div>
+                    <div class="house-room" onclick="toggleRoom(this)" data-cost="8">
+                        <div class="icon">🛏️</div>
+                        <div class="name">Schlafzimmer</div>
+                        <div class="devices">Radiowecker, Ladegeräte</div>
+                        <div class="standby-cost" style="display: none;">ca. 8 €/Jahr</div>
+                    </div>
+                    <div class="house-room" onclick="toggleRoom(this)" data-cost="15">
+                        <div class="icon">🍳</div>
+                        <div class="name">Küche</div>
+                        <div class="devices">Mikrowelle, Kaffeemaschine</div>
+                        <div class="standby-cost" style="display: none;">ca. 15 €/Jahr</div>
+                    </div>
+                    <div class="house-room" onclick="toggleRoom(this)" data-cost="5">
+                        <div class="icon">🚿</div>
+                        <div class="name">Bad</div>
+                        <div class="devices">Elektr. Zahnbürste</div>
+                        <div class="standby-cost" style="display: none;">ca. 5 €/Jahr</div>
+                    </div>
+                    <div class="house-room" onclick="toggleRoom(this)" data-cost="22">
+                        <div class="icon">🌐</div>
+                        <div class="name">Flur/Technik</div>
+                        <div class="devices">Router, Smart Home</div>
+                        <div class="standby-cost" style="display: none;">ca. 22 €/Jahr</div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 20px;">
+                    <p>Standby-Kosten gesamt: <strong style="font-size: 1.5em; color: var(--error);"><span id="standby-total">0</span> €/Jahr</strong></p>
+                    <p id="standby-hint" style="font-size: 0.9em; color: var(--text-secondary);">Klicke auf alle Räume!</p>
+                </div>
+            </div>
+
+            <div class="merkkasten" id="standby-tip" style="display: none;">
+                <h3>Spar-Tipp:</h3>
+                <p>Mit <strong>abschaltbaren Steckdosenleisten</strong> kannst du Standby-Verbraucher komplett vom Netz trennen und bis zu <strong>80 €/Jahr</strong> sparen!</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 11: WASCHMASCHINE OPTIMIEREN -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-11">
+            <h2>11. Waschmaschine optimieren</h2>
+            <p>Die Temperatur macht den Unterschied! <strong>Wähle verschiedene Einstellungen und beobachte den Verbrauch.</strong></p>
+
+            <div class="interactive-area">
+                <div class="sim-container light-theme">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <span style="font-size: 3em;">🧺</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px;"><strong>Temperatur:</strong></label>
+                            <select id="wash-temp" onchange="updateWashCalc()" style="padding: 10px; font-size: 1em; border-radius: 6px;">
+                                <option value="30">30°C (Kalt)</option>
+                                <option value="40" selected>40°C (Normal)</option>
+                                <option value="60">60°C (Heiß)</option>
+                                <option value="90">90°C (Kochwäsche)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px;"><strong>Programm:</strong></label>
+                            <select id="wash-program" onchange="updateWashCalc()" style="padding: 10px; font-size: 1em; border-radius: 6px;">
+                                <option value="eco">Eco (lang, sparsam)</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="kurz">Kurzprogramm</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="sim-display">
+                        <p>Energieverbrauch pro Waschgang:</p>
+                        <div class="value" style="color: var(--energy);" id="wash-energy">0,9</div>
+                        <div class="unit">kWh</div>
+                        <div class="cost" id="wash-cost">= 27 Cent</div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 8px;">
+                        <p style="color: #333;">Bei 4 Waschgängen pro Woche:</p>
+                        <p style="font-size: 1.3em; font-weight: bold; color: var(--money);" id="wash-year">56 €/Jahr</p>
+                    </div>
+                </div>
+
+                <div class="feedback" id="fb11" style="display: block; background: var(--success-light); color: var(--success);">
+                    <strong>Beste Wahl:</strong> 30°C + Eco-Programm spart bis zu 60% Energie!
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 12: KÜHLSCHRANK-TUNING -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-12">
+            <h2>12. Kühlschrank-Tuning</h2>
+            <p>Kälter = sicherer, aber teurer. <strong>Finde den besten Kompromiss aus Hygiene und Energiesparen!</strong></p>
+
+            <div class="interactive-area">
+                <div class="sim-container light-theme">
+                    <div style="text-align: center;">
+                        <span style="font-size: 3em;">🧊</span>
+                        <h3 style="margin: 10px 0; color: #333;">Kühlschrank-Temperatur</h3>
+                    </div>
+
+                    <div style="text-align: center; margin: 20px 0;">
+                        <input type="range" id="fridge-temp" min="3" max="10" value="5" oninput="updateFridgeTemp()" style="width: 80%;">
+                        <div style="font-size: 3em; font-weight: bold; color: #00bcd4; margin: 15px 0;" id="fridge-temp-display">5°C</div>
+                    </div>
+
+                    <div class="sim-display">
+                        <p>Energieverbrauch vs. 7°C (optimale Temperatur):</p>
+                        <div class="value" style="color: var(--error);" id="fridge-extra">+12%</div>
+                        <div class="cost" id="fridge-extra-cost">= +5,40 €/Jahr</div>
+                    </div>
+
+                    <div id="fridge-advice" style="text-align: center; margin-top: 15px; padding: 12px; background: #e9ecef; border-radius: 8px;">
+                        <p style="font-size: 0.95em; color: #333;">🥶 Zu kalt! Lebensmittel halten auch bei 7°C.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="merkkasten">
+                <h3>Weitere Kühlschrank-Tipps:</h3>
+                <ul style="margin-left: 1.5em; margin-top: 8px;">
+                    <li>Tür nur kurz öffnen</li>
+                    <li>Warme Speisen erst abkühlen lassen</li>
+                    <li>Rückwand regelmäßig abtauen (falls kein No-Frost)</li>
+                    <li>Mindestens 5 cm Abstand zur Wand</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 13: SPAR-TIPPS MEMORY -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-13">
+            <h2>13. Spar-Tipps Memory</h2>
+            <p><strong>Finde die passenden Paare:</strong> Welche Sparmaßnahme gehört zu welchem Gerät?</p>
+
+            <div class="interactive-area">
+                <div class="memory-grid" id="memory-grid">
+                    <!-- Wird per JS gefüllt -->
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <span class="score-display">Paare gefunden: <span id="memory-score">0</span>/6</span>
+                </div>
+                <div class="feedback" id="fb13"></div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-13">Finde alle Paare!</span>
+                <button class="nav-btn next" id="next-13" onclick="nextSlide()" disabled>Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 14: PROJEKTAUFTRAG -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-14">
+            <h2>14. Dein Auftrag: Stromdetektiv!</h2>
+            <p>Bevor du mit dem Arbeitsblatt startest, übe die Berechnung an einem Beispiel!</p>
+
+            <div class="interactive-area" id="example-calc-area">
+                <h3>📝 Beispielrechnung: Fernseher</h3>
+
+                <div class="highlight-box" style="background: var(--physik-light); border-color: var(--physik); margin-bottom: 15px;">
+                    <strong>Gegeben:</strong> Leistung P = <strong>100 W</strong> | Nutzung t = <strong>4 h/Tag</strong> | Tage/Jahr: <strong>365</strong> | Strompreis: <strong>0,30 €/kWh</strong>
+                </div>
+
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <p style="margin-bottom: 10px;"><strong>Schritt 1:</strong> Energie pro Tag berechnen</p>
+                    <div style="margin-left: 20px; font-family: monospace;">
+                        E<sub>Tag</sub> = P · t = 100 W · 4 h =
+                        <input type="text" id="ex-step1" class="calc-input" inputmode="decimal" style="width: 80px;" placeholder="?"> Wh
+                    </div>
+
+                    <p style="margin: 15px 0 10px 0;"><strong>Schritt 2:</strong> Energie pro Jahr berechnen</p>
+                    <div style="margin-left: 20px; font-family: monospace;">
+                        E<sub>Jahr</sub> = E<sub>Tag</sub> · Tage ÷ 1000 =
+                        <input type="text" id="ex-step2a" class="calc-input" inputmode="decimal" style="width: 80px;" placeholder="?"> Wh · 365 ÷ 1000 =
+                        <input type="text" id="ex-step2b" class="calc-input" inputmode="decimal" style="width: 80px;" placeholder="?"> kWh
+                    </div>
+
+                    <p style="margin: 15px 0 10px 0;"><strong>Schritt 3:</strong> Kosten pro Jahr berechnen</p>
+                    <div style="margin-left: 20px; font-family: monospace;">
+                        Kosten = E<sub>Jahr</sub> · 0,30 €/kWh =
+                        <input type="text" id="ex-step3a" class="calc-input" inputmode="decimal" style="width: 80px;" placeholder="?"> kWh · 0,30 € =
+                        <input type="text" id="ex-step3b" class="calc-input" inputmode="decimal" style="width: 80px;" placeholder="?"> €
+                    </div>
+                </div>
+
+                <p style="margin-bottom: 10px;"><strong>Schritt 4:</strong> Trage die Ergebnisse in die Tabellenzeile ein:</p>
+                <div style="overflow-x: auto;">
+                    <table class="ref-table" style="font-size: 0.9em; margin: 0 auto;">
+                        <thead>
+                            <tr>
+                                <th>Gerät</th>
+                                <th>P (W)</th>
+                                <th>t (h/Tag)</th>
+                                <th>E (Wh/Tag)</th>
+                                <th>Tage/Jahr</th>
+                                <th>kWh/Jahr</th>
+                                <th>€/Jahr</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Fernseher</td>
+                                <td>100</td>
+                                <td>4</td>
+                                <td><input type="text" id="ex-tbl-e" class="calc-input" inputmode="decimal" style="width: 60px;"></td>
+                                <td>365</td>
+                                <td><input type="text" id="ex-tbl-kwh" class="calc-input" inputmode="decimal" style="width: 60px;"></td>
+                                <td><input type="text" id="ex-tbl-eur" class="calc-input" inputmode="decimal" style="width: 60px;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <button class="check-btn" onclick="checkExampleCalc()" style="display: block; margin: 15px auto;">Beispiel prüfen</button>
+                <div class="feedback" id="fb14"></div>
+            </div>
+
+            <div class="merkkasten" id="ab-instructions" style="display: none;">
+                <h3>✅ Sehr gut! Jetzt das Arbeitsblatt:</h3>
+                <ul style="margin: 10px 0 0 1.5em;">
+                    <li><strong>Seite 1:</strong> Geräte-Tabelle ausfüllen (mind. 10 Geräte)</li>
+                    <li><strong>Seite 2:</strong> Aufgaben 1-4 bearbeiten</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>Tipp:</strong> Auf der nächsten Seite findest du eine Tabelle mit typischen Leistungswerten!</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span class="lock-message" id="lock-14">Löse erst die Beispielrechnung!</span>
+                <button class="nav-btn next" id="next-14" onclick="nextSlide()" disabled>Weiter zur Referenztabelle</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 15: LEISTUNGSTABELLE -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-15">
+            <h2>15. Typische Leistungswerte</h2>
+            <p><strong>Nutze diese Tabelle als Hilfe beim Ausfüllen des Arbeitsblatts!</strong></p>
+
+            <div class="interactive-area" style="padding: 15px;">
+                <input type="text" class="search-input" id="device-search" placeholder="🔍 Gerät suchen..." oninput="filterDeviceTable()">
+
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="ref-table" id="device-table">
+                        <thead>
+                            <tr>
+                                <th>Gerät</th>
+                                <th>Leistung</th>
+                                <th>Typische Nutzung</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>LED-Lampe</td><td class="power-col">10 W</td><td>4 h/Tag</td></tr>
+                            <tr><td>Glühbirne (alt)</td><td class="power-col">60 W</td><td>4 h/Tag</td></tr>
+                            <tr><td>Fernseher (LED)</td><td class="power-col">100 W</td><td>4 h/Tag</td></tr>
+                            <tr><td>Fernseher (Standby)</td><td class="power-col">1 W</td><td>20 h/Tag</td></tr>
+                            <tr><td>Computer/Laptop</td><td class="power-col">50-150 W</td><td>3 h/Tag</td></tr>
+                            <tr><td>Spielkonsole</td><td class="power-col">120 W</td><td>2 h/Tag</td></tr>
+                            <tr><td>Router</td><td class="power-col">10 W</td><td>24 h/Tag</td></tr>
+                            <tr><td>Handy-Ladegerät</td><td class="power-col">5 W</td><td>2 h/Tag</td></tr>
+                            <tr><td>Kühlschrank</td><td class="power-col">~15 W*</td><td>24 h/Tag</td></tr>
+                            <tr><td>Gefrierschrank</td><td class="power-col">~20 W*</td><td>24 h/Tag</td></tr>
+                            <tr><td>Waschmaschine</td><td class="power-col">500-2000 W</td><td>1 h/Woche</td></tr>
+                            <tr><td>Trockner</td><td class="power-col">2500 W</td><td>1 h/Woche</td></tr>
+                            <tr><td>Geschirrspüler</td><td class="power-col">1800 W</td><td>1 h/Tag</td></tr>
+                            <tr><td>Staubsauger</td><td class="power-col">800 W</td><td>0,5 h/Woche</td></tr>
+                            <tr><td>Föhn</td><td class="power-col">2000 W</td><td>10 min/Tag</td></tr>
+                            <tr><td>Wasserkocher</td><td class="power-col">2000 W</td><td>5 min/Tag</td></tr>
+                            <tr><td>Toaster</td><td class="power-col">800 W</td><td>5 min/Tag</td></tr>
+                            <tr><td>Mikrowelle</td><td class="power-col">800 W</td><td>10 min/Tag</td></tr>
+                            <tr><td>Elektroherd</td><td class="power-col">2000-4000 W</td><td>0,5 h/Tag</td></tr>
+                            <tr><td>Backofen</td><td class="power-col">2500 W</td><td>0,3 h/Tag</td></tr>
+                            <tr><td>Kaffeemaschine</td><td class="power-col">1000 W</td><td>10 min/Tag</td></tr>
+                            <tr><td>Durchlauferhitzer</td><td class="power-col">20000 W</td><td>15 min/Tag</td></tr>
+                            <tr><td>Heizlüfter</td><td class="power-col">2000 W</td><td>variabel</td></tr>
+                            <tr><td>Klimaanlage</td><td class="power-col">1000-3000 W</td><td>variabel</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 10px;">* Durchschnittswert (Kühlgeräte laufen nicht durchgehend)</p>
+            </div>
+
+            <div class="highlight-box" style="background: var(--warning-bg); border-color: var(--warning);">
+                <p><strong>Tipp:</strong> Diese Seite kannst du jederzeit wieder aufrufen, indem du auf Punkt 15 in der Fortschrittsleiste tippst!</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <button class="nav-btn next" onclick="nextSlide()">Zur Auswertung</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SLIDE 16: REFLEXION -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <div class="slide" id="slide-16">
+            <h2>16. Deine Schätzung vs. Realität</h2>
+            <p>Erinnerst du dich an deine Schätzung vom Anfang?</p>
+
+            <div class="interactive-area">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <p>Deine Schätzung am Anfang:</p>
+                    <p style="font-size: 2.5em; font-weight: bold; color: var(--physik);"><span id="original-estimate">?</span> €/Tag</p>
+                </div>
+
+                <div style="text-align: center;">
+                    <p>Dein berechneter Wert (aus dem Arbeitsblatt):</p>
+                    <input type="text" inputmode="decimal" class="exercise-input" id="final-value" style="font-size: 1.5em; width: 120px;" placeholder="?"> €/Tag
+                </div>
+
+                <button class="check-btn" onclick="compareEstimate()" style="display: block; margin: 20px auto;">Vergleichen</button>
+
+                <div class="feedback" id="fb16"></div>
+            </div>
+
+            <div class="highlight-box" style="background: var(--success-light); border-color: var(--success); display: none;" id="final-message">
+                <p style="font-size: 1.1em;"><strong>Geschafft!</strong> Du bist jetzt ein echter Stromdetektiv!</p>
+                <p style="margin-top: 10px;">Kontrolliere dein Arbeitsblatt und hefte es ab.</p>
+            </div>
+
+            <div class="merkkasten">
+                <h3>Das hast du gelernt:</h3>
+                <ul style="margin-left: 1.5em; margin-top: 8px;">
+                    <li>Stromverbraucher im Haushalt identifizieren</li>
+                    <li>Energie mit E = P · t berechnen</li>
+                    <li>Kosten mit €/kWh berechnen</li>
+                    <li>Sparmaßnahmen kennen und anwenden</li>
+                </ul>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevSlide()">Zurück</button>
+                <span style="color: var(--success); font-weight: 600;">✓ Lernpfad abgeschlossen</span>
+            </div>
+        </div>
+
+        <div class="reset-container">
+            <button class="reset-btn" onclick="resetProgress()">Fortschritt zurücksetzen</button>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        // GLOBALE VARIABLEN
+        // ═══════════════════════════════════════════════════════════════
+
+        var LP_ID = 'lp-04-stromdetektive-v1';
+        var TOTAL_SLIDES = 16;
+        var currentSlide = 1;
+        var completedEx = {};
+        var unlockedSlides = { 1: true };
+        var userEstimate = 0;
+
+        // Helper: Parst Zahlen mit Komma oder Punkt als Dezimaltrenner
+        function parseNumberInput(value) {
+            if (!value || value.trim() === '') return NaN;
+            // Ersetze Komma durch Punkt für parseFloat
+            var normalized = value.toString().replace(',', '.');
+            return parseFloat(normalized);
+        }
+        var selectedFormulaPiece = null;
+
+        var requirements = {
+            1: 'ex1',
+            2: 'ex2',
+            4: 'ex4',
+            5: 'ex5',
+            6: 'ex6',
+            13: 'ex13'
+        };
+
+        // ═══════════════════════════════════════════════════════════════
+        // INITIALISIERUNG
+        // ═══════════════════════════════════════════════════════════════
+
+        function init() {
+            loadProgress();
+            renderDots();
+            showSlide(currentSlide);
+            updateProgress();
+            initMemoryGame();
+            initRanking();
+            initWordCloud();
+            initFormulaPuzzle();
+        }
+
+        function loadProgress() {
+            var saved = localStorage.getItem(LP_ID);
+            if (saved) {
+                var data = JSON.parse(saved);
+                currentSlide = data.currentSlide || 1;
+                completedEx = data.completedEx || {};
+                unlockedSlides = data.unlockedSlides || { 1: true };
+                userEstimate = data.userEstimate || 0;
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem(LP_ID, JSON.stringify({
+                currentSlide: currentSlide,
+                completedEx: completedEx,
+                unlockedSlides: unlockedSlides,
+                userEstimate: userEstimate
+            }));
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // NAVIGATION
+        // ═══════════════════════════════════════════════════════════════
+
+        function renderDots() {
+            var container = document.getElementById('step-dots');
+            container.innerHTML = '';
+            for (var i = 1; i <= TOTAL_SLIDES; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'step-dot';
+                dot.textContent = i;
+                dot.setAttribute('data-slide', i);
+                dot.onclick = function() {
+                    var t = parseInt(this.getAttribute('data-slide'));
+                    if (unlockedSlides[t]) showSlide(t);
+                };
+                container.appendChild(dot);
+            }
+            updateDots();
+        }
+
+        function updateDots() {
+            var dots = document.querySelectorAll('.step-dot');
+            for (var i = 0; i < dots.length; i++) {
+                var n = i + 1;
+                dots[i].className = 'step-dot';
+                if (n === currentSlide) dots[i].classList.add('current');
+                else if (unlockedSlides[n] && n < currentSlide) dots[i].classList.add('completed');
+                else if (!unlockedSlides[n]) dots[i].classList.add('locked');
+            }
+        }
+
+        function showSlide(n) {
+            var slides = document.querySelectorAll('.slide');
+            for (var i = 0; i < slides.length; i++) slides[i].classList.remove('active');
+            var active = document.getElementById('slide-' + n);
+            if (active) active.classList.add('active');
+            currentSlide = n;
+            unlockedSlides[n] = true;
+            document.getElementById('current-step').textContent = n;
+            updateDots();
+            updateProgress();
+            updateNavBtns();
+            saveProgress();
+            window.scrollTo(0, 0);
+
+            // Spezielle Initialisierungen
+            if (n === 16) {
+                document.getElementById('original-estimate').textContent = userEstimate.toFixed(2).replace('.', ',');
+            }
+        }
+
+        function updateProgress() {
+            var pct = ((currentSlide - 1) / (TOTAL_SLIDES - 1)) * 100;
+            document.getElementById('progress-fill').style.width = pct + '%';
+        }
+
+        function nextSlide() {
+            var req = requirements[currentSlide];
+            if (req && !completedEx[req]) return;
+            if (currentSlide < TOTAL_SLIDES) showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) showSlide(currentSlide - 1);
+        }
+
+        function updateNavBtns() {
+            for (var s in requirements) {
+                var req = requirements[s];
+                var btn = document.getElementById('next-' + s);
+                var lock = document.getElementById('lock-' + s);
+                if (btn) {
+                    if (completedEx[req]) {
+                        btn.disabled = false;
+                        if (lock) lock.style.display = 'none';
+                    } else {
+                        btn.disabled = true;
+                        if (lock) lock.style.display = 'block';
+                    }
+                }
+            }
+        }
+
+        function unlockEx(id) {
+            completedEx[id] = true;
+            updateNavBtns();
+            saveProgress();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 1: SCHÄTZUNG
+        // ═══════════════════════════════════════════════════════════════
+
+        document.getElementById('estimate-slider').addEventListener('input', function() {
+            document.getElementById('estimate-value').textContent = parseFloat(this.value).toFixed(2).replace('.', ',');
+        });
+
+        function saveEstimate() {
+            userEstimate = parseFloat(document.getElementById('estimate-slider').value);
+            document.getElementById('fb1').className = 'feedback correct';
+            document.getElementById('fb1').textContent = 'Gespeichert! Am Ende vergleichen wir.';
+            unlockEx('ex1');
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 2: WORTWOLKE
+        // ═══════════════════════════════════════════════════════════════
+
+        var cloudCorrect = 0;
+
+        function initWordCloud() {
+            var container = document.getElementById('word-cloud');
+            var items = Array.from(container.querySelectorAll('.word-item'));
+
+            // Fisher-Yates Shuffle für randomisierte Anordnung
+            for (var i = items.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = items[i];
+                items[i] = items[j];
+                items[j] = temp;
+            }
+
+            // Elemente in neuer Reihenfolge einfügen
+            items.forEach(function(item) {
+                container.appendChild(item);
+            });
+
+            // Click-Handler hinzufügen
+            items.forEach(function(item) {
+                item.addEventListener('click', function() {
+                    if (this.classList.contains('selected') || this.classList.contains('wrong')) return;
+
+                    var isCorrect = this.getAttribute('data-correct') === 'true';
+                    if (isCorrect) {
+                        this.classList.add('correct');
+                        this.classList.add('selected');
+                        cloudCorrect++;
+                        document.getElementById('cloud-score').textContent = cloudCorrect;
+
+                        if (cloudCorrect >= 12) {
+                            document.getElementById('fb2').className = 'feedback correct';
+                            document.getElementById('fb2').textContent = 'Super! Du hast genug Stromverbraucher gefunden!';
+                            unlockEx('ex2');
+                        }
+                    } else {
+                        this.classList.add('wrong');
+                        setTimeout(function() {
+                            item.classList.remove('wrong');
+                        }, 500);
+                    }
+                });
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 3: SORTIEREN
+        // ═══════════════════════════════════════════════════════════════
+
+        var rankingScore = 0;
+        var draggedRankingItem = null;
+
+        function initRanking() {
+            var itemsContainer = document.getElementById('ranking-items');
+            var items = itemsContainer.querySelectorAll('.ranking-item');
+            var slots = document.querySelectorAll('.ranking-slot');
+
+            // Items randomisieren
+            var itemsArray = Array.from(items);
+            for (var i = itemsArray.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                itemsContainer.appendChild(itemsArray[j]);
+                itemsArray.splice(j, 1);
+            }
+
+            // Drag-Events für Items
+            document.querySelectorAll('.ranking-item').forEach(function(item) {
+                item.addEventListener('dragstart', function(e) {
+                    if (this.classList.contains('locked')) {
+                        e.preventDefault();
+                        return;
+                    }
+                    draggedRankingItem = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                    draggedRankingItem = null;
+                    document.querySelectorAll('.drag-over').forEach(function(el) {
+                        el.classList.remove('drag-over');
+                    });
+                });
+            });
+
+            // Drop-Events für Slots
+            slots.forEach(function(slot) {
+                slot.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    if (this.classList.contains('locked')) return;
+                    this.classList.add('drag-over');
+                });
+
+                slot.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+
+                slot.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    if (!draggedRankingItem || this.classList.contains('locked')) return;
+
+                    // Wenn Slot bereits gefüllt, Item zurück zum Pool
+                    var existingItem = this.querySelector('.ranking-item');
+                    if (existingItem && !existingItem.classList.contains('locked')) {
+                        itemsContainer.appendChild(existingItem);
+                        existingItem.classList.remove('in-slot');
+                        this.classList.remove('filled');
+                    }
+
+                    // Neues Item in Slot setzen
+                    var label = this.querySelector('.slot-label');
+                    if (label) label.style.display = 'none';
+                    this.appendChild(draggedRankingItem);
+                    draggedRankingItem.classList.add('in-slot');
+                    this.classList.add('filled');
+                });
+            });
+
+            // Drop-Event für Items-Container (zurücklegen)
+            itemsContainer.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+
+            itemsContainer.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+
+            itemsContainer.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if (!draggedRankingItem || draggedRankingItem.classList.contains('locked')) return;
+
+                // Item aus Slot entfernen
+                var parentSlot = draggedRankingItem.closest('.ranking-slot');
+                if (parentSlot) {
+                    parentSlot.classList.remove('filled');
+                    var label = parentSlot.querySelector('.slot-label');
+                    if (label) label.style.display = '';
+                }
+
+                this.appendChild(draggedRankingItem);
+                draggedRankingItem.classList.remove('in-slot');
+            });
+
+            // ═══════════════════════════════════════════════════════════════
+            // TOUCH SUPPORT für iPad/Mobile
+            // ═══════════════════════════════════════════════════════════════
+            var touchClone = null;
+            var touchItem = null;
+            var touchOffsetX = 0;
+            var touchOffsetY = 0;
+
+            document.querySelectorAll('.ranking-item').forEach(function(item) {
+                item.addEventListener('touchstart', function(e) {
+                    if (this.classList.contains('locked')) return;
+
+                    touchItem = this;
+                    var touch = e.touches[0];
+                    var rect = this.getBoundingClientRect();
+                    touchOffsetX = touch.clientX - rect.left;
+                    touchOffsetY = touch.clientY - rect.top;
+
+                    // Clone erstellen
+                    touchClone = this.cloneNode(true);
+                    touchClone.classList.add('touch-clone');
+                    touchClone.style.width = rect.width + 'px';
+                    touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+                    touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+                    document.body.appendChild(touchClone);
+
+                    this.classList.add('touch-dragging');
+                    e.preventDefault();
+                }, {passive: false});
+
+                item.addEventListener('touchmove', function(e) {
+                    if (!touchClone || !touchItem) return;
+
+                    var touch = e.touches[0];
+                    touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+                    touchClone.style.top = (touch.clientY - touchOffsetY) + 'px';
+
+                    // Highlight drop target
+                    document.querySelectorAll('.drag-over').forEach(function(el) {
+                        el.classList.remove('drag-over');
+                    });
+                    var elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (elemBelow) {
+                        var slot = elemBelow.closest('.ranking-slot');
+                        var container = elemBelow.closest('.ranking-items');
+                        if (slot && !slot.classList.contains('locked')) {
+                            slot.classList.add('drag-over');
+                        } else if (container) {
+                            container.classList.add('drag-over');
+                        }
+                    }
+                    e.preventDefault();
+                }, {passive: false});
+
+                item.addEventListener('touchend', function(e) {
+                    if (!touchClone || !touchItem) return;
+
+                    var touch = e.changedTouches[0];
+                    var elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    document.querySelectorAll('.drag-over').forEach(function(el) {
+                        el.classList.remove('drag-over');
+                    });
+
+                    if (elemBelow) {
+                        var slot = elemBelow.closest('.ranking-slot');
+                        var container = elemBelow.closest('.ranking-items');
+
+                        if (slot && !slot.classList.contains('locked')) {
+                            // Drop in Slot
+                            var existingItem = slot.querySelector('.ranking-item');
+                            if (existingItem && !existingItem.classList.contains('locked')) {
+                                itemsContainer.appendChild(existingItem);
+                                existingItem.classList.remove('in-slot');
+                                slot.classList.remove('filled');
+                            }
+                            var label = slot.querySelector('.slot-label');
+                            if (label) label.style.display = 'none';
+                            slot.appendChild(touchItem);
+                            touchItem.classList.add('in-slot');
+                            slot.classList.add('filled');
+                        } else if (container) {
+                            // Zurück zum Pool
+                            var parentSlot = touchItem.closest('.ranking-slot');
+                            if (parentSlot) {
+                                parentSlot.classList.remove('filled');
+                                var label = parentSlot.querySelector('.slot-label');
+                                if (label) label.style.display = '';
+                            }
+                            itemsContainer.appendChild(touchItem);
+                            touchItem.classList.remove('in-slot');
+                        }
+                    }
+
+                    // Cleanup
+                    touchItem.classList.remove('touch-dragging');
+                    if (touchClone && touchClone.parentNode) {
+                        touchClone.parentNode.removeChild(touchClone);
+                    }
+                    touchClone = null;
+                    touchItem = null;
+                    e.preventDefault();
+                }, {passive: false});
+            });
+        }
+
+        function checkRanking() {
+            var slots = document.querySelectorAll('.ranking-slot');
+            var newCorrect = 0;
+
+            slots.forEach(function(slot) {
+                var slotNum = parseInt(slot.getAttribute('data-slot'));
+                var item = slot.querySelector('.ranking-item');
+
+                if (item && !item.classList.contains('locked')) {
+                    var correctPos = parseInt(item.getAttribute('data-correct'));
+
+                    if (correctPos === slotNum) {
+                        // Richtig! Einrasten
+                        item.classList.add('locked');
+                        item.setAttribute('draggable', 'false');
+                        slot.classList.add('correct', 'locked');
+                        newCorrect++;
+                    }
+                } else if (item && item.classList.contains('locked')) {
+                    newCorrect++;
+                }
+            });
+
+            rankingScore = newCorrect;
+            document.getElementById('ranking-score').textContent = rankingScore;
+
+            var fb = document.getElementById('fb3');
+            if (rankingScore === 8) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Perfekt! Alle 8 Kategorien richtig eingeordnet!';
+                document.getElementById('ranking-result').style.display = 'block';
+            } else if (rankingScore > 0) {
+                fb.className = 'feedback hint';
+                fb.textContent = rankingScore + '/8 richtig eingerastet. Die falschen kannst du noch umsortieren!';
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Noch keine richtige Position. Versuche es nochmal!';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 4: FORMEL-PUZZLE
+        // ═══════════════════════════════════════════════════════════════
+
+        function initFormulaPuzzle() {
+            var container = document.getElementById('formula-pieces');
+            var pieces = Array.from(container.querySelectorAll('.formula-piece'));
+
+            // Fisher-Yates Shuffle
+            for (var i = pieces.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                container.appendChild(pieces[j]);
+                pieces.splice(j, 1);
+            }
+        }
+
+        function selectFormulaPiece(el) {
+            if (el.classList.contains('used')) return;
+            document.querySelectorAll('.formula-piece').forEach(function(p) {
+                p.style.transform = '';
+            });
+            el.style.transform = 'scale(1.2)';
+            selectedFormulaPiece = el;
+        }
+
+        function placeFormulaPiece(slot) {
+            // Wenn Slot gefüllt ist und angeklickt wird: Stück zurücklegen
+            if (slot.classList.contains('filled')) {
+                var value = slot.textContent;
+                slot.textContent = '';
+                slot.classList.remove('filled');
+                // Finde das zugehörige Stück und mache es wieder verfügbar
+                var pieces = document.querySelectorAll('.formula-piece.used');
+                for (var i = 0; i < pieces.length; i++) {
+                    if (pieces[i].getAttribute('data-value') === value) {
+                        pieces[i].classList.remove('used');
+                        break; // Nur ein Stück zurückgeben
+                    }
+                }
+                // Deselektiere ggf. aktuell ausgewähltes Stück
+                if (selectedFormulaPiece) {
+                    selectedFormulaPiece.style.transform = '';
+                    selectedFormulaPiece = null;
+                }
+                return;
+            }
+
+            // Normales Platzieren wenn ein Stück ausgewählt ist
+            if (!selectedFormulaPiece) return;
+            slot.textContent = selectedFormulaPiece.getAttribute('data-value');
+            slot.classList.add('filled');
+            selectedFormulaPiece.classList.add('used');
+            selectedFormulaPiece.style.transform = '';
+            selectedFormulaPiece = null;
+        }
+
+        function checkFormulas() {
+            var slots1 = document.querySelectorAll('#formula1-slots .formula-slot:not(.operator)');
+            var slots2 = document.querySelectorAll('#formula2-slots .formula-slot:not(.operator)');
+
+            var correct = true;
+            slots1.forEach(function(slot) {
+                if (slot.textContent !== slot.getAttribute('data-expect')) correct = false;
+            });
+            slots2.forEach(function(slot) {
+                if (slot.textContent !== slot.getAttribute('data-expect')) correct = false;
+            });
+
+            var fb = document.getElementById('fb4');
+            if (correct) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Perfekt! P = U · I und E = P · t';
+                unlockEx('ex4');
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Noch nicht ganz richtig. Denke an: Leistung = Spannung mal Stromstärke, Energie = Leistung mal Zeit.';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 5: EINHEITEN-TRAINER
+        // ═══════════════════════════════════════════════════════════════
+
+        function checkUnits() {
+            var answers = [
+                { id: 'unit1', correct: 2.5 },
+                { id: 'unit2', correct: 750 },
+                { id: 'unit3', correct: 4.2 },
+                { id: 'unit4', correct: 1500 },
+                { id: 'unit5', correct: 0.5 }
+            ];
+
+            var score = 0;
+            answers.forEach(function(a) {
+                var input = document.getElementById(a.id);
+                var val = parseNumberInput(input.value);
+                var box = document.getElementById('unit-ex' + a.id.slice(-1));
+
+                if (!isNaN(val) && Math.abs(val - a.correct) < 0.01) {
+                    box.classList.add('correct');
+                    box.classList.remove('incorrect');
+                    score++;
+                } else {
+                    box.classList.add('incorrect');
+                    box.classList.remove('correct');
+                }
+            });
+
+            document.getElementById('unit-score').textContent = score;
+
+            var fb = document.getElementById('fb5');
+            if (score >= 4) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Super! ' + score + '/5 richtig!';
+                unlockEx('ex5');
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Nur ' + score + '/5 richtig. Denke dran: kilo = 1000';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 6: TYPENSCHILDER
+        // ═══════════════════════════════════════════════════════════════
+
+        var deviceScore = 0;
+        var devicesDone = {};
+        var currentDevicePower = 0;
+
+        function selectDevice(card, power) {
+            if (devicesDone[power]) return;
+
+            document.querySelectorAll('.device-card').forEach(function(c) {
+                c.style.border = '2px solid #ccc';
+            });
+            card.style.border = '3px solid ' + 'var(--physik)';
+
+            currentDevicePower = power;
+            document.getElementById('selected-device-name').textContent = card.querySelector('h4').textContent;
+            document.getElementById('selected-power').textContent = power;
+            document.getElementById('calc-power').textContent = power;
+            document.getElementById('device-calc').style.display = 'block';
+            document.getElementById('device-energy').value = '';
+            document.getElementById('fb6').className = 'feedback';
+            document.getElementById('fb6').textContent = '';
+        }
+
+        function checkDeviceCalc() {
+            var input = parseNumberInput(document.getElementById('device-energy').value);
+            var expected = currentDevicePower * 2;
+
+            var fb = document.getElementById('fb6');
+            if (!isNaN(input) && input === expected) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Richtig! ' + currentDevicePower + ' W · 2 h = ' + expected + ' Wh';
+                devicesDone[currentDevicePower] = true;
+                deviceScore++;
+                document.getElementById('device-score').textContent = deviceScore;
+
+                if (deviceScore >= 3) {
+                    unlockEx('ex6');
+                }
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Nicht ganz. E = P · t = ' + currentDevicePower + ' W · 2 h = ?';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 7: KÜHLSCHRANK
+        // ═══════════════════════════════════════════════════════════════
+
+        function checkFridge() {
+            var dayVal = parseNumberInput(document.getElementById('fridge-day').value);
+            var costVal = parseNumberInput(document.getElementById('fridge-cost').value);
+
+            var dayCorrect = !isNaN(dayVal) && Math.abs(dayVal - 0.41) < 0.02;
+            var costCorrect = !isNaN(costVal) && Math.abs(costVal - 45) < 1;
+
+            var fb = document.getElementById('fb7');
+            if (dayCorrect && costCorrect) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Perfekt! 150 ÷ 365 ≈ 0,41 kWh/Tag und 150 · 0,30 = 45 €/Jahr';
+                document.getElementById('fridge-tip').style.display = 'block';
+            } else if (dayCorrect || costCorrect) {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Teilweise richtig! Prüfe beide Rechnungen.';
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Noch nicht richtig. Tagesverbrauch = 150 ÷ 365, Jahreskosten = 150 · 0,30';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 8: FÖHN-TIMER
+        // ═══════════════════════════════════════════════════════════════
+
+        var hairdryerInterval = null;
+        var hairdryerSeconds = 0;
+
+        function startHairdryer() {
+            document.getElementById('hairdryer-start').disabled = true;
+            document.getElementById('hairdryer-stop').disabled = false;
+            hairdryerSeconds = 0;
+
+            hairdryerInterval = setInterval(function() {
+                hairdryerSeconds++;
+                var mins = Math.floor(hairdryerSeconds / 60);
+                var secs = hairdryerSeconds % 60;
+                document.getElementById('hairdryer-time').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+                var hours = hairdryerSeconds / 3600;
+                var energy = 2000 * hours;
+                var cost = energy * 0.0003;
+
+                document.getElementById('hairdryer-energy').textContent = Math.round(energy);
+                document.getElementById('hairdryer-cost').textContent = '= ' + (cost * 100).toFixed(2) + ' Cent';
+
+                // LED-Vergleich (10W LED)
+                var ledHours = energy / 10;
+                document.getElementById('hairdryer-compare').textContent =
+                    'Das entspricht ' + ledHours.toFixed(1) + ' Stunden LED-Licht!';
+            }, 1000);
+        }
+
+        function stopHairdryer() {
+            clearInterval(hairdryerInterval);
+            document.getElementById('hairdryer-start').disabled = false;
+            document.getElementById('hairdryer-stop').disabled = true;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 9: LED VS GLÜHBIRNE
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateLightComparison() {
+            var hours = parseInt(document.getElementById('light-hours').value);
+            document.getElementById('light-hours-display').textContent = hours + ' Stunden';
+
+            var ledKwh = (10 * hours * 365) / 1000;
+            var gluehKwh = (60 * hours * 365) / 1000;
+
+            var ledCost = ledKwh * 0.30;
+            var gluehCost = gluehKwh * 0.30;
+
+            document.getElementById('led-cost').textContent = ledCost.toFixed(2).replace('.', ',') + ' €/Jahr';
+            document.getElementById('glueh-cost').textContent = gluehCost.toFixed(2).replace('.', ',') + ' €/Jahr';
+
+            var saving = gluehCost - ledCost;
+            document.getElementById('savings').textContent = saving.toFixed(2).replace('.', ',') + ' €/Jahr';
+            document.getElementById('savings-total').textContent = (saving * 10).toFixed(0) + ' €/Jahr';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 10: STANDBY-HAUS
+        // ═══════════════════════════════════════════════════════════════
+
+        var standbyTotal = 0;
+        var roomsChecked = 0;
+
+        function toggleRoom(room) {
+            if (room.classList.contains('checked')) return;
+
+            room.classList.add('checked');
+            var cost = parseInt(room.getAttribute('data-cost'));
+            standbyTotal += cost;
+            roomsChecked++;
+
+            room.querySelector('.standby-cost').style.display = 'block';
+            document.getElementById('standby-total').textContent = standbyTotal;
+
+            if (roomsChecked >= 6) {
+                document.getElementById('standby-hint').textContent = 'Das sind über 80 €/Jahr nur für Standby!';
+                document.getElementById('standby-tip').style.display = 'block';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 11: WASCHMASCHINE
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateWashCalc() {
+            var temp = parseInt(document.getElementById('wash-temp').value);
+            var program = document.getElementById('wash-program').value;
+
+            var baseEnergy = {
+                30: 0.4,
+                40: 0.6,
+                60: 1.0,
+                90: 1.8
+            };
+
+            var programFactor = {
+                eco: 0.7,
+                normal: 1.0,
+                kurz: 1.2
+            };
+
+            var energy = baseEnergy[temp] * programFactor[program];
+            var costPerWash = energy * 30;
+            var yearCost = costPerWash * 4 * 52 / 100;
+
+            document.getElementById('wash-energy').textContent = energy.toFixed(2).replace('.', ',');
+            document.getElementById('wash-cost').textContent = '= ' + Math.round(costPerWash) + ' Cent';
+            document.getElementById('wash-year').textContent = Math.round(yearCost) + ' €/Jahr';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 12: KÜHLSCHRANK-TEMPERATUR
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateFridgeTemp() {
+            var temp = parseInt(document.getElementById('fridge-temp').value);
+            document.getElementById('fridge-temp-display').textContent = temp + '°C';
+
+            // Referenz: 7°C ist hygienisch das Maximum und energetisch sinnvoll
+            // 6% Mehrverbrauch pro Grad unter 7°C (bestätigt durch co2online)
+            var extraPercent = (7 - temp) * 6;
+            var baseCost = 45; // €/Jahr bei 7°C
+            var extraCost = (extraPercent / 100) * baseCost;
+
+            var display = document.getElementById('fridge-extra');
+            var costDisplay = document.getElementById('fridge-extra-cost');
+            var advice = document.getElementById('fridge-advice');
+            var tempDisplay = document.getElementById('fridge-temp-display');
+
+            if (temp < 7) {
+                // Kälter als 7°C: mehr Stromverbrauch
+                display.textContent = '+' + extraPercent + '%';
+                display.style.color = 'var(--error)';
+                costDisplay.textContent = '= +' + extraCost.toFixed(2).replace('.', ',') + ' €/Jahr';
+                tempDisplay.style.color = '#00bcd4';
+            } else if (temp === 7) {
+                // Optimal: 7°C
+                display.textContent = '0%';
+                display.style.color = 'var(--success)';
+                costDisplay.textContent = 'Optimal!';
+                tempDisplay.style.color = 'var(--success)';
+            } else {
+                // Wärmer als 7°C: spart Strom, aber GEFÄHRLICH!
+                display.textContent = extraPercent + '%';
+                display.style.color = 'var(--warning)';
+                costDisplay.textContent = '⚠️ Spart ' + Math.abs(extraCost).toFixed(2).replace('.', ',') + ' €/Jahr';
+                tempDisplay.style.color = 'var(--error)';
+            }
+
+            // Hygiene-Hinweise basierend auf Verbraucherzentrale/BZfE-Empfehlungen
+            if (temp <= 4) {
+                advice.innerHTML = '<p style="font-size: 0.95em; color: #333;">🥶 <strong>Sehr kalt:</strong> Sicher für alle Lebensmittel, aber hoher Stromverbrauch. Unnötig für normale Haushalte.</p>';
+            } else if (temp <= 6) {
+                advice.innerHTML = '<p style="font-size: 0.95em; color: #333;">✅ <strong>Ideal:</strong> 5-6°C sind perfekt für empfindliche Lebensmittel wie Hackfleisch und Fisch.</p>';
+            } else if (temp === 7) {
+                advice.innerHTML = '<p style="font-size: 0.95em; color: #333;">✅ <strong>Optimal:</strong> 7°C ist der beste Kompromiss aus Hygiene und Energiesparen!</p>';
+            } else if (temp === 8) {
+                advice.innerHTML = '<p style="font-size: 0.95em; color: #c62828;">⚠️ <strong>Grenzwertig:</strong> Bakterien vermehren sich schneller. Empfindliche Lebensmittel verderben früher!</p>';
+            } else {
+                advice.innerHTML = '<p style="font-size: 0.95em; color: #c62828;">🚫 <strong>Zu warm!</strong> Keime vermehren sich stark. Lebensmittelvergiftung möglich! Nicht empfohlen.</p>';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 13: MEMORY
+        // ═══════════════════════════════════════════════════════════════
+
+        var memoryPairs = [
+            { device: 'Waschmaschine', tip: '30°C statt 60°C' },
+            { device: 'Kühlschrank', tip: '7°C einstellen' },
+            { device: 'Standby-Geräte', tip: 'Steckerleiste aus' },
+            { device: 'Beleuchtung', tip: 'LED verwenden' },
+            { device: 'Föhn', tip: 'Lufttrocknen' },
+            { device: 'Backofen', tip: 'Umluft nutzen' }
+        ];
+
+        var memoryCards = [];
+        var flippedCards = [];
+        var matchedPairs = 0;
+
+        function initMemoryGame() {
+            var grid = document.getElementById('memory-grid');
+            grid.innerHTML = '';
+            memoryCards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+
+            var items = [];
+            memoryPairs.forEach(function(pair, idx) {
+                items.push({ type: 'device', text: pair.device, pairId: idx });
+                items.push({ type: 'tip', text: pair.tip, pairId: idx });
+            });
+
+            // Shuffle
+            for (var i = items.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = items[i];
+                items[i] = items[j];
+                items[j] = temp;
+            }
+
+            items.forEach(function(item, index) {
+                var card = document.createElement('div');
+                card.className = 'memory-card';
+                card.textContent = '?';
+                card.setAttribute('data-index', index);
+                card.setAttribute('data-pair', item.pairId);
+                card.setAttribute('data-text', item.text);
+                card.onclick = function() { flipMemoryCard(this); };
+                grid.appendChild(card);
+                memoryCards.push(card);
+            });
+
+            document.getElementById('memory-score').textContent = '0';
+        }
+
+        function flipMemoryCard(card) {
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            if (flippedCards.length >= 2) return;
+
+            card.classList.add('flipped');
+            card.textContent = card.getAttribute('data-text');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                setTimeout(checkMemoryMatch, 800);
+            }
+        }
+
+        function checkMemoryMatch() {
+            var card1 = flippedCards[0];
+            var card2 = flippedCards[1];
+
+            if (card1.getAttribute('data-pair') === card2.getAttribute('data-pair')) {
+                var pairId = card1.getAttribute('data-pair');
+                card1.classList.add('matched', 'pair-' + pairId);
+                card2.classList.add('matched', 'pair-' + pairId);
+                matchedPairs++;
+                document.getElementById('memory-score').textContent = matchedPairs;
+
+                if (matchedPairs >= 6) {
+                    document.getElementById('fb13').className = 'feedback correct';
+                    document.getElementById('fb13').textContent = 'Alle Paare gefunden! Du kennst jetzt die wichtigsten Spartipps.';
+                    unlockEx('ex13');
+                }
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+                card1.textContent = '?';
+                card2.textContent = '?';
+            }
+
+            flippedCards = [];
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 14: CHECKLISTE
+        // ═══════════════════════════════════════════════════════════════
+
+        function toggleChecklist(li) {
+            li.classList.toggle('checked');
+            var checkbox = li.querySelector('.checkbox');
+            checkbox.textContent = li.classList.contains('checked') ? '✓' : '';
+        }
+
+        // Beispielrechnung prüfen
+        function checkExampleCalc() {
+            var allCorrect = true;
+            var checks = [
+                // Schritt 1: E_Tag = 100 * 4 = 400
+                { id: 'ex-step1', correct: 400 },
+                // Schritt 2a: gleicher Wert wie Schritt 1
+                { id: 'ex-step2a', correct: 400 },
+                // Schritt 2b: 400 * 365 / 1000 = 146
+                { id: 'ex-step2b', correct: 146 },
+                // Schritt 3a: gleicher Wert wie Schritt 2b
+                { id: 'ex-step3a', correct: 146 },
+                // Schritt 3b: 146 * 0.30 = 43.8
+                { id: 'ex-step3b', correct: 43.8, tolerance: 0.5 },
+                // Tabelle
+                { id: 'ex-tbl-e', correct: 400 },
+                { id: 'ex-tbl-kwh', correct: 146 },
+                { id: 'ex-tbl-eur', correct: 43.8, tolerance: 0.5 }
+            ];
+
+            checks.forEach(function(c) {
+                var input = document.getElementById(c.id);
+                var val = parseNumberInput(input.value);
+                var tolerance = c.tolerance || 0.01;
+
+                if (!isNaN(val) && Math.abs(val - c.correct) <= tolerance) {
+                    input.classList.add('correct');
+                    input.classList.remove('incorrect');
+                } else {
+                    input.classList.add('incorrect');
+                    input.classList.remove('correct');
+                    allCorrect = false;
+                }
+            });
+
+            var fb = document.getElementById('fb14');
+            if (allCorrect) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Perfekt! Genau so füllst du das Arbeitsblatt aus!';
+                document.getElementById('ab-instructions').style.display = 'block';
+                document.getElementById('lock-14').style.display = 'none';
+                document.getElementById('next-14').disabled = false;
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Noch nicht ganz richtig. Prüfe deine Rechnung: E = P · t, dann durch 1000 für kWh, dann mal 0,30 € für die Kosten.';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 15: GERÄTETABELLE FILTERN
+        // ═══════════════════════════════════════════════════════════════
+
+        function filterDeviceTable() {
+            var filter = document.getElementById('device-search').value.toLowerCase();
+            var rows = document.querySelectorAll('#device-table tbody tr');
+
+            rows.forEach(function(row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE 16: VERGLEICH
+        // ═══════════════════════════════════════════════════════════════
+
+        function compareEstimate() {
+            var finalVal = parseNumberInput(document.getElementById('final-value').value);
+            if (isNaN(finalVal) || finalVal <= 0) {
+                document.getElementById('fb16').className = 'feedback hint';
+                document.getElementById('fb16').textContent = 'Bitte gib einen gültigen Wert ein (z.B. 3,50).';
+                return;
+            }
+            var diff = Math.abs(finalVal - userEstimate);
+            var percentOff = (diff / finalVal) * 100;
+
+            var fb = document.getElementById('fb16');
+            if (percentOff < 20) {
+                fb.className = 'feedback correct';
+                fb.textContent = 'Wow! Deine Schätzung war ziemlich gut! Nur ' + percentOff.toFixed(0) + '% daneben.';
+            } else if (percentOff < 50) {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Nicht schlecht! Du warst ' + percentOff.toFixed(0) + '% daneben.';
+            } else {
+                fb.className = 'feedback hint';
+                fb.textContent = 'Überrascht? Die meisten verschätzen sich! Du warst ' + percentOff.toFixed(0) + '% daneben.';
+            }
+
+            document.getElementById('final-message').style.display = 'block';
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // RESET
+        // ═══════════════════════════════════════════════════════════════
+
+        function resetProgress() {
+            if (!confirm('Wirklich den gesamten Fortschritt löschen?')) return;
+            localStorage.removeItem(LP_ID);
+            location.reload();
+        }
+
+        // Init
+        init();
+        updateLightComparison();
+        updateWashCalc();
+        updateFridgeTemp();
+    </script>
+</body>
+</html>
