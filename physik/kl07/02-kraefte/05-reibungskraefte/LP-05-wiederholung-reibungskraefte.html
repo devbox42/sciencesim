@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Wiederholung: Reibungskräfte | Physik Klasse 7</title>
+    <style>
+        :root {
+            --physik: #2c5aa0;
+            --physik-light: #e8f0f8;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-secondary: #555555;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            -webkit-user-select: none;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.6;
+            padding-top: 55px;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        /* Timer-Leiste */
+        .timer-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--physik);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            font-weight: 600;
+            transition: background 0.5s;
+        }
+        .timer-bar.warning { background: var(--warning); }
+        .timer-bar.danger { background: var(--error); animation: pulse 1s ease-in-out infinite; }
+        .timer-bar.expired { background: #666; animation: none; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+        .timer-display { font-size: 1.4em; font-family: monospace; letter-spacing: 2px; }
+        .timer-label { font-size: 0.95em; }
+
+        header {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        header h1 { color: var(--physik); font-size: 1.3em; font-weight: 600; }
+        header .meta { color: #666; font-size: 0.85em; margin-top: 5px; }
+
+        .btn-reset {
+            background: rgba(44,90,160,0.1);
+            color: var(--physik);
+            border: 1px solid var(--physik);
+            font-size: 0.8em;
+            padding: 5px 12px;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .progress-bar { background: var(--border); height: 6px; }
+        .progress-fill { background: var(--physik); height: 100%; width: 0%; transition: width 0.3s; }
+
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            padding: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            border: 2px solid var(--border);
+            background: var(--white);
+            cursor: pointer;
+            transition: all 0.15s;
+            color: var(--text-secondary);
+            border-radius: 4px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .step-dot:hover { border-color: var(--physik); }
+        .step-dot.current { background: var(--physik); border-color: var(--physik); color: white; }
+        .step-dot.completed { background: var(--success); border-color: var(--success); color: white; }
+
+        .step {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .step.active { display: block; }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .step-number {
+            background: var(--physik);
+            color: white;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .step-title { font-weight: 600; color: var(--physik); }
+
+        .stern { color: var(--warning); font-weight: bold; }
+
+        h2 { font-size: 1.05em; font-weight: 600; margin: 18px 0 8px 0; color: var(--text); }
+        p { margin-bottom: 10px; }
+
+        .info-box {
+            background: var(--physik-light);
+            border-left: 4px solid var(--physik);
+            padding: 12px 15px;
+            margin: 12px 0;
+            font-size: 0.95em;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .merksatz {
+            background: var(--success-bg);
+            border: 2px solid var(--success);
+            padding: 12px 15px;
+            margin: 12px 0;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        .merksatz strong { color: var(--success); }
+
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: sans-serif; font-style: normal; }
+
+        /* Bruch */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 0.2em;
+        }
+        .frac-num {
+            border-bottom: 2px solid currentColor;
+            padding: 0 0.3em 0.1em 0.3em;
+            line-height: 1.2;
+        }
+        .frac-den {
+            padding: 0.1em 0.3em 0 0.3em;
+            line-height: 1.2;
+        }
+
+        /* Quiz-Optionen */
+        .quiz-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .quiz-option {
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 1em;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+        }
+        .quiz-option:hover { border-color: var(--physik); background: var(--physik-light); }
+        .quiz-option.correct { border-color: var(--success); background: var(--success-bg); }
+        .quiz-option.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .quiz-option.selected { border-color: var(--physik); background: var(--physik-light); }
+        .quiz-option.disabled { pointer-events: none; opacity: 0.7; }
+
+        /* Multi-Select */
+        .multi-option {
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 1em;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+            display: inline-block;
+            margin: 4px;
+        }
+        .multi-option:hover { border-color: var(--physik); }
+        .multi-option.picked { border-color: var(--physik); background: var(--physik-light); }
+        .multi-option.correct { border-color: var(--success); background: var(--success-bg); }
+        .multi-option.incorrect { border-color: var(--error); background: var(--error-bg); }
+
+        /* Dropdowns */
+        select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        select.correct { border: 2px solid var(--success); background: var(--success-bg); }
+        select.incorrect { border: 2px solid var(--error); background: var(--error-bg); }
+
+        .inline-answer {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 8px 0;
+        }
+
+        /* Sortier-Slots */
+        .sort-slots {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .sort-slot {
+            width: 140px;
+            min-height: 50px;
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            color: #999;
+            position: relative;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .sort-slot.filled {
+            border-style: solid;
+            border-color: var(--physik);
+            background: var(--physik-light);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .sort-slot.drag-over {
+            border-color: var(--physik);
+            background: var(--physik-light);
+            border-style: solid;
+        }
+        .sort-slot .slot-label {
+            position: absolute;
+            top: -10px;
+            left: 8px;
+            font-size: 0.7em;
+            background: var(--white);
+            padding: 0 4px;
+            color: #999;
+        }
+
+        .sort-items {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .sort-item {
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: grab;
+            font-size: 1em;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .sort-item:hover { border-color: var(--physik); background: var(--physik-light); }
+        .sort-item.used { opacity: 0.3; pointer-events: none; cursor: default; }
+
+        /* Drag-Ghost */
+        .drag-ghost {
+            position: fixed;
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0.85;
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-mini-reset {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            padding: 6px 14px;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            margin-top: 8px;
+        }
+        .btn-mini-reset:hover { border-color: var(--physik); color: var(--physik); }
+
+        /* Classify */
+        .classify-grid {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .classify-bucket {
+            flex: 1;
+            min-width: 140px;
+            border: 2px solid var(--border);
+            padding: 10px;
+            min-height: 80px;
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .classify-bucket h3 {
+            font-size: 0.9em;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+        .classify-bucket.erwuenscht h3 { color: var(--success); }
+        .classify-bucket.unerwuenscht h3 { color: var(--error); }
+        .classify-bucket.drag-over {
+            border-color: var(--physik);
+            background: var(--physik-light);
+            border-style: solid;
+        }
+        .classify-items {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 15px 0;
+        }
+        .classify-item {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            background: white;
+            cursor: grab;
+            font-size: 0.95em;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .classify-item:hover { border-color: var(--physik); }
+        .classify-item.placed { opacity: 0.3; pointer-events: none; cursor: default; }
+        .classify-item.selected-item { border-color: var(--physik); background: var(--physik-light); }
+        .classify-placed {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 3px;
+            font-size: 0.85em;
+            background: var(--physik-light);
+            border: 1px solid var(--physik);
+            cursor: pointer;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .classify-placed:hover { opacity: 0.7; }
+
+        /* Eingabefelder */
+        input[type="text"] {
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            width: 100px;
+            margin: 0 5px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        input[type="text"].correct { border: 2px solid var(--success); background: var(--success-bg); }
+        input[type="text"].incorrect { border: 2px solid var(--error); background: var(--error-bg); }
+
+        /* Feedback */
+        .feedback {
+            padding: 10px 14px;
+            margin: 8px 0;
+            font-size: 0.9em;
+            display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.ok { background: var(--success-bg); border: 1px solid var(--success); color: #1b5e20; }
+        .feedback.nope { background: var(--error-bg); border: 1px solid var(--error); color: #b71c1c; }
+
+        /* Buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .btn {
+            padding: 12px 24px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-primary { background: var(--physik); color: white; }
+        .btn-primary:hover { background: #1e4a8a; }
+        .btn-secondary { background: var(--border); color: var(--text); }
+        .btn-check {
+            background: var(--physik);
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.95em;
+            border: none;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            margin-top: 8px;
+        }
+
+        /* Material-Tabelle */
+        .mu-tabelle {
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9em;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        .mu-tabelle th, .mu-tabelle td {
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            text-align: center;
+        }
+        .mu-tabelle th { background: var(--physik); color: white; font-size: 0.85em; }
+
+        /* Selbstcheck */
+        .selfcheck-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+        .selfcheck-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin: 6px 0;
+            background: var(--white);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.15s;
+        }
+        .selfcheck-item:hover { border-color: var(--physik); }
+        .selfcheck-item.checked {
+            background: var(--success-bg);
+            border-color: var(--success);
+        }
+        .selfcheck-box {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.1em;
+        }
+        .selfcheck-item.checked .selfcheck-box {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .final-message {
+            text-align: center;
+            padding: 20px;
+            margin: 15px 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            display: none;
+        }
+        .final-message.show { display: block; }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            header { padding: 12px 15px; }
+            .step { padding: 15px; }
+            .sort-slot { width: 110px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Timer-Leiste -->
+    <div class="timer-bar" id="timerBar">
+        <span class="timer-label">Wiederholung Reibungskräfte</span>
+        <span class="timer-display" id="timerDisplay">15:00</span>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Wiederholung: Reibungskräfte</h1>
+            <div class="meta">Physik Klasse 7 | Wiederholung Reibungskräfte | 15 Min</div>
+            <button class="btn-reset" onclick="resetLP()">Neu starten</button>
+        </header>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="step-indicators" id="stepIndicators"></div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 1: Schnellcheck Grundlagen -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="step active" id="step1">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <span class="step-title">Schnellcheck: Grundlagen</span>
+            </div>
+
+            <div class="merksatz">
+                <strong>Merke:</strong><br>
+                3 Reibungsarten: <em>Haftreibung, Gleitreibung, Rollreibung</em><br>
+                Einheiten: <span class="fz">F</span><sub>R</sub> in N, <span class="fz">μ</span> ohne Einheit, <span class="fz">F</span><sub>N</sub> in N<br>
+                Einflussfaktoren: <em>Gewichtskraft</em> (Normalkraft) und <em>Oberflächenbeschaffenheit</em> (Reibungszahl)
+            </div>
+
+            <h2>Q1a: Welche drei Reibungsarten gibt es?</h2>
+            <div class="quiz-options" id="q1a-opts">
+                <div class="quiz-option" onclick="checkMC('q1a',this,true)">Haftreibung, Gleitreibung, Rollreibung</div>
+                <div class="quiz-option" onclick="checkMC('q1a',this,false)">Startreibung, Bremsreibung, Luftreibung</div>
+                <div class="quiz-option" onclick="checkMC('q1a',this,false)">Zugreibung, Druckreibung, Drehreibung</div>
+            </div>
+            <div class="feedback" id="q1a-fb"></div>
+
+            <h2>Q1b: Ordne die Einheiten zu</h2>
+            <div class="inline-answer">
+                <span style="min-width:160px;">Reibungskraft <span class="fz">F</span><sub>R</sub>:</span>
+                <select id="q1b-fr">
+                    <option value="">-- wählen --</option>
+                    <option value="N">N (Newton)</option>
+                    <option value="m">m (Meter)</option>
+                    <option value="keine">keine Einheit</option>
+                </select>
+            </div>
+            <div class="inline-answer">
+                <span style="min-width:160px;">Reibungszahl <span class="fz">μ</span>:</span>
+                <select id="q1b-mu">
+                    <option value="">-- wählen --</option>
+                    <option value="N">N (Newton)</option>
+                    <option value="m">m (Meter)</option>
+                    <option value="keine">keine Einheit</option>
+                </select>
+            </div>
+            <div class="inline-answer">
+                <span style="min-width:160px;">Normalkraft <span class="fz">F</span><sub>N</sub>:</span>
+                <select id="q1b-fn">
+                    <option value="">-- wählen --</option>
+                    <option value="N">N (Newton)</option>
+                    <option value="m">m (Meter)</option>
+                    <option value="keine">keine Einheit</option>
+                </select>
+            </div>
+            <button class="btn-check" onclick="checkDropdowns()">Prüfen</button>
+            <div class="feedback" id="q1b-fb"></div>
+
+            <h2>Q1c: Welche zwei Faktoren beeinflussen die Reibungskraft?</h2>
+            <p style="font-size:0.9em; color:#888;">(Wähle genau 2 aus)</p>
+            <div class="quiz-options" id="q1c-opts">
+                <div class="multi-option" data-correct="true" onclick="toggleMulti(this)">Gewichtskraft (Normalkraft)</div>
+                <div class="multi-option" data-correct="false" onclick="toggleMulti(this)">Geschwindigkeit</div>
+                <div class="multi-option" data-correct="true" onclick="toggleMulti(this)">Oberflächenbeschaffenheit (Reibungszahl)</div>
+                <div class="multi-option" data-correct="false" onclick="toggleMulti(this)">Kontaktfläche</div>
+            </div>
+            <button class="btn-check" onclick="checkMultiSelect()">Prüfen</button>
+            <div class="feedback" id="q1c-fb"></div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 2: Sortieren & Zuordnen -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="step" id="step2">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <span class="step-title">Sortieren & Zuordnen</span>
+            </div>
+
+            <h2>Q2a: Sortiere die Reibungsarten der Größe nach</h2>
+            <p>Tippe oder ziehe die Begriffe in die Felder (größte zuerst). Tippe auf ein belegtes Feld zum Zurücklegen.</p>
+
+            <div class="sort-slots" id="sort-slots">
+                <div class="sort-slot" id="slot-1" data-slot="1" onclick="undoSort(1)"><span class="slot-label">1. größte</span>?</div>
+                <div class="sort-slot" id="slot-2" data-slot="2" onclick="undoSort(2)"><span class="slot-label">2. mittlere</span>?</div>
+                <div class="sort-slot" id="slot-3" data-slot="3" onclick="undoSort(3)"><span class="slot-label">3. kleinste</span>?</div>
+            </div>
+            <div class="sort-items" id="sort-items">
+                <div class="sort-item" data-value="roll" data-label="Rollreibung">Rollreibung</div>
+                <div class="sort-item" data-value="haft" data-label="Haftreibung">Haftreibung</div>
+                <div class="sort-item" data-value="gleit" data-label="Gleitreibung">Gleitreibung</div>
+            </div>
+            <button class="btn-mini-reset" onclick="resetSort()">Zurücksetzen</button>
+            <div class="feedback" id="q2a-fb"></div>
+
+            <h2>Q2b: Warum ist Rollreibung am kleinsten?</h2>
+            <div class="quiz-options" id="q2b-opts">
+                <div class="quiz-option" onclick="checkMC('q2b',this,true)">Beim Rollen berührt nur ein kleiner Punkt die Oberfläche</div>
+                <div class="quiz-option" onclick="checkMC('q2b',this,false)">Weil Räder immer rund sind</div>
+                <div class="quiz-option" onclick="checkMC('q2b',this,false)">Weil rollende Körper leichter werden</div>
+            </div>
+            <div class="feedback" id="q2b-fb"></div>
+
+            <h2>Q2c: Erwünscht oder unerwünscht?</h2>
+            <p>Tippe ein Beispiel, dann den Bereich. Oder ziehe es direkt hinein. Tippe auf ein platziertes Beispiel zum Zurücklegen.</p>
+
+            <div class="classify-grid">
+                <div class="classify-bucket erwuenscht" id="bucket-e" data-bucket="e">
+                    <h3>Erwünscht</h3>
+                    <div id="bucket-e-items"></div>
+                </div>
+                <div class="classify-bucket unerwuenscht" id="bucket-u" data-bucket="u">
+                    <h3>Unerwünscht</h3>
+                    <div id="bucket-u-items"></div>
+                </div>
+            </div>
+
+            <div class="classify-items" id="classify-items">
+                <div class="classify-item" data-answer="e" data-label="Auto-Bremsen">Auto-Bremsen</div>
+                <div class="classify-item" data-answer="e" data-label="Schuhsohle auf Boden">Schuhsohle auf Boden</div>
+                <div class="classify-item" data-answer="u" data-label="Abrieb an Reifen">Abrieb an Reifen</div>
+                <div class="classify-item" data-answer="u" data-label="Verschleiß im Getriebe">Verschleiß im Getriebe</div>
+            </div>
+            <button class="btn-mini-reset" onclick="resetClassify()">Zurücksetzen</button>
+            <div class="feedback" id="q2c-fb"></div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 3: F_R berechnen -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="step" id="step3">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <span class="step-title"><span class="fz">F</span><sub>R</sub> berechnen</span>
+            </div>
+
+            <div class="merksatz" style="text-align:center;">
+                <strong>Formel:</strong> <span style="font-size:1.3em;"><span class="fz">F</span><sub>R</sub> = <span class="fz">μ</span> · <span class="fz">F</span><sub>N</sub></span>
+            </div>
+
+            <h2>Q3a: <span class="fz">μ</span> = 0,2 &nbsp; <span class="fz">F</span><sub>N</sub> = 30 N</h2>
+            <div class="inline-answer">
+                <span class="fz">F</span><sub>R</sub> =
+                <input type="text" inputmode="decimal" id="q3a-val" placeholder="?">
+                <span class="einheit">N</span>
+                <button class="btn-check" onclick="checkCalc('q3a',6)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q3a-fb"></div>
+
+            <h2>Q3b: <span class="fz">μ</span> = 0,6 &nbsp; <span class="fz">F</span><sub>N</sub> = 40 N</h2>
+            <div class="inline-answer">
+                <span class="fz">F</span><sub>R</sub> =
+                <input type="text" inputmode="decimal" id="q3b-val" placeholder="?">
+                <span class="einheit">N</span>
+                <button class="btn-check" onclick="checkCalc('q3b',24)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q3b-fb"></div>
+
+            <h2>Q3c <span class="stern">★★</span>: <span class="fz">μ</span> = 0,7 &nbsp; <span class="fz">F</span><sub>N</sub> = 30 N</h2>
+            <div class="inline-answer">
+                <span class="fz">F</span><sub>R</sub> =
+                <input type="text" inputmode="decimal" id="q3c-val" placeholder="?">
+                <span class="einheit">N</span>
+                <button class="btn-check" onclick="checkCalc('q3c',21)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q3c-fb"></div>
+
+            <h2>Q3d <span class="stern">★★</span>: <span class="fz">μ</span> = 0,5 &nbsp; <span class="fz">F</span><sub>N</sub> = 15 N</h2>
+            <div class="inline-answer">
+                <span class="fz">F</span><sub>R</sub> =
+                <input type="text" inputmode="decimal" id="q3d-val" placeholder="?">
+                <span class="einheit">N</span>
+                <button class="btn-check" onclick="checkCalc('q3d',7.5)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q3d-fb"></div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 4: Formel umstellen (★★/★★★) -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="step" id="step4">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <span class="step-title">Formel umstellen <span class="stern">★★</span></span>
+            </div>
+
+            <div class="info-box" style="background: var(--warning-bg); border-color: var(--warning);">
+                <strong>Nur für ★★ und ★★★!</strong> Wenn du nur ★ machst, springe direkt zu Schritt 5.
+            </div>
+
+            <div class="merksatz" style="text-align:center;">
+                <strong>Umgestellte Formeln:</strong><br>
+                <span style="font-size:1.2em;">
+                    <span class="fz">μ</span> = <span class="frac"><span class="frac-num"><span class="fz">F</span><sub>R</sub></span><span class="frac-den"><span class="fz">F</span><sub>N</sub></span></span>
+                    &nbsp;&nbsp;&nbsp;
+                    <span class="fz">F</span><sub>N</sub> = <span class="frac"><span class="frac-num"><span class="fz">F</span><sub>R</sub></span><span class="frac-den"><span class="fz">μ</span></span></span>
+                </span>
+            </div>
+
+            <h2>Q4a <span class="stern">★★</span>: <span class="fz">F</span><sub>R</sub> = 6 N, <span class="fz">F</span><sub>N</sub> = 10 N &rarr; <span class="fz">μ</span> = ?</h2>
+            <div class="inline-answer">
+                <span class="fz">μ</span> =
+                <input type="text" inputmode="decimal" id="q4a-val" placeholder="?">
+                <button class="btn-check" onclick="checkCalc('q4a',0.6)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q4a-fb"></div>
+
+            <h2>Q4b <span class="stern">★★</span>: <span class="fz">F</span><sub>R</sub> = 8 N, <span class="fz">F</span><sub>N</sub> = 20 N &rarr; <span class="fz">μ</span> = ?</h2>
+            <div class="inline-answer">
+                <span class="fz">μ</span> =
+                <input type="text" inputmode="decimal" id="q4b-val" placeholder="?">
+                <button class="btn-check" onclick="checkCalc('q4b',0.4)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q4b-fb"></div>
+
+            <h2>Q4c <span class="stern">★★</span>: <span class="fz">F</span><sub>R</sub> = 10 N, <span class="fz">μ</span> = 0,5 &rarr; <span class="fz">F</span><sub>N</sub> = ?</h2>
+            <div class="inline-answer">
+                <span class="fz">F</span><sub>N</sub> =
+                <input type="text" inputmode="decimal" id="q4c-val" placeholder="?">
+                <span class="einheit">N</span>
+                <button class="btn-check" onclick="checkCalc('q4c',20)">Prüfen</button>
+            </div>
+            <div class="feedback" id="q4c-fb"></div>
+
+            <h2>Q4d <span class="stern">★★★</span>: <span class="fz">F</span><sub>R</sub> = 12 N, <span class="fz">F</span><sub>N</sub> = 40 N &rarr; Material?</h2>
+            <p>Berechne zuerst <span class="fz">μ</span>, dann bestimme das Material:</p>
+            <table class="mu-tabelle">
+                <tr><th>Material</th><th><span class="fz">μ</span></th></tr>
+                <tr><td>Holz auf Holz</td><td>0,5</td></tr>
+                <tr><td>Stahl auf Stahl</td><td>0,3</td></tr>
+                <tr><td>Gummi auf Asphalt</td><td>0,8</td></tr>
+                <tr><td>Stahl auf Eis</td><td>0,03</td></tr>
+            </table>
+            <div class="inline-answer">
+                <span class="fz">μ</span> =
+                <input type="text" inputmode="decimal" id="q4d-mu" placeholder="?" style="width:80px;">
+            </div>
+            <div class="inline-answer">
+                Material:
+                <select id="q4d-mat">
+                    <option value="">-- wählen --</option>
+                    <option value="holz">Holz auf Holz</option>
+                    <option value="stahl">Stahl auf Stahl</option>
+                    <option value="gummi">Gummi auf Asphalt</option>
+                    <option value="eis">Stahl auf Eis</option>
+                </select>
+            </div>
+            <button class="btn-check" onclick="checkQ4d()">Prüfen</button>
+            <div class="feedback" id="q4d-fb"></div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <button class="btn btn-primary" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- SCHRITT 5: Zusammenfassung -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <div class="step" id="step5">
+            <div class="step-header">
+                <span class="step-number">5</span>
+                <span class="step-title">Zusammenfassung</span>
+            </div>
+
+            <p>Hake ab, was du sicher kannst:</p>
+
+            <ul class="selfcheck-list" id="selfcheck">
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kenne die 3 Reibungsarten (Haft-, Gleit-, Rollreibung).</span>
+                </li>
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kann die Reibungsarten der Größe nach ordnen.</span>
+                </li>
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kann Beispiele als erwünscht/unerwünscht einteilen.</span>
+                </li>
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kenne die Einheiten von <span class="fz">F</span><sub>R</sub>, <span class="fz">μ</span> und <span class="fz">F</span><sub>N</sub>.</span>
+                </li>
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kann <span class="fz">F</span><sub>R</sub> = <span class="fz">μ</span> · <span class="fz">F</span><sub>N</sub> berechnen.</span>
+                </li>
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kann die Formel nach <span class="fz">μ</span> umstellen.</span>
+                </li>
+                <li class="selfcheck-item" onclick="toggleCheck(this)">
+                    <span class="selfcheck-box"></span>
+                    <span>Ich kann die Formel nach <span class="fz">F</span><sub>N</sub> umstellen.</span>
+                </li>
+            </ul>
+
+            <div class="progress-bar" style="margin:15px 0; height:10px;">
+                <div class="progress-fill" id="selfcheckFill" style="background:var(--success); transition: width 0.3s;"></div>
+            </div>
+            <p id="selfcheckText" style="text-align:center; color:#888; font-size:0.9em;">0 von 7 abgehakt</p>
+
+            <div class="final-message" id="finalMsg" style="background:var(--success-bg); color:var(--success); border:2px solid var(--success);">
+                Gut vorbereitet! Du bist bereit.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="prevStep()">Zurück</button>
+                <span></span>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <script>
+        // ============================================================
+        // KONFIGURATION
+        // ============================================================
+        var STORAGE_KEY = 'lp-05-wiederholung-reibungskraefte-v1';
+        var totalSteps = 5;
+        var currentStep = 1;
+        var TIME_LIMIT = 15 * 60;
+        var timeRemaining = TIME_LIMIT;
+        var timerInterval = null;
+
+        // ============================================================
+        // HILFSFUNKTIONEN
+        // ============================================================
+        function parseNumber(val) {
+            if (val === '' || val === null || val === undefined) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        // ============================================================
+        // TIMER
+        // ============================================================
+        function startTimer() {
+            var saved = localStorage.getItem(STORAGE_KEY + '-time');
+            if (saved !== null) timeRemaining = parseInt(saved);
+            updateTimerDisplay();
+            timerInterval = setInterval(function() {
+                timeRemaining--;
+                if (timeRemaining < 0) timeRemaining = 0;
+                localStorage.setItem(STORAGE_KEY + '-time', timeRemaining);
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            var bar = document.getElementById('timerBar');
+            var display = document.getElementById('timerDisplay');
+            if (timeRemaining <= 0) {
+                display.textContent = 'Zeit vorbei \u2013 übe weiter!';
+                bar.className = 'timer-bar expired';
+                return;
+            }
+            var m = Math.floor(timeRemaining / 60);
+            var s = timeRemaining % 60;
+            display.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            bar.classList.remove('warning', 'danger', 'expired');
+            if (timeRemaining <= 120) bar.classList.add('danger');
+            else if (timeRemaining <= 300) bar.classList.add('warning');
+        }
+
+        // ============================================================
+        // NAVIGATION
+        // ============================================================
+        function init() {
+            var saved = localStorage.getItem(STORAGE_KEY + '-step');
+            if (saved) currentStep = parseInt(saved) || 1;
+            createStepIndicators();
+            showStep(currentStep);
+            startTimer();
+        }
+
+        function createStepIndicators() {
+            var c = document.getElementById('stepIndicators');
+            c.innerHTML = '';
+            for (var i = 1; i <= totalSteps; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'step-dot';
+                dot.textContent = i === totalSteps ? '\u2713' : i;
+                dot.setAttribute('data-step', i);
+                dot.onclick = (function(s) {
+                    return function() { if (s <= getMaxStep() + 1) showStep(s); };
+                })(i);
+                c.appendChild(dot);
+            }
+        }
+
+        function getMaxStep() {
+            return parseInt(localStorage.getItem(STORAGE_KEY + '-maxStep')) || 1;
+        }
+
+        function updateStepIndicators() {
+            var dots = document.querySelectorAll('.step-dot');
+            var maxDone = getMaxStep();
+            for (var i = 0; i < dots.length; i++) {
+                var num = i + 1;
+                dots[i].classList.remove('current', 'completed');
+                if (num === currentStep) dots[i].classList.add('current');
+                else if (num <= maxDone) dots[i].classList.add('completed');
+            }
+        }
+
+        function showStep(n) {
+            var steps = document.querySelectorAll('.step');
+            for (var i = 0; i < steps.length; i++) steps[i].classList.remove('active');
+            var el = document.getElementById('step' + n);
+            if (el) el.classList.add('active');
+            currentStep = n;
+            localStorage.setItem(STORAGE_KEY + '-step', n);
+            var mx = getMaxStep();
+            if (n > mx) localStorage.setItem(STORAGE_KEY + '-maxStep', n);
+            document.getElementById('progressFill').style.width = ((n - 1) / (totalSteps - 1) * 100) + '%';
+            updateStepIndicators();
+            window.scrollTo(0, 0);
+        }
+
+        function nextStep() { if (currentStep < totalSteps) showStep(currentStep + 1); }
+        function prevStep() { if (currentStep > 1) showStep(currentStep - 1); }
+
+        function resetLP() {
+            if (confirm('Wiederholung wirklich neu starten?')) {
+                var keys = [];
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (k && k.indexOf(STORAGE_KEY) === 0) keys.push(k);
+                }
+                for (var j = 0; j < keys.length; j++) localStorage.removeItem(keys[j]);
+                location.reload();
+            }
+        }
+
+        // ============================================================
+        // Q1a: MC (Single)
+        // ============================================================
+        function checkMC(id, el, isCorrect) {
+            var opts = el.parentNode.querySelectorAll('.quiz-option');
+            for (var i = 0; i < opts.length; i++) {
+                opts[i].classList.add('disabled');
+                opts[i].style.pointerEvents = 'none';
+            }
+            var fb = document.getElementById(id + '-fb');
+            if (isCorrect) {
+                el.classList.add('correct');
+                fb.className = 'feedback ok show';
+                fb.textContent = 'Richtig!';
+            } else {
+                el.classList.add('incorrect');
+                // Markiere richtige
+                for (var j = 0; j < opts.length; j++) {
+                    if (opts[j].getAttribute('onclick') && opts[j].getAttribute('onclick').indexOf('true') > -1) {
+                        opts[j].classList.add('correct');
+                    }
+                }
+                fb.className = 'feedback nope show';
+                fb.textContent = 'Leider falsch. Schau dir die grüne Antwort an.';
+            }
+        }
+
+        // ============================================================
+        // Q1b: Dropdowns
+        // ============================================================
+        function checkDropdowns() {
+            var fr = document.getElementById('q1b-fr');
+            var mu = document.getElementById('q1b-mu');
+            var fn = document.getElementById('q1b-fn');
+            var fb = document.getElementById('q1b-fb');
+
+            var ok = true;
+            // F_R -> N
+            fr.classList.remove('correct', 'incorrect');
+            if (fr.value === 'N') { fr.classList.add('correct'); }
+            else { fr.classList.add('incorrect'); ok = false; }
+            // mu -> keine
+            mu.classList.remove('correct', 'incorrect');
+            if (mu.value === 'keine') { mu.classList.add('correct'); }
+            else { mu.classList.add('incorrect'); ok = false; }
+            // F_N -> N
+            fn.classList.remove('correct', 'incorrect');
+            if (fn.value === 'N') { fn.classList.add('correct'); }
+            else { fn.classList.add('incorrect'); ok = false; }
+
+            if (ok) {
+                fb.className = 'feedback ok show';
+                fb.innerHTML = 'Richtig! <span class="fz">F</span><sub>R</sub> in N, <span class="fz">μ</span> ohne Einheit, <span class="fz">F</span><sub>N</sub> in N.';
+            } else {
+                fb.className = 'feedback nope show';
+                fb.innerHTML = '<span class="fz">F</span><sub>R</sub> = N, <span class="fz">μ</span> = keine Einheit, <span class="fz">F</span><sub>N</sub> = N';
+            }
+        }
+
+        // ============================================================
+        // Q1c: Multi-Select
+        // ============================================================
+        var multiLocked = false;
+        function toggleMulti(el) {
+            if (multiLocked) return;
+            el.classList.toggle('picked');
+        }
+
+        function checkMultiSelect() {
+            multiLocked = true;
+            var opts = document.querySelectorAll('#q1c-opts .multi-option');
+            var fb = document.getElementById('q1c-fb');
+            var allOk = true;
+            for (var i = 0; i < opts.length; i++) {
+                var isPicked = opts[i].classList.contains('picked');
+                var isCorrect = opts[i].getAttribute('data-correct') === 'true';
+                opts[i].style.pointerEvents = 'none';
+                if (isPicked && isCorrect) {
+                    opts[i].classList.add('correct');
+                } else if (isPicked && !isCorrect) {
+                    opts[i].classList.add('incorrect');
+                    allOk = false;
+                } else if (!isPicked && isCorrect) {
+                    opts[i].classList.add('correct');
+                    allOk = false;
+                }
+            }
+            if (allOk) {
+                fb.className = 'feedback ok show';
+                fb.textContent = 'Richtig! Gewichtskraft und Oberflächenbeschaffenheit.';
+            } else {
+                fb.className = 'feedback nope show';
+                fb.textContent = 'Die beiden Einflussfaktoren sind: Gewichtskraft (Normalkraft) und Oberflächenbeschaffenheit (Reibungszahl).';
+            }
+        }
+
+        // ============================================================
+        // DRAG-AND-DROP ENGINE (Touch + Mouse)
+        // ============================================================
+        var dragState = null; // { el, ghost, originType, originData, offsetX, offsetY }
+
+        function createGhost(el) {
+            var ghost = el.cloneNode(true);
+            ghost.className = el.className + ' drag-ghost';
+            var r = el.getBoundingClientRect();
+            ghost.style.width = r.width + 'px';
+            ghost.style.height = r.height + 'px';
+            ghost.style.left = r.left + 'px';
+            ghost.style.top = r.top + 'px';
+            document.body.appendChild(ghost);
+            return ghost;
+        }
+
+        function moveGhost(x, y) {
+            if (!dragState || !dragState.ghost) return;
+            dragState.ghost.style.left = (x - dragState.offsetX) + 'px';
+            dragState.ghost.style.top = (y - dragState.offsetY) + 'px';
+        }
+
+        function removeGhost() {
+            if (dragState && dragState.ghost && dragState.ghost.parentNode) {
+                dragState.ghost.parentNode.removeChild(dragState.ghost);
+            }
+        }
+
+        function hitTest(x, y, selector) {
+            var els = document.querySelectorAll(selector);
+            for (var i = 0; i < els.length; i++) {
+                var r = els[i].getBoundingClientRect();
+                if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return els[i];
+            }
+            return null;
+        }
+
+        function clearDragHighlights(selector) {
+            var els = document.querySelectorAll(selector);
+            for (var i = 0; i < els.length; i++) els[i].classList.remove('drag-over');
+        }
+
+        // Unified pointer start
+        function onDragStart(el, x, y, originType, originData) {
+            var r = el.getBoundingClientRect();
+            dragState = {
+                el: el,
+                ghost: createGhost(el),
+                originType: originType,
+                originData: originData,
+                offsetX: x - r.left,
+                offsetY: y - r.top,
+                moved: false
+            };
+            el.style.opacity = '0.4';
+        }
+
+        // ============================================================
+        // Q2a: SORT (Tap + Drag + Undo)
+        // ============================================================
+        var sortSlots = [null, null, null]; // value at each slot index
+        var sortLocked = false;
+        var correctSortOrder = ['haft', 'gleit', 'roll'];
+        var sortLabels = { haft: 'Haftreibung', gleit: 'Gleitreibung', roll: 'Rollreibung' };
+        var slotNames = ['größte', 'mittlere', 'kleinste'];
+
+        function renderSort() {
+            // Render slots
+            for (var i = 0; i < 3; i++) {
+                var slot = document.getElementById('slot-' + (i + 1));
+                var val = sortSlots[i];
+                if (val) {
+                    slot.classList.add('filled');
+                    slot.innerHTML = '<span class="slot-label">' + (i+1) + '. ' + slotNames[i] + '</span>' + sortLabels[val];
+                } else {
+                    slot.classList.remove('filled');
+                    slot.innerHTML = '<span class="slot-label">' + (i+1) + '. ' + slotNames[i] + '</span>?';
+                    slot.style.borderColor = '';
+                }
+            }
+            // Render pool items
+            var items = document.querySelectorAll('#sort-items .sort-item');
+            for (var j = 0; j < items.length; j++) {
+                var v = items[j].getAttribute('data-value');
+                var isPlaced = sortSlots.indexOf(v) >= 0;
+                if (isPlaced) {
+                    items[j].classList.add('used');
+                } else {
+                    items[j].classList.remove('used');
+                }
+            }
+        }
+
+        function nextEmptySortSlot() {
+            for (var i = 0; i < 3; i++) { if (!sortSlots[i]) return i; }
+            return -1;
+        }
+
+        function placeSortValue(val, slotIdx) {
+            if (sortLocked) return;
+            if (slotIdx < 0 || slotIdx > 2) return;
+            // Remove from any other slot first
+            for (var i = 0; i < 3; i++) { if (sortSlots[i] === val) sortSlots[i] = null; }
+            sortSlots[slotIdx] = val;
+            renderSort();
+            checkSortComplete();
+        }
+
+        function undoSort(slotNum) {
+            if (sortLocked) return;
+            var idx = slotNum - 1;
+            if (!sortSlots[idx]) return;
+            sortSlots[idx] = null;
+            renderSort();
+            document.getElementById('q2a-fb').className = 'feedback';
+        }
+
+        function resetSort() {
+            sortLocked = false;
+            sortSlots = [null, null, null];
+            renderSort();
+            var fb = document.getElementById('q2a-fb');
+            fb.className = 'feedback';
+            fb.textContent = '';
+        }
+
+        function checkSortComplete() {
+            if (sortSlots[0] && sortSlots[1] && sortSlots[2]) {
+                var fb = document.getElementById('q2a-fb');
+                var ok = sortSlots[0] === 'haft' && sortSlots[1] === 'gleit' && sortSlots[2] === 'roll';
+                if (ok) {
+                    fb.className = 'feedback ok show';
+                    fb.innerHTML = 'Richtig! <span class="fz">F</span><sub>Haft</sub> > <span class="fz">F</span><sub>Gleit</sub> > <span class="fz">F</span><sub>Roll</sub>';
+                    sortLocked = true;
+                    for (var i = 0; i < 3; i++) {
+                        document.getElementById('slot-' + (i+1)).style.borderColor = 'var(--success)';
+                    }
+                } else {
+                    fb.className = 'feedback nope show';
+                    fb.innerHTML = 'Nicht ganz – tippe auf ein Feld zum Korrigieren oder drücke Zurücksetzen.';
+                }
+            }
+        }
+
+        // Sort item: tap to place in next empty slot
+        function onSortItemTap(el) {
+            if (sortLocked) return;
+            var val = el.getAttribute('data-value');
+            if (sortSlots.indexOf(val) >= 0) return; // already placed
+            var idx = nextEmptySortSlot();
+            if (idx >= 0) placeSortValue(val, idx);
+        }
+
+        // ============================================================
+        // Q2c: CLASSIFY (Tap + Drag + Undo)
+        // ============================================================
+        var classifyPlacements = {}; // label -> bucket ('e' or 'u')
+        var selectedClassifyEl = null;
+        var classifyLocked = false;
+        var classifyData = [
+            { label: 'Auto-Bremsen', answer: 'e' },
+            { label: 'Schuhsohle auf Boden', answer: 'e' },
+            { label: 'Abrieb an Reifen', answer: 'u' },
+            { label: 'Verschleiß im Getriebe', answer: 'u' }
+        ];
+
+        function renderClassify() {
+            // Clear buckets
+            document.getElementById('bucket-e-items').innerHTML = '';
+            document.getElementById('bucket-u-items').innerHTML = '';
+            // Render placed items in buckets
+            for (var label in classifyPlacements) {
+                if (!classifyPlacements.hasOwnProperty(label)) continue;
+                var bucket = classifyPlacements[label];
+                var correctBucket = null;
+                for (var d = 0; d < classifyData.length; d++) {
+                    if (classifyData[d].label === label) { correctBucket = classifyData[d].answer; break; }
+                }
+                var placed = document.createElement('div');
+                placed.className = 'classify-placed';
+                placed.textContent = label;
+                placed.setAttribute('data-label', label);
+                if (classifyLocked) {
+                    placed.style.borderColor = (bucket === correctBucket) ? 'var(--success)' : 'var(--error)';
+                    placed.style.background = (bucket === correctBucket) ? 'var(--success-bg)' : 'var(--error-bg)';
+                }
+                // Click to undo (unless locked)
+                if (!classifyLocked) {
+                    placed.onclick = (function(lbl) { return function() { undoClassify(lbl); }; })(label);
+                }
+                document.getElementById('bucket-' + bucket + '-items').appendChild(placed);
+            }
+            // Render pool items
+            var items = document.querySelectorAll('#classify-items .classify-item');
+            for (var j = 0; j < items.length; j++) {
+                var lbl = items[j].getAttribute('data-label');
+                if (classifyPlacements[lbl]) {
+                    items[j].classList.add('placed');
+                } else {
+                    items[j].classList.remove('placed');
+                }
+                items[j].classList.remove('selected-item');
+            }
+            if (selectedClassifyEl && !selectedClassifyEl.classList.contains('placed')) {
+                selectedClassifyEl.classList.add('selected-item');
+            }
+        }
+
+        function undoClassify(label) {
+            if (classifyLocked) return;
+            delete classifyPlacements[label];
+            renderClassify();
+            document.getElementById('q2c-fb').className = 'feedback';
+        }
+
+        function resetClassify() {
+            classifyLocked = false;
+            classifyPlacements = {};
+            selectedClassifyEl = null;
+            renderClassify();
+            var fb = document.getElementById('q2c-fb');
+            fb.className = 'feedback';
+            fb.textContent = '';
+        }
+
+        function placeClassifyItem(label, bucket) {
+            if (classifyLocked) return;
+            classifyPlacements[label] = bucket;
+            selectedClassifyEl = null;
+            renderClassify();
+            checkClassifyComplete();
+        }
+
+        function checkClassifyComplete() {
+            var count = 0;
+            for (var k in classifyPlacements) { if (classifyPlacements.hasOwnProperty(k)) count++; }
+            if (count === 4) {
+                classifyLocked = true;
+                renderClassify(); // re-render with colors
+                var fb = document.getElementById('q2c-fb');
+                fb.className = 'feedback ok show';
+                fb.textContent = 'Erwünscht: Auto-Bremsen, Schuhsohle. Unerwünscht: Reifenabrieb, Getriebeverschleiß.';
+            }
+        }
+
+        function onClassifyItemTap(el) {
+            if (classifyLocked) return;
+            if (el.classList.contains('placed')) return;
+            // Deselect old
+            var items = document.querySelectorAll('.classify-item');
+            for (var i = 0; i < items.length; i++) items[i].classList.remove('selected-item');
+            el.classList.add('selected-item');
+            selectedClassifyEl = el;
+        }
+
+        function onBucketTap(bucket) {
+            if (classifyLocked) return;
+            if (!selectedClassifyEl) return;
+            var label = selectedClassifyEl.getAttribute('data-label');
+            placeClassifyItem(label, bucket);
+        }
+
+        // ============================================================
+        // DRAG EVENT WIRING (Touch + Mouse)
+        // ============================================================
+        function initDragAndDrop() {
+            // Sort items
+            var sortItems = document.querySelectorAll('#sort-items .sort-item');
+            for (var i = 0; i < sortItems.length; i++) {
+                wireUpDraggable(sortItems[i], 'sort-item');
+            }
+            // Classify items
+            var classItems = document.querySelectorAll('#classify-items .classify-item');
+            for (var j = 0; j < classItems.length; j++) {
+                wireUpDraggable(classItems[j], 'classify-item');
+            }
+            // Bucket tap handlers
+            document.getElementById('bucket-e').addEventListener('click', function(e) {
+                if (e.target.classList.contains('classify-placed')) return;
+                onBucketTap('e');
+            });
+            document.getElementById('bucket-u').addEventListener('click', function(e) {
+                if (e.target.classList.contains('classify-placed')) return;
+                onBucketTap('u');
+            });
+
+            // Global move/end handlers
+            document.addEventListener('mousemove', onPointerMove);
+            document.addEventListener('mouseup', onPointerEnd);
+            document.addEventListener('touchmove', function(e) {
+                if (dragState) { e.preventDefault(); onPointerMove(e); }
+            }, { passive: false });
+            document.addEventListener('touchend', onPointerEnd);
+            document.addEventListener('touchcancel', onDragCancel);
+        }
+
+        function wireUpDraggable(el, type) {
+            el.addEventListener('mousedown', function(e) {
+                if (el.classList.contains('used') || el.classList.contains('placed')) return;
+                e.preventDefault();
+                onDragStart(el, e.clientX, e.clientY, type, el.getAttribute('data-value') || el.getAttribute('data-label'));
+            });
+            el.addEventListener('touchstart', function(e) {
+                if (el.classList.contains('used') || el.classList.contains('placed')) return;
+                var t = e.touches[0];
+                onDragStart(el, t.clientX, t.clientY, type, el.getAttribute('data-value') || el.getAttribute('data-label'));
+            }, { passive: true });
+            // Tap fallback (fires if no drag movement)
+            el.addEventListener('click', function() {
+                if (type === 'sort-item') onSortItemTap(el);
+                else if (type === 'classify-item') onClassifyItemTap(el);
+            });
+        }
+
+        function onPointerMove(e) {
+            if (!dragState) return;
+            var x, y;
+            if (e.touches) { x = e.touches[0].clientX; y = e.touches[0].clientY; }
+            else { x = e.clientX; y = e.clientY; }
+            moveGhost(x, y);
+            dragState.moved = true;
+
+            // Highlight drop targets
+            if (dragState.originType === 'sort-item') {
+                clearDragHighlights('.sort-slot');
+                var target = hitTest(x, y, '.sort-slot');
+                if (target && !target.classList.contains('filled')) target.classList.add('drag-over');
+            } else if (dragState.originType === 'classify-item') {
+                clearDragHighlights('.classify-bucket');
+                var bucket = hitTest(x, y, '.classify-bucket');
+                if (bucket) bucket.classList.add('drag-over');
+            }
+        }
+
+        function onPointerEnd(e) {
+            if (!dragState) return;
+            var x, y;
+            if (e.changedTouches) { x = e.changedTouches[0].clientX; y = e.changedTouches[0].clientY; }
+            else { x = e.clientX; y = e.clientY; }
+
+            dragState.el.style.opacity = '';
+            removeGhost();
+            clearDragHighlights('.sort-slot');
+            clearDragHighlights('.classify-bucket');
+
+            if (!dragState.moved) { dragState = null; return; } // was just a tap
+
+            if (dragState.originType === 'sort-item') {
+                var slot = hitTest(x, y, '.sort-slot');
+                if (slot) {
+                    var slotIdx = parseInt(slot.getAttribute('data-slot')) - 1;
+                    if (!sortSlots[slotIdx] || sortSlots[slotIdx] !== dragState.originData) {
+                        // If slot occupied by different value, swap back
+                        if (sortSlots[slotIdx]) {
+                            // Return existing to pool
+                            sortSlots[slotIdx] = null;
+                        }
+                        placeSortValue(dragState.originData, slotIdx);
+                    }
+                }
+            } else if (dragState.originType === 'classify-item') {
+                var bucket = hitTest(x, y, '.classify-bucket');
+                if (bucket) {
+                    var bId = bucket.getAttribute('data-bucket');
+                    var label = dragState.el.getAttribute('data-label');
+                    placeClassifyItem(label, bId);
+                }
+            }
+
+            dragState = null;
+        }
+
+        function onDragCancel() {
+            if (!dragState) return;
+            dragState.el.style.opacity = '';
+            removeGhost();
+            clearDragHighlights('.sort-slot');
+            clearDragHighlights('.classify-bucket');
+            dragState = null;
+        }
+
+        // ============================================================
+        // Q3/Q4: Rechenaufgaben
+        // ============================================================
+        function checkCalc(id, expected) {
+            var input = document.getElementById(id + '-val');
+            var fb = document.getElementById(id + '-fb');
+            var val = parseNumber(input.value);
+
+            input.classList.remove('correct', 'incorrect');
+            if (isNaN(val)) {
+                fb.className = 'feedback nope show';
+                fb.textContent = 'Bitte eine Zahl eingeben.';
+                input.classList.add('incorrect');
+                return;
+            }
+
+            // Toleranz 0.01
+            if (Math.abs(val - expected) < 0.01) {
+                input.classList.add('correct');
+                input.setAttribute('readonly', 'readonly');
+                fb.className = 'feedback ok show';
+                fb.textContent = 'Richtig! ' + String(expected).replace('.', ',');
+                if (id.indexOf('q3') === 0) fb.textContent += ' N';
+            } else {
+                input.classList.add('incorrect');
+                fb.className = 'feedback nope show';
+                var ans = String(expected).replace('.', ',');
+                fb.textContent = 'Leider falsch. Richtig: ' + ans;
+                if (id.indexOf('q3') === 0) fb.textContent += ' N';
+            }
+        }
+
+        // ============================================================
+        // Q4d: Kombination Rechnung + Material
+        // ============================================================
+        function checkQ4d() {
+            var muInput = document.getElementById('q4d-mu');
+            var matSelect = document.getElementById('q4d-mat');
+            var fb = document.getElementById('q4d-fb');
+
+            var muVal = parseNumber(muInput.value);
+            var matVal = matSelect.value;
+
+            muInput.classList.remove('correct', 'incorrect');
+            matSelect.classList.remove('correct', 'incorrect');
+
+            var muOk = !isNaN(muVal) && Math.abs(muVal - 0.3) < 0.01;
+            var matOk = matVal === 'stahl';
+
+            if (muOk) { muInput.classList.add('correct'); muInput.setAttribute('readonly', 'readonly'); }
+            else { muInput.classList.add('incorrect'); }
+
+            if (matOk) { matSelect.classList.add('correct'); }
+            else if (matVal) { matSelect.classList.add('incorrect'); }
+
+            if (muOk && matOk) {
+                fb.className = 'feedback ok show';
+                fb.innerHTML = 'Richtig! <span class="fz">μ</span> = 12/40 = 0,3 \u2192 Stahl auf Stahl';
+            } else {
+                fb.className = 'feedback nope show';
+                fb.innerHTML = '<span class="fz">μ</span> = 12 \u00f7 40 = <strong>0,3</strong> \u2192 Stahl auf Stahl';
+            }
+        }
+
+        // ============================================================
+        // SCHRITT 5: Selbstcheck
+        // ============================================================
+        function toggleCheck(el) {
+            el.classList.toggle('checked');
+            var isChecked = el.classList.contains('checked');
+            var box = el.querySelector('.selfcheck-box');
+            box.textContent = isChecked ? '\u2713' : '';
+            updateSelfcheck();
+        }
+
+        function updateSelfcheck() {
+            var items = document.querySelectorAll('.selfcheck-item');
+            var checked = 0;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].classList.contains('checked')) checked++;
+            }
+            var total = items.length;
+            var pct = (checked / total) * 100;
+            document.getElementById('selfcheckFill').style.width = pct + '%';
+            document.getElementById('selfcheckText').textContent = checked + ' von ' + total + ' abgehakt';
+
+            var msg = document.getElementById('finalMsg');
+            if (checked >= 5) {
+                msg.classList.add('show');
+                if (checked === total) {
+                    msg.textContent = 'Perfekt vorbereitet! Du kannst alles.';
+                } else {
+                    msg.textContent = 'Gut vorbereitet! Schau dir die offenen Punkte nochmal an.';
+                }
+            } else {
+                msg.classList.remove('show');
+            }
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        init();
+        initDragAndDrop();
+    </script>
+</body>
+</html>

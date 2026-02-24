@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LP-02a: Wärmeleitung</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.5;
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 15px; }
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .progress-bar {
+            background: #ddd;
+            height: 8px;
+            margin: 15px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #2c5aa0, #4a7bc4);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 10px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .step-nav-item {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+        .step-nav-item:active { background: #e3f2fd; }
+        .step-nav-item.active { background: #2c5aa0; color: white; border-color: #2c5aa0; }
+        .step-nav-item.done { background: #2a7a4b; color: white; border-color: #2a7a4b; }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 18px;
+            margin-bottom: 15px;
+            display: none;
+            border-radius: 8px;
+        }
+        .section.active { display: block; }
+        .section h2 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+        .section h3 {
+            font-size: 0.95em;
+            margin: 15px 0 8px 0;
+            color: #333;
+        }
+        .section p { margin-bottom: 10px; }
+
+        /* Erkenntnisweg Labels */
+        .ew-label {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .ew-phaenomen { background: #e3f2fd; color: #1565c0; }
+        .ew-hypothese { background: #f3e5f5; color: #7b1fa2; }
+        .ew-experiment { background: #fff3e0; color: #e65100; }
+        .ew-auswertung { background: #ffebee; color: #c62828; }
+        .ew-deutung { background: #f1f8e9; color: #33691e; }
+        .ew-verallgemeinerung { background: #e8f5e9; color: #2e7d32; }
+
+        /* Content Boxes */
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            border-radius: 0 8px 8px 0;
+        }
+        .merke-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 12px 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .merke-box::before {
+            content: "📝 Merke";
+            display: inline-block;
+            background: #2a7a4b;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .warn-box {
+            background: #fff3e0;
+            border-left: 4px solid #b35c00;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Protokoll-Box (AB-Verweise) — orange/braun */
+        .protokoll-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .protokoll-box::before {
+            content: "📋 Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        /* Erkenntnis-Box */
+        .erkenntnis-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .erkenntnis-box::before {
+            content: "💡 Erkenntnis";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        /* Predictions / Hypotheses */
+        .prediction-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .prediction-option:active { border-color: #2c5aa0; background: #e3f2fd; }
+        .prediction-option.selected { border-color: #2c5aa0; background: #e3f2fd; font-weight: 600; }
+        .prediction-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .prediction-option.wrong { border-color: #c62828; background: #ffebee; opacity: 0.6; }
+        .recall-box {
+            background: #f3e5f5;
+            border-left: 4px solid #7b1fa2;
+            padding: 12px 14px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+
+        /* Simulation */
+        .sim-container {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .sim-container canvas {
+            border-radius: 4px;
+            max-width: 100%;
+            touch-action: none;
+        }
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .sim-controls label { color: #ccc; font-size: 0.85em; }
+        .sim-controls select {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #2a2a4a;
+            color: white;
+            font-size: 0.9em;
+            min-height: 44px;
+        }
+        .sim-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            background: #2c5aa0;
+            color: white;
+        }
+        .sim-btn:hover { background: #1e3d6f; }
+        .sim-btn.secondary { background: #555; }
+        .sim-value { color: #ffcc80; font-size: 1.1em; font-weight: 600; min-width: 40px; text-align: center; }
+
+        /* Badges & Tables */
+        .niveau-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .niveau-1 { background: #e8f5e9; color: #2e7d32; }
+        .niveau-2 { background: #fff3e0; color: #e65100; }
+        .niveau-3 { background: #ffebee; color: #c62828; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.85em;
+        }
+        .data-table th { background: #2c5aa0; color: white; padding: 10px; text-align: left; }
+        .data-table td { border: 1px solid #ddd; padding: 10px; }
+        .data-table tr:nth-child(even) { background: #f9f9f9; }
+
+        /* Fill-in-the-blank */
+        .fill-blank {
+            border: none;
+            border-bottom: 2px solid #2c5aa0;
+            background: transparent;
+            padding: 8px;
+            font-size: 1em;
+            width: 140px;
+            min-height: 44px;
+            text-align: center;
+            font-family: inherit;
+        }
+        .fill-blank:focus { outline: none; border-bottom-color: #2a7a4b; }
+        .fill-blank.correct { border-bottom-color: #2a7a4b; color: #2a7a4b; font-weight: 600; }
+
+        /* Collapsibles */
+        .collapsible-header {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 0 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .collapsible-header:hover { background: #eee; }
+        .collapsible-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .collapsible-content.open { display: block; }
+
+        /* Experiment Box */
+        .experiment-box {
+            background: #fafafa;
+            border: 2px solid #2c5aa0;
+            padding: 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .experiment-box h4 {
+            color: #2c5aa0;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        .measure-input {
+            width: 60px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1em;
+            font-family: inherit;
+            min-height: 44px;
+        }
+        .measure-input:focus { outline: none; border-color: #2c5aa0; }
+        .measure-input.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .measure-input.incorrect { border-color: #c62828; background: #ffebee; }
+        .check-btn {
+            background: #2a7a4b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.9em;
+            min-height: 44px;
+        }
+        .check-btn:active { background: #1b5e20; }
+
+        /* Navigation Buttons (bottom of sections) */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid #ddd;
+            gap: 10px;
+        }
+        .nav-buttons button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 0.95em;
+            border-radius: 8px;
+            min-height: 46px;
+        }
+        .nav-buttons button:active { background: #1e3d6f; }
+        .nav-buttons button.btn-secondary {
+            background: white;
+            color: #2c5aa0;
+            border: 2px solid #2c5aa0;
+        }
+        .nav-buttons button.success { background: #2a7a4b; }
+
+        /* ===== FLASHCARD STYLES ===== */
+        .flashcard-container { max-width: 420px; margin: 1.5rem auto; }
+        .flashcard-progress { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 0.9rem; color: #555; }
+        .fc-progress-bar { flex: 1; height: 6px; background: #ddd; border-radius: 3px; margin: 0 1rem; overflow: hidden; }
+        .fc-progress-fill { height: 100%; background: #2a7a4b; transition: width 0.3s; }
+        .fc-streak { color: #b35c00; font-weight: bold; }
+        .flashcard-wrapper { perspective: 1000px; height: 220px; touch-action: pan-y; }
+        .flashcard { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s, left 0.1s; cursor: pointer; left: 0; }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .fc-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); text-align: center; }
+        .fc-front { background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%); color: white; }
+        .fc-back { background: white; color: #333; transform: rotateY(180deg); border: 2px solid #2c5aa0; }
+        .fc-term { font-size: 1.6rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .fc-hint { font-size: 0.85rem; opacity: 0.8; }
+        .fc-definition { font-size: 1.2rem; line-height: 1.4; }
+        .flashcard-buttons { display: flex; gap: 1rem; margin-top: 1rem; }
+        .btn-wrong, .btn-correct { flex: 1; padding: 0.8rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; touch-action: manipulation; }
+        .btn-wrong { background: #ffebee; color: #c62828; }
+        .btn-correct { background: #e8f5e9; color: #2e7d32; }
+        .btn-wrong:active, .btn-correct:active { transform: scale(0.95); }
+        .flashcard-complete { text-align: center; padding: 2rem; }
+        .complete-score { font-size: 3rem; font-weight: bold; color: #2a7a4b; }
+        .btn-restart { margin-top: 1rem; padding: 0.8rem 2rem; background: #2c5aa0; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; }
+
+        /* ===== MEMORY STYLES ===== */
+        .memory-container { max-width: 520px; margin: 1.5rem auto; padding: 0; }
+        .memory-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .memory-title { font-size: 1.2rem; font-weight: bold; color: #333; }
+        .memory-stats { display: flex; gap: 1rem; font-size: 0.9rem; color: #555; }
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+        .memory-card { aspect-ratio: 1; perspective: 1000px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .memory-card-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s; }
+        .memory-card.flipped .memory-card-inner { transform: rotateY(180deg); }
+        .memory-card.matched .memory-card-inner { transform: rotateY(180deg); }
+        .memory-card.matched { pointer-events: none; }
+        .mc-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; display: flex; justify-content: center; align-items: center; padding: 0.4rem; text-align: center; font-size: 0.8rem; font-weight: 500; }
+        .mc-back { background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%); color: white; font-size: 1.5rem; }
+        .mc-front { background: white; color: #333; transform: rotateY(180deg); border: 2px solid #2c5aa0; word-break: break-word; hyphens: auto; line-height: 1.2; }
+        .memory-card.matched .mc-front { background: #e8f5e9; border-color: #2a7a4b; color: #2e7d32; }
+        @keyframes matchPulse { 0%, 100% { transform: rotateY(180deg) scale(1); } 50% { transform: rotateY(180deg) scale(1.05); } }
+        .memory-card.just-matched .memory-card-inner { animation: matchPulse 0.4s ease; }
+        .memory-complete { text-align: center; padding: 2rem; background: #f5f5f5; border-radius: 12px; margin-top: 1rem; }
+        .complete-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+        ul, ol { margin-left: 18px; margin-top: 8px; }
+        li { margin-bottom: 4px; font-size: 0.9em; }
+
+        @media (max-width: 600px) {
+            .section { padding: 14px; }
+            .sim-controls { flex-direction: column; }
+            .nav-buttons { flex-direction: column; }
+            .nav-buttons button { width: 100%; }
+            .memory-grid { grid-template-columns: repeat(4, 1fr); gap: 0.3rem; }
+            .mc-face { font-size: 0.65rem; padding: 0.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Wärmeleitung</h1>
+        <p>Physik Klasse 8 | LP-02a | Wärmeübertragung Teil 1</p>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="step-nav" id="stepNav"></div>
+
+        <!-- SECTION 1: Phänomen -->
+        <section class="section active" data-step="1" data-title="Phänomen: Metalllöffel vs. Holzlöffel">
+            <div class="ew-label ew-phaenomen">Phänomen</div>
+            <h2>1. Warum fühlt sich Metall kälter an als Holz?</h2>
+            <p>Stell dir vor: Du kommst morgens in die Küche. Der Metalllöffel und der Holzlöffel liegen nebeneinander auf der Arbeitsplatte.</p>
+            <div class="info-box">
+                <strong>Gedankenexperiment:</strong> Du fasst beide Löffel an. Beide lagen die ganze Nacht in der Küche. Welcher fühlt sich kälter an?
+            </div>
+            <p>Fast jeder sagt: <em>„Der Metalllöffel ist kälter!"</em></p>
+            <p>Aber stimmt das wirklich? Beide Löffel waren stundenlang im selben Raum. Haben sie nicht die <strong>gleiche Temperatur</strong>?</p>
+            <div class="warn-box">
+                <strong>Tatsache:</strong> Ein Thermometer zeigt bei beiden Löffeln <strong>die gleiche Temperatur</strong> — nämlich Raumtemperatur (~20 °C). Trotzdem fühlt sich Metall kälter an!
+            </div>
+            <p>Wie kann das sein? Das klären wir heute — und entdecken dabei die <strong>Wärmeleitung</strong>.</p>
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 1</strong>: Notiere deine Alltagserfahrungen mit „warm" und „kalt" anfühlen.
+            </div>
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="goToStep(2)">Hypothese →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Hypothese -->
+        <section class="section" data-step="2" data-title="Hypothese: Warum fühlt sich Metall kälter an?">
+            <div class="ew-label ew-hypothese">Hypothese</div>
+            <h2>2. Was vermutest du?</h2>
+            <p><strong>Warum fühlt sich der Metalllöffel kälter an als der Holzlöffel, obwohl beide die gleiche Temperatur haben?</strong></p>
+            <div id="hypothesis1">
+                <button class="prediction-option" onclick="saveHypothesis(this, 'A')">A) Metall hat eine niedrigere Temperatur als Holz</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'B')">B) Metall leitet Wärme von der Hand schneller ab als Holz</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'C')">C) Metall erzeugt Kälte, Holz nicht</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'D')">D) Das ist nur Einbildung, beide fühlen sich gleich an</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.85em; color: #666;">Merke dir deine Vermutung – wir überprüfen sie gleich mit einer Simulation!</p>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(1)">← Zurück</button>
+                <button onclick="goToStep(3)">Simulation →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Simulation Wärmeleitung -->
+        <section class="section" data-step="3" data-title="Simulation: Wärmeleitung">
+            <div class="ew-label ew-experiment">Experiment</div>
+            <h2>3. Simulation: Wärmeleitung (1 m Stab, Echtzeit)</h2>
+            <p>Ein <strong>1 m langer Stab</strong> wird am linken Ende mit einem Bunsenbrenner auf <strong>900 °C</strong> erhitzt. Die Simulation zeigt, wie sich die Wärme im Stab ausbreitet — so wie in einem echten Experiment.</p>
+            <div class="info-box">
+                <strong>Auftrag:</strong>
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li>Wähle <strong>Kupfer</strong> und drücke „Start"</li>
+                    <li>Beobachte die Wärmefront — warte ca. <strong>1 Minute</strong></li>
+                    <li>Drücke <strong>Pause</strong> und lies P2–P5 ab</li>
+                    <li>Trage die Werte unten ein und prüfe sie</li>
+                    <li>Wiederhole für <strong>Eisen</strong> (und optional <strong>Silber</strong>)</li>
+                </ol>
+            </div>
+            <div class="sim-container">
+                <canvas id="conductionCanvas" width="760" height="280" style="display:block; width:100%;"></canvas>
+                <div class="sim-controls">
+                    <label>Material:
+                        <select id="conductionMaterial" onchange="resetConduction()">
+                            <option value="kupfer">Kupfer (λ = 385 W/(m·K))</option>
+                            <option value="silber">Silber (λ = 429 W/(m·K))</option>
+                            <option value="eisen">Eisen (λ = 80 W/(m·K))</option>
+                            <option value="holz">Holz (λ = 0,13 W/(m·K))</option>
+                            <option value="styropor">Styropor (λ = 0,035 W/(m·K))</option>
+                        </select>
+                    </label>
+                    <button class="sim-btn" id="conductionStartBtn" onclick="toggleConduction()">▶ Start</button>
+                    <button class="sim-btn secondary" onclick="resetConduction()">↺ Reset</button>
+                    <span class="sim-value" id="conductionTime">t = 0 s</span>
+                </div>
+            </div>
+
+            <div class="experiment-box" id="measureBox">
+                <h4>Messwerte ablesen und prüfen</h4>
+                <p>Drücke <strong>Pause</strong> und lies die Temperaturen an P2–P5 ab (P1 = Brenner, immer 900 °C):</p>
+                <div style="overflow-x:auto;">
+                    <table class="data-table" style="text-align:center;">
+                        <tr>
+                            <th style="min-width:70px;">Material</th>
+                            <th>P1<br><small>0,00 m</small></th>
+                            <th>P2<br><small>0,05 m</small></th>
+                            <th>P3<br><small>0,10 m</small></th>
+                            <th>P4<br><small>0,25 m</small></th>
+                            <th>P5<br><small>0,50 m</small></th>
+                        </tr>
+                        <tr>
+                            <td id="measureMat" style="font-weight:600;">Kupfer</td>
+                            <td style="color:#2a7a4b; font-weight:600;">900 °C</td>
+                            <td><input type="number" class="measure-input" id="mp2" min="0" max="100" step="1" inputmode="numeric"></td>
+                            <td><input type="number" class="measure-input" id="mp3" min="0" max="100" step="1" inputmode="numeric"></td>
+                            <td><input type="number" class="measure-input" id="mp4" min="0" max="100" step="1" inputmode="numeric"></td>
+                            <td><input type="number" class="measure-input" id="mp5" min="0" max="100" step="1" inputmode="numeric"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button class="check-btn" onclick="checkMeasure()">Werte prüfen</button>
+                    <span id="measureFeedback" style="font-size:0.9em;"></span>
+                </div>
+                <p style="margin-top:8px; font-size:0.8em; color:#888;">Toleranz: ±10 °C. Validierung für Silber, Kupfer und Eisen.</p>
+                <div id="checkedInfo" style="margin-top:10px; font-size:0.85em; color:#555;"></div>
+            </div>
+
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 2</strong>: Übertrage die geprüften Temperaturen für Kupfer und Eisen in die Tabelle.
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(2)">← Zurück</button>
+                <button id="step3Next" onclick="goToStep(4)">Auswertung →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Auswertung -->
+        <section class="section" data-step="4" data-title="Auswertung: Wärmeleiter und Isolatoren">
+            <div class="ew-label ew-auswertung">Auswertung</div>
+            <h2>4. Auswertung: Welches Material leitet am besten?</h2>
+            <div id="hypothesisRecall" class="recall-box">
+                <p id="hypothesisRecallText"></p>
+            </div>
+            <p>Wenn du die Simulation durchgeführt hast, beantworte diese Fragen:</p>
+            <h3>Ranking der Materialien</h3>
+            <p>Ordne die Materialien nach ihrer <strong>Wärmeleitfähigkeit</strong> (schnellste zuerst):</p>
+            <div style="overflow-x:auto;">
+            <table class="data-table">
+                <tr><th>Rang</th><th>Material</th><th>Leitung</th></tr>
+                <tr><td>1 (schnellste)</td><td><strong>Silber</strong></td><td>sehr gut</td></tr>
+                <tr><td>2</td><td><strong>Kupfer</strong></td><td>sehr gut</td></tr>
+                <tr><td>3</td><td><strong>Eisen</strong></td><td>gut</td></tr>
+                <tr><td>4</td><td><strong>Holz</strong></td><td>schlecht</td></tr>
+                <tr><td>5 (langsamste)</td><td><strong>Styropor</strong></td><td>sehr schlecht</td></tr>
+            </table>
+            </div>
+            <h3>Rückblick auf die Hypothese</h3>
+            <p>Jetzt können wir unser Phänomen erklären:</p>
+            <div class="merke-box">
+                Der Metalllöffel fühlt sich kälter an, weil er die <strong>Wärme viel schneller von deiner Hand ableitet</strong> als Holz. Deine Haut kühlt schneller ab — deshalb <em>fühlt</em> es sich kälter an. Die Temperatur beider Löffel ist aber gleich!
+            </div>
+            <p><strong>Richtige Antwort:</strong> B) Metall leitet Wärme von der Hand schneller ab als Holz.</p>
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 3</strong>: Erkläre, warum sich Metall kälter anfühlt als Holz.
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(3)">← Zurück</button>
+                <button onclick="goToStep(5)">Teilchenmodell →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 5: Deutung Teilchenmodell -->
+        <section class="section" data-step="5" data-title="Deutung: Teilchenmodell der Wärmeleitung">
+            <div class="ew-label ew-deutung">Deutung</div>
+            <h2>5. Was passiert auf Teilchenebene?</h2>
+            <p>Aus LP-01 weißt du: <strong>Temperatur = mittlere kinetische Energie der Teilchen</strong>.</p>
+            <p>Was passiert bei der Wärmeleitung auf Teilchenebene?</p>
+            <div class="sim-container">
+                <canvas id="particleCanvas" width="760" height="200" style="display:block; width:100%;"></canvas>
+                <div class="sim-controls">
+                    <button class="sim-btn" id="particleBtn" onclick="toggleParticles()">▶ Teilchen zeigen</button>
+                </div>
+            </div>
+            <div class="info-box">
+                <strong>Beobachte:</strong>
+                <ul style="margin-top: 8px; padding-left: 20px;">
+                    <li>Links (heiß): Teilchen <strong>schwingen schnell</strong></li>
+                    <li>Mitte: Schnelle Teilchen stoßen langsame an → <strong>Energieübertragung</strong></li>
+                    <li>Rechts (kalt): Teilchen schwingen langsam, werden nach und nach schneller</li>
+                </ul>
+            </div>
+            <div class="merke-box">
+                <strong>Wärmeleitung</strong> ist die Übertragung von Wärme durch <strong>direkte Weitergabe</strong> von kinetischer Energie zwischen benachbarten Teilchen. Die Teilchen selbst bleiben an ihrem Platz — nur die <strong>Energie wandert</strong>!
+            </div>
+            <p><strong>Gute Wärmeleiter</strong> (Metalle): In Metallen transportieren vor allem <strong>frei bewegliche Elektronen</strong> die Wärme besonders schnell weiter. Zusätzlich geben die eng beieinander liegenden Teilchen Energie effizient von Nachbar zu Nachbar weiter.</p>
+            <p><strong>Schlechte Wärmeleiter = Wärmeisolatoren</strong> (Holz, Styropor): Diese Materialien enthalten viele kleine <strong>Lufteinschlüsse</strong>. Die eingeschlossene Luft leitet Wärme sehr schlecht — deshalb sind sie gute Isolatoren.</p>
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 4</strong>: Erkläre Wärmeleitung auf Teilchenebene mit einer Skizze.
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(4)">← Zurück</button>
+                <button onclick="goToStep(6)">Alltag →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 6: Verallgemeinerung -->
+        <section class="section" data-step="6" data-title="Verallgemeinerung: Wärmeleiter und Isolatoren">
+            <div class="ew-label ew-verallgemeinerung">Verallgemeinerung</div>
+            <h2>6. Wärmeleiter und Isolatoren im Alltag</h2>
+            <h3>Alltagsbeispiele</h3>
+            <div style="overflow-x:auto;">
+            <table class="data-table">
+                <tr><th>Situation</th><th>Material</th><th>Leiter oder Isolator?</th><th>Warum?</th></tr>
+                <tr><td>Kochtopf</td><td>Metall</td><td>Leiter</td><td>Wärme soll zum Essen gelangen</td></tr>
+                <tr><td>Topfgriff</td><td>Kunststoff / Holz</td><td>Isolator</td><td>Hand soll nicht verbrennen</td></tr>
+                <tr><td>Fenster (Doppelverglasung)</td><td>Gas zwischen den Scheiben</td><td>Isolator</td><td>Wärme soll im Haus bleiben</td></tr>
+                <tr><td>Heizkörper</td><td>Metall</td><td>Leiter</td><td>Wärme soll an die Luft abgegeben werden</td></tr>
+            </table>
+            </div>
+            <h3>Lückentext <span class="niveau-badge niveau-1">★</span></h3>
+            <p>
+                Materialien, die Wärme gut leiten, heißen <input type="text" class="fill-blank" data-answer="Wärmeleiter" id="fb1" onchange="checkFillBlank(this)">.
+                Materialien, die Wärme schlecht leiten, heißen <input type="text" class="fill-blank" data-answer="Isolatoren" id="fb2" onchange="checkFillBlank(this)">.
+            </p>
+            <p>
+                <input type="text" class="fill-blank" data-answer="Metalle" id="fb3" onchange="checkFillBlank(this)"> sind besonders gute Wärmeleiter.
+                Eingeschlossene <input type="text" class="fill-blank" data-answer="Luft" id="fb4" onchange="checkFillBlank(this)"> (z.B. in Styropor) ist ein besonders guter Isolator.
+            </p>
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 5</strong>: Vervollständige den Lückentext und ordne Alltagsgegenstände zu.
+            </div>
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>★★★ Erweiterung:</strong> Wärmeleitfähigkeit λ</span>
+                <span>▼</span>
+            </div>
+            <div class="collapsible-content">
+                <p>Die <strong>Wärmeleitfähigkeit λ</strong> (Lambda) gibt an, wie gut ein Material Wärme leitet:</p>
+                <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <tr><th>Material</th><th>λ in W/(m·K)</th></tr>
+                    <tr><td>Silber</td><td>429</td></tr>
+                    <tr><td>Kupfer</td><td>385</td></tr>
+                    <tr><td>Eisen</td><td>80</td></tr>
+                    <tr><td>Stahl</td><td>50</td></tr>
+                    <tr><td>Glas</td><td>0,8</td></tr>
+                    <tr><td>Holz</td><td>0,13</td></tr>
+                    <tr><td>Styropor</td><td>0,035</td></tr>
+                    <tr><td>ruhende Luft</td><td>0,025</td></tr>
+                </table>
+                </div>
+                <p>Kupfer leitet Wärme also <strong>über 10.000-mal besser</strong> als Styropor!</p>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(5)">← Zurück</button>
+                <button onclick="goToStep(7)">Flashcards →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 7: Flashcards -->
+        <section class="section" data-step="7" data-title="Üben: Flashcards">
+            <h2>7. Üben: Begriffe wiederholen</h2>
+            <p>Teste dein Wissen! Tippe auf die Karte zum Umdrehen. Dann bewerte: <strong>Gewusst</strong> oder <strong>Nochmal</strong>.</p>
+            <p style="font-size:0.85em; color:#666;">Die Karten decken sowohl LP-01 (Temperatur) als auch die heutige Wärmeleitung ab.</p>
+
+            <div class="flashcard-container" id="flashcardApp">
+                <div class="flashcard-progress">
+                    <span class="fc-current">1</span>
+                    <div class="fc-progress-bar"><div class="fc-progress-fill" style="width:0%"></div></div>
+                    <span class="fc-total">15</span>
+                    <span class="fc-streak">🔥 0</span>
+                </div>
+                <div class="flashcard-wrapper">
+                    <div class="flashcard" id="flashcard">
+                        <div class="fc-face fc-front">
+                            <div class="fc-term">Begriff</div>
+                            <div class="fc-hint">Tippen zum Umdrehen</div>
+                        </div>
+                        <div class="fc-face fc-back">
+                            <div class="fc-definition">Definition</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flashcard-buttons">
+                    <button class="btn-wrong" onclick="fcMarkWrong()">✗ Nochmal</button>
+                    <button class="btn-correct" onclick="fcMarkCorrect()">✓ Gewusst!</button>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(6)">← Zurück</button>
+                <button onclick="goToStep(8)">Memory →</button>
+            </div>
+        </section>
+
+        <!-- SECTION 8: Memory -->
+        <section class="section" data-step="8" data-title="Spiel: Memory">
+            <h2>8. Memory: Finde die Paare!</h2>
+            <p>Finde die zusammengehörenden Paare (Begriff + Erklärung). Tippe auf zwei Karten — wenn sie zusammenpassen, bleiben sie offen.</p>
+
+            <div class="memory-container" id="memoryApp">
+                <div class="memory-header">
+                    <span class="memory-title">Memory: Temperatur & Wärmeleitung</span>
+                    <div class="memory-stats">
+                        <span class="pairs-found">Paare: <strong>0/8</strong></span>
+                        <span class="attempts">Versuche: <strong>0</strong></span>
+                    </div>
+                </div>
+                <div class="memory-grid" id="memoryGrid"></div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <div class="merke-box">
+                    <strong>LP-02a geschafft!</strong> Du kennst jetzt die <strong>Wärmeleitung</strong>: Teilchen geben Energie an ihre Nachbarn weiter — die Teilchen bleiben am Platz, nur die Energie wandert. Metalle leiten gut, Luft und Styropor sind Isolatoren. Nächstes Mal: Wärmeströmung und Wärmestrahlung!
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(7)">← Zurück</button>
+                <button class="success" onclick="finishLP()">✓ Lernpfad abschließen</button>
+            </div>
+        </section>
+
+    </div><!-- /container -->
+
+    <script>
+        // ========== NAVIGATION ==========
+        var currentStep = 1;
+        var sections = document.querySelectorAll('.section');
+        var totalSteps = sections.length;
+        var stepTitles = [];
+        sections.forEach(function(s, i) { stepTitles.push(s.dataset.title || 'Schritt ' + (i+1)); });
+
+        // Generate step-nav items
+        var stepNav = document.getElementById('stepNav');
+        for (var i = 1; i <= totalSteps; i++) {
+            var item = document.createElement('div');
+            item.className = 'step-nav-item' + (i === 1 ? ' active' : '');
+            item.textContent = i;
+            item.onclick = (function(n) { return function() { goToStep(n); }; })(i);
+            stepNav.appendChild(item);
+        }
+
+        function updateProgress() {
+            var progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            var navItems = document.querySelectorAll('.step-nav-item');
+            navItems.forEach(function(item, i) {
+                item.classList.remove('active', 'done');
+                if (i + 1 < currentStep) item.classList.add('done');
+                else if (i + 1 === currentStep) item.classList.add('active');
+            });
+        }
+
+        var measurementsDone = true; // TODO: auf false setzen für Unterricht (Gatekeeper)
+
+        function goToStep(num) {
+            if (num < 1 || num > totalSteps) return;
+            // Step-Lock deaktiviert für Planung
+            // if (num > 3 && !measurementsDone) return;
+            sections.forEach(function(s) { s.classList.remove('active'); });
+            // Use data-step to find section
+            sections.forEach(function(s) {
+                if (parseInt(s.dataset.step) === num) s.classList.add('active');
+            });
+            currentStep = num;
+            updateProgress();
+            localStorage.setItem('kl08-waerme-02a-waermeleitung-step', num);
+            // Lazy-init simulations and games
+            if (num === 3 && !conductionInited) initConduction();
+            if (num === 5 && !particleInited) initParticles();
+            if (num === 7 && !fcInited) initFlashcards();
+            if (num === 8 && !memInited) initMemory();
+            if (num === 4) displayHypothesisRecall();
+            // Canvas-Redraw nach display:none→block Wechsel
+            if (num === 3 && conductionInited) setTimeout(function(){ drawConduction(); }, 50);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function finishLP() {
+            alert('Lernpfad abgeschlossen! Gib dein Arbeitsblatt zur Kontrolle ab.');
+            localStorage.setItem('kl08-waerme-02a-completed', 'true');
+        }
+
+        // Restore saved position
+        var saved = localStorage.getItem('kl08-waerme-02a-waermeleitung-step');
+        if (saved) goToStep(parseInt(saved));
+        updateProgress();
+
+        // ========== HYPOTHESES ==========
+        var LS = 'kl08-waerme-02a';
+
+        function saveHypothesis(el, choice) {
+            document.querySelectorAll('#hypothesis1 .prediction-option').forEach(function(o) { o.classList.remove('selected'); });
+            el.classList.add('selected');
+            localStorage.setItem(LS + '-hyp1', choice);
+        }
+
+        function displayHypothesisRecall() {
+            var pred = localStorage.getItem(LS + '-hyp1');
+            var box = document.getElementById('hypothesisRecall');
+            var txt = document.getElementById('hypothesisRecallText');
+            if (pred) {
+                var labels = { A: 'Metall hat eine niedrigere Temperatur', B: 'Metall leitet Wärme schneller ab', C: 'Metall erzeugt Kälte', D: 'Nur Einbildung' };
+                txt.innerHTML = '<strong>Deine Vermutung war:</strong> ' + pred + ') ' + (labels[pred] || pred);
+                box.style.display = 'block';
+            }
+        }
+
+        function loadHypotheses() {
+            var h1 = localStorage.getItem(LS + '-hyp1');
+            if (h1) {
+                document.querySelectorAll('#hypothesis1 .prediction-option').forEach(function(o) {
+                    if (o.textContent.trim().startsWith(h1 + ')')) o.classList.add('selected');
+                });
+            }
+        }
+        loadHypotheses();
+
+        // ========== FILL BLANKS ==========
+        function checkFillBlank(el) {
+            var answer = el.dataset.answer.toLowerCase().trim();
+            var val = el.value.toLowerCase().trim();
+            if (val === answer || val === answer.replace('ä','ae').replace('ö','oe').replace('ü','ue')) {
+                el.classList.add('correct'); el.classList.remove('wrong');
+            } else if (val.length > 0) { el.classList.remove('correct'); }
+            localStorage.setItem(LS + '-fb-' + el.id, el.value);
+        }
+        function loadFillBlanks() {
+            document.querySelectorAll('.fill-blank').forEach(function(el) {
+                var saved = localStorage.getItem(LS + '-fb-' + el.id);
+                if (saved) { el.value = saved; checkFillBlank(el); }
+            });
+        }
+        loadFillBlanks();
+
+        // ========== COLLAPSIBLE ==========
+        function toggleCollapsible(header) {
+            var content = header.nextElementSibling;
+            content.classList.toggle('open');
+            header.querySelector('span:last-child').textContent = content.classList.contains('open') ? '▲' : '▼';
+        }
+
+        // ========== SIMULATION 1: WÄRMELEITUNG — FD-Solver (ECHTZEIT) ==========
+        // 1D-Wärmeleitungsgleichung: dT/dt = α · d²T/dx²
+        // Explizites FTCS-Schema (Forward Time, Central Space)
+        // Randbedingungen: T[0]=900°C (Dirichlet, Bunsenbrenner), T[N]=insulated (Neumann: dT/dx=0)
+
+        var N_NODES = 101;     // 0..100 → 101 Knoten
+        var DX = 0.01;         // 1m / 100 Segmente = 0.01 m
+        var DT_PHYS = 0.4;    // Basis-Zeitschritt (Sub-Stepping bei r>0.5)
+        var T_HOT = 900;       // Quellentemperatur [°C] — Bunsenbrenner
+        var T_INIT = 20;       // Anfangstemperatur [°C]
+        var SIM_DURATION = 60;  // Sekunden
+
+        var conductionData = {
+            silber:   { alpha: 1.74e-4,  lambda: 429, color: '#C0C0C0', name: 'Silber' },
+            kupfer:   { alpha: 1.116e-4, lambda: 385, color: '#b87333', name: 'Kupfer' },
+            eisen:    { alpha: 2.263e-5, lambda: 80,  color: '#888',    name: 'Eisen' },
+            holz:     { alpha: 1.275e-7, lambda: 0.13, color: '#8B4513', name: 'Holz' },
+            styropor: { alpha: 1.0e-6,   lambda: 0.035, color: '#ddd',   name: 'Styropor' }
+        };
+        // Messpunkte: P1=0.00m, P2=0.05m, P3=0.10m, P4=0.25m, P5=0.50m
+        var measureNodes = [0, 5, 10, 25, 50]; // Indizes im Grid (node_i = x/dx)
+
+        var conductionInited = false, conductionRunning = false, conductionTime = 0, conductionAnimId = null;
+        var lastFrameTime = null;
+        var Tgrid = [];        // Temperatur-Array [N_NODES]
+        var physTime = 0;      // Akkumulierte Physik-Zeit (kann von conductionTime leicht abweichen)
+        var checkedMats = JSON.parse(localStorage.getItem(LS + '-checkedMats') || '{}');
+
+        function initTgrid() {
+            Tgrid = [];
+            for (var i = 0; i < N_NODES; i++) Tgrid[i] = T_INIT;
+            Tgrid[0] = T_HOT;
+            physTime = 0;
+        }
+
+        function stepFDInner(r) {
+            // Ein einzelner FTCS-Schritt mit gegebenem r
+            var Tnew = Tgrid.slice();
+            for (var i = 1; i < N_NODES - 1; i++) {
+                Tnew[i] = Tgrid[i] + r * (Tgrid[i+1] - 2*Tgrid[i] + Tgrid[i-1]);
+            }
+            Tnew[0] = T_HOT;
+            Tnew[N_NODES - 1] = Tnew[N_NODES - 2];
+            Tgrid = Tnew;
+        }
+        function stepFD(alpha) {
+            // Stabilitätsfaktor r = α·dt/dx²
+            var r = alpha * DT_PHYS / (DX * DX);
+            if (r > 0.5) {
+                // Sub-Stepping: mehrere kleinere Schritte für Stabilität
+                var nSub = Math.ceil(r / 0.45);
+                var rSub = r / nSub;
+                for (var s = 0; s < nSub; s++) stepFDInner(rSub);
+            } else {
+                stepFDInner(r);
+            }
+            physTime += DT_PHYS;
+        }
+
+        function initConduction() {
+            conductionInited = true;
+            conductionRunning = false;
+            conductionTime = 0;
+            lastFrameTime = null;
+            initTgrid();
+            if (conductionAnimId) cancelAnimationFrame(conductionAnimId);
+            conductionAnimId = null;
+            document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            document.getElementById('conductionTime').textContent = 't = 0 s';
+            // Verzögert zeichnen: Section muss erst sichtbar + Layout fertig sein
+            setTimeout(function() { drawConduction(); }, 100);
+            // Material-Wechsel: Label aktualisieren
+            document.getElementById('conductionMaterial').addEventListener('change', function() {
+                var ml = document.getElementById('measureMat');
+                if (ml) ml.textContent = conductionData[this.value].name;
+            });
+        }
+
+        function resetConduction() {
+            conductionRunning = false;
+            conductionTime = 0;
+            lastFrameTime = null;
+            initTgrid();
+            if (conductionAnimId) cancelAnimationFrame(conductionAnimId);
+            conductionAnimId = null;
+            document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            document.getElementById('conductionTime').textContent = 't = 0 s';
+            if (conductionInited) setTimeout(function(){ drawConduction(); }, 0);
+            // Messwerte-Inputs leeren
+            for (var k = 2; k <= 5; k++) {
+                var inp = document.getElementById('mp' + k);
+                if (inp) { inp.value = ''; inp.className = 'measure-input'; }
+            }
+            var matSel = document.getElementById('conductionMaterial');
+            var matLabel = document.getElementById('measureMat');
+            if (matSel && matLabel) matLabel.textContent = conductionData[matSel.value].name;
+            var fb = document.getElementById('measureFeedback');
+            if (fb) fb.innerHTML = '';
+        }
+
+        function toggleConduction() {
+            if (conductionRunning) {
+                conductionRunning = false;
+                lastFrameTime = null;
+                document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            } else {
+                conductionRunning = true;
+                lastFrameTime = performance.now();
+                document.getElementById('conductionStartBtn').textContent = '⏸ Pause';
+                conductionAnimId = requestAnimationFrame(animateConduction);
+            }
+        }
+
+        function tempToColor(t) {
+            var frac = Math.max(0, Math.min(1, (t - T_INIT) / (T_HOT - T_INIT)));
+            // Blau (kalt) → Rot (heiß)
+            var r = Math.round(30 + frac * 225);
+            var g = Math.round(100 - frac * 80);
+            var b = Math.round(220 - frac * 200);
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        function drawConduction() {
+            var canvas = document.getElementById('conductionCanvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var matKey = document.getElementById('conductionMaterial').value;
+            var mat = conductionData[matKey];
+            var W = canvas.width, H = canvas.height;
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, W, H);
+
+            // Flamme links
+            var flameGrad = ctx.createRadialGradient(50, 140, 5, 50, 140, 45);
+            flameGrad.addColorStop(0, '#ff6600');
+            flameGrad.addColorStop(0.5, '#ff3300');
+            flameGrad.addColorStop(1, 'rgba(255,50,0,0)');
+            ctx.fillStyle = flameGrad;
+            ctx.fillRect(5, 95, 90, 90);
+            ctx.fillStyle = '#ff9900';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('900 °C', 50, 210);
+            ctx.fillText('Brenner', 50, 224);
+
+            // Stab: 100 Segmente, farbcodiert nach Tgrid
+            var barX = 95, barY = 110, barW = 570, barH = 55;
+            var segW = barW / (N_NODES - 1);
+            for (var i = 0; i < N_NODES - 1; i++) {
+                var tAvg = (Tgrid[i] + Tgrid[i+1]) / 2;
+                ctx.fillStyle = tempToColor(tAvg);
+                ctx.fillRect(barX + i * segW, barY, segW + 1, barH);
+            }
+            // Rahmen
+            ctx.strokeStyle = mat.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(barX, barY, barW, barH);
+            // Materialname über dem Stab
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(mat.name + ' — 1 m', barX + barW / 2, barY - 8);
+
+            // Messpunkte P1–P5 unter dem Stab
+            var pPositions = [0, 0.05, 0.10, 0.25, 0.50]; // in Meter
+            ctx.font = 'bold 12px sans-serif';
+            for (var j = 0; j < 5; j++) {
+                var px = barX + pPositions[j] * barW; // barW = 1m visuell
+                var py = barY + barH + 14;
+                // Dreieck-Marker
+                ctx.fillStyle = '#ffcc80';
+                ctx.beginPath();
+                ctx.moveTo(px, barY + barH);
+                ctx.lineTo(px - 5, py);
+                ctx.lineTo(px + 5, py);
+                ctx.closePath();
+                ctx.fill();
+                // Temperaturwert
+                var tVal = Tgrid[measureNodes[j]];
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(Math.round(tVal) + ' °C', px, py + 18);
+                // Label
+                ctx.fillStyle = '#aaa';
+                ctx.font = '10px sans-serif';
+                ctx.fillText('P' + (j+1), px, py + 32);
+                ctx.font = '8px sans-serif';
+                ctx.fillText(pPositions[j].toFixed(2) + ' m', px, py + 43);
+            }
+
+            // Skala-Legende rechts
+            var legX = 700, legY = 110, legH = barH;
+            for (var y = 0; y < legH; y++) {
+                ctx.fillStyle = tempToColor(T_HOT - (y / legH) * (T_HOT - T_INIT));
+                ctx.fillRect(legX, legY + y, 14, 1);
+            }
+            ctx.fillStyle = '#888';
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('900°C', legX + 18, legY + 8);
+            ctx.fillText('20°C', legX + 18, legY + legH - 2);
+        }
+
+        function animateConduction(now) {
+            if (!conductionRunning) return;
+            if (!lastFrameTime) lastFrameTime = now;
+            var wallDt = (now - lastFrameTime) / 1000; // echte vergangene Sekunden
+            lastFrameTime = now;
+            // Begrenze wallDt bei Tab-Wechsel o.ä.
+            if (wallDt > 0.1) wallDt = 0.1;
+
+            conductionTime += wallDt;
+
+            // FD-Schritte nachholen: so viele Physik-Schritte wie in der Echtzeit vergangen
+            var matKey = document.getElementById('conductionMaterial').value;
+            var alpha = conductionData[matKey].alpha;
+            var targetPhysTime = conductionTime;
+            while (physTime + DT_PHYS <= targetPhysTime) {
+                stepFD(alpha);
+            }
+
+            document.getElementById('conductionTime').textContent = 't = ' + Math.round(conductionTime) + ' s';
+            drawConduction();
+
+            if (conductionTime < SIM_DURATION) {
+                conductionAnimId = requestAnimationFrame(animateConduction);
+            } else {
+                conductionRunning = false;
+                lastFrameTime = null;
+                document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            }
+        }
+
+        // ========== MESSWERTE-CHECK ==========
+        function checkMeasure() {
+            if (conductionRunning) {
+                document.getElementById('measureFeedback').innerHTML = '<span style="color:#c62828;">⏸ Drücke zuerst Pause!</span>';
+                return;
+            }
+            if (conductionTime < 30) {
+                document.getElementById('measureFeedback').innerHTML = '<span style="color:#c62828;">Lasse die Simulation erst länger laufen (mindestens 30 s)!</span>';
+                return;
+            }
+            var matKey = document.getElementById('conductionMaterial').value;
+            // Validierung nur für Metalle (Holz/Styropor zeigen kaum Änderung)
+            if (matKey !== 'silber' && matKey !== 'kupfer' && matKey !== 'eisen') {
+                document.getElementById('measureFeedback').innerHTML = '<span style="color:#555;">Validierung nur für <strong>Silber</strong>, <strong>Kupfer</strong> und <strong>Eisen</strong> möglich. Holz und Styropor leiten zu langsam für messbare Unterschiede bei 1 m.</span>';
+                return;
+            }
+            var tolerance = 10; // ±10 °C
+            var allFilled = true;
+            var allCorrect = true;
+            // Nur P2–P5 prüfen (P1 = Quelle, fest 100°C)
+            for (var i = 1; i < 5; i++) {
+                var input = document.getElementById('mp' + (i + 1));
+                var entered = parseFloat(input.value);
+                var actual = Tgrid[measureNodes[i]];
+                if (isNaN(entered) || input.value === '') {
+                    allFilled = false;
+                    input.className = 'measure-input';
+                } else if (Math.abs(entered - Math.round(actual)) <= tolerance) {
+                    input.className = 'measure-input correct';
+                } else {
+                    input.className = 'measure-input incorrect';
+                    allCorrect = false;
+                }
+            }
+            var fb = document.getElementById('measureFeedback');
+            if (!allFilled) {
+                fb.innerHTML = '<span style="color:#c62828;">Bitte alle Messpunkte P2–P5 ausfüllen!</span>';
+                return;
+            }
+            if (allCorrect) {
+                var matName = conductionData[matKey].name;
+                checkedMats[matKey] = true;
+                localStorage.setItem(LS + '-checkedMats', JSON.stringify(checkedMats));
+                fb.innerHTML = '<span style="color:#2a7a4b;">✓ <strong>' + matName + '</strong> korrekt abgelesen!</span>';
+                updateCheckedInfo();
+            } else {
+                fb.innerHTML = '<span style="color:#c62828;">Nicht ganz — schau nochmal genau auf die Temperaturwerte an P2–P5. (Toleranz: ±' + tolerance + ' °C)</span>';
+            }
+        }
+        function updateCheckedInfo() {
+            var count = Object.keys(checkedMats).length;
+            var names = [];
+            for (var k in checkedMats) { if (checkedMats.hasOwnProperty(k)) names.push(conductionData[k].name); }
+            var info = document.getElementById('checkedInfo');
+            info.innerHTML = '✓ Geprüft: <strong>' + names.join(', ') + '</strong> (' + count + ' von 2 Metallen)';
+            if (count >= 2 && !measurementsDone) {
+                measurementsDone = true;
+                var btn = document.getElementById('step3Next');
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = 'Auswertung →';
+                info.innerHTML += '<br><span style="color:#2a7a4b; font-weight:600;">Super! Du kannst jetzt weitergehen.</span>';
+            }
+        }
+
+        // ========== SIMULATION 2: TEILCHEN ==========
+        var particleInited=false,particleRunning=false,particleAnimId=null,particles=[];
+        function initParticles(){
+            particleInited=true;
+            particles=[];
+            var cols=20,rows=4,startX=60,startY=30,spX=34,spY=38;
+            for(var r=0;r<rows;r++) for(var c=0;c<cols;c++){
+                var x=startX+c*spX,y=startY+r*spY,tf=1-c/(cols-1);
+                particles.push({baseX:x,baseY:y,x:x,y:y,energy:0.3+tf*2.5,r:8});
+            }
+            toggleParticles();
+        }
+        function toggleParticles(){
+            if(particleRunning){particleRunning=false;if(particleAnimId)cancelAnimationFrame(particleAnimId);document.getElementById('particleBtn').textContent='▶ Teilchen zeigen';}
+            else{particleRunning=true;document.getElementById('particleBtn').textContent='⏸ Pause';animateParticles();}
+        }
+        function animateParticles(){
+            if(!particleRunning)return;
+            var canvas=document.getElementById('particleCanvas'),ctx=canvas.getContext('2d');
+            ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,canvas.width,canvas.height);
+            for(var i=1;i<particles.length;i++){var d=particles[i-1].energy-particles[i].energy;if(d>0){particles[i].energy+=d*0.0003;particles[i-1].energy-=d*0.0003;}}
+            particles.forEach(function(p){
+                p.x=p.baseX+(Math.random()-0.5)*p.energy*4;p.y=p.baseY+(Math.random()-0.5)*p.energy*4;
+                var f=Math.max(0,Math.min(1,(p.energy-0.3)/2.5)),r=Math.round(30+f*225),g=Math.round(100-f*80),b=Math.round(220-f*200);
+                ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle='rgb('+r+','+g+','+b+')';ctx.fill();
+                ctx.strokeStyle='rgba('+r+','+g+','+b+',0.3)';ctx.lineWidth=2;ctx.stroke();
+            });
+            ctx.fillStyle='#ff6644';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('🔥 HEISS',80,canvas.height-10);
+            ctx.fillStyle='#4488ff';ctx.fillText('❄ KALT',canvas.width-80,canvas.height-10);
+            ctx.fillStyle='#aaa';ctx.font='11px sans-serif';ctx.fillText('← Energie wandert →',canvas.width/2,canvas.height-10);
+            particleAnimId=requestAnimationFrame(animateParticles);
+        }
+
+        // ========== FLASHCARDS ==========
+        var fcInited = false;
+        var fcCards = [
+            { term: 'Temperatur', definition: 'Maß für die mittlere kinetische Energie der Teilchen' },
+            { term: 'Thermische Bewegung', definition: 'Ständige, ungeordnete Bewegung aller Teilchen' },
+            { term: 'Absoluter Nullpunkt', definition: '0 K = −273 °C — Teilchen bewegen sich (fast) nicht' },
+            { term: 'Kelvin', definition: 'Temperaturskala, die beim absoluten Nullpunkt beginnt' },
+            { term: 'Aggregatzustände', definition: 'Fest, flüssig, gasförmig' },
+            { term: 'Schmelzen', definition: 'Fest → Flüssig (Energie zuführen)' },
+            { term: 'Erstarren', definition: 'Flüssig → Fest (Energie abgeben)' },
+            { term: 'Verdampfen', definition: 'Flüssig → Gasförmig (Energie zuführen)' },
+            { term: 'Kondensieren', definition: 'Gasförmig → Flüssig (Energie abgeben)' },
+            { term: 'Phasenübergang', definition: 'Temperatur bleibt konstant (Plateau), Energie bricht Bindungen auf' },
+            { term: 'Wärmeleitung', definition: 'Energieübertragung von Teilchen zu Teilchen — Teilchen bleiben am Platz' },
+            { term: 'Wärmeleiter', definition: 'Material, das Wärme gut leitet (z.B. Silber, Kupfer, Eisen)' },
+            { term: 'Isolator', definition: 'Material, das Wärme schlecht leitet (z.B. Holz, Luft, Styropor)' },
+            { term: 'Wärmeleitfähigkeit λ', definition: 'Gibt an, wie gut ein Material Wärme leitet — Einheit: W/(m·K)' },
+            { term: 'Warum fühlt sich Metall kalt an?', definition: 'Metall leitet Wärme schnell von der Hand ab → Haut kühlt ab → fühlt sich kalt an' }
+        ];
+        var fcIndex=0,fcCorrect=0,fcWrong=0,fcStreak=0;
+
+        function initFlashcards() {
+            fcInited = true;
+            for(var i=fcCards.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=fcCards[i];fcCards[i]=fcCards[j];fcCards[j]=tmp;}
+            fcUpdateCard();
+        }
+
+        function fcUpdateCard(){
+            var app=document.getElementById('flashcardApp');
+            if(fcIndex>=fcCards.length){
+                var pct=Math.round((fcCorrect/fcCards.length)*100);
+                app.innerHTML='<div class="flashcard-complete"><div class="complete-score">'+pct+'%</div><p>'+fcCorrect+' von '+fcCards.length+' gewusst</p><button class="btn-restart" onclick="fcRestart()">Nochmal</button></div>';
+                return;
+            }
+            var card=fcCards[fcIndex];
+            var fc=document.getElementById('flashcard');
+            fc.querySelector('.fc-term').textContent=card.term;
+            fc.querySelector('.fc-definition').textContent=card.definition;
+            fc.classList.remove('flipped'); fc.style.left='0px'; fc.style.opacity='1';
+            app.querySelector('.fc-current').textContent=fcIndex+1;
+            app.querySelector('.fc-total').textContent=fcCards.length;
+            app.querySelector('.fc-progress-fill').style.width=(fcIndex/fcCards.length)*100+'%';
+            app.querySelector('.fc-streak').textContent='🔥 '+fcStreak;
+        }
+
+        function fcMarkCorrect(){if(!document.getElementById('flashcard').classList.contains('flipped'))return;fcCorrect++;fcStreak++;fcNext(1);}
+        function fcMarkWrong(){if(!document.getElementById('flashcard').classList.contains('flipped'))return;fcWrong++;fcStreak=0;fcNext(-1);}
+        function fcNext(dir){
+            var fc=document.getElementById('flashcard');
+            fc.style.transition='left 0.3s, opacity 0.3s';fc.style.left=dir*300+'px';fc.style.opacity='0';
+            setTimeout(function(){fc.style.transition='none';fcIndex++;fcUpdateCard();},300);
+        }
+        function fcRestart(){fcIndex=0;fcCorrect=0;fcWrong=0;fcStreak=0;location.reload();}
+
+        document.getElementById('flashcard').addEventListener('click',function(){this.classList.toggle('flipped');});
+        // Touch swipe
+        var fcStartX=0,fcIsDrag=false;
+        var fcEl=document.getElementById('flashcard');
+        fcEl.addEventListener('touchstart',function(e){fcStartX=e.touches[0].clientX;fcIsDrag=true;fcEl.style.transition='none';},{passive:true});
+        fcEl.addEventListener('touchmove',function(e){if(!fcIsDrag)return;var d=e.touches[0].clientX-fcStartX;fcEl.style.left=d+'px';},{passive:true});
+        fcEl.addEventListener('touchend',function(e){if(!e.changedTouches||!e.changedTouches[0]){fcIsDrag=false;return;}var d=e.changedTouches[0].clientX-fcStartX;fcIsDrag=false;if(d<-100)fcMarkWrong();else if(d>100)fcMarkCorrect();else{fcEl.style.transition='left 0.2s';fcEl.style.left='0px';}});
+
+        // ========== MEMORY ==========
+        var memInited=false;
+        var memPairs=[
+            {term:'Wärmeleitung',match:'Teilchen geben Energie an Nachbarn weiter'},
+            {term:'Wärmeleiter',match:'Metalle (Silber, Kupfer, Eisen)'},
+            {term:'Isolator',match:'Holz, Luft, Styropor'},
+            {term:'Temperatur',match:'Mittlere kinetische Energie'},
+            {term:'Schmelzen',match:'Fest → Flüssig'},
+            {term:'Verdampfen',match:'Flüssig → Gasförmig'},
+            {term:'Absoluter Nullpunkt',match:'0 K = −273 °C'},
+            {term:'Phasenübergang',match:'Temperatur bleibt konstant'}
+        ];
+        var memCards=[],memFlipped=[],memMatched=0,memAttempts=0,memLocked=false;
+
+        function initMemory(){
+            memInited=true;
+            memCards=[];
+            memPairs.forEach(function(p,i){
+                memCards.push({id:i+'-t',content:p.term,pairId:i});
+                memCards.push({id:i+'-m',content:p.match,pairId:i});
+            });
+            for(var i=memCards.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=memCards[i];memCards[i]=memCards[j];memCards[j]=tmp;}
+            var grid=document.getElementById('memoryGrid');
+            grid.innerHTML=memCards.map(function(c){return '<div class="memory-card" data-id="'+c.id+'" data-pair="'+c.pairId+'"><div class="memory-card-inner"><div class="mc-face mc-back">?</div><div class="mc-face mc-front">'+c.content+'</div></div></div>';}).join('');
+            grid.querySelectorAll('.memory-card').forEach(function(c){c.addEventListener('click',function(){memFlip(c);});});
+            memUpdateStats();
+        }
+
+        function memFlip(card){
+            if(memLocked||card.classList.contains('flipped')||card.classList.contains('matched'))return;
+            card.classList.add('flipped');memFlipped.push(card);
+            if(memFlipped.length===2){memAttempts++;memUpdateStats();memCheck();}
+        }
+        function memCheck(){
+            memLocked=true;var c1=memFlipped[0],c2=memFlipped[1];
+            if(c1.dataset.pair===c2.dataset.pair){
+                setTimeout(function(){c1.classList.add('matched','just-matched');c2.classList.add('matched','just-matched');
+                setTimeout(function(){c1.classList.remove('just-matched');c2.classList.remove('just-matched');},400);
+                memMatched++;memUpdateStats();memFlipped=[];memLocked=false;
+                if(memMatched===memPairs.length)setTimeout(memComplete,500);},300);
+            }else{
+                setTimeout(function(){c1.classList.remove('flipped');c2.classList.remove('flipped');memFlipped=[];memLocked=false;},1000);
+            }
+        }
+        function memUpdateStats(){
+            var app=document.getElementById('memoryApp');
+            app.querySelector('.pairs-found strong').textContent=memMatched+'/'+memPairs.length;
+            app.querySelector('.attempts strong').textContent=memAttempts;
+        }
+        function memComplete(){
+            var eff=Math.round((memPairs.length/memAttempts)*100);
+            document.getElementById('memoryApp').innerHTML+='<div class="memory-complete"><div class="complete-icon">🎉</div><p><strong>Geschafft!</strong></p><p>'+memPairs.length+' Paare in '+memAttempts+' Versuchen</p><p>Effizienz: '+eff+'%</p><button class="btn-restart" onclick="memRestart()">Nochmal spielen</button></div>';
+        }
+        function memRestart(){memMatched=0;memAttempts=0;memFlipped=[];memLocked=false;var mc=document.getElementById('memoryApp').querySelector('.memory-complete');if(mc)mc.remove();initMemory();}
+
+        // ========== INIT ==========
+        if(currentStep===3) initConduction();
+        if(currentStep===5) initParticles();
+        if(currentStep===7) initFlashcards();
+        if(currentStep===8) initMemory();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP-02: Wärmeübertragung – Leitung, Strömung, Strahlung</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e4080 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.4em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        header .meta {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.3);
+            height: 4px;
+            margin-top: 15px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: white;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .nav-bar {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .step-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .step-dot.active {
+            background: #2c5aa0;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step-dot.completed {
+            background: #2a7a4b;
+            color: white;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-title {
+            font-size: 0.85em;
+            color: #555;
+            text-align: center;
+            flex: 1;
+        }
+
+        .nav-btn {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            border-radius: 4px;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #1e4080;
+        }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 25px;
+            margin-bottom: 20px;
+            display: none;
+            border-radius: 8px;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section h2 {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+
+        .section h3 {
+            font-size: 1em;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+            color: #333;
+        }
+
+        .section p {
+            margin-bottom: 12px;
+        }
+
+        /* Boxes */
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .merke-box {
+            background: #e8f5e9;
+            border-left: 4px solid #2a7a4b;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .merke-box::before {
+            content: "Merke";
+            display: block;
+            font-weight: 700;
+            color: #2a7a4b;
+            margin-bottom: 5px;
+        }
+
+        .warn-box {
+            background: #fff3e0;
+            border-left: 4px solid #f57c00;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .hefter-hinweis {
+            background: #fff3e0;
+            border-left: 4px solid #b35c00;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.9em;
+        }
+
+        .hefter-hinweis::before {
+            content: "📓 Hefter-Hinweis";
+            display: block;
+            font-weight: 700;
+            color: #b35c00;
+            margin-bottom: 4px;
+        }
+
+        /* Erkenntnisweg Labels */
+        .ew-label {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .ew-phaenomen { background: #e3f2fd; color: #1565c0; }
+        .ew-hypothese { background: #f3e5f5; color: #7b1fa2; }
+        .ew-experiment { background: #fff3e0; color: #e65100; }
+        .ew-beobachtung { background: #e0f2f1; color: #00695c; }
+        .ew-auswertung { background: #fce4ec; color: #c62828; }
+        .ew-deutung { background: #f1f8e9; color: #33691e; }
+        .ew-verallgemeinerung { background: #e8f5e9; color: #2e7d32; }
+        .ew-anwendung { background: #e8eaf6; color: #283593; }
+
+        /* MC Questions */
+        .prediction-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .prediction-option:hover {
+            border-color: #2c5aa0;
+            background: #fff5f5;
+        }
+
+        .prediction-option.selected {
+            border-color: #2c5aa0;
+            background: #ffebee;
+            font-weight: 600;
+        }
+
+        .prediction-option.correct {
+            border-color: #2a7a4b;
+            background: #e8f5e9;
+        }
+
+        .prediction-option.wrong {
+            border-color: #c62828;
+            background: #ffebee;
+            opacity: 0.6;
+        }
+
+        /* Quiz */
+        .quiz-feedback {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            font-weight: 600;
+        }
+
+        .quiz-feedback.correct {
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: block;
+        }
+
+        .quiz-feedback.wrong {
+            background: #ffebee;
+            color: #c62828;
+            display: block;
+        }
+
+        /* Recall Box */
+        .recall-box {
+            background: #f3e5f5;
+            border-left: 4px solid #7b1fa2;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+            display: none;
+        }
+
+        /* Simulation Canvas */
+        .sim-container {
+            background: #1a1a2e;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .sim-container canvas {
+            border-radius: 4px;
+            max-width: 100%;
+            touch-action: none;
+        }
+
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .sim-controls label {
+            color: #ccc;
+            font-size: 0.85em;
+        }
+
+        .sim-controls input[type=range] {
+            width: 140px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .sim-controls select {
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #2a2a4a;
+            color: white;
+            font-size: 0.9em;
+            min-height: 44px;
+        }
+
+        .sim-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            background: #2c5aa0;
+            color: white;
+        }
+
+        .sim-btn:hover { background: #1e4080; }
+
+        .sim-btn.secondary {
+            background: #555;
+        }
+
+        .sim-value {
+            color: #ffcc80;
+            font-size: 1.1em;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* Niveau Badges */
+        .niveau-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .niveau-1 { background: #e8f5e9; color: #2e7d32; }
+        .niveau-2 { background: #fff3e0; color: #e65100; }
+        .niveau-3 { background: #fce4ec; color: #c62828; }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .data-table th, .data-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .data-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+
+        /* Fill blank */
+        .fill-blank {
+            border: none;
+            border-bottom: 2px solid #2c5aa0;
+            background: transparent;
+            padding: 2px 8px;
+            font-size: 1em;
+            width: 120px;
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .fill-blank:focus {
+            outline: none;
+            border-bottom-color: #2a7a4b;
+        }
+
+        .fill-blank.correct {
+            border-bottom-color: #2a7a4b;
+            color: #2a7a4b;
+            font-weight: 600;
+        }
+
+        /* Collapsible */
+        .collapsible-header {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 10px 0 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .collapsible-header:hover {
+            background: #eee;
+        }
+
+        .collapsible-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .collapsible-content.open {
+            display: block;
+        }
+
+        /* Temperature gradient */
+        .temp-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .section { padding: 15px; }
+            header h1 { font-size: 1.2em; }
+            .sim-controls { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Wärmeübertragung: Leitung, Strömung, Strahlung</h1>
+        <div class="meta">Physik Klasse 8 | LP-02 | ca. 3 Doppelstunden</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </header>
+
+    <div class="container">
+        <nav class="nav-bar">
+            <div class="step-indicators" id="stepIndicators"></div>
+            <div class="nav-controls">
+                <button class="nav-btn" id="prevBtn" onclick="prevStep()">Zurück</button>
+                <div class="step-title" id="stepTitle">Einstieg</div>
+                <button class="nav-btn" id="nextBtn" onclick="nextStep()">Weiter</button>
+            </div>
+        </nav>
+
+        <!-- ============================================================ -->
+        <!-- ZYKLUS 1: Wärmeleitung (WÜ1)                                -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 1: Phänomen — Kognitiver Konflikt -->
+        <section class="section active" data-step="1" data-title="Phänomen: Metalllöffel vs. Holzlöffel">
+            <div class="ew-label ew-phaenomen">Phänomen</div>
+            <h2>1. Warum fühlt sich Metall kälter an als Holz?</h2>
+
+            <p>Stell dir vor: Du kommst morgens in die Küche. Der Metalllöffel und der Holzlöffel liegen nebeneinander auf der Arbeitsplatte.</p>
+
+            <div class="info-box">
+                <strong>Gedankenexperiment:</strong> Du fasst beide Löffel an. Beide lagen die ganze Nacht in der Küche. Welcher fühlt sich kälter an?
+            </div>
+
+            <p>Fast jeder sagt: <em>„Der Metalllöffel ist kälter!"</em></p>
+
+            <p>Aber stimmt das wirklich? Beide Löffel waren stundenlang im selben Raum. Haben sie nicht die <strong>gleiche Temperatur</strong>?</p>
+
+            <div class="warn-box">
+                <strong>Tatsache:</strong> Ein Thermometer zeigt bei beiden Löffeln <strong>die gleiche Temperatur</strong> — nämlich Raumtemperatur (~20 °C). Trotzdem fühlt sich Metall kälter an!
+            </div>
+
+            <p>Wie kann das sein? Das klären wir heute — und entdecken dabei die <strong>drei Arten der Wärmeübertragung</strong>.</p>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 1</strong>: Notiere deine Alltagserfahrungen mit „warm" und „kalt" anfühlen.
+            </div>
+        </section>
+
+        <!-- SECTION 2: Hypothese -->
+        <section class="section" data-step="2" data-title="Hypothese: Warum fühlt sich Metall kälter an?">
+            <div class="ew-label ew-hypothese">Hypothese</div>
+            <h2>2. Was vermutest du?</h2>
+
+            <p><strong>Warum fühlt sich der Metalllöffel kälter an als der Holzlöffel, obwohl beide die gleiche Temperatur haben?</strong></p>
+
+            <div id="hypothesis1">
+                <button class="prediction-option" onclick="saveHypothesis(this, 'A')">A) Metall hat eine niedrigere Temperatur als Holz</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'B')">B) Metall leitet Wärme von der Hand schneller ab als Holz</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'C')">C) Metall erzeugt Kälte, Holz nicht</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'D')">D) Das ist nur Einbildung, beide fühlen sich gleich an</button>
+            </div>
+
+            <p style="margin-top: 15px; font-size: 0.85em; color: #666;">Merke dir deine Vermutung – wir überprüfen sie gleich mit einer Simulation!</p>
+        </section>
+
+        <!-- SECTION 3: Simulation Wärmeleitung -->
+        <section class="section" data-step="3" data-title="Simulation: Wärmeleitung">
+            <div class="ew-label ew-experiment">Experiment</div>
+            <h2>3. Simulation: Wärmeleitung in verschiedenen Materialien</h2>
+
+            <p>In dieser Simulation wird ein Stab aus verschiedenen Materialien an einem Ende erhitzt. Beobachte, wie schnell die Wärme durch den Stab wandert.</p>
+
+            <div class="info-box">
+                <strong>Auftrag:</strong>
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li>Wähle ein Material (Kupfer, Eisen, Holz, Styropor)</li>
+                    <li>Drücke „Start" und beobachte die Farbänderung</li>
+                    <li>Lies die Temperatur an den 5 Messpunkten ab</li>
+                    <li>Wiederhole mit einem anderen Material und vergleiche</li>
+                </ol>
+            </div>
+
+            <div class="sim-container">
+                <canvas id="conductionCanvas" width="760" height="280"></canvas>
+                <div class="sim-controls">
+                    <label>Material:
+                        <select id="conductionMaterial" onchange="resetConduction()">
+                            <option value="kupfer">Kupfer</option>
+                            <option value="eisen">Eisen</option>
+                            <option value="holz">Holz</option>
+                            <option value="styropor">Styropor</option>
+                        </select>
+                    </label>
+                    <button class="sim-btn" id="conductionStartBtn" onclick="toggleConduction()">▶ Start</button>
+                    <button class="sim-btn secondary" onclick="resetConduction()">↺ Reset</button>
+                    <span class="sim-value" id="conductionTime">t = 0 s</span>
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 2</strong>: Trage die Temperaturen an den Messpunkten für mindestens 2 Materialien in die Tabelle ein.
+            </div>
+        </section>
+
+        <!-- SECTION 4: Auswertung Wärmeleitung -->
+        <section class="section" data-step="4" data-title="Auswertung: Wärmeleiter und Isolatoren">
+            <div class="ew-label ew-auswertung">Auswertung</div>
+            <h2>4. Auswertung: Welches Material leitet am besten?</h2>
+
+            <div id="hypothesisRecall" class="recall-box">
+                <p id="hypothesisRecallText"></p>
+            </div>
+
+            <p>Wenn du die Simulation durchgeführt hast, beantworte diese Fragen:</p>
+
+            <h3>Ranking der Materialien</h3>
+
+            <p>Ordne die Materialien nach ihrer <strong>Wärmeleitfähigkeit</strong> (schnellste zuerst):</p>
+
+            <table class="data-table">
+                <tr>
+                    <th>Rang</th>
+                    <th>Material</th>
+                    <th>Leitung</th>
+                </tr>
+                <tr>
+                    <td>1 (schnellste)</td>
+                    <td><strong>Kupfer</strong></td>
+                    <td>sehr gut</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>Eisen</strong></td>
+                    <td>gut</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Holz</strong></td>
+                    <td>schlecht</td>
+                </tr>
+                <tr>
+                    <td>4 (langsamste)</td>
+                    <td><strong>Styropor</strong></td>
+                    <td>sehr schlecht</td>
+                </tr>
+            </table>
+
+            <h3>Rückblick auf die Hypothese</h3>
+
+            <p>Jetzt können wir unser Phänomen erklären:</p>
+
+            <div class="merke-box">
+                Der Metalllöffel fühlt sich kälter an, weil er die <strong>Wärme viel schneller von deiner Hand ableitet</strong> als Holz. Deine Haut kühlt schneller ab — deshalb <em>fühlt</em> es sich kälter an. Die Temperatur beider Löffel ist aber gleich!
+            </div>
+
+            <p><strong>Richtige Antwort:</strong> B) Metall leitet Wärme von der Hand schneller ab als Holz.</p>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 3</strong>: Erkläre, warum sich Metall kälter anfühlt als Holz.
+            </div>
+        </section>
+
+        <!-- SECTION 5: Deutung — Teilchenmodell -->
+        <section class="section" data-step="5" data-title="Deutung: Teilchenmodell der Wärmeleitung">
+            <div class="ew-label ew-deutung">Deutung</div>
+            <h2>5. Was passiert auf Teilchenebene?</h2>
+
+            <p>Aus LP-01 weißt du: <strong>Temperatur = mittlere kinetische Energie der Teilchen</strong>.</p>
+
+            <p>Was passiert bei der Wärmeleitung auf Teilchenebene?</p>
+
+            <div class="sim-container">
+                <canvas id="particleCanvas" width="760" height="200"></canvas>
+                <div class="sim-controls">
+                    <button class="sim-btn" id="particleBtn" onclick="toggleParticles()">▶ Teilchen zeigen</button>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Beobachte:</strong>
+                <ul style="margin-top: 8px; padding-left: 20px;">
+                    <li>Links (heiß): Teilchen <strong>schwingen schnell</strong></li>
+                    <li>Mitte: Schnelle Teilchen stoßen langsame an → <strong>Energieübertragung</strong></li>
+                    <li>Rechts (kalt): Teilchen schwingen langsam, werden nach und nach schneller</li>
+                </ul>
+            </div>
+
+            <div class="merke-box">
+                <strong>Wärmeleitung</strong> ist die Übertragung von Wärme durch <strong>direkte Weitergabe</strong> von kinetischer Energie zwischen benachbarten Teilchen. Die Teilchen selbst bleiben an ihrem Platz — nur die <strong>Energie wandert</strong>!
+            </div>
+
+            <p><strong>Gute Wärmeleiter</strong> (Metalle): Teilchen sind eng und regelmäßig angeordnet → Energie wird effizient weitergegeben. Zusätzlich: frei bewegliche Elektronen!</p>
+            <p><strong>Schlechte Wärmeleiter = Isolatoren</strong> (Holz, Styropor): Teilchen weit auseinander, unregelmäßig → Energie wird kaum weitergegeben.</p>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 4</strong>: Erkläre Wärmeleitung auf Teilchenebene mit einer Skizze.
+            </div>
+        </section>
+
+        <!-- SECTION 6: Verallgemeinerung — Leiter/Isolatoren -->
+        <section class="section" data-step="6" data-title="Verallgemeinerung: Wärmeleiter und Isolatoren">
+            <div class="ew-label ew-verallgemeinerung">Verallgemeinerung</div>
+            <h2>6. Wärmeleiter und Isolatoren im Alltag</h2>
+
+            <h3>Alltagsbeispiele</h3>
+
+            <table class="data-table">
+                <tr>
+                    <th>Situation</th>
+                    <th>Material</th>
+                    <th>Leiter oder Isolator?</th>
+                    <th>Warum?</th>
+                </tr>
+                <tr>
+                    <td>Kochtopf</td>
+                    <td>Metall</td>
+                    <td>Leiter</td>
+                    <td>Wärme soll zum Essen gelangen</td>
+                </tr>
+                <tr>
+                    <td>Topfgriff</td>
+                    <td>Kunststoff / Holz</td>
+                    <td>Isolator</td>
+                    <td>Hand soll nicht verbrennen</td>
+                </tr>
+                <tr>
+                    <td>Fenster (Doppelverglasung)</td>
+                    <td>Luft zwischen den Scheiben</td>
+                    <td>Isolator</td>
+                    <td>Wärme soll im Haus bleiben</td>
+                </tr>
+                <tr>
+                    <td>Heizkörper</td>
+                    <td>Metall</td>
+                    <td>Leiter</td>
+                    <td>Wärme soll an die Luft abgegeben werden</td>
+                </tr>
+            </table>
+
+            <h3>Lückentext <span class="niveau-badge niveau-1">★</span></h3>
+
+            <p>
+                Materialien, die Wärme gut leiten, heißen <input type="text" class="fill-blank" data-answer="Wärmeleiter" id="fb1" onchange="checkFillBlank(this)">.
+                Materialien, die Wärme schlecht leiten, heißen <input type="text" class="fill-blank" data-answer="Isolatoren" id="fb2" onchange="checkFillBlank(this)">.
+            </p>
+            <p>
+                <input type="text" class="fill-blank" data-answer="Metalle" id="fb3" onchange="checkFillBlank(this)"> sind besonders gute Wärmeleiter.
+                <input type="text" class="fill-blank" data-answer="Luft" id="fb4" onchange="checkFillBlank(this)"> ist ein besonders guter Isolator.
+            </p>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 5</strong>: Vervollständige den Lückentext und ordne Alltagsgegenstände zu.
+            </div>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>★★★ Erweiterung:</strong> Wärmeleitfähigkeit λ</span>
+                <span>▼</span>
+            </div>
+            <div class="collapsible-content">
+                <p>Die <strong>Wärmeleitfähigkeit λ</strong> (Lambda) gibt an, wie gut ein Material Wärme leitet:</p>
+                <table class="data-table">
+                    <tr><th>Material</th><th>λ in W/(m·K)</th></tr>
+                    <tr><td>Kupfer</td><td>390</td></tr>
+                    <tr><td>Eisen/Stahl</td><td>50</td></tr>
+                    <tr><td>Glas</td><td>0,8</td></tr>
+                    <tr><td>Holz</td><td>0,15</td></tr>
+                    <tr><td>Styropor</td><td>0,04</td></tr>
+                    <tr><td>Luft</td><td>0,025</td></tr>
+                </table>
+                <p>Kupfer leitet Wärme also <strong>fast 10.000-mal besser</strong> als Styropor!</p>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- ZYKLUS 2: Wärmeströmung / Konvektion (WÜ2)                  -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 7: Phänomen Konvektion -->
+        <section class="section" data-step="7" data-title="Phänomen: Wie verteilt die Heizung Wärme?">
+            <div class="ew-label ew-phaenomen">Phänomen</div>
+            <h2>7. Wie verteilt eine Heizung die Wärme im Raum?</h2>
+
+            <p>Denke an dein Zimmer im Winter. Die Heizung steht unter dem Fenster. Trotzdem wird der <strong>ganze Raum</strong> warm — auch die Ecke weit weg von der Heizung.</p>
+
+            <div class="info-box">
+                <strong>Frage:</strong> Wie kann die Wärme von der Heizung in die hinterste Ecke des Raumes gelangen? Die Heizung berührt ja nicht alle Wände!
+            </div>
+
+            <p>Wärmeleitung allein kann das nicht erklären — Luft ist ein <strong>Isolator</strong> und leitet Wärme schlecht.</p>
+
+            <p>Es muss also noch eine andere Art der Wärmeübertragung geben...</p>
+
+            <h3>Was vermutest du?</h3>
+
+            <div id="hypothesis2">
+                <button class="prediction-option" onclick="saveHypothesis2(this, 'A')">A) Die warme Luft steigt auf und verteilt sich</button>
+                <button class="prediction-option" onclick="saveHypothesis2(this, 'B')">B) Die Heizung strahlt Wärme unsichtbar ab</button>
+                <button class="prediction-option" onclick="saveHypothesis2(this, 'C')">C) Die Wände leiten die Wärme weiter</button>
+            </div>
+        </section>
+
+        <!-- SECTION 8: Simulation Konvektion -->
+        <section class="section" data-step="8" data-title="Simulation: Konvektion">
+            <div class="ew-label ew-experiment">Experiment</div>
+            <h2>8. Simulation: Wärmeströmung (Konvektion)</h2>
+
+            <p>Beobachte, wie sich erwärmte Flüssigkeit in einem Behälter bewegt, wenn sie von unten erhitzt wird.</p>
+
+            <div class="sim-container">
+                <canvas id="convectionCanvas" width="760" height="400"></canvas>
+                <div class="sim-controls">
+                    <label>Heizleistung:
+                        <input type="range" id="convectionHeat" min="0" max="100" value="50" oninput="updateConvectionHeat(this.value)">
+                    </label>
+                    <span class="sim-value" id="convectionHeatValue">50%</span>
+                    <button class="sim-btn secondary" onclick="resetConvection()">↺ Reset</button>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Beobachte:</strong>
+                <ul style="margin-top: 8px; padding-left: 20px;">
+                    <li>Was passiert mit der Flüssigkeit über der Wärmequelle?</li>
+                    <li>Wohin bewegt sich die warme Flüssigkeit?</li>
+                    <li>Was passiert mit der kalten Flüssigkeit an den Seiten?</li>
+                    <li>Erkennst du ein <strong>kreisförmiges Muster</strong>?</li>
+                </ul>
+            </div>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 6</strong>: Zeichne die Strömungspfeile in den Behälter und beschreibe den Kreislauf.
+            </div>
+        </section>
+
+        <!-- SECTION 9: Deutung Konvektion -->
+        <section class="section" data-step="9" data-title="Deutung: Warum steigt warme Luft auf?">
+            <div class="ew-label ew-deutung">Deutung</div>
+            <h2>9. Warum steigt warme Luft (oder Wasser) auf?</h2>
+
+            <p>Auf Teilchenebene passiert Folgendes:</p>
+
+            <div class="info-box">
+                <ol style="padding-left: 20px;">
+                    <li>Die Heizung erwärmt die Luft direkt darüber → Teilchen bewegen sich <strong>schneller</strong></li>
+                    <li>Schnelle Teilchen brauchen mehr Platz → die warme Luft <strong>dehnt sich aus</strong></li>
+                    <li>Ausgedehnte Luft hat eine <strong>geringere Dichte</strong> (weniger Masse pro Volumen)</li>
+                    <li>Leichtere warme Luft <strong>steigt auf</strong>, schwere kalte Luft <strong>sinkt ab</strong></li>
+                    <li>Es entsteht eine <strong>Kreisbewegung</strong> — die <em>Konvektionszelle</em></li>
+                </ol>
+            </div>
+
+            <div class="merke-box">
+                <strong>Wärmeströmung (Konvektion)</strong> ist die Übertragung von Wärme durch <strong>Bewegung</strong> von Flüssigkeiten oder Gasen. Warme Bereiche steigen auf (geringere Dichte), kalte sinken ab. Es entsteht ein <strong>Kreislauf</strong>.
+            </div>
+
+            <h3>Alltagsbeispiele</h3>
+            <table class="data-table">
+                <tr><th>Beispiel</th><th>Warme Strömung</th><th>Kalte Strömung</th></tr>
+                <tr><td>Heizung im Zimmer</td><td>Luft steigt an Heizung auf</td><td>Kalte Luft sinkt am Fenster ab</td></tr>
+                <tr><td>Kochtopf</td><td>Wasser steigt am Boden auf</td><td>Kühles Wasser sinkt an den Seiten ab</td></tr>
+                <tr><td>Wind am Meer (Seewind)</td><td>Warme Luft über Land steigt</td><td>Kühle Luft vom Meer strömt nach</td></tr>
+            </table>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 7</strong>: Erkläre mit dem Teilchenmodell, warum warme Luft aufsteigt.
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- ZYKLUS 3: Wärmestrahlung (WÜ3)                              -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 10: Phänomen Strahlung -->
+        <section class="section" data-step="10" data-title="Phänomen: Wärme ohne Kontakt">
+            <div class="ew-label ew-phaenomen">Phänomen</div>
+            <h2>10. Wärme ohne Berührung — wie geht das?</h2>
+
+            <p>Die Sonne erwärmt die Erde. Zwischen Sonne und Erde liegt aber das <strong>Weltall — ein fast perfektes Vakuum</strong>.</p>
+
+            <div class="warn-box">
+                <strong>Problem:</strong> Im Vakuum gibt es keine Teilchen. Also kann dort weder Wärmeleitung (Teilchen stoßen sich an) noch Konvektion (Flüssigkeit/Gas strömt) funktionieren!
+            </div>
+
+            <p>Es muss also eine <strong>dritte Art</strong> der Wärmeübertragung geben, die <strong>kein Medium</strong> braucht.</p>
+
+            <p>Kennst du noch ein Beispiel? Halte deine Hand neben (nicht über!) eine eingeschaltete Lampe oder einen Heizkörper. Du spürst Wärme — <strong>ohne Berührung und ohne Luftströmung</strong>.</p>
+        </section>
+
+        <!-- SECTION 11: Simulation Strahlung -->
+        <section class="section" data-step="11" data-title="Simulation: Wärmestrahlung">
+            <div class="ew-label ew-experiment">Experiment</div>
+            <h2>11. Simulation: Absorption und Emission von Wärmestrahlung</h2>
+
+            <p>Zwei identische Behälter werden von einer Wärmequelle bestrahlt. Der einzige Unterschied: die <strong>Farbe der Oberfläche</strong>.</p>
+
+            <div class="sim-container">
+                <canvas id="radiationCanvas" width="760" height="320"></canvas>
+                <div class="sim-controls">
+                    <label>Bestrahlungsdauer:
+                        <input type="range" id="radiationTime" min="0" max="100" value="0" oninput="updateRadiation(this.value)">
+                    </label>
+                    <span class="sim-value" id="radiationTimeValue">0 s</span>
+                    <button class="sim-btn secondary" onclick="resetRadiation()">↺ Reset</button>
+                </div>
+            </div>
+
+            <h3>Beobachtung</h3>
+            <p>Welcher Behälter erwärmt sich schneller?</p>
+
+            <div id="radiationQuiz">
+                <button class="prediction-option" onclick="checkRadiationQuiz(this, 'A')">A) Der schwarze Behälter</button>
+                <button class="prediction-option" onclick="checkRadiationQuiz(this, 'B')">B) Der weiße Behälter</button>
+                <button class="prediction-option" onclick="checkRadiationQuiz(this, 'C')">C) Beide gleich schnell</button>
+            </div>
+            <div class="quiz-feedback" id="radiationFeedback"></div>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 8</strong>: Trage die Temperaturwerte für beide Behälter in die Tabelle ein und beschreibe den Unterschied.
+            </div>
+        </section>
+
+        <!-- SECTION 12: Deutung Strahlung + Merksatz -->
+        <section class="section" data-step="12" data-title="Deutung: Wärmestrahlung">
+            <div class="ew-label ew-deutung">Deutung</div>
+            <h2>12. Was ist Wärmestrahlung?</h2>
+
+            <p><strong>Wärmestrahlung</strong> ist eine <strong>elektromagnetische Strahlung</strong> (wie Licht, aber unsichtbar — im Infrarot-Bereich).</p>
+
+            <div class="info-box">
+                <strong>Wichtige Eigenschaften:</strong>
+                <ul style="margin-top: 8px; padding-left: 20px;">
+                    <li>Braucht <strong>kein Medium</strong> — funktioniert auch im Vakuum</li>
+                    <li>Breitet sich mit <strong>Lichtgeschwindigkeit</strong> aus</li>
+                    <li>Jeder Körper <strong>sendet</strong> Wärmestrahlung aus (je heißer, desto mehr)</li>
+                    <li>Jeder Körper <strong>absorbiert</strong> (verschluckt) Wärmestrahlung</li>
+                </ul>
+            </div>
+
+            <h3>Absorption hängt von der Oberfläche ab</h3>
+
+            <table class="data-table">
+                <tr><th>Oberfläche</th><th>Absorption</th><th>Emission</th><th>Beispiel</th></tr>
+                <tr><td>Schwarz, matt</td><td>sehr hoch</td><td>sehr hoch</td><td>Schwarzes Auto in der Sonne</td></tr>
+                <tr><td>Weiß, glatt</td><td>gering</td><td>gering</td><td>Weiße Hauswand reflektiert</td></tr>
+                <tr><td>Silber, spiegelnd</td><td>sehr gering</td><td>sehr gering</td><td>Rettungsdecke, Thermoskanne</td></tr>
+            </table>
+
+            <div class="merke-box">
+                <strong>Wärmestrahlung</strong> ist die Übertragung von Wärme durch <strong>elektromagnetische Strahlung</strong> (Infrarotstrahlung). Sie braucht <strong>kein Medium</strong> und funktioniert auch im Vakuum. <strong>Dunkle, matte</strong> Oberflächen absorbieren und emittieren mehr Strahlung als helle, glatte.
+            </div>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 9</strong>: Erkläre, warum Häuser in heißen Ländern oft weiß gestrichen sind.
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- ABSCHLUSS: Vergleich + Wärmedämmung (WÜ4)                   -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 13: Vergleich der drei Arten -->
+        <section class="section" data-step="13" data-title="Vergleich: Drei Arten der Wärmeübertragung">
+            <div class="ew-label ew-verallgemeinerung">Verallgemeinerung</div>
+            <h2>13. Die drei Arten der Wärmeübertragung im Vergleich</h2>
+
+            <table class="data-table">
+                <tr>
+                    <th></th>
+                    <th>Wärmeleitung</th>
+                    <th>Wärmeströmung</th>
+                    <th>Wärmestrahlung</th>
+                </tr>
+                <tr>
+                    <td><strong>Wie?</strong></td>
+                    <td>Teilchen geben Energie an Nachbarn weiter</td>
+                    <td>Warmes Material strömt (aufsteigt)</td>
+                    <td>Elektromagnetische Wellen (Infrarot)</td>
+                </tr>
+                <tr>
+                    <td><strong>Medium nötig?</strong></td>
+                    <td>Ja (Feststoffe am besten)</td>
+                    <td>Ja (Flüssigkeiten, Gase)</td>
+                    <td>Nein (auch im Vakuum)</td>
+                </tr>
+                <tr>
+                    <td><strong>Teilchen bewegen sich?</strong></td>
+                    <td>Nein (schwingen am Platz)</td>
+                    <td>Ja (strömen mit)</td>
+                    <td>Keine Teilchen nötig</td>
+                </tr>
+                <tr>
+                    <td><strong>Beispiel</strong></td>
+                    <td>Heißer Löffel im Topf</td>
+                    <td>Heizung erwärmt Zimmer</td>
+                    <td>Sonne erwärmt Erde</td>
+                </tr>
+            </table>
+
+            <h3>Lückentext: Zusammenfassung <span class="niveau-badge niveau-1">★</span></h3>
+
+            <p>Wärme kann auf <strong>drei Arten</strong> übertragen werden:</p>
+
+            <p>Bei der <input type="text" class="fill-blank" data-answer="Wärmeleitung" id="fb5" onchange="checkFillBlank(this)">
+            geben Teilchen Energie an ihre Nachbarn weiter. Das funktioniert am besten in
+            <input type="text" class="fill-blank" data-answer="Feststoffen" id="fb6" onchange="checkFillBlank(this)">, besonders in Metallen.</p>
+
+            <p>Bei der <input type="text" class="fill-blank" data-answer="Wärmeströmung" id="fb7" onchange="checkFillBlank(this)">
+            (Konvektion) strömt warme Flüssigkeit oder warmes Gas nach
+            <input type="text" class="fill-blank" data-answer="oben" id="fb8" onchange="checkFillBlank(this)">, weil es eine geringere
+            <input type="text" class="fill-blank" data-answer="Dichte" id="fb9" onchange="checkFillBlank(this)"> hat.</p>
+
+            <p>Bei der <input type="text" class="fill-blank" data-answer="Wärmestrahlung" id="fb10" onchange="checkFillBlank(this)">
+            wird Wärme durch <input type="text" class="fill-blank" data-answer="Infrarotstrahlung" id="fb11" onchange="checkFillBlank(this)">
+            übertragen. Diese braucht kein <input type="text" class="fill-blank" data-answer="Medium" id="fb12" onchange="checkFillBlank(this)">.</p>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 10</strong>: Vervollständige den Lückentext und die Vergleichstabelle.
+            </div>
+        </section>
+
+        <!-- SECTION 14: Wärmedämmung -->
+        <section class="section" data-step="14" data-title="Anwendung: Wärmedämmung">
+            <div class="ew-label ew-anwendung">Anwendung</div>
+            <h2>14. Wärmedämmung — alle drei Arten stoppen</h2>
+
+            <p>Gute <strong>Wärmedämmung</strong> muss alle drei Arten der Wärmeübertragung verhindern:</p>
+
+            <table class="data-table">
+                <tr>
+                    <th>Art</th>
+                    <th>Wie stoppen?</th>
+                    <th>Beispiel</th>
+                </tr>
+                <tr>
+                    <td>Leitung</td>
+                    <td>Isolierende Materialien (Luft, Styropor)</td>
+                    <td>Hausdämmung mit Styropor</td>
+                </tr>
+                <tr>
+                    <td>Strömung</td>
+                    <td>Luftbewegung verhindern (Doppelverglasung)</td>
+                    <td>Doppelglasfenster, Daunendecke</td>
+                </tr>
+                <tr>
+                    <td>Strahlung</td>
+                    <td>Reflektierende Oberflächen</td>
+                    <td>Rettungsdecke (silbern), Thermoskanne</td>
+                </tr>
+            </table>
+
+            <h3>Beispiel: Die Thermoskanne <span class="niveau-badge niveau-2">★★</span></h3>
+
+            <div class="info-box">
+                Eine Thermoskanne nutzt <strong>alle drei Tricks</strong>:
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li><strong>Vakuum</strong> zwischen den Wänden → keine Leitung, keine Strömung möglich</li>
+                    <li><strong>Verspiegelte Innenwand</strong> → reflektiert Wärmestrahlung zurück</li>
+                    <li><strong>Verschluss</strong> → verhindert Konvektion durch die Öffnung</li>
+                </ol>
+            </div>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>★★★ Transfer:</strong> Klimawandel und Treibhauseffekt</span>
+                <span>▼</span>
+            </div>
+            <div class="collapsible-content">
+                <p>Der <strong>Treibhauseffekt</strong> ist ein Wärmestrahlungs-Phänomen:</p>
+                <ol style="padding-left: 20px;">
+                    <li>Sonnenstrahlung durchdringt die Atmosphäre und erwärmt den Erdboden</li>
+                    <li>Der Erdboden strahlt <strong>Infrarotstrahlung</strong> zurück Richtung Weltall</li>
+                    <li>Treibhausgase (CO₂, Methan) in der Atmosphäre <strong>absorbieren</strong> einen Teil dieser Strahlung</li>
+                    <li>Sie strahlen die Wärme <strong>zurück zur Erde</strong> → die Erde wird wärmer</li>
+                </ol>
+                <p>Mehr Treibhausgase → mehr Absorption → stärkere Erwärmung.</p>
+            </div>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 11</strong>: Erkläre, wie eine Thermoskanne alle drei Arten der Wärmeübertragung verhindert.
+            </div>
+        </section>
+
+        <!-- SECTION 15: Quiz + Zusammenfassung -->
+        <section class="section" data-step="15" data-title="Quiz: Teste dein Wissen">
+            <div class="ew-label ew-verallgemeinerung">Sicherung</div>
+            <h2>15. Quiz: Teste dein Wissen!</h2>
+
+            <!-- Quiz 1 -->
+            <h3>Frage 1</h3>
+            <p>Ein Metalllöffel in einer heißen Suppe wird am Griff heiß. Welche Art der Wärmeübertragung ist das?</p>
+            <div id="quiz1">
+                <button class="prediction-option" onclick="checkQuiz('quiz1', this, 'A', true)">A) Wärmeleitung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz1', this, 'B', false)">B) Wärmeströmung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz1', this, 'C', false)">C) Wärmestrahlung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz1-feedback"></div>
+
+            <!-- Quiz 2 -->
+            <h3>Frage 2</h3>
+            <p>Warme Luft steigt an der Heizung auf und verteilt sich im Zimmer. Welche Art?</p>
+            <div id="quiz2">
+                <button class="prediction-option" onclick="checkQuiz('quiz2', this, 'A', false)">A) Wärmeleitung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz2', this, 'B', true)">B) Wärmeströmung (Konvektion)</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz2', this, 'C', false)">C) Wärmestrahlung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz2-feedback"></div>
+
+            <!-- Quiz 3 -->
+            <h3>Frage 3</h3>
+            <p>Du spürst die Wärme eines Lagerfeuers auf deiner Haut, obwohl du 2 Meter entfernt stehst. Welche Art?</p>
+            <div id="quiz3">
+                <button class="prediction-option" onclick="checkQuiz('quiz3', this, 'A', false)">A) Wärmeleitung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz3', this, 'B', false)">B) Wärmeströmung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz3', this, 'C', true)">C) Wärmestrahlung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz3-feedback"></div>
+
+            <!-- Quiz 4 -->
+            <h3>Frage 4 <span class="niveau-badge niveau-2">★★</span></h3>
+            <p>Warum haben Häuser in Norddeutschland dicke Wände und Doppelglasfenster?</p>
+            <div id="quiz4">
+                <button class="prediction-option" onclick="checkQuiz('quiz4', this, 'A', false)">A) Damit es leiser ist</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz4', this, 'B', true)">B) Um Wärmeverlust durch Leitung und Strömung zu verringern</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz4', this, 'C', false)">C) Weil Metall teuer ist</button>
+            </div>
+            <div class="quiz-feedback" id="quiz4-feedback"></div>
+
+            <!-- Quiz 5 -->
+            <h3>Frage 5 <span class="niveau-badge niveau-3">★★★</span></h3>
+            <p>Eine Rettungsdecke ist innen silber und außen gold. Warum?</p>
+            <div id="quiz5">
+                <button class="prediction-option" onclick="checkQuiz('quiz5', this, 'A', false)">A) Damit sie schön aussieht</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz5', this, 'B', false)">B) Silber leitet Wärme gut zum Körper</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz5', this, 'C', true)">C) Silber reflektiert die Wärmestrahlung des Körpers zurück</button>
+            </div>
+            <div class="quiz-feedback" id="quiz5-feedback"></div>
+
+            <div style="margin-top: 25px;">
+                <div class="merke-box">
+                    <strong>Du hast LP-02 geschafft!</strong> Du kennst jetzt die drei Arten der Wärmeübertragung: <strong>Leitung</strong> (Teilchen → Teilchen), <strong>Strömung</strong> (warmes Material strömt) und <strong>Strahlung</strong> (Infrarot, ohne Medium). Gute Wärmedämmung muss alle drei Arten stoppen!
+                </div>
+            </div>
+
+            <div class="hefter-hinweis">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 12</strong>: Abschluss-Lückentext zu allen drei Arten der Wärmeübertragung.
+            </div>
+        </section>
+
+    </div><!-- /container -->
+
+    <script>
+        // ========== NAVIGATION ==========
+        const sections = document.querySelectorAll('.section');
+        const totalSteps = sections.length;
+        let currentStep = 1;
+
+        const stepTitles = [];
+        sections.forEach((s, i) => {
+            stepTitles.push(s.dataset.title || `Schritt ${i+1}`);
+        });
+
+        const indicatorContainer = document.getElementById('stepIndicators');
+        for (let i = 1; i <= totalSteps; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'step-dot' + (i === 1 ? ' active' : '');
+            dot.textContent = i;
+            dot.onclick = () => goToStep(i);
+            indicatorContainer.appendChild(dot);
+        }
+
+        function updateNavigation() {
+            document.querySelectorAll('.step-dot').forEach((dot, i) => {
+                dot.classList.remove('active', 'completed');
+                if (i + 1 === currentStep) dot.classList.add('active');
+                else if (i + 1 < currentStep) dot.classList.add('completed');
+            });
+            sections.forEach((s, i) => {
+                s.classList.toggle('active', i + 1 === currentStep);
+            });
+            document.getElementById('stepTitle').textContent = stepTitles[currentStep - 1];
+            document.getElementById('prevBtn').disabled = currentStep === 1;
+            document.getElementById('nextBtn').disabled = currentStep === totalSteps;
+            document.getElementById('nextBtn').textContent = currentStep === totalSteps ? 'Fertig ✓' : 'Weiter';
+            document.getElementById('progressFill').style.width = ((currentStep / totalSteps) * 100) + '%';
+            localStorage.setItem('kl08-waerme-02-waermeuebertragung-step', currentStep);
+        }
+
+        function goToStep(step) {
+            if (step >= 1 && step <= totalSteps) {
+                currentStep = step;
+                updateNavigation();
+                requestAnimationFrame(() => {
+                    if (step === 3 && !conductionInited) initConduction();
+                    if (step === 5 && !particleInited) initParticles();
+                    if (step === 8 && !convectionInited) initConvection();
+                    if (step === 11 && !radiationInited) initRadiation();
+                });
+                if (step === 4) displayHypothesisRecall1();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function nextStep() { goToStep(currentStep + 1); }
+        function prevStep() { goToStep(currentStep - 1); }
+
+        const savedStep = localStorage.getItem('kl08-waerme-02-waermeuebertragung-step');
+        if (savedStep) goToStep(parseInt(savedStep));
+
+        // ========== HYPOTHESES ==========
+        const LS = 'kl08-waerme-02';
+
+        function saveHypothesis(el, choice) {
+            document.querySelectorAll('#hypothesis1 .prediction-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            localStorage.setItem(LS + '-hyp1', choice);
+        }
+
+        function saveHypothesis2(el, choice) {
+            document.querySelectorAll('#hypothesis2 .prediction-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            localStorage.setItem(LS + '-hyp2', choice);
+        }
+
+        function displayHypothesisRecall1() {
+            const pred = localStorage.getItem(LS + '-hyp1');
+            const box = document.getElementById('hypothesisRecall');
+            const txt = document.getElementById('hypothesisRecallText');
+            if (pred) {
+                const labels = {
+                    A: 'Metall hat eine niedrigere Temperatur als Holz',
+                    B: 'Metall leitet Wärme von der Hand schneller ab als Holz',
+                    C: 'Metall erzeugt Kälte, Holz nicht',
+                    D: 'Das ist nur Einbildung, beide fühlen sich gleich an'
+                };
+                txt.innerHTML = '<strong>Deine Vermutung war:</strong> ' + pred + ') ' + (labels[pred] || pred);
+                box.style.display = 'block';
+            }
+        }
+
+        function loadHypotheses() {
+            const h1 = localStorage.getItem(LS + '-hyp1');
+            if (h1) {
+                document.querySelectorAll('#hypothesis1 .prediction-option').forEach(o => {
+                    if (o.textContent.trim().startsWith(h1 + ')')) o.classList.add('selected');
+                });
+            }
+            const h2 = localStorage.getItem(LS + '-hyp2');
+            if (h2) {
+                document.querySelectorAll('#hypothesis2 .prediction-option').forEach(o => {
+                    if (o.textContent.trim().startsWith(h2 + ')')) o.classList.add('selected');
+                });
+            }
+        }
+        loadHypotheses();
+
+        // ========== FILL BLANKS ==========
+        function checkFillBlank(el) {
+            const answer = el.dataset.answer.toLowerCase().trim();
+            const val = el.value.toLowerCase().trim();
+            if (val === answer || val === answer.replace('ä', 'ae').replace('ö', 'oe').replace('ü', 'ue')) {
+                el.classList.add('correct');
+                el.classList.remove('wrong');
+            } else if (val.length > 0) {
+                el.classList.remove('correct');
+            }
+            localStorage.setItem(LS + '-fb-' + el.id, el.value);
+        }
+
+        function loadFillBlanks() {
+            document.querySelectorAll('.fill-blank').forEach(el => {
+                const saved = localStorage.getItem(LS + '-fb-' + el.id);
+                if (saved) {
+                    el.value = saved;
+                    checkFillBlank(el);
+                }
+            });
+        }
+        loadFillBlanks();
+
+        // ========== QUIZ ==========
+        function checkQuiz(quizId, el, choice, isCorrect) {
+            const container = document.getElementById(quizId);
+            const feedback = document.getElementById(quizId + '-feedback');
+            container.querySelectorAll('.prediction-option').forEach(o => {
+                o.classList.remove('selected', 'correct', 'wrong');
+                o.style.pointerEvents = 'none';
+            });
+            if (isCorrect) {
+                el.classList.add('correct');
+                feedback.textContent = '✓ Richtig!';
+                feedback.className = 'quiz-feedback correct';
+            } else {
+                el.classList.add('wrong');
+                container.querySelectorAll('.prediction-option').forEach(o => {
+                    if (o.onclick && o.onclick.toString().includes('true')) o.classList.add('correct');
+                });
+                feedback.textContent = '✗ Leider falsch. Die richtige Antwort ist grün markiert.';
+                feedback.className = 'quiz-feedback wrong';
+            }
+            localStorage.setItem(LS + '-' + quizId, choice);
+        }
+
+        function checkRadiationQuiz(el, choice) {
+            const container = document.getElementById('radiationQuiz');
+            const feedback = document.getElementById('radiationFeedback');
+            container.querySelectorAll('.prediction-option').forEach(o => {
+                o.classList.remove('selected', 'correct', 'wrong');
+                o.style.pointerEvents = 'none';
+            });
+            if (choice === 'A') {
+                el.classList.add('correct');
+                feedback.textContent = '✓ Richtig! Schwarze Oberflächen absorbieren mehr Wärmestrahlung.';
+                feedback.className = 'quiz-feedback correct';
+            } else {
+                el.classList.add('wrong');
+                container.querySelector('.prediction-option:first-child').classList.add('correct');
+                feedback.textContent = '✗ Der schwarze Behälter erwärmt sich schneller, weil er mehr Strahlung absorbiert.';
+                feedback.className = 'quiz-feedback wrong';
+            }
+            localStorage.setItem(LS + '-radQuiz', choice);
+        }
+
+        // ========== COLLAPSIBLE ==========
+        function toggleCollapsible(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('open');
+            const arrow = header.querySelector('span:last-child');
+            arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+        }
+
+        // ========== SIMULATION 1: WÄRMELEITUNG ==========
+        let conductionInited = false;
+        let conductionRunning = false;
+        let conductionTime = 0;
+        let conductionAnimId = null;
+        const conductionData = {
+            kupfer: { lambda: 390, color: '#b87333', name: 'Kupfer' },
+            eisen: { lambda: 50, color: '#888', name: 'Eisen' },
+            holz: { lambda: 0.15, color: '#8B4513', name: 'Holz' },
+            styropor: { lambda: 0.04, color: '#f5f5f5', name: 'Styropor' }
+        };
+        let conductionTemps = [20, 20, 20, 20, 20]; // 5 measurement points
+
+        function initConduction() {
+            conductionInited = true;
+            resetConduction();
+            drawConduction();
+        }
+
+        function resetConduction() {
+            conductionRunning = false;
+            conductionTime = 0;
+            conductionTemps = [20, 20, 20, 20, 20];
+            if (conductionAnimId) cancelAnimationFrame(conductionAnimId);
+            conductionAnimId = null;
+            document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            document.getElementById('conductionTime').textContent = 't = 0 s';
+            if (conductionInited) drawConduction();
+        }
+
+        function toggleConduction() {
+            if (conductionRunning) {
+                conductionRunning = false;
+                document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            } else {
+                conductionRunning = true;
+                document.getElementById('conductionStartBtn').textContent = '⏸ Pause';
+                animateConduction();
+            }
+        }
+
+        function tempToColor(t) {
+            // 20°C = blue, 100°C = red
+            const frac = Math.max(0, Math.min(1, (t - 20) / 80));
+            const r = Math.round(30 + frac * 225);
+            const g = Math.round(100 - frac * 80);
+            const b = Math.round(220 - frac * 200);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function drawConduction() {
+            const canvas = document.getElementById('conductionCanvas');
+            const ctx = canvas.getContext('2d');
+            const mat = conductionData[document.getElementById('conductionMaterial').value];
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Background
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Heat source (left)
+            const flameGrad = ctx.createRadialGradient(60, 140, 5, 60, 140, 50);
+            flameGrad.addColorStop(0, '#ff6600');
+            flameGrad.addColorStop(0.5, '#ff3300');
+            flameGrad.addColorStop(1, 'rgba(255,50,0,0)');
+            ctx.fillStyle = flameGrad;
+            ctx.fillRect(10, 90, 80, 100);
+
+            // Label
+            ctx.fillStyle = '#ff9900';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('100 °C', 55, 220);
+            ctx.fillText('Wärmequelle', 55, 235);
+
+            // Bar
+            const barX = 100, barY = 110, barW = 560, barH = 60;
+            const segments = 28;
+            const segW = barW / segments;
+
+            for (let i = 0; i < segments; i++) {
+                const frac = i / (segments - 1);
+                // Interpolate temperature along bar
+                let t;
+                if (i < segments * 0.2) t = conductionTemps[0] + (conductionTemps[1] - conductionTemps[0]) * (i / (segments * 0.2));
+                else if (i < segments * 0.4) t = conductionTemps[1] + (conductionTemps[2] - conductionTemps[1]) * ((i - segments * 0.2) / (segments * 0.2));
+                else if (i < segments * 0.6) t = conductionTemps[2] + (conductionTemps[3] - conductionTemps[2]) * ((i - segments * 0.4) / (segments * 0.2));
+                else if (i < segments * 0.8) t = conductionTemps[3] + (conductionTemps[4] - conductionTemps[3]) * ((i - segments * 0.6) / (segments * 0.2));
+                else t = conductionTemps[4];
+
+                ctx.fillStyle = tempToColor(t);
+                ctx.fillRect(barX + i * segW, barY, segW + 1, barH);
+            }
+
+            // Bar outline
+            ctx.strokeStyle = mat.color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(barX, barY, barW, barH);
+
+            // Material label
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(mat.name, barX + barW / 2, barY - 10);
+
+            // Measurement points
+            const pointPositions = [0, 0.25, 0.5, 0.75, 1];
+            ctx.font = 'bold 13px sans-serif';
+            for (let i = 0; i < 5; i++) {
+                const px = barX + pointPositions[i] * barW;
+                const py = barY + barH + 15;
+
+                // Triangle marker
+                ctx.fillStyle = '#ffcc80';
+                ctx.beginPath();
+                ctx.moveTo(px, barY + barH);
+                ctx.lineTo(px - 6, py);
+                ctx.lineTo(px + 6, py);
+                ctx.closePath();
+                ctx.fill();
+
+                // Temperature value
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.round(conductionTemps[i]) + ' °C', px, py + 20);
+                ctx.fillStyle = '#aaa';
+                ctx.font = '11px sans-serif';
+                ctx.fillText('P' + (i + 1), px, py + 36);
+                ctx.font = 'bold 13px sans-serif';
+            }
+
+            // Legend
+            ctx.fillStyle = '#888';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('kalt', 740, 145);
+            ctx.textAlign = 'left';
+
+            // Color legend bar
+            const legX = 700, legY = 155, legH = 80;
+            for (let y = 0; y < legH; y++) {
+                const t = 100 - (y / legH) * 80;
+                ctx.fillStyle = tempToColor(t);
+                ctx.fillRect(legX, legY + y, 15, 1);
+            }
+            ctx.fillStyle = '#888';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('100°C', legX + 20, legY + 6);
+            ctx.fillText('20°C', legX + 20, legY + legH);
+            ctx.textAlign = 'right';
+            ctx.fillText('heiß', 740, legY - 4);
+        }
+
+        let lastCondTime = 0;
+        function animateConduction() {
+            if (!conductionRunning) return;
+
+            const mat = conductionData[document.getElementById('conductionMaterial').value];
+            // Normalized speed factor (kupfer = 1.0, styropor ~0.001)
+            const speed = Math.log10(mat.lambda + 1) / Math.log10(391);
+
+            conductionTime += 0.5;
+
+            // Heat diffusion simulation
+            const source = 100;
+            conductionTemps[0] = Math.min(source, conductionTemps[0] + speed * 3);
+            for (let i = 1; i < 5; i++) {
+                const diff = conductionTemps[i - 1] - conductionTemps[i];
+                conductionTemps[i] += diff * speed * 0.15;
+            }
+
+            document.getElementById('conductionTime').textContent = 't = ' + Math.round(conductionTime) + ' s';
+            drawConduction();
+
+            if (conductionTime < 300) {
+                conductionAnimId = requestAnimationFrame(animateConduction);
+            } else {
+                conductionRunning = false;
+                document.getElementById('conductionStartBtn').textContent = '▶ Start';
+            }
+        }
+
+        // ========== SIMULATION 2: TEILCHEN-VISUALISIERUNG ==========
+        let particleInited = false;
+        let particleRunning = false;
+        let particleAnimId = null;
+        let particles = [];
+
+        function initParticles() {
+            particleInited = true;
+            const canvas = document.getElementById('particleCanvas');
+
+            // Create particles in a grid (lattice)
+            particles = [];
+            const cols = 20, rows = 4;
+            const startX = 60, startY = 30;
+            const spacingX = 34, spacingY = 38;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x = startX + c * spacingX;
+                    const y = startY + r * spacingY;
+                    // Temperature decreases from left to right
+                    const tempFrac = 1 - c / (cols - 1);
+                    particles.push({
+                        baseX: x, baseY: y,
+                        x: x, y: y,
+                        vx: 0, vy: 0,
+                        energy: 0.3 + tempFrac * 2.5, // left = hot, right = cold
+                        r: 8
+                    });
+                }
+            }
+            toggleParticles();
+        }
+
+        function toggleParticles() {
+            if (particleRunning) {
+                particleRunning = false;
+                if (particleAnimId) cancelAnimationFrame(particleAnimId);
+                document.getElementById('particleBtn').textContent = '▶ Teilchen zeigen';
+            } else {
+                particleRunning = true;
+                document.getElementById('particleBtn').textContent = '⏸ Pause';
+                animateParticles();
+            }
+        }
+
+        function animateParticles() {
+            if (!particleRunning) return;
+            const canvas = document.getElementById('particleCanvas');
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Slowly diffuse energy (right gets warmer over time)
+            for (let i = 1; i < particles.length; i++) {
+                const diff = particles[i - 1].energy - particles[i].energy;
+                if (diff > 0) {
+                    particles[i].energy += diff * 0.0003;
+                    particles[i - 1].energy -= diff * 0.0003;
+                }
+            }
+
+            // Update and draw particles
+            particles.forEach(p => {
+                // Random vibration proportional to energy
+                p.x = p.baseX + (Math.random() - 0.5) * p.energy * 4;
+                p.y = p.baseY + (Math.random() - 0.5) * p.energy * 4;
+
+                // Color based on energy
+                const frac = Math.max(0, Math.min(1, (p.energy - 0.3) / 2.5));
+                const r = Math.round(30 + frac * 225);
+                const g = Math.round(100 - frac * 80);
+                const b = Math.round(220 - frac * 200);
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fill();
+                ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Labels
+            ctx.fillStyle = '#ff6644';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🔥 HEISS', 80, canvas.height - 10);
+            ctx.fillStyle = '#4488ff';
+            ctx.fillText('❄ KALT', canvas.width - 80, canvas.height - 10);
+
+            ctx.fillStyle = '#aaa';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('← Energie wandert →', canvas.width / 2, canvas.height - 10);
+
+            particleAnimId = requestAnimationFrame(animateParticles);
+        }
+
+        // ========== SIMULATION 3: KONVEKTION ==========
+        let convectionInited = false;
+        let convectionAnimId = null;
+        let convParticles = [];
+        let convHeat = 50;
+
+        function initConvection() {
+            convectionInited = true;
+            resetConvection();
+        }
+
+        function resetConvection() {
+            convParticles = [];
+            const canvas = document.getElementById('convectionCanvas');
+            // Create particles
+            for (let i = 0; i < 120; i++) {
+                convParticles.push({
+                    x: 80 + Math.random() * 600,
+                    y: 40 + Math.random() * 300,
+                    vx: 0, vy: 0,
+                    temp: 20
+                });
+            }
+            if (!convectionAnimId) animateConvection();
+        }
+
+        function updateConvectionHeat(val) {
+            convHeat = parseInt(val);
+            document.getElementById('convectionHeatValue').textContent = val + '%';
+        }
+
+        function animateConvection() {
+            const canvas = document.getElementById('convectionCanvas');
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Container
+            const cx = 80, cy = 40, cw = 600, ch = 300;
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(cx, cy, cw, ch);
+
+            // Heat source at bottom center
+            const heatX = cx + cw / 2 - 60;
+            const heatY = cy + ch;
+            const heatW = 120;
+            if (convHeat > 0) {
+                const grad = ctx.createLinearGradient(heatX, heatY, heatX, heatY + 20);
+                grad.addColorStop(0, `rgba(255, ${100 - convHeat}, 0, ${convHeat / 100})`);
+                grad.addColorStop(1, 'rgba(255,50,0,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(heatX, heatY - 5, heatW, 25);
+            }
+
+            // Label
+            ctx.fillStyle = '#ff9900';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Wärmequelle', cx + cw / 2, heatY + 30);
+
+            // Update particles
+            convParticles.forEach(p => {
+                // Heat from source
+                const distToHeat = Math.abs(p.x - (cx + cw / 2));
+                if (p.y > cy + ch - 30 && distToHeat < 80) {
+                    p.temp = Math.min(80, p.temp + convHeat * 0.02);
+                }
+
+                // Cooling at top and sides
+                if (p.y < cy + 40) p.temp = Math.max(20, p.temp - 0.3);
+                if (p.x < cx + 30 || p.x > cx + cw - 30) p.temp = Math.max(20, p.temp - 0.2);
+
+                // Buoyancy: warm goes up
+                const buoyancy = -(p.temp - 20) * 0.008 * (convHeat / 50);
+                p.vy += buoyancy;
+
+                // Horizontal drift: create circulation
+                if (p.y < cy + ch / 2) {
+                    // Top: drift outward
+                    const centerDist = p.x - (cx + cw / 2);
+                    p.vx += centerDist * 0.0003;
+                } else {
+                    // Bottom: drift inward
+                    const centerDist = p.x - (cx + cw / 2);
+                    p.vx -= centerDist * 0.0002;
+                }
+
+                // Gravity (cold sinks)
+                p.vy += 0.02;
+
+                // Friction
+                p.vx *= 0.98;
+                p.vy *= 0.98;
+
+                // Move
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Bounds
+                if (p.x < cx + 8) { p.x = cx + 8; p.vx *= -0.5; }
+                if (p.x > cx + cw - 8) { p.x = cx + cw - 8; p.vx *= -0.5; }
+                if (p.y < cy + 8) { p.y = cy + 8; p.vy *= -0.5; }
+                if (p.y > cy + ch - 8) { p.y = cy + ch - 8; p.vy *= -0.5; }
+
+                // Cool slowly
+                p.temp = Math.max(20, p.temp - 0.05);
+
+                // Draw
+                const frac = Math.max(0, Math.min(1, (p.temp - 20) / 60));
+                const r = Math.round(30 + frac * 225);
+                const g = Math.round(100 + (1 - frac) * 50 - frac * 50);
+                const b = Math.round(220 - frac * 200);
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fill();
+
+                // Velocity arrow (shows direction)
+                if (convHeat > 10) {
+                    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                    if (speed > 0.3) {
+                        const arrowLen = Math.min(15, speed * 8);
+                        ctx.strokeStyle = `rgba(${r},${g},${b},0.4)`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p.x + p.vx * arrowLen / speed * 8, p.y + p.vy * arrowLen / speed * 8);
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            // Legend
+            ctx.fillStyle = '#888';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('rot = warm (steigt auf)', cx + 10, cy + ch + 48);
+            ctx.fillText('blau = kalt (sinkt ab)', cx + 200, cy + ch + 48);
+
+            convectionAnimId = requestAnimationFrame(animateConvection);
+        }
+
+        // ========== SIMULATION 4: WÄRMESTRAHLUNG ==========
+        let radiationInited = false;
+
+        function initRadiation() {
+            radiationInited = true;
+            drawRadiation(0);
+        }
+
+        function updateRadiation(val) {
+            drawRadiation(parseInt(val));
+            document.getElementById('radiationTimeValue').textContent = Math.round(val * 3) + ' s';
+        }
+
+        function resetRadiation() {
+            document.getElementById('radiationTime').value = 0;
+            document.getElementById('radiationTimeValue').textContent = '0 s';
+            drawRadiation(0);
+        }
+
+        function drawRadiation(progress) {
+            const canvas = document.getElementById('radiationCanvas');
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const frac = progress / 100;
+
+            // Sun / heat source
+            const sunX = 380, sunY = 35;
+            const sunGrad = ctx.createRadialGradient(sunX, sunY, 5, sunX, sunY, 40);
+            sunGrad.addColorStop(0, '#ffdd00');
+            sunGrad.addColorStop(0.5, '#ff9900');
+            sunGrad.addColorStop(1, 'rgba(255,150,0,0)');
+            ctx.fillStyle = sunGrad;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, 35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Wärmequelle', sunX, sunY + 55);
+
+            // Radiation rays
+            if (frac > 0) {
+                ctx.strokeStyle = 'rgba(255,200,50,0.3)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 8; i++) {
+                    const angle = Math.PI * 0.3 + (i / 7) * Math.PI * 0.4;
+                    const len = 70 + frac * 80;
+                    ctx.beginPath();
+                    ctx.moveTo(sunX, sunY + 30);
+                    ctx.lineTo(sunX + Math.cos(angle) * len * (i < 4 ? -1 : 1), sunY + 30 + Math.sin(angle) * len);
+                    ctx.stroke();
+                }
+            }
+
+            // Black container (left)
+            const bx = 120, by = 150, bw = 120, bh = 130;
+            const blackTemp = 20 + frac * 60; // heats up a lot
+            const blackFrac = Math.max(0, Math.min(1, (blackTemp - 20) / 60));
+            ctx.fillStyle = `rgb(${Math.round(30 + blackFrac * 80)}, ${Math.round(20 + blackFrac * 10)}, ${Math.round(20 + blackFrac * 10)})`;
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(bx, by, bw, bh);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('SCHWARZ', bx + bw / 2, by - 8);
+
+            // Thermometer black
+            drawThermometer(ctx, bx + bw + 20, by + 10, blackTemp);
+
+            // White container (right)
+            const wx = 520, wy = 150, ww = 120, wh = 130;
+            const whiteTemp = 20 + frac * 15; // heats up less
+            ctx.fillStyle = `rgb(${Math.round(230 + (whiteTemp - 20) * 0.5)}, ${Math.round(230 - (whiteTemp - 20) * 2)}, ${Math.round(230 - (whiteTemp - 20) * 2)})`;
+            ctx.fillRect(wx, wy, ww, wh);
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(wx, wy, ww, wh);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('WEISS', wx + ww / 2, wy - 8);
+
+            // Thermometer white
+            drawThermometer(ctx, wx - 50, wy + 10, whiteTemp);
+
+            // Absorption labels
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#ff6644';
+            ctx.fillText('Absorption: ' + Math.round(blackFrac * 100) + '%', bx + bw / 2, by + bh + 25);
+            ctx.fillStyle = '#88aaff';
+            const whiteFrac = (whiteTemp - 20) / 60;
+            ctx.fillText('Absorption: ' + Math.round(whiteFrac * 100) + '%', wx + ww / 2, wy + wh + 25);
+        }
+
+        function drawThermometer(ctx, x, y, temp) {
+            // Thermometer body
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(x, y, 16, 90);
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, 16, 90);
+
+            // Mercury
+            const mercuryH = Math.max(5, ((temp - 10) / 90) * 80);
+            ctx.fillStyle = '#d32f2f';
+            ctx.fillRect(x + 2, y + 88 - mercuryH, 12, mercuryH);
+
+            // Bulb
+            ctx.beginPath();
+            ctx.arc(x + 8, y + 95, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#d32f2f';
+            ctx.fill();
+
+            // Temperature text
+            ctx.fillStyle = '#ffcc80';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(Math.round(temp) + '°C', x + 8, y + 120);
+        }
+
+        // ========== INIT ==========
+        // Initialize simulations on load if user is on that step
+        if (currentStep === 3) initConduction();
+        if (currentStep === 5) initParticles();
+        if (currentStep === 8) initConvection();
+        if (currentStep === 11) initRadiation();
+    </script>
+</body>
+</html>

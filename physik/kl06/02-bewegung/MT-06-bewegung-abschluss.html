@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <title>Abschlusstest: Bewegung | Physik Klasse 6</title>
     <style>
         /* ═══════════════════════════════════════════════════════════════
@@ -63,12 +63,13 @@
 
         .lueckentext { line-height: 2.2; font-size: 1em; }
         .lueckentext select {
-            padding: 4px 8px;
-            font-size: 0.95em;
+            padding: 8px 12px;
+            font-size: 16px;
             border: 1px solid #2c5aa0;
             border-radius: 2px;
             background: #fafafa;
             min-width: 130px;
+            min-height: 44px;
         }
         .lueckentext select.correct { border-color: #2a7a4b; background: #e8f5e9; }
         .lueckentext select.incorrect { border-color: #c62828; background: #ffebee; }
@@ -79,7 +80,7 @@
         .zuordnung-table td:first-child { font-weight: 500; }
         .zuordnung-table td:not(:first-child) { text-align: center; }
         .zuordnung-table tr:nth-child(even) { background: #fafafa; }
-        .zuordnung-table input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
+        .zuordnung-table input[type="checkbox"] { width: 44px; height: 44px; cursor: pointer; }
         .zuordnung-table input.correct-check { accent-color: #2a7a4b; }
         .zuordnung-table input.incorrect-check { accent-color: #c62828; outline: 2px solid #c62828; }
         .zuordnung-table input.missed-check { outline: 2px dashed #b35c00; }
@@ -111,7 +112,7 @@
             min-height: 44px;
         }
         .option:hover { background: #f0f0f0; }
-        .option input[type="radio"] { width: 20px; height: 20px; cursor: pointer; }
+        .option input[type="radio"] { width: 44px; height: 44px; cursor: pointer; }
         .option.selected { background: #e3f2fd; border-color: #2c5aa0; }
         .option.correct-option { background: #e8f5e9; border-color: #2a7a4b; }
         .option.incorrect-option { background: #ffebee; border-color: #c62828; }
@@ -190,19 +191,20 @@
         }
 
         /* Touch-Optimierung für iOS */
-        select, input[type="number"] {
+        select, input[type="number"], input[type="text"] {
             -webkit-tap-highlight-color: transparent;
+            font-size: 16px; /* verhindert iOS Auto-Zoom */
         }
 
         input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
         }
 
         input[type="radio"] {
-            width: 22px;
-            height: 22px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
         }
     </style>
@@ -756,8 +758,9 @@
     // ═══════════════════════════════════════════════════════════════
     // KONFIGURATION
     // ═══════════════════════════════════════════════════════════════
-    var STORAGE_KEY = 'mt-physik-6-bewegung-abschluss-v1';
-    var STORAGE_HOURS = 22;
+    var STORAGE_PREFIX = 'mt-physik-6-bewegung-abschluss';
+    var STORAGE_KEY = STORAGE_PREFIX + '-v2'; // wird nach Sitzwahl platzspezifisch
+    var STORAGE_HOURS = 16;
     var selectedNiveau = 0;
     var testSubmitted = false;
     var seatConfirmed = false;
@@ -825,6 +828,14 @@
     // ═══════════════════════════════════════════════════════════════
     // INITIALISIERUNG
     // ═══════════════════════════════════════════════════════════════
+    // Alte Daten (v1, vor 2 Wochen) aufräumen
+    (function cleanupOldKeys() {
+        try {
+            var oldKey = 'mt-physik-6-bewegung-abschluss-v1';
+            if (localStorage.getItem(oldKey)) localStorage.removeItem(oldKey);
+        } catch(e) {}
+    })();
+
     (function() {
         // Platznummern generieren
         var seatSel = document.getElementById('seatSelect');
@@ -881,6 +892,8 @@
         var sel = document.getElementById('seatSelect');
         var val = sel.value;
         if (!val) { alert('Bitte Platznummer wählen!'); return; }
+        // Platzspezifischen Storage-Key setzen
+        STORAGE_KEY = STORAGE_PREFIX + '-v2-p' + val;
         seatConfirmed = true;
         document.getElementById('seatRow').style.display = 'none';
         document.getElementById('seatWarning').style.display = 'none';
@@ -1024,6 +1037,8 @@
             seatConfirmed: seatConfirmed,
             niveau: selectedNiveau,
             submitted: testSubmitted,
+            tabSwitches: tabSwitches,
+            totalTimeAway: totalTimeAway,
             answers: {}
         };
         // Alle Selects
@@ -1048,21 +1063,55 @@
                 data.answers['radio_' + allRadios[i].name] = allRadios[i].value;
             }
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch(e) {}
     }
 
     function restoreAnswers() {
+        // Platzspezifischen Key suchen: Scanne alle v2-p* Keys
+        var found = false;
+        var maxAge = STORAGE_HOURS * 60 * 60 * 1000;
+        var now = Date.now();
+        try {
+            for (var k = 0; k < localStorage.length; k++) {
+                var key = localStorage.key(k);
+                if (key && key.indexOf(STORAGE_PREFIX + '-v2-p') === 0) {
+                    var raw = localStorage.getItem(key);
+                    if (!raw) continue;
+                    var tmp = JSON.parse(raw);
+                    if (tmp.timestamp && (now - tmp.timestamp) > maxAge) {
+                        localStorage.removeItem(key);
+                        continue;
+                    }
+                    // Gültige Session gefunden
+                    STORAGE_KEY = key;
+                    found = true;
+                    break;
+                }
+            }
+        } catch(e) { return; }
+        if (!found) return;
+
         var stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) return;
-        var data = JSON.parse(stored);
+        var data;
+        try {
+            data = JSON.parse(stored);
+        } catch(e) {
+            localStorage.removeItem(STORAGE_KEY);
+            return;
+        }
 
         // Prüfe Ablaufzeit
-        var now = Date.now();
-        var maxAge = STORAGE_HOURS * 60 * 60 * 1000;
         if (data.timestamp && (now - data.timestamp) > maxAge) {
             localStorage.removeItem(STORAGE_KEY);
             return;
         }
+
+        // Tab-Protokoll wiederherstellen
+        if (data.tabSwitches !== undefined) tabSwitches = data.tabSwitches;
+        if (data.totalTimeAway !== undefined) totalTimeAway = data.totalTimeAway;
 
         // Platz wiederherstellen
         if (data.seat) {
@@ -1125,8 +1174,10 @@
     // TEST ABGEBEN
     // ═══════════════════════════════════════════════════════════════
     function submitTest(isRestore) {
+        if (testSubmitted && !isRestore) return;
         if (!isRestore && !confirm('Test wirklich abgeben? Du kannst danach nichts mehr ändern.')) return;
         testSubmitted = true;
+        document.getElementById('submitBtn').disabled = true;
         saveAnswers();
 
         var totalPoints = 0;
@@ -1356,6 +1407,9 @@
 
     function showQuestionResult(qId, earned, total) {
         var header = document.querySelector('#' + qId + ' .question-header');
+        // Duplikat-Schutz bei Restore
+        var existing = header.querySelector('.question-result');
+        if (existing) existing.parentNode.removeChild(existing);
         var span = document.createElement('span');
         span.className = 'question-result';
         if (earned === total) {
@@ -1386,7 +1440,7 @@
         for (var i = 0; i < thresholds.length; i++) {
             if (pct >= thresholds[i][0]) return thresholds[i][1];
         }
-        return 0;
+        return 1;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1414,7 +1468,21 @@
     function teacherReset() {
         var code = prompt('Lehrer-Code eingeben:');
         if (code === '2024') {
+            // Aktuellen platzspezifischen Key löschen
             localStorage.removeItem(STORAGE_KEY);
+            // Auch alle v2-p* Keys für diesen Test aufräumen (falls Platz noch nicht bestätigt)
+            try {
+                var toRemove = [];
+                for (var k = 0; k < localStorage.length; k++) {
+                    var key = localStorage.key(k);
+                    if (key && key.indexOf(STORAGE_PREFIX + '-v2-p') === 0) {
+                        toRemove.push(key);
+                    }
+                }
+                for (var i = 0; i < toRemove.length; i++) {
+                    localStorage.removeItem(toRemove[i]);
+                }
+            } catch(e) {}
             alert('Platz wurde zurückgesetzt. Seite wird neu geladen.');
             location.reload();
         } else if (code !== null) {

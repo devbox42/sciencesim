@@ -2,11 +2,21 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Stundenleistung: Reibungskräfte</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-touch-callout: none;
+            scroll-padding-top: 60px;
+        }
         body {
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: #f5f5f5;
             font-size: 16px;
@@ -58,6 +68,47 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
         .timer-display { font-size: 1.4em; font-family: monospace; letter-spacing: 2px; }
         .timer-label { font-size: 0.95em; }
+
+        /* Tab-Wechsel-Warnung */
+        .tab-warning {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            right: 0;
+            background: #c62828;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 0.95em;
+            font-weight: 600;
+            text-align: center;
+            z-index: 999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .tab-warning.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .tab-warning-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 4px;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         /* Auswahl-Bereich */
         .selection-section {
@@ -164,7 +215,7 @@
             color: #888;
             font-size: 0.85em;
         }
-        .question-text { margin-bottom: 12px; }
+        .question-text { margin-bottom: 12px; -webkit-user-select: text; user-select: text; }
         .question-result {
             padding: 3px 8px;
             font-size: 0.85em;
@@ -183,6 +234,9 @@
             border: 1px solid #ddd;
             cursor: pointer;
             transition: all 0.15s;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .options label:hover { background: #e8f4fd; }
         .options label.selected { background: #e3f2fd; border-color: #2c5aa0; }
@@ -192,16 +246,26 @@
 
         /* Inputs */
         input[type="number"], input[type="text"] {
-            padding: 8px 12px;
+            padding: 10px 12px;
             font-size: 1em;
             border: 1px solid #ddd;
             width: 100px;
             margin: 0 5px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: auto;
+            user-select: auto;
         }
         select {
             padding: 8px 12px;
             font-size: 1em;
             border: 1px solid #ddd;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: auto;
+            user-select: auto;
         }
         select.correct { border: 2px solid #2a7a4b !important; background: #e8f5e9; }
         select.incorrect { border: 2px solid #c62828 !important; background: #ffebee; }
@@ -230,12 +294,16 @@
             cursor: pointer;
             font-size: 1em;
             margin: 5px 5px 5px 0;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         .btn:hover { background: #1e4a8a; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
         .btn-success { background: #2a7a4b; }
         .btn-success:hover { background: #1e5a35; }
-        .btn-small { padding: 6px 12px; font-size: 0.85em; }
+        .btn-small { padding: 10px 16px; font-size: 0.85em; min-height: 44px; }
 
         /* Feedback */
         .feedback-box {
@@ -336,10 +404,73 @@
             color: #b35c00;
         }
 
+        /* PDF-Abgabe-Box */
+        .pdf-upload-box {
+            display: none;
+            margin: 24px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border: 2px solid #2c5aa0;
+            border-radius: 12px;
+        }
+        .pdf-upload-box h3 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 14px;
+        }
+        .pdf-upload-box.visible { display: block; }
+        .pdf-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pdf-steps li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #bbdefb;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+        .pdf-steps li:last-child { border-bottom: none; }
+        .step-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+        }
+        .step-text { flex: 1; }
+        .step-text strong { color: #1565c0; }
+        .btn-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 14px 24px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 48px;
+            min-width: 48px;
+        }
+        .btn-pdf:active { background: #1a3d6e; }
+
         @media print {
-            .timer-bar, .selection-section, .progress-container, button, .teacher-section { display: none; }
+            .timer-bar, .selection-section, .progress-container, button, .teacher-section, .pdf-upload-box { display: none; }
             body { padding-top: 0; }
-            .question { page-break-inside: avoid; display: block !important; }
+            .question { page-break-inside: avoid; }
+            .question.visible { display: block !important; }
         }
     </style>
 </head>
@@ -348,6 +479,10 @@
     <div class="timer-bar" id="timerBar">
         <span class="timer-label">Stundenleistung: Reibungskräfte</span>
         <span class="timer-display" id="timerDisplay">15:00</span>
+    </div>
+    <div class="tab-warning" id="tabWarning">
+        <span id="tabWarningText"></span>
+        <button class="tab-warning-close" onclick="hideTabWarning()" aria-label="Schließen">&times;</button>
     </div>
 
     <div class="container">
@@ -704,17 +839,17 @@
                 </div>
                 <div class="question-text">
                     <strong>Berechne</strong> die Reibungszahl. Formel: <span class="fz">μ</span> = <span class="fz">F</span><sub>R</sub> / <span class="fz">F</span><sub>N</sub><br>
-                    <span class="fz">F</span><sub>R</sub> = 6 <span class="einheit">N</span> &nbsp;&nbsp; <span class="fz">F</span><sub>N</sub> = 10 <span class="einheit">N</span>
+                    <span class="fz">F</span><sub>R</sub> = 2 <span class="einheit">N</span> &nbsp;&nbsp; <span class="fz">F</span><sub>N</sub> = 10 <span class="einheit">N</span>
                 </div>
                 <div class="inline-answer">
                     <span class="fz">μ</span> =
                     <input type="text" inputmode="decimal" id="q11v" style="width:80px;">
                 </div>
-                <div class="feedback-box correct" id="q11-fb-correct">Richtig! 6 / 10 = 0,6</div>
-                <div class="feedback-box incorrect" id="q11-fb-incorrect"><span class="fz">μ</span> = 6 / 10 = <strong>0,6</strong></div>
+                <div class="feedback-box correct" id="q11-fb-correct">Richtig! 2 / 10 = 0,2</div>
+                <div class="feedback-box incorrect" id="q11-fb-incorrect"><span class="fz">μ</span> = 2 / 10 = <strong>0,2</strong></div>
             </div>
 
-            <!-- F12: Rechnung μ = 8/20 (2 BE) -->
+            <!-- F12: Rechnung μ = 5/10 (2 BE) -->
             <div class="question" id="q12" data-niveau="1" data-points="2">
                 <div class="question-header">
                     <div class="question-title">Frage 12: Reibungszahl berechnen</div>
@@ -725,14 +860,14 @@
                 </div>
                 <div class="question-text">
                     <strong>Berechne</strong> die Reibungszahl:<br>
-                    <span class="fz">F</span><sub>R</sub> = 8 <span class="einheit">N</span> &nbsp;&nbsp; <span class="fz">F</span><sub>N</sub> = 20 <span class="einheit">N</span>
+                    <span class="fz">F</span><sub>R</sub> = 5 <span class="einheit">N</span> &nbsp;&nbsp; <span class="fz">F</span><sub>N</sub> = 10 <span class="einheit">N</span>
                 </div>
                 <div class="inline-answer">
                     <span class="fz">μ</span> =
                     <input type="text" inputmode="decimal" id="q12v" style="width:80px;">
                 </div>
-                <div class="feedback-box correct" id="q12-fb-correct">Richtig! 8 / 20 = 0,4</div>
-                <div class="feedback-box incorrect" id="q12-fb-incorrect"><span class="fz">μ</span> = 8 / 20 = <strong>0,4</strong></div>
+                <div class="feedback-box correct" id="q12-fb-correct">Richtig! 5 / 10 = 0,5</div>
+                <div class="feedback-box incorrect" id="q12-fb-incorrect"><span class="fz">μ</span> = 5 / 10 = <strong>0,5</strong></div>
             </div>
 
             <!-- F13: Warum Rollreibung < Gleitreibung (2 BE) -->
@@ -869,6 +1004,30 @@
             </table>
         </div>
 
+        <!-- PDF-ABGABE -->
+        <div class="pdf-upload-box" id="pdfUploadBox">
+            <h3>&#128203; Ergebnis abgeben</h3>
+            <ol class="pdf-steps">
+                <li>
+                    <span class="step-icon">&#9312;</span>
+                    <span class="step-text">Tippe unten auf <strong>Drucken / PDF speichern</strong></span>
+                </li>
+                <li>
+                    <span class="step-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5aa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>
+                    <span class="step-text">In der Druckvorschau: Tippe auf das <strong>Teilen-Symbol</strong> <svg style="vertical-align:middle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> (Quadrat mit Pfeil nach oben)</span>
+                </li>
+                <li>
+                    <span class="step-icon">&#128193;</span>
+                    <span class="step-text">Wähle <strong>„In Dateien sichern"</strong> und speichere die PDF</span>
+                </li>
+                <li>
+                    <span class="step-icon">&#9757;</span>
+                    <span class="step-text">Öffne die <strong>Bildungscloud</strong>, gehe zur Aufgabe und lade die PDF hoch</span>
+                </li>
+            </ol>
+            <button class="btn-pdf" onclick="window.print()">&#128424; Drucken / PDF speichern</button>
+        </div>
+
         <!-- LEHRER-BEREICH -->
         <details class="teacher-section">
             <summary>Lehrerbereich</summary>
@@ -893,6 +1052,7 @@
         var tabSwitchCount = 0;
         var tabSwitchStart = 0;
         var tabSwitchSeconds = 0;
+        var tabWarningTimer = null;
 
         // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
         function formatTimestamp(ts) {
@@ -929,9 +1089,26 @@
                         tabSwitchSeconds += duration;
                         localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
                         tabSwitchStart = 0;
+                        showTabWarning();
                     }
                 }
             });
+        }
+
+        function showTabWarning() {
+            var el = document.getElementById('tabWarning');
+            var txt = document.getElementById('tabWarningText');
+            if (!el || !txt) return;
+            txt.textContent = 'Tab-Wechsel erkannt! (' + tabSwitchCount + '. Mal) \u2013 wird protokolliert.';
+            el.classList.add('visible');
+            if (tabWarningTimer) clearTimeout(tabWarningTimer);
+            tabWarningTimer = setTimeout(function() { hideTabWarning(); }, 4000);
+        }
+
+        function hideTabWarning() {
+            var el = document.getElementById('tabWarning');
+            if (el) el.classList.remove('visible');
+            if (tabWarningTimer) { clearTimeout(tabWarningTimer); tabWarningTimer = null; }
         }
 
         function formatDuration(seconds) {
@@ -954,7 +1131,7 @@
             q5: 'a', q6: 'a',
             q7a: 'reib', q7b: 'zahl', q7c: 'norm',
             q8: 5, q9: 8, q10: 40,
-            q11: 0.6, q12: 0.4,
+            q11: 0.2, q12: 0.5,
             q13: 'a',
             q14: 4.5, q15: 30,
             q16b: 'gummi'
@@ -1187,6 +1364,9 @@
             var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
             if (seatLocked !== 'true') { alert('Bitte erst Platznummer bestätigen!'); return; }
 
+            var submitBtn = document.querySelector('#submitSection .btn');
+            if (submitBtn) submitBtn.disabled = true;
+
             testSubmitted = true;
             localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
             localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
@@ -1210,8 +1390,8 @@
                 score += evalNumeric('q8v', 5, 2);
                 score += evalNumeric('q9v', 8, 2);
                 score += evalNumeric('q10v', 40, 2);
-                score += evalNumeric('q11v', 0.6, 2);
-                score += evalNumeric('q12v', 0.4, 2);
+                score += evalNumeric('q11v', 0.2, 2);
+                score += evalNumeric('q12v', 0.5, 2);
                 score += evalRadio('q13', 'a', 2);
             }
 
@@ -1240,6 +1420,7 @@
 
             document.getElementById('results').style.display = 'block';
             document.getElementById('submitSection').style.display = 'none';
+            document.getElementById('pdfUploadBox').classList.add('visible');
 
             // Zeitstempel anzeigen (Anti-Betrug)
             var startTS = localStorage.getItem(STORAGE_KEY + '-start');

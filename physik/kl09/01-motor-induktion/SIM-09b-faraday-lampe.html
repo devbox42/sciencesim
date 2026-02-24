@@ -10,8 +10,9 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background: #f5f5f5;
             padding: 10px;
-            font-size: 14px;
+            font-size: 16px;
             color: #222;
+            -webkit-text-size-adjust: 100%;
         }
         .container { max-width: 700px; margin: 0 auto; }
         h1 { color: #2c5aa0; font-size: 1.1em; margin-bottom: 10px; text-align: center; }
@@ -31,6 +32,7 @@
             cursor: grab;
             max-width: 100%;
             height: auto;
+            aspect-ratio: 3 / 1;
         }
         canvas:active, canvas.dragging {
             cursor: grabbing;
@@ -61,7 +63,19 @@
             font-family: "Courier New", monospace;
             color: #2c5aa0;
         }
-        .meter-label { font-size: 0.7em; color: #666; margin-top: 2px; }
+        .meter-label { font-size: 12px; color: #666; margin-top: 2px; }
+        button { -webkit-tap-highlight-color: rgba(0,0,0,0.1); touch-action: manipulation; }
+        .enable-motion-btn {
+            margin-top: 8px;
+            padding: 10px 16px;
+            min-height: 44px;
+            border: 1px solid #2c5aa0;
+            background: #fff;
+            color: #2c5aa0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
         .info {
             background: #fff3e0;
             border-left: 3px solid #b35c00;
@@ -114,7 +128,7 @@
 
             <div class="instructions">
                 <strong>Schüttle das Gerät</strong> oder ziehe den Magneten links/rechts!
-                <button id="enableMotion" style="display:none; margin-top:8px; padding:10px 16px; min-height:44px; border:1px solid #2c5aa0; background:#fff; color:#2c5aa0; border-radius:6px; font-size:0.9em; cursor:pointer;">Schütteln aktivieren</button>
+                <button id="enableMotion" class="enable-motion-btn" style="display:none;">Schütteln aktivieren</button>
             </div>
         </div>
 
@@ -130,6 +144,7 @@
         var state = {
             magnetX: 300,
             lastX: 300,
+            lastMagnetX: 300,
             velocity: 0,
             charge: 0,
             brightness: 0,
@@ -150,13 +165,14 @@
         canvas.addEventListener('mouseleave', endDrag);
 
         canvas.addEventListener('touchstart', function(e) {
-            e.preventDefault();
             startDrag(e.touches[0]);
-        }, { passive: false });
+        }, { passive: true });
 
         canvas.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-            drag(e.touches[0]);
+            if (state.isDragging) {
+                e.preventDefault();
+                drag(e.touches[0]);
+            }
         }, { passive: false });
 
         canvas.addEventListener('touchend', endDrag);
@@ -166,7 +182,7 @@
             canvas.classList.add('dragging');
             var rect = canvas.getBoundingClientRect();
             var scaleX = canvas.width / rect.width;
-            state.lastX = (e.clientX - rect.left) * scaleX;
+            state.lastX = state.magnetX;
         }
 
         function drag(e) {
@@ -330,7 +346,7 @@
             ctx.strokeRect(480, cy - 15, 50, 30);
 
             ctx.fillStyle = '#666';
-            ctx.font = '9px sans-serif';
+            ctx.font = '11px sans-serif';
             ctx.fillText('Kond.', 505, cy + 35);
 
             // Beschriftungen
@@ -342,11 +358,11 @@
 
         function update() {
             var now = Date.now();
-            var dt = (now - state.lastTime) / 1000;
+            var dt = Math.min((now - state.lastTime) / 1000, 0.1);
             state.lastTime = now;
 
             // Geschwindigkeit berechnen
-            var dx = state.magnetX - state.lastX;
+            var dx = state.magnetX - state.lastMagnetX;
             state.velocity = state.velocity * 0.8 + dx * 0.2; // Glättung
 
             // Spannung proportional zur Geschwindigkeit (wenn im Spulenbereich)
@@ -367,7 +383,7 @@
                 state.brightness *= 0.95; // Langsam abdunkeln
             }
 
-            state.charge = Math.max(0, state.charge);
+            state.charge = Math.max(0, Math.min(100, state.charge));
 
             // Displays aktualisieren
             voltageDisplay.textContent = voltage.toFixed(1).replace('.', ',') + ' V';
@@ -375,7 +391,7 @@
             chargeDisplay.textContent = Math.round(state.charge) + '%';
             brightnessFill.style.width = (state.brightness * 100) + '%';
 
-            state.lastX = state.magnetX;
+            state.lastMagnetX = state.magnetX;
         }
 
         function animate() {
