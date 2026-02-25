@@ -541,10 +541,9 @@ var GRADE_SCALE = [
 
 var HYPO_TIMER = 0;
 var EXP_TIMER = 0;
-var TEACHER_CODE = '2026';
+var CODE_HASH = 1537280;   // Lehrercode (Reset + NTA) – kein Klartext im Quellcode
 var MAX_TIME = 1920;       // 32 Min Bearbeitungszeit (0 = kein Timer)
 var EXTEND_TIME = 960;     // +16 Min Nachteilsausgleich (ergibt 48 Min gesamt = +50%)
-var EXTEND_CODE = '2024';  // Lehrercode fuer Verlaengerung (NICHT Reset-Code '2026'!)
 
 /* ══ Fragen-Pools ══ */
 var MC_POOL_1 = [
@@ -682,6 +681,7 @@ function resolveMCOptions(item, rng) {
 }
 function generateVerification(name, score, date) { var suffix = state.forcedSubmit ? '-TIMEOUT' : ''; var str = name.toLowerCase().trim() + '-' + score + '-' + date + suffix; var hash = 0; for (var i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash = hash & hash; } var code = Math.abs(hash).toString(36).toUpperCase().substr(0, 6); return state.forcedSubmit ? code + '-T' : code; }
 function parseNum(val) { if (!val) return NaN; return parseFloat(String(val).replace(',', '.')); }
+function checkCode(input) { var h = 0; var s = (input || '').trim(); for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h = h & h; } return h === CODE_HASH; }
 
 /* ── TEMPLATE: Navigation ── */
 function goToPhase(n) {
@@ -757,7 +757,7 @@ function formatDuration(sec) { var m = Math.floor(sec / 60); var s = sec % 60; r
 function showBeleg() { var container = document.getElementById('belegContainer'); if (container.style.display === 'block') { container.style.display = 'none'; document.getElementById('btnBeleg').textContent = 'Detailbeleg anzeigen'; return; } var belegData = state.beleg || []; if (belegData.length === 0) { container.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px;">Keine Beleg-Daten vorhanden.</p>'; container.style.display = 'block'; document.getElementById('btnBeleg').textContent = 'Beleg ausblenden'; return; } var total = 0; for (var t = 0; t < PHASE_CONFIG.length; t++) total += state.scores['p'+(t+1)]; var html = '<div class="beleg"><div class="beleg-header"><h2>Detailbeleg: ' + state.name + '</h2><p>' + BLP_ID + ' | ' + total + '/' + TOTAL_BE + ' BE | ' + new Date().toLocaleDateString('de-DE') + '</p></div>'; for (var p = 0; p < belegData.length; p++) { var phase = belegData[p]; html += '<div class="beleg-phase"><h3>Phase ' + phase.phase + ': ' + phase.phaseName + ' (' + phase.phBE + '/' + phase.phMaxBE + ' BE)</h3>'; for (var i = 0; i < phase.items.length; i++) { var item = phase.items[i]; var itemClass = item.be >= item.maxBE ? 'beleg-correct' : 'beleg-wrong'; html += '<div class="beleg-item ' + itemClass + '"><div class="beleg-q">' + item.q + '</div>'; if (item.options && item.options.length > 0) { html += '<div class="beleg-options">'; for (var j = 0; j < item.options.length; j++) { var optClass = ''; if (item.options[j] === item.correct) optClass += ' beleg-opt-correct'; if (item.options[j] === item.given) optClass += ' beleg-opt-given'; html += '<span class="beleg-opt' + optClass + '">' + item.options[j] + '</span>'; } html += '</div>'; } html += '<div class="beleg-points">' + item.be + '/' + item.maxBE + ' BE</div><div class="beleg-explain">' + item.explain + '</div></div>'; } html += '</div>'; } html += '</div>'; container.innerHTML = html; container.style.display = 'block'; document.getElementById('btnBeleg').textContent = 'Beleg ausblenden'; }
 
 /* ── TEMPLATE: Teacher-Reset ── */
-function teacherReset() { var code = prompt('Lehrer-Code eingeben:'); if (code === TEACHER_CODE) { if (confirm('Wirklich alle Daten l\u00f6schen?')) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); localStorage.removeItem(sKey('result')); localStorage.removeItem(sKey('tabswitches')); localStorage.removeItem(sKey('tabseconds')); alert('Zur\u00fcckgesetzt.'); location.reload(); } } else if (code !== null) { alert('Falscher Code!'); } }
+function teacherReset() { var code = prompt('Lehrer-Code eingeben:'); if (code !== null && checkCode(code)) { if (confirm('Wirklich alle Daten l\u00f6schen?')) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); localStorage.removeItem(sKey('result')); localStorage.removeItem(sKey('tabswitches')); localStorage.removeItem(sKey('tabseconds')); alert('Zur\u00fcckgesetzt.'); location.reload(); } } else if (code !== null) { alert('Falscher Code!'); } }
 
 /* ══ TIMER-SYSTEM ══ */
 var timerInterval = null;
@@ -808,7 +808,7 @@ function onTimerExpired() {
 function tryExtend() {
     var inp = document.getElementById('extendCodeInput');
     var code = inp ? inp.value.trim() : '';
-    if (code === EXTEND_CODE) {
+    if (checkCode(code)) {
         state.timerExtended = true; saveState();
         var overlay = document.getElementById('extendOverlay');
         if (overlay) overlay.classList.remove('visible');
