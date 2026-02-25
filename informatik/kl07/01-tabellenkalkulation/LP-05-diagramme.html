@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagramme in Numbers | Informatik 7</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+
+        header {
+            background: linear-gradient(135deg, #b35c00 0%, #d97a1f 100%);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; margin-bottom: 5px; }
+        header .subtitle { font-size: 0.85em; opacity: 0.9; }
+
+        /* Progress */
+        .progress-bar { background: #ddd; height: 6px; margin-bottom: 8px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 15px; }
+
+        /* Steps Navigation */
+        .step-nav { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .step-dot {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85em; font-weight: 600;
+            border: 2px solid #ddd; background: #fff; color: #999;
+            border-radius: 50%;
+            cursor: not-allowed; transition: all 0.15s;
+        }
+        .step-dot.active { border-color: #b35c00; background: #fff3e0; color: #b35c00; }
+        .step-dot.done { background: #2a7a4b; border-color: #2a7a4b; color: #fff; cursor: pointer; }
+
+        /* Sections */
+        .section { background: #fff; border: 1px solid #ddd; padding: 20px; margin-bottom: 15px; display: none; }
+        .section.active { display: block; }
+        .section h2 { font-size: 1.1em; font-weight: 600; color: #b35c00; margin-bottom: 15px; border-bottom: 2px solid #b35c00; padding-bottom: 8px; }
+
+        /* Instruction boxes */
+        .do-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 12px 15px;
+            margin: 12px 0;
+            font-size: 0.95em;
+        }
+        .do-box::before {
+            content: "Tu das:";
+            display: block;
+            font-weight: 600;
+            color: #1976d2;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .info-box {
+            background: #fff3e0;
+            border-left: 4px solid #b35c00;
+            padding: 12px 15px;
+            margin: 12px 0;
+        }
+
+        .check-box {
+            background: #e8f5e9;
+            border-left: 4px solid #2a7a4b;
+            padding: 12px 15px;
+            margin: 12px 0;
+        }
+        .check-box::before {
+            content: "Pr\00fcfe:";
+            display: block;
+            font-weight: 600;
+            color: #2a7a4b;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .warn-box {
+            background: #fff8e1;
+            border-left: 4px solid #f9a825;
+            padding: 12px 15px;
+            margin: 12px 0;
+        }
+        .warn-box::before {
+            content: "Wichtig:";
+            display: block;
+            font-weight: 600;
+            color: #f9a825;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        /* Keyboard shortcuts */
+        kbd {
+            display: inline-block;
+            background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-family: -apple-system, sans-serif;
+            font-size: 0.85em;
+            box-shadow: 0 2px 0 #999;
+            margin: 0 2px;
+        }
+        .key-combo {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin: 5px 0;
+        }
+        .key-combo .plus { color: #666; font-size: 0.9em; }
+
+        /* Large key display */
+        .key-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .key-display kbd {
+            font-size: 1.1em;
+            padding: 8px 14px;
+        }
+        .key-display .plus {
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        /* Numbers interface mock */
+        .numbers-mock {
+            background: #f0f0f0;
+            border: 1px solid #999;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+            font-size: 0.8em;
+        }
+        .numbers-toolbar {
+            background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+            border-bottom: 1px solid #bbb;
+            padding: 6px 10px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .toolbar-btn {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.85em;
+        }
+        .toolbar-btn.active { background: #e0e0e0; }
+        .numbers-sheet {
+            background: #fff;
+            padding: 10px;
+        }
+        .numbers-table {
+            border-collapse: collapse;
+            font-family: -apple-system, sans-serif;
+            font-size: 0.9em;
+        }
+        .numbers-table th {
+            background: #e8e8e8;
+            border: 1px solid #ccc;
+            padding: 4px 12px;
+            font-weight: 500;
+            color: #555;
+            min-width: 70px;
+        }
+        .numbers-table td {
+            border: 1px solid #ccc;
+            padding: 4px 8px;
+            min-width: 70px;
+            height: 22px;
+        }
+        .numbers-table .selected {
+            background: #cce5ff;
+            outline: 2px solid #0066cc;
+        }
+        .numbers-table .result {
+            background: #d4edda;
+        }
+
+        /* Chart type selector mock */
+        .chart-selector {
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-width: 360px;
+        }
+        .chart-selector-title {
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .chart-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #ccc;
+        }
+        .chart-tab {
+            padding: 5px 12px;
+            font-size: 0.8em;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        .chart-tab.active {
+            color: #0066cc;
+            border-bottom-color: #0066cc;
+            font-weight: 600;
+        }
+        .chart-types {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .chart-type-item {
+            width: 56px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-size: 0.65em;
+            color: #666;
+            background: #fff;
+        }
+        .chart-type-item.selected {
+            border-color: #0066cc;
+            background: #e3f2fd;
+        }
+        .chart-type-item .icon {
+            font-size: 1.8em;
+            margin-bottom: 2px;
+        }
+
+        /* Scatter chart mock */
+        .chart-mock {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            max-width: 450px;
+        }
+        .chart-mock-title {
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .chart-area {
+            position: relative;
+            height: 200px;
+            border-left: 2px solid #333;
+            border-bottom: 2px solid #333;
+            margin: 0 10px 25px 40px;
+        }
+        .chart-area .y-label {
+            position: absolute;
+            left: -40px;
+            top: 50%;
+            transform: rotate(-90deg) translateX(50%);
+            font-size: 0.75em;
+            color: #555;
+            white-space: nowrap;
+        }
+        .chart-area .x-label {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75em;
+            color: #555;
+        }
+        .chart-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #0066cc;
+            border-radius: 50%;
+            transform: translate(-50%, 50%);
+        }
+        .chart-dot.highlight {
+            background: #ff6600;
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 0 0 3px rgba(255,102,0,0.3);
+        }
+        .chart-gridline {
+            position: absolute;
+            left: 0;
+            right: 0;
+            border-top: 1px dashed #ddd;
+        }
+        .chart-y-tick {
+            position: absolute;
+            left: -30px;
+            font-size: 0.7em;
+            color: #888;
+            transform: translateY(50%);
+        }
+        .chart-x-tick {
+            position: absolute;
+            bottom: -18px;
+            font-size: 0.7em;
+            color: #888;
+            transform: translateX(-50%);
+        }
+
+        /* Sidebar mock */
+        .sidebar-mock {
+            background: #f8f8f8;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+            max-width: 280px;
+            font-size: 0.8em;
+        }
+        .sidebar-header {
+            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+            padding: 8px 12px;
+            border-bottom: 1px solid #bbb;
+            display: flex;
+            gap: 0;
+        }
+        .sidebar-tab {
+            flex: 1;
+            text-align: center;
+            padding: 4px 8px;
+            font-size: 0.85em;
+            color: #666;
+            border-bottom: 2px solid transparent;
+        }
+        .sidebar-tab.active {
+            color: #0066cc;
+            border-bottom-color: #0066cc;
+            font-weight: 600;
+        }
+        .sidebar-body {
+            padding: 10px 12px;
+        }
+        .sidebar-section {
+            margin-bottom: 10px;
+        }
+        .sidebar-section-title {
+            font-weight: 600;
+            font-size: 0.85em;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .sidebar-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+        .sidebar-field label {
+            font-size: 0.85em;
+            color: #555;
+            min-width: 50px;
+        }
+        .sidebar-field input {
+            flex: 1;
+            padding: 3px 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 0.85em;
+            background: #fff;
+        }
+
+        /* App switcher mock */
+        .app-switcher {
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 12px;
+            padding: 20px 25px;
+            display: flex;
+            gap: 20px;
+            margin: 15px auto;
+            width: fit-content;
+        }
+        .app-switcher-item {
+            text-align: center;
+            color: #fff;
+        }
+        .app-switcher-item .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            margin-bottom: 6px;
+        }
+        .app-switcher-item .icon.numbers { background: linear-gradient(135deg, #34c759 0%, #30a14e 100%); }
+        .app-switcher-item .icon.safari { background: linear-gradient(135deg, #5ac8fa 0%, #007aff 100%); }
+        .app-switcher-item.selected .icon {
+            outline: 3px solid #fff;
+            outline-offset: 3px;
+        }
+        .app-switcher-item .name { font-size: 0.75em; }
+
+        /* Numbered steps */
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            margin: 10px 0;
+        }
+        .step-list li {
+            counter-increment: step;
+            padding: 8px 0 8px 35px;
+            position: relative;
+            border-bottom: 1px solid #eee;
+        }
+        .step-list li:last-child { border-bottom: none; }
+        .step-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 22px;
+            height: 22px;
+            background: #b35c00;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.75em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            background: #b35c00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.95em;
+            cursor: pointer;
+            border-radius: 4px;
+            min-height: 44px;
+        }
+        button:hover { background: #8a4700; }
+        button.secondary { background: #666; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* MC Quiz */
+        .mc-quiz { margin: 15px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin: 6px 0;
+            background: #fafafa;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 44px;
+        }
+        .mc-option:hover { border-color: #b35c00; background: #fff3e0; }
+        .mc-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .mc-option.wrong { border-color: #c62828; background: #ffebee; }
+        .mc-option.disabled { pointer-events: none; opacity: 0.7; }
+        .mc-feedback {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+            font-size: 0.95em;
+        }
+        .mc-feedback.show { display: block; }
+        .mc-feedback.correct { background: #e8f5e9; border-left: 4px solid #2a7a4b; color: #1b5e20; }
+        .mc-feedback.wrong { background: #ffebee; border-left: 4px solid #c62828; color: #b71c1c; }
+
+        /* Checklist */
+        .checklist { margin: 15px 0; }
+        .checklist label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            margin: 4px 0;
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .checklist label:hover { background: #f5f5f5; }
+        .checklist input[type="checkbox"] {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .text-muted { color: #666; font-size: 0.9em; }
+        code { background: #f0f0f0; padding: 2px 6px; font-family: "SF Mono", Menlo, monospace; border-radius: 3px; }
+
+        .success-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .success-box strong {
+            color: #2a7a4b;
+            font-size: 1.1em;
+        }
+
+        /* Comparison table */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.9em;
+        }
+        .compare-table th {
+            background: #b35c00;
+            color: #fff;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .compare-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+        }
+        .compare-table tr:nth-child(even) { background: #fafafa; }
+
+        /* Chart connecting line */
+        .chart-line {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        /* Bildungscloud Mock */
+        .cloud-mock {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 15px 0;
+            font-size: 0.85em;
+            background: #fff;
+        }
+        .cloud-header {
+            background: linear-gradient(135deg, #b71c1c 0%, #c62828 100%);
+            color: #fff;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+        .cloud-logo { font-weight: 600; }
+        .cloud-content {
+            display: flex;
+            min-height: 120px;
+        }
+        .cloud-sidebar {
+            background: #f5f5f5;
+            border-right: 1px solid #ddd;
+            width: 120px;
+            padding: 10px 0;
+        }
+        .cloud-menu-item {
+            padding: 8px 15px;
+            color: #555;
+            cursor: pointer;
+        }
+        .cloud-menu-item:hover { background: #e8e8e8; }
+        .cloud-menu-item.active {
+            background: #fff;
+            color: #b71c1c;
+            font-weight: 600;
+            border-left: 3px solid #b71c1c;
+        }
+        .cloud-main {
+            flex: 1;
+            padding: 15px;
+        }
+        .cloud-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .cloud-task {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        .cloud-task-icon { font-size: 1.5em; }
+        .cloud-submit-area { padding: 20px; }
+        .cloud-submit-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .cloud-upload-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            background: #fafafa;
+            margin-bottom: 15px;
+        }
+        .cloud-upload-icon { font-size: 2em; margin-bottom: 10px; }
+        .cloud-upload-btn {
+            display: inline-block;
+            background: #b71c1c;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .cloud-submit-btn {
+            display: inline-block;
+            background: #2e7d32;
+            color: #fff;
+            padding: 10px 25px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .section { padding: 15px; }
+            .numbers-mock { font-size: 0.75em; }
+            .chart-mock { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Diagramme in Numbers</h1>
+        <div class="subtitle">Informatik 7 | XY-Diagramm, Beschriftung &amp; Referenzprinzip</div>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Schritt 1 von 6</div>
+        <div class="step-nav" id="stepNav"></div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             SCHRITT 1: Einstieg & Wiederholung
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="section active" id="step1">
+            <h2>1. Kurze Wiederholung</h2>
+
+            <p>Letzte Stunde hast du in Numbers eine Tabelle erstellt, Formeln geschrieben und ein S&auml;ulendiagramm eingef&uuml;gt.</p>
+
+            <div class="mc-quiz" id="quiz1">
+                <p><strong>Kurzer R&uuml;ckblick: Was stand auf der X-Achse bei deinem S&auml;ulendiagramm?</strong></p>
+                <div class="mc-option" onclick="checkQuiz('quiz1', this, false)">A) Die Umsatz-Werte in Euro</div>
+                <div class="mc-option" onclick="checkQuiz('quiz1', this, true)">B) Die Produktnamen (Brezel, Apfel, Saft, Keks)</div>
+                <div class="mc-option" onclick="checkQuiz('quiz1', this, false)">C) Die Zeilennummern (1, 2, 3, 4)</div>
+                <div class="mc-feedback correct" id="quiz1-correct">Richtig! Beim S&auml;ulendiagramm standen <strong>Kategorien</strong> (Produktnamen) auf der X-Achse. Heute lernst du ein Diagramm, bei dem <strong>beide Achsen Zahlen</strong> haben.</div>
+                <div class="mc-feedback wrong" id="quiz1-wrong">Nicht ganz. Auf der X-Achse standen die <strong>Produktnamen</strong> (Kategorien). Heute lernst du ein Diagramm, bei dem beide Achsen Zahlen haben.</div>
+            </div>
+
+            <div class="info-box">
+                <strong>Heute lernst du:</strong><br>
+                &bull; XY-Diagramm (Streudiagramm) &ndash; wenn beide Achsen Zahlen sind<br>
+                &bull; Diagramme beschriften (Titel + Achsen)<br>
+                &bull; Referenzprinzip &ndash; Daten &auml;ndern = Diagramm &auml;ndert sich
+            </div>
+
+            <p>&Ouml;ffne Numbers und diesen Lernpfad nebeneinander.</p>
+
+            <div class="do-box">
+                <p>Wechsle zwischen den Apps mit:</p>
+                <div class="key-display">
+                    <kbd>&#8984;</kbd> <span class="plus">+</span> <kbd>Tab</kbd>
+                </div>
+            </div>
+
+            <div class="app-switcher">
+                <div class="app-switcher-item selected">
+                    <div class="icon safari">&#x1F9ED;</div>
+                    <div class="name">Safari</div>
+                </div>
+                <div class="app-switcher-item">
+                    <div class="icon numbers">&#x1F4CA;</div>
+                    <div class="name">Numbers</div>
+                </div>
+            </div>
+
+            <div class="do-box">
+                <ol class="step-list">
+                    <li>Starte Numbers mit <span class="key-combo"><kbd>&#8984;</kbd><span class="plus">+</span><kbd>Leertaste</kbd></span>, tippe <code>Numbers</code>, dr&uuml;cke <kbd>Enter</kbd></li>
+                    <li>W&auml;hle <strong>&bdquo;Leere Tabelle&ldquo;</strong></li>
+                    <li>Wechsle mit <span class="key-combo"><kbd>&#8984;</kbd><span class="plus">+</span><kbd>Tab</kbd></span> zur&uuml;ck zu Safari</li>
+                </ol>
+            </div>
+
+            <div class="check-box">
+                Du hast Numbers und Safari offen und kannst mit <span class="key-combo"><kbd>&#8984;</kbd><span class="plus">+</span><kbd>Tab</kbd></span> hin- und herwechseln.
+            </div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="goNext()" id="btn1" disabled>Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             SCHRITT 2: Daten eingeben (mit Autovervollständigung als Tipp)
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step2">
+            <h2>2. Daten eingeben</h2>
+
+            <p>Stell dir vor: Du beobachtest, wie dein <strong>Handyakku</strong> im Laufe des Tages leer wird. Die Messwerte tr&auml;gst du in Numbers ein.</p>
+
+            <div class="do-box">
+                <p>Wechsle zu Numbers: <span class="key-combo"><kbd>&#8984;</kbd><span class="plus">+</span><kbd>Tab</kbd></span></p>
+                <ol class="step-list">
+                    <li>Klicke auf <strong>A1</strong>, tippe: <code>Uhrzeit</code> &rarr; <kbd>Tab</kbd></li>
+                    <li>Tippe: <code>Akku (%)</code> &rarr; <kbd>Enter</kbd></li>
+                </ol>
+            </div>
+
+            <p>Gib jetzt die Messwerte ein (Zeile f&uuml;r Zeile):</p>
+
+            <div class="numbers-mock">
+                <div class="numbers-sheet">
+                    <table class="numbers-table">
+                        <tr><th></th><th>A</th><th>B</th></tr>
+                        <tr><th>1</th><td><strong>Uhrzeit</strong></td><td><strong>Akku (%)</strong></td></tr>
+                        <tr><th>2</th><td>8</td><td>100</td></tr>
+                        <tr><th>3</th><td>10</td><td>87</td></tr>
+                        <tr><th>4</th><td>12</td><td>71</td></tr>
+                        <tr><th>5</th><td>14</td><td>52</td></tr>
+                        <tr><th>6</th><td>16</td><td>38</td></tr>
+                        <tr><th>7</th><td>18</td><td>21</td></tr>
+                        <tr><th>8</th><td>20</td><td>5</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="warn-box">
+                Falls du sp&auml;ter Dezimalzahlen eingibst: Immer <strong>Komma</strong> verwenden (z.B. <code>3,5</code> nicht <code>3.5</code>). Bei einem Punkt denkt Numbers, du tippst ein Datum.
+            </div>
+
+            <div class="info-box">
+                <strong>Tipp &ndash; Ausfuellpunkt (Autovervollst&auml;ndigung):</strong><br>
+                Die Uhrzeiten (8, 10, 12, ...) musst du nicht alle von Hand eintippen! Tippe <code>8</code> und <code>10</code> ein, markiere beide Zellen, und ziehe den <strong>kleinen gelben Punkt</strong> (Ausfuellpunkt) am unteren Rand der Markierung nach unten bis Zeile 8. Numbers erkennt das 2er-Muster und f&uuml;llt 12, 14, 16, ... automatisch weiter.<br><br>
+                <span class="text-muted">Klappt das Ziehen nicht? Tippe die Werte einfach von Hand ein &ndash; das geht auch schnell.</span>
+            </div>
+
+            <div class="check-box">
+                Deine Tabelle hat 8 Zeilen: &Uuml;berschriften + 7 Messungen (8&ndash;20 Uhr, alle 2 Stunden).<br>
+                Spalte A = Uhrzeit, Spalte B = Akkustand in Prozent.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zur&uuml;ck</button>
+                <button onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             SCHRITT 3: XY-Diagramm erstellen (mit Lehrer-Hinweis)
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step3">
+            <h2>3. XY-Diagramm erstellen</h2>
+
+            <p>Ein <strong>XY-Diagramm</strong> (Streudiagramm) zeigt, wie sich ein Zahlenwert (Akkustand) &uuml;ber einen anderen (Uhrzeit) ver&auml;ndert. Beide Achsen haben Zahlen &ndash; das ist der Unterschied zum S&auml;ulendiagramm.</p>
+
+            <div class="do-box">
+                <ol class="step-list">
+                    <li>Markiere alle Daten: Klicke auf <strong>A1</strong>, halte <kbd>Shift</kbd>, klicke auf <strong>B8</strong></li>
+                    <li>Klicke in der <strong>Symbolleiste</strong> auf <strong>Diagramm</strong> &ndash; es &ouml;ffnet sich der <strong>Diagrammassistent</strong></li>
+                </ol>
+            </div>
+
+            <div class="numbers-mock">
+                <div class="numbers-toolbar">
+                    <span style="font-weight: 500;">Tabelle 1</span>
+                    <div style="flex: 1;"></div>
+                    <div class="toolbar-btn">Tabelle</div>
+                    <div class="toolbar-btn active" style="background: #cce5ff; border-color: #0066cc;">Diagramm</div>
+                    <div class="toolbar-btn">Text</div>
+                    <div class="toolbar-btn">Form</div>
+                </div>
+                <div style="padding: 8px; font-size: 0.8em; color: #666; text-align: center;">
+                    &uarr; Klicke hier auf &bdquo;Diagramm&ldquo;
+                </div>
+            </div>
+
+            <p>Es &ouml;ffnet sich das Auswahlfenster f&uuml;r Diagrammtypen:</p>
+
+            <div class="chart-selector">
+                <div class="chart-selector-title">Diagrammtyp w&auml;hlen</div>
+                <div class="chart-tabs">
+                    <div class="chart-tab active">2D</div>
+                    <div class="chart-tab">3D</div>
+                    <div class="chart-tab">Interaktiv</div>
+                </div>
+                <div class="chart-types">
+                    <div class="chart-type-item">
+                        <div class="icon">&#x2587;&#x2587;</div>
+                        <span>S&auml;ule</span>
+                    </div>
+                    <div class="chart-type-item">
+                        <div class="icon">&#x2015;&#x2571;</div>
+                        <span>Linie</span>
+                    </div>
+                    <div class="chart-type-item">
+                        <div class="icon">&#x25CB;</div>
+                        <span>Kreis</span>
+                    </div>
+                    <div class="chart-type-item selected">
+                        <div class="icon">&#x2022; &#x2022;</div>
+                        <span>Streu</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="do-box">
+                <ol class="step-list" start="3">
+                    <li>Klicke oben auf <strong>2D</strong></li>
+                    <li>W&auml;hle <strong>&bdquo;Streu&ldquo;</strong> (Punkte-Symbol)</li>
+                </ol>
+            </div>
+
+            <div class="check-box">
+                Ein Streudiagramm erscheint auf deinem Arbeitsblatt!<br>
+                Du siehst Punkte, die den Akkuverbrauch im Tagesverlauf zeigen.
+            </div>
+
+            <p class="text-muted">Speichere jetzt: <span class="key-combo"><kbd>&#8984;</kbd><span class="plus">+</span><kbd>S</kbd></span> &rarr; Name: <code>Akku-Diagramm-VORNAME</code> &rarr; Ort: Schreibtisch. Nach dem ersten Speichern sichert Numbers automatisch &ndash; du musst nicht nochmal <span class="key-combo"><kbd>&#8984;</kbd><span class="plus">+</span><kbd>S</kbd></span> dr&uuml;cken.</p>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zur&uuml;ck</button>
+                <button onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             SCHRITT 4: Diagramm beschriften
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step4">
+            <h2>4. Diagramm beschriften</h2>
+
+            <p>Ein Diagramm ohne Beschriftung ist wertlos &ndash; niemand wei&szlig;, was die Achsen bedeuten.</p>
+
+            <h3 style="font-size: 1em; color: #555; margin: 15px 0 8px 0;">A) Titel hinzuf&uuml;gen</h3>
+
+            <div class="do-box">
+                <ol class="step-list">
+                    <li>Klicke auf dein <strong>Streudiagramm</strong></li>
+                    <li>Oben im Diagramm steht &bdquo;Titel&ldquo; &ndash; klicke darauf</li>
+                    <li>Tippe: <code>Handyakku im Tagesverlauf</code></li>
+                </ol>
+            </div>
+
+            <div class="info-box">
+                <strong>Falls kein Titel sichtbar ist:</strong><br>
+                Klicke auf das Diagramm &rarr; rechts in der Seitenleiste auf <strong>Diagramm</strong> &rarr; Haken bei <strong>&bdquo;Titel&ldquo;</strong> setzen.
+            </div>
+
+            <h3 style="font-size: 1em; color: #555; margin: 15px 0 8px 0;">B) Achsen beschriften</h3>
+
+            <div class="do-box">
+                <ol class="step-list" start="4">
+                    <li>Klicke auf das Diagramm</li>
+                    <li>Rechts in der Seitenleiste: klicke auf den Tab <strong>&bdquo;Achse&ldquo;</strong></li>
+                    <li>Unter <strong>&bdquo;Wert (X)&ldquo;</strong> &rarr; bei <strong>&bdquo;Name&ldquo;</strong> tippe: <code>Uhrzeit</code></li>
+                    <li>Klicke auf <strong>&bdquo;Wert (Y)&ldquo;</strong> &rarr; bei <strong>&bdquo;Name&ldquo;</strong> tippe: <code>Akku (%)</code></li>
+                </ol>
+            </div>
+
+            <div class="info-box">
+                <strong>Findest du die Seitenleiste nicht?</strong><br>
+                Klicke oben rechts auf das <strong>Pinsel-Symbol</strong> (Format) &ndash; dann erscheint die Seitenleiste.
+            </div>
+
+            <p>So sieht die Seitenleiste aus:</p>
+
+            <div class="sidebar-mock">
+                <div class="sidebar-header">
+                    <div class="sidebar-tab">Diagramm</div>
+                    <div class="sidebar-tab active">Achse</div>
+                    <div class="sidebar-tab">Reihe</div>
+                </div>
+                <div class="sidebar-body">
+                    <div class="sidebar-section">
+                        <div class="sidebar-section-title">Wert (X)</div>
+                        <div class="sidebar-field">
+                            <label>Name:</label>
+                            <input type="text" value="Uhrzeit" readonly>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <div class="sidebar-section-title">Wert (Y)</div>
+                        <div class="sidebar-field">
+                            <label>Name:</label>
+                            <input type="text" value="Akku (%)" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p>So sollte dein Diagramm jetzt aussehen:</p>
+
+            <div class="chart-mock">
+                <div class="chart-mock-title">Handyakku im Tagesverlauf</div>
+                <div class="chart-area">
+                    <span class="y-label">Akku (%)</span>
+                    <span class="x-label">Uhrzeit</span>
+                    <!-- Gridlines -->
+                    <div class="chart-gridline" style="bottom: 100%;"></div>
+                    <div class="chart-gridline" style="bottom: 75%;"></div>
+                    <div class="chart-gridline" style="bottom: 50%;"></div>
+                    <div class="chart-gridline" style="bottom: 25%;"></div>
+                    <!-- Y ticks -->
+                    <span class="chart-y-tick" style="bottom: 100%;">100</span>
+                    <span class="chart-y-tick" style="bottom: 75%;">75</span>
+                    <span class="chart-y-tick" style="bottom: 50%;">50</span>
+                    <span class="chart-y-tick" style="bottom: 25%;">25</span>
+                    <span class="chart-y-tick" style="bottom: 0%;">0</span>
+                    <!-- X ticks (8, 10, 12, 14, 16, 18, 20) -->
+                    <span class="chart-x-tick" style="left: 0%;">8</span>
+                    <span class="chart-x-tick" style="left: 17%;">10</span>
+                    <span class="chart-x-tick" style="left: 33%;">12</span>
+                    <span class="chart-x-tick" style="left: 50%;">14</span>
+                    <span class="chart-x-tick" style="left: 67%;">16</span>
+                    <span class="chart-x-tick" style="left: 83%;">18</span>
+                    <span class="chart-x-tick" style="left: 100%;">20</span>
+                    <!-- Dots: (8,100) (10,87) (12,71) (14,52) (16,38) (18,21) (20,5) -->
+                    <div class="chart-dot" style="left: 0%; bottom: 100%;"></div>
+                    <div class="chart-dot" style="left: 17%; bottom: 87%;"></div>
+                    <div class="chart-dot" style="left: 33%; bottom: 71%;"></div>
+                    <div class="chart-dot" style="left: 50%; bottom: 52%;"></div>
+                    <div class="chart-dot" style="left: 67%; bottom: 38%;"></div>
+                    <div class="chart-dot" style="left: 83%; bottom: 21%;"></div>
+                    <div class="chart-dot" style="left: 100%; bottom: 5%;"></div>
+                </div>
+            </div>
+
+            <div class="check-box">
+                Dein Diagramm hat jetzt:<br>
+                &bull; Titel: &bdquo;Handyakku im Tagesverlauf&ldquo;<br>
+                &bull; X-Achse: &bdquo;Uhrzeit&ldquo;<br>
+                &bull; Y-Achse: &bdquo;Akku (%)&ldquo;
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zur&uuml;ck</button>
+                <button onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             SCHRITT 5: Referenzprinzip
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step5">
+            <h2>5. Das Referenzprinzip</h2>
+
+            <p>Jetzt kommt etwas Spannendes: Das Diagramm ist <strong>live mit der Tabelle verbunden</strong>. Wenn du einen Wert &auml;nderst, &auml;ndert sich der Punkt im Diagramm sofort mit!</p>
+
+            <div class="do-box">
+                <ol class="step-list">
+                    <li>Klicke in der Tabelle auf Zelle <strong>B5</strong> (14 Uhr, Akku: 52)</li>
+                    <li>&Auml;ndere den Wert auf <code>85</code></li>
+                    <li>Dr&uuml;cke <kbd>Enter</kbd></li>
+                    <li>Schaue auf das Diagramm!</li>
+                </ol>
+            </div>
+
+            <p>Vorher und nachher:</p>
+
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin: 15px 0;">
+                <div class="chart-mock" style="flex: 1; min-width: 200px;">
+                    <div class="chart-mock-title" style="font-size: 0.8em; color: #888;">Vorher: B5 = 52</div>
+                    <div class="chart-area" style="height: 120px;">
+                        <div class="chart-dot" style="left: 50%; bottom: 52%;"></div>
+                        <span class="chart-x-tick" style="left: 50%;">14 Uhr</span>
+                    </div>
+                </div>
+                <div class="chart-mock" style="flex: 1; min-width: 200px;">
+                    <div class="chart-mock-title" style="font-size: 0.8em; color: #b35c00;">Nachher: B5 = 85</div>
+                    <div class="chart-area" style="height: 120px;">
+                        <div class="chart-dot highlight" style="left: 50%; bottom: 85%;"></div>
+                        <span class="chart-x-tick" style="left: 50%;">14 Uhr</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="check-box">
+                Der Punkt f&uuml;r 14 Uhr ist nach oben gesprungen, weil der Akkuwert gr&ouml;&szlig;er geworden ist.
+            </div>
+
+            <div class="info-box">
+                <strong>Das Referenzprinzip:</strong><br>
+                Das Diagramm <em>verweist</em> (referenziert) auf die Tabellendaten. Es speichert keine eigene Kopie. Jede &Auml;nderung in der Tabelle wirkt sich sofort auf das Diagramm aus.<br><br>
+                Das ist wie ein Live-Bild: &Auml;nderst du die Wirklichkeit, &auml;ndert sich auch das Bild.
+            </div>
+
+            <div class="do-box">
+                <p>&Auml;ndere den Wert in <strong>B5</strong> zur&uuml;ck auf <code>52</code> und dr&uuml;cke <kbd>Enter</kbd>.</p>
+            </div>
+
+            <p>Jetzt ein Quiz zum Referenzprinzip:</p>
+
+            <div class="mc-quiz" id="quiz5">
+                <p><strong>Was passiert, wenn du den Wert in Zelle B4 (12 Uhr, aktuell 71) auf 95 &auml;nderst?</strong></p>
+                <div class="mc-option" onclick="checkQuiz('quiz5', this, false)">A) Nichts &ndash; das Diagramm muss neu erstellt werden</div>
+                <div class="mc-option" onclick="checkQuiz('quiz5', this, true)">B) Der Punkt f&uuml;r 12 Uhr springt im Diagramm nach oben</div>
+                <div class="mc-option" onclick="checkQuiz('quiz5', this, false)">C) Alle Punkte im Diagramm verschieben sich</div>
+                <div class="mc-option" onclick="checkQuiz('quiz5', this, false)">D) Das Diagramm wird gel&ouml;scht</div>
+                <div class="mc-feedback correct" id="quiz5-correct">Richtig! Das Diagramm ist live mit der Tabelle verbunden. Nur der ge&auml;nderte Punkt bewegt sich.</div>
+                <div class="mc-feedback wrong" id="quiz5-wrong">Nicht ganz. Durch das Referenzprinzip aktualisiert sich der betroffene Punkt sofort &ndash; automatisch, ohne Neuerstellung.</div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zur&uuml;ck</button>
+                <button onclick="goNext()" id="btn5" disabled>Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             SCHRITT 6: Selbstcheck & Zusammenfassung
+             ══════════════════════════════════════════════════════════════════ -->
+        <div class="section" id="step6">
+            <h2>6. Selbstcheck &amp; Zusammenfassung</h2>
+
+            <p>Teste dein Wissen mit diesen Fragen:</p>
+
+            <div class="mc-quiz" id="quiz6a">
+                <p><strong>Frage 1: Wann benutzt du ein S&auml;ulendiagramm, wann ein XY-Diagramm?</strong></p>
+                <div class="mc-option" onclick="checkQuiz('quiz6a', this, false)">A) S&auml;ulendiagramm f&uuml;r Zahlen, XY-Diagramm f&uuml;r Text</div>
+                <div class="mc-option" onclick="checkQuiz('quiz6a', this, true)">B) S&auml;ulendiagramm zum Vergleichen von Kategorien (z.B. Produkte), XY-Diagramm wenn beide Achsen Zahlen sind (z.B. Uhrzeit &rarr; Akku)</div>
+                <div class="mc-option" onclick="checkQuiz('quiz6a', this, false)">C) Es gibt keinen Unterschied, beide zeigen das Gleiche</div>
+                <div class="mc-feedback correct" id="quiz6a-correct">Richtig! S&auml;ulendiagramm = Kategorien vergleichen. XY-Diagramm = Zusammenhang zwischen zwei Zahlenwerten zeigen.</div>
+                <div class="mc-feedback wrong" id="quiz6a-wrong">Nicht ganz. S&auml;ulendiagramme vergleichen Kategorien (z.B. Brezel, Apfel, Saft). XY-Diagramme zeigen den Zusammenhang zwischen zwei Zahlenwerten (z.B. Uhrzeit und Akkustand).</div>
+            </div>
+
+            <div class="mc-quiz" id="quiz6b">
+                <p><strong>Frage 2: Was bedeutet das Referenzprinzip?</strong></p>
+                <div class="mc-option" onclick="checkQuiz('quiz6b', this, false)">A) Man muss das Diagramm immer neu erstellen, wenn sich Daten &auml;ndern</div>
+                <div class="mc-option" onclick="checkQuiz('quiz6b', this, false)">B) Das Diagramm speichert eine Kopie der Daten</div>
+                <div class="mc-option" onclick="checkQuiz('quiz6b', this, true)">C) Das Diagramm verweist auf die Tabellendaten und aktualisiert sich automatisch bei &Auml;nderungen</div>
+                <div class="mc-feedback correct" id="quiz6b-correct">Genau! Das Diagramm referenziert die Original-Daten. &Auml;nderst du die Tabelle, &auml;ndert sich das Diagramm automatisch mit.</div>
+                <div class="mc-feedback wrong" id="quiz6b-wrong">Nicht ganz. Das Referenzprinzip bedeutet: Das Diagramm verweist direkt auf die Tabellendaten &ndash; keine Kopie, sondern eine Live-Verbindung.</div>
+            </div>
+
+            <h3 style="margin-top: 25px; font-size: 1em; color: #333;">Zusammenfassung:</h3>
+
+            <table class="compare-table">
+                <tr>
+                    <th>Konzept</th>
+                    <th>Was es bedeutet</th>
+                </tr>
+                <tr>
+                    <td><strong>S&auml;ulendiagramm</strong></td>
+                    <td>Vergleicht Kategorien (z.B. Produkte). X-Achse = Namen.</td>
+                </tr>
+                <tr>
+                    <td><strong>Balkendiagramm</strong></td>
+                    <td>Wie S&auml;ulendiagramm, aber die Balken liegen waagerecht statt senkrecht.</td>
+                </tr>
+                <tr>
+                    <td><strong>XY-Diagramm (Streu)</strong></td>
+                    <td>Zeigt Zusammenhang zwischen zwei Zahlenwerten als Punkte. Beide Achsen = Zahlen.</td>
+                </tr>
+                <tr>
+                    <td><strong>Ausfuellpunkt</strong></td>
+                    <td>Der gelbe Punkt am Zellenrand &ndash; zieht Muster oder Datenreihen automatisch weiter.</td>
+                </tr>
+                <tr>
+                    <td><strong>Referenzprinzip</strong></td>
+                    <td>Diagramm ist live mit der Tabelle verbunden &ndash; &Auml;nderung in Tabelle = &Auml;nderung im Diagramm.</td>
+                </tr>
+            </table>
+
+            <h3 style="margin-top: 20px; font-size: 1em; color: #333;">Checkliste:</h3>
+            <div class="checklist" id="finalChecklist">
+                <label><input type="checkbox" onchange="checkFinal()"> Akku-Tabelle eingegeben (7 Messungen, 8&ndash;20 Uhr)</label>
+                <label><input type="checkbox" onchange="checkFinal()"> XY-Diagramm (Streu) erstellt</label>
+                <label><input type="checkbox" onchange="checkFinal()"> Diagramm beschriftet (Titel + beide Achsen)</label>
+                <label><input type="checkbox" onchange="checkFinal()"> Referenzprinzip getestet (Wert ge&auml;ndert, Punkt bewegt sich)</label>
+                <label><input type="checkbox" onchange="checkFinal()"> Datei gespeichert</label>
+            </div>
+
+            <div class="success-box" id="successBox" style="display: none;">
+                <strong>Geschafft!</strong><br>
+                Du kannst jetzt XY-Diagramme erstellen, beschriften und wei&szlig;t, wie das Referenzprinzip funktioniert.
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zur&uuml;ck</button>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var TOTAL_STEPS = 6;
+    var STORAGE_KEY = 'kl07-tabellenkalkulation-05';
+    var currentStep = 1;
+    var completedSteps = [];
+    var quizSolved = {};
+
+    function init() {
+        loadProgress();
+        renderNav();
+        showStep(currentStep);
+    }
+
+    function loadProgress() {
+        try {
+            var saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                var data = JSON.parse(saved);
+                currentStep = data.currentStep || 1;
+                completedSteps = data.completedSteps || [];
+                quizSolved = data.quizSolved || {};
+            }
+        } catch (e) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    function saveProgress() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            currentStep: currentStep,
+            completedSteps: completedSteps,
+            quizSolved: quizSolved
+        }));
+    }
+
+    function renderNav() {
+        var nav = document.getElementById('stepNav');
+        nav.innerHTML = '';
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var dot = document.createElement('div');
+            dot.className = 'step-dot';
+            dot.textContent = i;
+            if (completedSteps.indexOf(i) !== -1) {
+                dot.classList.add('done');
+                (function(step) {
+                    dot.onclick = function() { goToStep(step); };
+                })(i);
+            }
+            if (i === currentStep) dot.classList.add('active');
+            nav.appendChild(dot);
+        }
+        var progress = ((currentStep - 1) / (TOTAL_STEPS - 1)) * 100;
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressText').textContent = 'Schritt ' + currentStep + ' von ' + TOTAL_STEPS;
+    }
+
+    function showStep(n) {
+        var sections = document.querySelectorAll('.section');
+        for (var i = 0; i < sections.length; i++) {
+            sections[i].classList.remove('active');
+        }
+        var target = document.getElementById('step' + n);
+        if (target) target.classList.add('active');
+        currentStep = n;
+        renderNav();
+        saveProgress();
+        window.scrollTo(0, 0);
+        updateButtons();
+    }
+
+    function goToStep(n) {
+        if (completedSteps.indexOf(n) !== -1 || n === currentStep) showStep(n);
+    }
+
+    function goNext() {
+        if (completedSteps.indexOf(currentStep) === -1) completedSteps.push(currentStep);
+        if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
+        saveProgress();
+    }
+
+    function goPrev() {
+        if (currentStep > 1) showStep(currentStep - 1);
+    }
+
+    function updateButtons() {
+        var btn1 = document.getElementById('btn1');
+        if (btn1) {
+            btn1.disabled = !quizSolved['quiz1'];
+        }
+        var btn5 = document.getElementById('btn5');
+        if (btn5) {
+            btn5.disabled = !quizSolved['quiz5'];
+        }
+    }
+
+    function checkQuiz(quizId, el, isCorrect) {
+        var quiz = document.getElementById(quizId);
+        var options = quiz.querySelectorAll('.mc-option');
+        for (var i = 0; i < options.length; i++) {
+            options[i].classList.add('disabled');
+        }
+
+        if (isCorrect) {
+            el.classList.add('correct');
+            var fb = document.getElementById(quizId + '-correct');
+            if (fb) { fb.classList.add('show'); }
+        } else {
+            el.classList.add('wrong');
+            var fb2 = document.getElementById(quizId + '-wrong');
+            if (fb2) { fb2.classList.add('show'); }
+            for (var j = 0; j < options.length; j++) {
+                if (options[j].getAttribute('onclick') && options[j].getAttribute('onclick').indexOf('true') !== -1) {
+                    options[j].classList.add('correct');
+                }
+            }
+        }
+
+        quizSolved[quizId] = true;
+        saveProgress();
+        updateButtons();
+    }
+
+    function checkFinal() {
+        var checked = document.querySelectorAll('#finalChecklist input:checked').length;
+        var total = document.querySelectorAll('#finalChecklist input').length;
+        var box = document.getElementById('successBox');
+        if (checked >= total) {
+            box.style.display = 'block';
+            if (completedSteps.indexOf(currentStep) === -1) completedSteps.push(currentStep);
+            saveProgress();
+            renderNav();
+        } else {
+            box.style.display = 'none';
+        }
+    }
+
+    window.onload = init;
+    </script>
+</body>
+</html>
