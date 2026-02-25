@@ -34,7 +34,7 @@ Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
         header p { font-size: 0.85em; opacity: 0.9; }
         .bewertung-badge { display: inline-block; background: var(--error); color: white; padding: 3px 12px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
         .ew-nav { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 12px 10px; background: var(--white); border-bottom: 1px solid var(--border); margin: 0 -20px 15px; flex-wrap: wrap; }
-        .ew-step { padding: 6px 10px; font-size: 0.7em; font-weight: 600; background: var(--border); color: var(--text-muted); text-align: center; min-width: 44px; min-height: 36px; display: flex; align-items: center; justify-content: center; }
+        .ew-step { padding: 6px 10px; font-size: 0.7em; font-weight: 600; background: var(--border); color: var(--text-muted); text-align: center; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
         .ew-step.active { background: var(--fach); color: white; }
         .ew-step.done { background: var(--success); color: white; }
         .ew-step.graded { border-bottom: 3px solid var(--error); }
@@ -171,8 +171,25 @@ Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
         .pw-submit:disabled { opacity: 0.4; cursor: not-allowed; }
         .pw-card .pw-feedback { margin-top: 10px; padding: 8px 12px; font-size: 0.9em; display: none; }
         .pw-card .pw-feedback.visible { display: block; }
+        /* Timer */
+        .timer-display { position: fixed; top: 0; right: 0; z-index: 900; background: #555; color: #ccc; padding: 8px 16px; font-family: monospace; font-size: 1.2em; font-weight: 700; min-width: 90px; text-align: center; border-bottom-left-radius: 6px; }
+        .timer-display.timer-active { background: #222; color: #fff; }
+        .timer-display.timer-warn { background: #e65100; color: #fff; }
+        .timer-display.timer-critical { background: #c62828; color: #fff; animation: timer-blink 0.5s infinite; }
+        .timer-display.timer-hidden { display: none; }
+        @keyframes timer-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .extend-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
+        .extend-overlay.visible { display: flex; }
+        .extend-content { background: #fff; padding: 40px; text-align: center; max-width: 420px; width: 90%; }
+        .extend-content h2 { color: #c62828; margin-bottom: 15px; font-size: 1.3em; }
+        .extend-content p { margin-bottom: 12px; font-size: 0.95em; }
+        .extend-content input { border: 2px solid #ddd; padding: 10px; font-size: 1.1em; width: 120px; text-align: center; margin: 10px 0; }
+        .extend-btn { background: #2c5aa0; color: #fff; border: none; padding: 12px 24px; font-size: 1em; cursor: pointer; margin: 5px; min-height: 48px; min-width: 48px; }
+        .extend-btn.extend-cancel { background: #c62828; }
+        .forced-submit-badge { display: inline-block; background: #c62828; color: #fff; padding: 4px 14px; font-size: 0.8em; font-weight: 700; margin-top: 8px; letter-spacing: 0.5px; }
+        .nta-badge { display: inline-block; background: #e65100; color: #fff; padding: 4px 14px; font-size: 0.8em; font-weight: 700; margin-top: 8px; letter-spacing: 0.5px; }
         @media print {
-            .ew-nav, .step-badge, .btn, .tab-warning-overlay, #btnBeleg, .hefter-hint, .nav-buttons, .teacher-reset, .bewertung-badge, .progress-bar { display: none !important; }
+            .ew-nav, .step-badge, .btn, .tab-warning-overlay, #btnBeleg, .hefter-hint, .nav-buttons, .teacher-reset, .bewertung-badge, .progress-bar, .timer-display, .extend-overlay { display: none !important; }
             .step { display: none !important; }
             #step7 { display: block !important; }
             #belegContainer { display: block !important; }
@@ -251,7 +268,7 @@ Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
         </div>
 
         <div class="practice-zone">
-            <p style="margin-top: 8px;"><strong>Passwort-Tester:</strong> Gib ein Test-Passwort ein (nicht dein echtes!) und beobachte die Analyse:</p>
+            <p style="margin-top: 8px;"><strong>Passwort-Tester</strong> <span style="color:var(--text-muted);font-size:0.85em;">(max. 3 Min.)</span>: Gib ein Test-Passwort ein (nicht dein echtes!) und beobachte die Analyse:</p>
             <div class="pw-input-wrap">
                 <input type="text" id="pwTestInput" placeholder="Test-Passwort eingeben..." oninput="analyzePW()" autocomplete="off">
             </div>
@@ -292,16 +309,18 @@ Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
 
         <div class="formel-box">
             Kombinationen = Zeichensatzgr&ouml;&szlig;e<sup>Passwortl&auml;nge</sup>
+            <div style="font-size:0.65em; color:var(--text-muted); margin-top:8px;">&bdquo;hoch&ldquo; = so oft mit sich selbst multiplizieren. Beispiel: 10<sup>3</sup> = 10 &times; 10 &times; 10 = 1.000</div>
         </div>
 
         <div class="info-box">
             <strong>Was ist Brute Force?</strong>
             <p style="margin-top: 8px;">Ein Computer probiert <strong>alle m&ouml;glichen Kombinationen</strong> durch. Moderne Computer schaffen &uuml;ber <strong>1 Milliarde Versuche pro Sekunde</strong>.</p>
             <p>Beispiel: Ein 4-stelliger Zahlen-PIN hat 10<sup>4</sup> = <strong>10.000</strong> Kombinationen &ndash; in unter 0,001 Sekunden geknackt!</p>
+            <p style="margin-top: 8px;"><strong>Wichtig:</strong> Professionelle Angriffsprogramme testen zuerst g&auml;ngige Muster &ndash; W&ouml;rterbuch-W&ouml;rter, Tastaturfolgen (<code>qwertz</code>) und wiederholte Zeichen (<code>aaaaaa</code>) &ndash; bevor sie jede Kombination einzeln durchprobieren.</p>
         </div>
 
         <div class="practice-zone">
-            <p style="margin-top: 8px;"><strong>Brute-Force-Rechner:</strong> Teste selbst &ndash; wie lange braucht ein Hacker?</p>
+            <p style="margin-top: 8px;"><strong>Brute-Force-Rechner</strong> <span style="color:var(--text-muted);font-size:0.85em;">(max. 3 Min.)</span>: Teste selbst &ndash; wie lange braucht ein Hacker?</p>
             <div class="bf-calculator">
                 <label>Zeichensatz:</label>
                 <select id="bfCharset" onchange="calculateBF()">
@@ -346,7 +365,7 @@ Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
         <h3>4 Schutzma&szlig;nahmen</h3>
         <div class="info-box">
             <ol style="margin: 0 0 0 20px;">
-                <li style="margin-bottom: 8px;"><strong>Starke Passw&ouml;rter:</strong> Mindestens 12 Zeichen, alle Zeichenarten, keine W&ouml;rter/Muster/pers&ouml;nliche Daten.</li>
+                <li style="margin-bottom: 8px;"><strong>Starke Passw&ouml;rter:</strong> Mindestens 12 Zeichen, alle Zeichenarten, kein einzelnes W&ouml;rterbuch-Wort, keine Muster, keine pers&ouml;nlichen Daten. (<em>Ausnahme: Passphrasen aus mehreren zuf&auml;lligen W&ouml;rtern &ndash; siehe Tipp!</em>)</li>
                 <li style="margin-bottom: 8px;"><strong>Verschiedene Passw&ouml;rter:</strong> F&uuml;r jeden Dienst ein eigenes Passwort &ndash; so ist bei einem Datenleck nur ein Konto betroffen.</li>
                 <li style="margin-bottom: 8px;"><strong>Passwort-Manager:</strong> Programme wie Bitwarden oder KeePass speichern alle Passw&ouml;rter <strong>verschl&uuml;sselt</strong>. Man merkt sich nur ein <strong>Master-Passwort</strong>.</li>
                 <li><strong>Zwei-Faktor-Authentifizierung (2FA):</strong> Zwei Nachweise beim Login &ndash; <em>Wissen</em> (Passwort) + <em>Besitz</em> (Handy-Code). Selbst mit gestohlenem Passwort kommt niemand rein.</li>
@@ -486,13 +505,27 @@ Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
     </div>
 </div>
 <div class="teacher-reset" onclick="teacherReset()">Lehrer-Reset</div>
+<div class="timer-display timer-hidden" id="timerDisplay">32:00</div>
+<div class="extend-overlay" id="extendOverlay">
+    <div class="extend-content">
+        <h2>&#9200; Zeit abgelaufen!</h2>
+        <p>Deine Bearbeitungszeit ist abgelaufen.</p>
+        <p>Wenn du eine Zeitverl&auml;ngerung erhalten hast, gib den Lehrercode ein:</p>
+        <input type="text" id="extendCodeInput" placeholder="Code" maxlength="10" autocomplete="off">
+        <div id="extendError" style="color:#c62828;font-size:0.85em;display:none;">Falscher Code!</div>
+        <div style="margin-top: 15px;">
+            <button class="extend-btn" onclick="tryExtend()">Verl&auml;ngerung aktivieren</button>
+            <button class="extend-btn extend-cancel" onclick="forceSubmitNow()">Ohne Verl&auml;ngerung abgeben</button>
+        </div>
+    </div>
+</div>
 
 <script>
 // BLP-02 Passwort-Sicherheit | ES5 | 25 BE | 6 Phasen
 
 /* ══ Config ══ */
 var BLP_ID = 'blp-02-passwort';
-var LP_VERSION = '1.0';
+var LP_VERSION = '1.1';
 var TOTAL_BE = 25;
 
 var PHASE_CONFIG = [
@@ -516,6 +549,9 @@ var GRADE_SCALE = [
 var HYPO_TIMER = 0;
 var EXP_TIMER = 0;
 var TEACHER_CODE = '2026';
+var MAX_TIME = 1920;       // 32 Min Bearbeitungszeit (0 = kein Timer)
+var EXTEND_TIME = 960;     // +16 Min Nachteilsausgleich (ergibt 48 Min gesamt = +50%)
+var EXTEND_CODE = '2024';  // Lehrercode fuer Verlaengerung (NICHT Reset-Code '2026'!)
 
 /* ══ Fragen-Pools ══ */
 var MC_POOL_1 = [
@@ -539,8 +575,8 @@ var MC_POOL_3 = [
     { text: 'Was ist ein Passwort-Manager?', options: ['Ein Programm, das Passw\u00f6rter verschl\u00fcsselt speichert und verwaltet', 'Ein Browser-Plugin, das unsichere Passw\u00f6rter automatisch blockiert', 'Eine Website, die pr\u00fcft ob das eigene Passwort gehackt wurde', 'Eine Funktion im Betriebssystem, die alle Passw\u00f6rter zur\u00fccksetzt'], correct: 0, fb: 'Passwort-Manager speichern alle Passw\u00f6rter verschl\u00fcsselt. Man braucht nur ein Master-Passwort.' },
     { text: 'Was bedeutet Zwei-Faktor-Authentifizierung (2FA)?', options: ['Zwei Passw\u00f6rter nacheinander eingeben', 'Zus\u00e4tzlich zum Passwort einen zweiten Nachweis (z.B. Handy-Code)', 'Das Passwort zweimal eingeben', 'Zwei Personen kennen das Passwort'], correct: 1, fb: '2FA nutzt zwei verschiedene Faktoren: Wissen (Passwort) + Besitz (Handy/App).' },
     { text: 'Was ist ein Datenleck?', options: ['Wenn ein Dienst absichtlich Nutzerdaten an Werbefirmen verkauft', 'Wenn Hacker die Datenbank eines Dienstes stehlen und Passw\u00f6rter ver\u00f6ffentlicht werden', 'Wenn man sein Passwort auf einer gef\u00e4lschten Website eingibt', 'Wenn das eigene WLAN-Passwort zu schwach ist und Fremde mitlesen'], correct: 1, fb: 'Bei Datenlecks werden gespeicherte Nutzerdaten (inkl. Passw\u00f6rter) gestohlen und oft ver\u00f6ffentlicht.' },
-    { text: 'Warum sollte man NICHT \u00fcberall dasselbe Passwort verwenden?', options: ['Man vergisst es sonst', 'Es ist gesetzlich verboten', 'Computer werden dadurch langsamer', 'Wird ein Dienst gehackt, sind alle Konten gef\u00e4hrdet'], correct: 3, fb: 'Bei einem Datenleck k\u00f6nnen Angreifer mit dem geleakten Passwort alle anderen Konten \u00fcbernehmen.' },
-    { text: 'Was braucht man, um einen Passwort-Manager zu nutzen?', options: ['Ein einziges starkes Master-Passwort', 'F\u00fcr jeden Dienst ein Passwort merken', 'Einen teuren Computer', 'Eine spezielle SIM-Karte'], correct: 0, fb: 'Das Master-Passwort \u00f6ffnet den verschl\u00fcsselten Tresor - alle anderen Passw\u00f6rter werden dort gespeichert.' },
+    { text: 'Warum sollte man NICHT \u00fcberall dasselbe Passwort verwenden?', options: ['Ein langes Passwort reicht f\u00fcr alle Dienste aus', 'Verschiedene Passw\u00f6rter sind nur bei Bankkonten n\u00f6tig', 'Jeder Dienst braucht ein eigenes Verschl\u00fcsselungsformat', 'Wird ein Dienst gehackt, sind alle Konten gef\u00e4hrdet'], correct: 3, fb: 'Bei einem Datenleck k\u00f6nnen Angreifer mit dem geleakten Passwort alle anderen Konten \u00fcbernehmen.' },
+    { text: 'Was braucht man, um einen Passwort-Manager zu nutzen?', options: ['Ein einziges starkes Master-Passwort', 'F\u00fcr jeden Dienst ein Passwort merken', 'Eine kostenpflichtige Premium-Lizenz', 'Einen USB-Stick als Schl\u00fcssel'], correct: 0, fb: 'Das Master-Passwort \u00f6ffnet den verschl\u00fcsselten Tresor - alle anderen Passw\u00f6rter werden dort gespeichert.' },
     { text: 'Warum ist "Sommer2025!" ein schwaches Passwort?', options: ['Es ist zu kurz', 'Es hat zu viele Sonderzeichen', 'Es enth\u00e4lt ein W\u00f6rterbuch-Wort und ein vorhersagbares Muster', 'Es enth\u00e4lt keine Zahlen'], correct: 2, fb: '"Sommer" ist ein W\u00f6rterbuch-Wort, "2025" eine Jahreszahl, "!" ein vorhersagbares Sonderzeichen.' }
 ];
 
@@ -553,11 +589,11 @@ var PW_WEAK = [
 ];
 
 var PW_STRONG = [
-    { pw: 'K@tz3!Bm#7xQ', secure: true, correctReason: 0, reasons: ['12 Zeichen mit allen Zeichenarten und keinem erkennbaren Muster', 'Enth\u00e4lt ein bekanntes Wort r\u00fcckw\u00e4rts geschrieben', 'Verwendet nur zwei verschiedene Zeichenarten', 'Ist ein h\u00e4ufiges Tastaturmuster'] },
+    { pw: 'Qm8#xK!2pNv7', secure: true, correctReason: 0, reasons: ['12 Zeichen mit allen Zeichenarten und keinem erkennbaren Muster', 'Enth\u00e4lt ein bekanntes Wort r\u00fcckw\u00e4rts geschrieben', 'Verwendet nur zwei verschiedene Zeichenarten', 'Ist ein h\u00e4ufiges Tastaturmuster'] },
     { pw: 'Mn7$kR!9xQ2p', secure: true, correctReason: 0, reasons: ['Zuf\u00e4llige Zeichenfolge ohne erkennbare W\u00f6rter oder Muster', 'Enth\u00e4lt eine vorhersagbare Jahreszahl', 'Besteht nur aus Buchstaben und Zahlen ohne Sonderzeichen', 'Ist k\u00fcrzer als 8 Zeichen'] },
     { pw: 'X#9pL!mK4wzR', secure: true, correctReason: 0, reasons: ['Maximale Zeichenvielfalt und kein Zusammenhang zwischen den Zeichen', 'Enth\u00e4lt den Namen einer bekannten Person', 'Verwendet nur Kleinbuchstaben und Zahlen', 'Hat ein vorhersagbares Muster am Ende'] },
     { pw: 'jF8!kWz#2mNp', secure: true, correctReason: 0, reasons: ['Alle vier Zeichenarten, keine W\u00f6rter und keine Muster', 'Beginnt mit einem h\u00e4ufigen deutschen Vornamen', 'Enth\u00e4lt nur Zahlen und Sonderzeichen', 'Ist ein bekannter Tastaturlauf auf QWERTZ'] },
-    { pw: 'Tr0ub4d&r!3x', secure: true, correctReason: 0, reasons: ['Gemischte Zeichenarten mit kreativen Ersetzungen - kein einfaches Muster', 'Verwendet nur Gro\u00dfbuchstaben und Zahlen', 'Hat weniger als 8 Zeichen', 'Enth\u00e4lt eine einfache aufsteigende Zahlenfolge'] }
+    { pw: 'Bz4$wR!9kFm3', secure: true, correctReason: 0, reasons: ['Alle vier Zeichenarten und kein erkennbares Wort oder Muster', 'Verwendet nur Gro\u00dfbuchstaben und Zahlen', 'Hat weniger als 8 Zeichen', 'Enth\u00e4lt eine einfache aufsteigende Zahlenfolge'] }
 ];
 
 var MC_POOL_5 = [
@@ -623,7 +659,7 @@ function sKey(suffix) {
     return BLP_ID + platz + '-' + suffix;
 }
 
-var state = { name: '', seed: 0, version: LP_VERSION, currentPhase: 0, scores: {}, submitted: {}, hypotheses: {}, measurements: [], completed: false, startTime: null, phaseTimestamps: {}, experimentTimeLeft: EXP_TIMER, beleg: [] };
+var state = { name: '', seed: 0, version: LP_VERSION, currentPhase: 0, scores: {}, submitted: {}, hypotheses: {}, measurements: [], completed: false, startTime: null, phaseTimestamps: {}, experimentTimeLeft: EXP_TIMER, beleg: [], timerStart: null, timerExtended: false, forcedSubmit: false };
 (function() { for (var i = 0; i < PHASE_CONFIG.length; i++) { state.scores['p' + (i+1)] = 0; state.submitted['p' + (i+1)] = false; } })();
 
 var tabSwitchCount = 0, tabSwitchStart = 0, tabSwitchSeconds = 0;
@@ -633,7 +669,7 @@ var audioCtx = null, alarmOsc = null, alarmGain = null, alarmActive = false;
 function seedFromName(name) { var hash = 0; var str = name.trim().toLowerCase(); for (var i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash = hash & hash; } return Math.abs(hash); }
 function createRNG(seed) { var s = seed; return { next: function() { s = (s * 9301 + 49297) % 233280; return s / 233280; }, nextInt: function(max) { return Math.floor(this.next() * max); } }; }
 function shuffleWithRNG(arr, rng) { var result = arr.slice(); for (var i = result.length - 1; i > 0; i--) { var j = rng.nextInt(i + 1); var temp = result[i]; result[i] = result[j]; result[j] = temp; } return result; }
-function generateVerification(name, score, date) { var str = name.toLowerCase().trim() + '-' + score + '-' + date; var hash = 0; for (var i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash = hash & hash; } return Math.abs(hash).toString(36).toUpperCase().substr(0, 6); }
+function generateVerification(name, score, date) { var suffix = state.forcedSubmit ? '-TIMEOUT' : ''; var str = name.toLowerCase().trim() + '-' + score + '-' + date + suffix; var hash = 0; for (var i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash = hash & hash; } var code = Math.abs(hash).toString(36).toUpperCase().substr(0, 6); return state.forcedSubmit ? code + '-T' : code; }
 function parseNum(val) { if (!val) return NaN; return parseFloat(String(val).replace(',', '.')); }
 
 /* ── TEMPLATE: Navigation ── */
@@ -671,13 +707,14 @@ function showTabWarningOverlay() { document.getElementById('tabWarnCount').textC
 function dismissTabWarning() { if (document.getElementById('tabWarnDismiss').disabled) return; document.getElementById('tabWarning').classList.remove('visible'); if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; } stopAlarm(); }
 
 /* ── TEMPLATE: Persistenz ── */
-function saveState() { var data = { name: state.name, seed: state.seed, version: state.version, currentPhase: state.currentPhase, scores: state.scores, submitted: state.submitted, hypotheses: state.hypotheses, measurements: state.measurements, completed: state.completed, startTime: state.startTime, phaseTimestamps: state.phaseTimestamps, experimentTimeLeft: state.experimentTimeLeft, beleg: state.beleg }; localStorage.setItem(sKey('state'), JSON.stringify(data)); }
+function saveState() { var data = { name: state.name, seed: state.seed, version: state.version, currentPhase: state.currentPhase, scores: state.scores, submitted: state.submitted, hypotheses: state.hypotheses, measurements: state.measurements, completed: state.completed, startTime: state.startTime, phaseTimestamps: state.phaseTimestamps, experimentTimeLeft: state.experimentTimeLeft, beleg: state.beleg, timerStart: state.timerStart, timerExtended: state.timerExtended, forcedSubmit: state.forcedSubmit }; localStorage.setItem(sKey('state'), JSON.stringify(data)); }
 function saveInputSnapshot() { var data = {}; var inputs = document.querySelectorAll('input[type="text"], input[type="number"], select'); for (var i = 0; i < inputs.length; i++) { if (inputs[i].id) data[inputs[i].id] = inputs[i].value; } var selected = document.querySelectorAll('.mc-option.selected'); for (var i = 0; i < selected.length; i++) { var parent = selected[i].parentNode; if (parent.id) { var idx = 0; var siblings = parent.querySelectorAll('.mc-option'); for (var j = 0; j < siblings.length; j++) { if (siblings[j] === selected[i]) { idx = j; break; } } data['mc-' + parent.id] = idx; } } localStorage.setItem(sKey('inputs'), JSON.stringify(data)); }
 function loadInputSnapshot() { var saved = localStorage.getItem(sKey('inputs')); if (!saved) return; try { var data = JSON.parse(saved); for (var key in data) { if (key.indexOf('mc-') === 0) { var parentId = key.substr(3); var parent = document.getElementById(parentId); if (parent) { var opts = parent.querySelectorAll('.mc-option'); var idx = parseInt(data[key]); if (opts[idx]) opts[idx].classList.add('selected'); } } else { var el = document.getElementById(key); if (el) el.value = data[key]; } } } catch(e) {} }
-function loadState() { var saved = localStorage.getItem(sKey('state')); if (!saved) return false; try { var data = JSON.parse(saved); if (!data.name || !data.seed) return false; if (data.version !== LP_VERSION) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); return false; } state.name = data.name; state.seed = data.seed; state.version = data.version; state.currentPhase = data.currentPhase || 0; state.scores = data.scores || state.scores; state.submitted = data.submitted || state.submitted; state.hypotheses = data.hypotheses || state.hypotheses; state.measurements = data.measurements || state.measurements; state.completed = data.completed || false; state.startTime = data.startTime; state.phaseTimestamps = data.phaseTimestamps || {}; state.experimentTimeLeft = data.experimentTimeLeft || EXP_TIMER; state.beleg = data.beleg || []; return true; } catch (e) { return false; } }
+function loadState() { var saved = localStorage.getItem(sKey('state')); if (!saved) return false; try { var data = JSON.parse(saved); if (!data.name || !data.seed) return false; if (data.version !== LP_VERSION) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); return false; } state.name = data.name; state.seed = data.seed; state.version = data.version; state.currentPhase = data.currentPhase || 0; state.scores = data.scores || state.scores; state.submitted = data.submitted || state.submitted; state.hypotheses = data.hypotheses || state.hypotheses; state.measurements = data.measurements || state.measurements; state.completed = data.completed || false; state.startTime = data.startTime; state.phaseTimestamps = data.phaseTimestamps || {}; state.experimentTimeLeft = data.experimentTimeLeft || EXP_TIMER; state.beleg = data.beleg || []; state.timerStart = data.timerStart || null; state.timerExtended = data.timerExtended || false; state.forcedSubmit = data.forcedSubmit || false; return true; } catch (e) { return false; } }
 
 /* ── TEMPLATE: Ergebnis ── */
 function showResults() {
+    stopTimer();
     var total = 0; for (var i = 0; i < PHASE_CONFIG.length; i++) total += state.scores['p' + (i+1)];
     var pct = Math.round((total / TOTAL_BE) * 100); var grade = getGrade(total);
     var now = new Date(); var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
@@ -697,6 +734,8 @@ function showResults() {
     document.getElementById('resCode').textContent = code;
     document.getElementById('resTimestamp').textContent = 'Abgabe: ' + now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE');
     if (tabSwitchCount > 0) document.getElementById('resTabInfo').textContent = 'Tab-Wechsel: ' + tabSwitchCount + '\u00d7 (' + formatDuration(tabSwitchSeconds) + ')';
+    if (state.forcedSubmit) { var badgeDiv = document.createElement('div'); badgeDiv.style.textAlign = 'center'; badgeDiv.innerHTML = '<span class="forced-submit-badge">ZEITABLAUF &ndash; Zwangsabgabe</span>'; document.getElementById('resTabInfo').parentNode.insertBefore(badgeDiv, document.getElementById('resTabInfo').nextSibling); }
+    if (state.timerExtended) { var ntaDiv = document.createElement('div'); ntaDiv.style.textAlign = 'center'; ntaDiv.innerHTML = '<span class="nta-badge">NTA-Verl&auml;ngerung aktiv (+' + Math.round(EXTEND_TIME / 60) + ' Min.)</span>'; document.getElementById('resTabInfo').parentNode.insertBefore(ntaDiv, document.getElementById('resTabInfo').nextSibling); }
     goToPhase(PHASE_CONFIG.length + 1);
     showBeleg();
 }
@@ -709,6 +748,82 @@ function showBeleg() { var container = document.getElementById('belegContainer')
 /* ── TEMPLATE: Teacher-Reset ── */
 function teacherReset() { var code = prompt('Lehrer-Code eingeben:'); if (code === TEACHER_CODE) { if (confirm('Wirklich alle Daten l\u00f6schen?')) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); localStorage.removeItem(sKey('result')); localStorage.removeItem(sKey('tabswitches')); localStorage.removeItem(sKey('tabseconds')); alert('Zur\u00fcckgesetzt.'); location.reload(); } } else if (code !== null) { alert('Falscher Code!'); } }
 
+/* ══ TIMER-SYSTEM ══ */
+var timerInterval = null;
+var timerRemainingSeconds = 0;
+
+function startTimer() {
+    if (MAX_TIME <= 0) return;
+    if (!state.timerStart) { state.timerStart = new Date().toISOString(); saveState(); }
+    var disp = document.getElementById('timerDisplay');
+    if (disp) disp.classList.remove('timer-hidden');
+    updateTimerRemaining(); renderTimer();
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(function() {
+        updateTimerRemaining(); renderTimer();
+        if (timerRemainingSeconds <= 0) { clearInterval(timerInterval); timerInterval = null; onTimerExpired(); }
+    }, 1000);
+}
+function updateTimerRemaining() {
+    var now = new Date().getTime();
+    var start = new Date(state.timerStart).getTime();
+    var elapsed = Math.floor((now - start) / 1000);
+    var maxSec = MAX_TIME + (state.timerExtended ? EXTEND_TIME : 0);
+    timerRemainingSeconds = Math.max(0, maxSec - elapsed);
+}
+function renderTimer() {
+    var disp = document.getElementById('timerDisplay');
+    if (!disp) return;
+    var mins = Math.floor(timerRemainingSeconds / 60);
+    var secs = timerRemainingSeconds % 60;
+    disp.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    disp.classList.remove('timer-active', 'timer-warn', 'timer-critical');
+    if (timerRemainingSeconds <= 60) disp.classList.add('timer-critical');
+    else if (timerRemainingSeconds <= 300) disp.classList.add('timer-warn');
+    else disp.classList.add('timer-active');
+}
+function onTimerExpired() {
+    if (state.completed) return;
+    if (state.timerExtended) { forceSubmitNow(); return; }
+    var overlay = document.getElementById('extendOverlay');
+    if (overlay) overlay.classList.add('visible');
+    var errEl = document.getElementById('extendError');
+    if (errEl) errEl.style.display = 'none';
+    var inp = document.getElementById('extendCodeInput');
+    if (inp) { inp.value = ''; inp.focus(); }
+}
+function tryExtend() {
+    var inp = document.getElementById('extendCodeInput');
+    var code = inp ? inp.value.trim() : '';
+    if (code === EXTEND_CODE) {
+        state.timerExtended = true; saveState();
+        var overlay = document.getElementById('extendOverlay');
+        if (overlay) overlay.classList.remove('visible');
+        updateTimerRemaining(); renderTimer();
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(function() {
+            updateTimerRemaining(); renderTimer();
+            if (timerRemainingSeconds <= 0) { clearInterval(timerInterval); timerInterval = null; forceSubmitNow(); }
+        }, 1000);
+    } else {
+        var errEl = document.getElementById('extendError');
+        if (errEl) errEl.style.display = 'block';
+        if (inp) inp.value = '';
+    }
+}
+function forceSubmitNow() {
+    var overlay = document.getElementById('extendOverlay');
+    if (overlay) overlay.classList.remove('visible');
+    for (var i = 0; i < PHASE_CONFIG.length; i++) {
+        var pKey = 'p' + (i + 1);
+        if (!state.submitted[pKey]) {
+            state.submitted[pKey] = true; state.scores[pKey] = 0;
+            state.beleg.push({ phase: i + 1, phaseName: PHASE_CONFIG[i].name, items: [{ q: 'Nicht abgegeben (Zeitablauf)', options: [], correct: '-', given: '-', be: 0, maxBE: PHASE_CONFIG[i].maxBE, explain: 'Phase wurde nicht innerhalb der Zeit bearbeitet.' }], phBE: 0, phMaxBE: PHASE_CONFIG[i].maxBE });
+        }
+    }
+    state.forcedSubmit = true; saveState(); showResults();
+}
+function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } var disp = document.getElementById('timerDisplay'); if (disp) disp.classList.add('timer-hidden'); }
 
 /* ══ CONTENT: Helpers ══ */
 function escapeHTML(str) { var div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
@@ -965,7 +1080,7 @@ function startLP() {
     try { initAudioContext(); } catch(e) {}
     buildPersonalTasks();
     buildPhase1(); buildPhase2(); buildPhase3(); buildPhase4(); buildPhase5(); buildPhase6();
-    saveState(); goToPhase(1); sessionReady = true;
+    saveState(); goToPhase(1); sessionReady = true; startTimer();
 }
 
 function restoreSession() {
@@ -1051,7 +1166,7 @@ function restoreSession() {
         }
     }
     if (state.completed) { document.getElementById('lockedNotice').classList.add('visible'); showResults(); }
-    else { goToPhase(state.currentPhase || 1); }
+    else { goToPhase(state.currentPhase || 1); startTimer(); }
     sessionReady = true;
 }
 
