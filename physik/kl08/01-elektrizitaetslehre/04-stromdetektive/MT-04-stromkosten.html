@@ -143,6 +143,24 @@
         .tab-warnung p { font-size: 1.2em; margin-bottom: 20px; }
         .tab-warnung .btn { background: white; color: #c62828; font-weight: 700; }
 
+        /* Abgabe-Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 9998;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 8px; padding: 30px; max-width: 400px; width: 90%;
+            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-box h3 { color: #2c5aa0; margin-bottom: 10px; }
+        .modal-box p { color: #555; margin-bottom: 20px; }
+        .modal-buttons { display: flex; gap: 12px; justify-content: center; }
+        .modal-buttons .btn { min-width: 120px; }
+        .btn-cancel { background: #eee; color: #333; }
+        .btn-cancel:hover { background: #ddd; }
+
         /* Responsive */
         @media (max-width: 500px) {
             .aufgabe { padding: 15px; }
@@ -164,6 +182,18 @@
         <h2>Tab-Wechsel erkannt!</h2>
         <p>Du hast den Test-Tab verlassen.<br>Das wurde registriert: <strong id="tabCount">0</strong> Mal</p>
         <button class="btn" onclick="closeTabWarnung()">Zurück zum Test</button>
+    </div>
+
+    <!-- Abgabe-Bestätigung Modal -->
+    <div class="modal-overlay" id="abgabeModal">
+        <div class="modal-box">
+            <h3>Test abgeben?</h3>
+            <p>Du kannst danach nichts mehr ändern.</p>
+            <div class="modal-buttons">
+                <button class="btn btn-cancel" onclick="closeAbgabeModal()">Abbrechen</button>
+                <button class="btn btn-success" onclick="confirmAbgabe()">Abgeben</button>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -562,6 +592,10 @@
         document.addEventListener('visibilitychange', function() {
             if (!testGestartet || testBeendet) return;
             if (document.hidden) {
+                // Bei erneutem hidden: bisherige Abwesenheit erst akkumulieren
+                if (window._tabLeave) {
+                    tabSekunden += Math.floor((Date.now() - window._tabLeave) / 1000);
+                }
                 tabWechsel++;
                 window._tabLeave = Date.now();
             } else if (tabWechsel > 0 && window._tabLeave) {
@@ -590,10 +624,19 @@
             }
         });
 
+        // === ABGABE-MODAL ===
+        window.closeAbgabeModal = function() { document.getElementById('abgabeModal').classList.remove('show'); };
+        window.confirmAbgabe = function() { document.getElementById('abgabeModal').classList.remove('show'); doAbgabe(); };
+
         // === ABGEBEN ===
         function abgeben() {
             if (testBeendet) return;
-            if (zeitVerbleibend > 0 && !confirm('Test wirklich abgeben? Du kannst danach nichts mehr ändern.')) return;
+            if (zeitVerbleibend > 0) { document.getElementById('abgabeModal').classList.add('show'); return; }
+            doAbgabe();
+        }
+
+        function doAbgabe() {
+            if (testBeendet) return;
             testBeendet = true;
             clearInterval(timerInterval);
 
@@ -642,7 +685,7 @@
                 else { if (zrow) zrow.classList.add('incorrect'); if (zsel) zsel.classList.add('incorrect'); }
             }
             var fb2 = document.getElementById('feedback2');
-            fb2.innerHTML = '<strong>Lösung:</strong> Wasserkocher = 2000 W, LED-Lampe = 10 W, Smartphone-Ladegerät = 20 W, Haartrockner = 1800 W.';
+            fb2.innerHTML = '<strong>Lösung:</strong> Wasserkocher = 2000 W, LED-Lampe = 10 W, USB-Ladegerät (5 V) = 20 W, Haartrockner = 1800 W.';
             fb2.className = 'feedback show ' + (p2 >= 3 ? 'correct' : 'incorrect');
 
             // --- Aufgabe 3: Energie (4 BE) --- computed, not stored
