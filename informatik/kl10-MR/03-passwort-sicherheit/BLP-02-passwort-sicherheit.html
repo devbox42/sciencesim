@@ -651,7 +651,7 @@ function sKey(suffix) {
     return BLP_ID + platz + '-' + suffix;
 }
 
-var state = { name: '', seed: 0, version: LP_VERSION, currentPhase: 0, scores: {}, submitted: {}, hypotheses: {}, measurements: [], completed: false, startTime: null, phaseTimestamps: {}, experimentTimeLeft: EXP_TIMER, beleg: [], timerStart: null, timerExtended: false, forcedSubmit: false };
+var state = { name: '', seed: 0, version: LP_VERSION, currentPhase: 0, scores: {}, submitted: {}, hypotheses: {}, measurements: [], completed: false, completedAt: null, startTime: null, phaseTimestamps: {}, experimentTimeLeft: EXP_TIMER, beleg: [], timerStart: null, timerExtended: false, forcedSubmit: false };
 (function() { for (var i = 0; i < PHASE_CONFIG.length; i++) { state.scores['p' + (i+1)] = 0; state.submitted['p' + (i+1)] = false; } })();
 
 var tabSwitchCount = 0, tabSwitchStart = 0, tabSwitchSeconds = 0;
@@ -718,17 +718,19 @@ function showTabWarningOverlay() { document.getElementById('tabWarnCount').textC
 function dismissTabWarning() { if (document.getElementById('tabWarnDismiss').disabled) return; document.getElementById('tabWarning').classList.remove('visible'); if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; } stopAlarm(); }
 
 /* ── TEMPLATE: Persistenz ── */
-function saveState() { var data = { name: state.name, seed: state.seed, version: state.version, currentPhase: state.currentPhase, scores: state.scores, submitted: state.submitted, hypotheses: state.hypotheses, measurements: state.measurements, completed: state.completed, startTime: state.startTime, phaseTimestamps: state.phaseTimestamps, experimentTimeLeft: state.experimentTimeLeft, beleg: state.beleg, timerStart: state.timerStart, timerExtended: state.timerExtended, forcedSubmit: state.forcedSubmit }; localStorage.setItem(sKey('state'), JSON.stringify(data)); }
+function saveState() { var data = { name: state.name, seed: state.seed, version: state.version, currentPhase: state.currentPhase, scores: state.scores, submitted: state.submitted, hypotheses: state.hypotheses, measurements: state.measurements, completed: state.completed, completedAt: state.completedAt, startTime: state.startTime, phaseTimestamps: state.phaseTimestamps, experimentTimeLeft: state.experimentTimeLeft, beleg: state.beleg, timerStart: state.timerStart, timerExtended: state.timerExtended, forcedSubmit: state.forcedSubmit }; localStorage.setItem(sKey('state'), JSON.stringify(data)); }
 function saveInputSnapshot() { var data = {}; var inputs = document.querySelectorAll('input[type="text"], input[type="number"], select'); for (var i = 0; i < inputs.length; i++) { if (inputs[i].id) data[inputs[i].id] = inputs[i].value; } var selected = document.querySelectorAll('.mc-option.selected'); for (var i = 0; i < selected.length; i++) { var parent = selected[i].parentNode; if (parent.id) { var idx = 0; var siblings = parent.querySelectorAll('.mc-option'); for (var j = 0; j < siblings.length; j++) { if (siblings[j] === selected[i]) { idx = j; break; } } data['mc-' + parent.id] = idx; } } localStorage.setItem(sKey('inputs'), JSON.stringify(data)); }
 function loadInputSnapshot() { var saved = localStorage.getItem(sKey('inputs')); if (!saved) return; try { var data = JSON.parse(saved); for (var key in data) { if (key.indexOf('mc-') === 0) { var parentId = key.substr(3); var parent = document.getElementById(parentId); if (parent) { var opts = parent.querySelectorAll('.mc-option'); var idx = parseInt(data[key]); if (opts[idx]) opts[idx].classList.add('selected'); } } else { var el = document.getElementById(key); if (el) el.value = data[key]; } } } catch(e) {} }
-function loadState() { var saved = localStorage.getItem(sKey('state')); if (!saved) return false; try { var data = JSON.parse(saved); if (!data.name || !data.seed) return false; if (data.version !== LP_VERSION) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); return false; } state.name = data.name; state.seed = data.seed; state.version = data.version; state.currentPhase = data.currentPhase || 0; state.scores = data.scores || state.scores; state.submitted = data.submitted || state.submitted; state.hypotheses = data.hypotheses || state.hypotheses; state.measurements = data.measurements || state.measurements; state.completed = data.completed || false; state.startTime = data.startTime; state.phaseTimestamps = data.phaseTimestamps || {}; state.experimentTimeLeft = data.experimentTimeLeft || EXP_TIMER; state.beleg = data.beleg || []; state.timerStart = data.timerStart || null; state.timerExtended = data.timerExtended || false; state.forcedSubmit = data.forcedSubmit || false; return true; } catch (e) { return false; } }
+function loadState() { var saved = localStorage.getItem(sKey('state')); if (!saved) return false; try { var data = JSON.parse(saved); if (!data.name || !data.seed) return false; if (data.version !== LP_VERSION) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('inputs')); return false; } state.name = data.name; state.seed = data.seed; state.version = data.version; state.currentPhase = data.currentPhase || 0; state.scores = data.scores || state.scores; state.submitted = data.submitted || state.submitted; state.hypotheses = data.hypotheses || state.hypotheses; state.measurements = data.measurements || state.measurements; state.completed = data.completed || false; state.completedAt = data.completedAt || null; state.startTime = data.startTime; state.phaseTimestamps = data.phaseTimestamps || {}; state.experimentTimeLeft = data.experimentTimeLeft || EXP_TIMER; state.beleg = data.beleg || []; state.timerStart = data.timerStart || null; state.timerExtended = data.timerExtended || false; state.forcedSubmit = data.forcedSubmit || false; return true; } catch (e) { return false; } }
 
 /* ── TEMPLATE: Ergebnis ── */
 function showResults() {
     stopTimer();
     var total = 0; for (var i = 0; i < PHASE_CONFIG.length; i++) total += state.scores['p' + (i+1)];
     var pct = Math.round((total / TOTAL_BE) * 100); var grade = getGrade(total);
-    var now = new Date(); var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
+    if (!state.completedAt) state.completedAt = new Date().toISOString();
+    var now = new Date(state.completedAt);
+    var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
     state.completed = true; saveState();
     localStorage.setItem(sKey('result'), JSON.stringify({ name: state.name, total: total, pct: pct, grade: grade, code: code, timestamp: now.toISOString() }));
     document.getElementById('resultName').textContent = state.name;
@@ -1088,30 +1090,62 @@ function restoreSession() {
     buildPersonalTasks();
     buildPhase1(); buildPhase2(); buildPhase3(); buildPhase4(); buildPhase5(); buildPhase6();
     loadInputSnapshot();
-    // Restore MC phases
+    // Restore MC phases with visual feedback
     var mcPhases = [1, 2, 3, 5, 6];
     for (var m = 0; m < mcPhases.length; m++) {
         var pn = mcPhases[m];
         if (state.submitted['p' + pn]) {
+            var mcItems = pn === 1 ? myPhase1Items : pn === 2 ? myPhase2Items : pn === 3 ? myPhase3Items : pn === 5 ? myPhase5Items : myPhase6Items;
+            for (var rq = 0; rq < mcItems.length; rq++) {
+                var rqDiv = document.getElementById('mc-p' + pn + '-q' + rq);
+                if (!rqDiv) continue;
+                var rCorrectIdx = parseInt(rqDiv.getAttribute('data-correct-idx'));
+                var rOpts = document.getElementById('mc-opts-p' + pn + '-q' + rq).querySelectorAll('.mc-option');
+                var rSelIdx = -1;
+                for (var ri = 0; ri < rOpts.length; ri++) { if (rOpts[ri].classList.contains('selected')) { rSelIdx = ri; break; } }
+                for (var ri = 0; ri < rOpts.length; ri++) rOpts[ri].classList.add('disabled');
+                if (rSelIdx >= 0) rOpts[rSelIdx].classList.add(rSelIdx === rCorrectIdx ? 'correct-reveal' : 'wrong-reveal');
+                rOpts[rCorrectIdx].classList.add('correct-reveal');
+            }
             lockZone('assess' + pn);
+            var fb = document.getElementById('fb-assess' + pn);
+            if (fb) { fb.className = 'feedback ' + (state.scores['p' + pn] > 0 ? 'correct' : 'incorrect'); fb.textContent = state.scores['p' + pn] + '/' + PHASE_CONFIG[pn - 1].maxBE + ' BE'; }
             var nextBtn = document.getElementById('btn-next' + pn);
             if (nextBtn) nextBtn.disabled = false;
         }
     }
     // Restore Phase 4 PW cards
     if (state.submitted.p4) {
-        // All 5 answered - lock everything
+        // All 5 answered - restore with full visual feedback
         for (var ci = 0; ci < 5; ci++) {
             var card = document.getElementById('pw-card-' + ci);
-            if (card) card.classList.add('answered');
-            var reasons = document.getElementById('pw-reasons-' + ci);
-            if (reasons) { var rbtns = reasons.querySelectorAll('.pw-reason-btn'); for (var rb = 0; rb < rbtns.length; rb++) rbtns[rb].classList.add('disabled'); }
-            var submit = document.getElementById('pw-submit-' + ci);
-            if (submit) submit.disabled = true;
-            var step1Btns = document.getElementById('pw-step1-' + ci);
-            if (step1Btns) { var btns = step1Btns.querySelectorAll('.pw-btn'); for (var b = 0; b < btns.length; b++) btns[b].classList.add('disabled'); }
+            if (!card) continue;
+            card.classList.add('answered');
             var step2 = document.getElementById('pw-step2-' + ci);
             if (step2) step2.style.display = 'block';
+            var s1Key4 = 'pw-step1-' + ci;
+            var rKey4 = 'pw-reason-' + ci;
+            var s1Btns4 = document.getElementById('pw-step1-' + ci).querySelectorAll('.pw-btn');
+            for (var b = 0; b < s1Btns4.length; b++) s1Btns4[b].classList.add('disabled');
+            var rBtns4 = document.getElementById('pw-reasons-' + ci).querySelectorAll('.pw-reason-btn');
+            for (var rb = 0; rb < rBtns4.length; rb++) rBtns4[rb].classList.add('disabled');
+            document.getElementById('pw-submit-' + ci).disabled = true;
+            if (state.hypotheses.hasOwnProperty(s1Key4) && state.hypotheses.hasOwnProperty(rKey4)) {
+                var isSec4 = state.hypotheses[s1Key4];
+                var selR4 = state.hypotheses[rKey4];
+                var actSec4 = card.getAttribute('data-secure') === '1';
+                var corRI4 = parseInt(card.getAttribute('data-correct-reason'));
+                var s1ok4 = (isSec4 === actSec4);
+                var s2ok4 = (selR4 === corRI4);
+                s1Btns4[isSec4 ? 0 : 1].classList.add(s1ok4 ? 'chosen-correct' : 'chosen-wrong');
+                rBtns4[selR4].classList.add(s2ok4 ? 'chosen-correct' : 'chosen-wrong');
+                if (!s2ok4) rBtns4[corRI4].classList.add('show-correct');
+                var fbC = document.getElementById('pw-fb-' + ci);
+                fbC.className = 'pw-feedback visible';
+                var bothOK4 = s1ok4 && s2ok4;
+                if (bothOK4) { fbC.style.background = 'var(--success-bg)'; fbC.style.borderLeft = '3px solid var(--success)'; fbC.innerHTML = '<strong>1 BE</strong> - Bewertung und Begr\u00fcndung richtig!'; }
+                else { fbC.style.background = 'var(--error-bg)'; fbC.style.borderLeft = '3px solid var(--error)'; var msg4 = '<strong>0 BE</strong> - '; if (!s1ok4 && !s2ok4) msg4 += 'Bewertung und Begr\u00fcndung falsch.'; else if (!s1ok4) msg4 += 'Bewertung falsch.'; else msg4 += 'Begr\u00fcndung falsch.'; fbC.innerHTML = msg4; }
+            }
         }
         var fb4 = document.getElementById('fb-assess4');
         fb4.className = 'feedback ' + (state.scores.p4 > 0 ? 'correct' : 'incorrect');

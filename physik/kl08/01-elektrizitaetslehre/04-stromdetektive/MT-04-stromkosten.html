@@ -2,851 +2,1647 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MT-04: Stromkosten & Energie</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Test: Stromkosten &amp; Energie</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html {
+            -webkit-text-size-adjust: 100%;
+            -webkit-touch-callout: none;
+            scroll-padding-top: 60px;
+        }
         body {
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: manipulation;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f5f5f5; color: #222; font-size: 16px; line-height: 1.6;
+            background: #f5f5f5;
+            font-size: 16px;
+            color: #222;
+            line-height: 1.5;
+            padding-top: 55px;
         }
-        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            padding: 20px;
+        }
         header {
-            background: linear-gradient(135deg, #2c5aa0 0%, #1e4080 100%);
-            color: white; padding: 15px 20px; text-align: center;
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
         }
-        header h1 { font-size: 1.3em; font-weight: 600; }
-        header .meta { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+        header h1 {
+            color: #2c5aa0;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        header .meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
 
-        /* Timer */
+        /* Timer-Leiste */
         .timer-bar {
-            background: white; border: 1px solid #ddd; padding: 10px 15px;
-            display: flex; justify-content: space-between; align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #2a7a4b;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            font-weight: 600;
+            transition: background 0.5s;
+        }
+        .timer-bar.warning { background: #b35c00; }
+        .timer-bar.danger { background: #c62828; animation: pulse 1s ease-in-out infinite; }
+        .timer-bar.expired { background: #c62828; animation: pulse 0.5s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .timer-display { font-size: 1.4em; font-family: monospace; letter-spacing: 2px; }
+        .timer-label { font-size: 0.95em; }
+
+        /* Tab-Wechsel-Warnung */
+        .tab-warning {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            right: 0;
+            background: #c62828;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 0.95em;
+            font-weight: 600;
+            text-align: center;
+            z-index: 999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transform: translateY(-100%);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .tab-warning.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .tab-warning-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 4px;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Auswahl-Bereich */
+        .selection-section {
+            background: #fff;
+            border: 2px solid #2c5aa0;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .selection-section h2 {
+            color: #2c5aa0;
+            font-size: 1.1em;
             margin-bottom: 15px;
-            position: -webkit-sticky; position: sticky; top: 0; z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .timer { font-size: 1.5em; font-weight: 700; color: #2c5aa0; font-family: monospace; }
-        .timer.warning { color: #b35c00; }
-        .timer.danger { color: #c62828; -webkit-animation: pulse 1s infinite; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-        .progress-info { font-size: 0.9em; color: #666; }
-
-        /* Aufgaben */
-        .aufgabe { background: white; border: 1px solid #ddd; padding: 20px; margin-bottom: 15px; border-radius: 4px; }
-        .aufgabe.locked { opacity: 0.5; pointer-events: none; }
-        .aufgabe-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #2c5aa0;
+        .selection-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
         }
-        .aufgabe-nummer { background: #2c5aa0; color: white; padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.9em; }
-        .aufgabe-punkte { color: #666; font-size: 0.85em; }
-        .aufgabe-niveau { color: #b35c00; font-weight: 600; font-size: 0.85em; margin-left: 8px; }
-        .aufgabe h3 { color: #2c5aa0; font-size: 1em; margin-bottom: 12px; }
-        .aufgabe p { margin-bottom: 10px; }
-        .teilaufgabe { margin-top: 20px; }
-
-        /* Multiple Choice */
-        .mc-options { display: flex; flex-direction: column; }
-        .mc-options .mc-option + .mc-option { margin-top: 10px; }
-        .mc-option {
-            display: flex; align-items: center;
-            padding: 12px 15px; background: #f9f9f9; border: 2px solid #ddd;
-            border-radius: 4px; cursor: pointer; transition: all 0.2s; min-height: 48px;
+        .selection-row label {
+            font-weight: 600;
+            min-width: 120px;
         }
-        .mc-option input { width: 20px; height: 20px; margin-right: 12px; flex-shrink: 0; }
-        .mc-option:hover { border-color: #2c5aa0; background: #f0f5ff; }
-        .mc-option.selected { border-color: #2c5aa0; background: #e8f0fa; }
-        .mc-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
-        .mc-option.incorrect { border-color: #c62828; background: #ffebee; }
-        .mc-option label { flex: 1; cursor: pointer; }
-
-        /* Input Felder */
-        .input-group { display: flex; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-        .input-group > * + * { margin-left: 10px; }
-        .input-field {
-            padding: 10px 15px; font-size: 1.1em; border: 2px solid #ddd;
-            border-radius: 4px; width: 120px; text-align: center; min-height: 44px;
+        .selection-row select {
+            padding: 10px 15px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            min-width: 200px;
         }
-        .input-field:focus { border-color: #2c5aa0; outline: none; }
-        .input-field.correct { border-color: #2a7a4b; background: #e8f5e9; }
-        .input-field.incorrect { border-color: #c62828; background: #ffebee; }
-        .input-unit { font-weight: 600; color: #555; }
-
-        /* Zuordnung (Dropdown) */
-        .zuordnung-table { margin: 15px 0; }
-        .zuordnung-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 15px; background: #f9f9f9; border: 2px solid #ddd;
-            border-radius: 4px; margin-bottom: 8px; min-height: 48px;
+        .selection-row .btn {
+            padding: 10px 20px;
         }
-        .zuordnung-row.correct { border-color: #2a7a4b; background: #e8f5e9; }
-        .zuordnung-row.incorrect { border-color: #c62828; background: #ffebee; }
-        .zuordnung-geraet { font-weight: 600; }
-        .zuordnung-select {
-            padding: 8px 12px; font-size: 1em; border: 2px solid #ddd;
-            border-radius: 4px; background: white; min-width: 140px; min-height: 44px;
+        .locked-display {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 12px 20px;
+            font-weight: 600;
+            color: #2a7a4b;
         }
-        .zuordnung-select:focus { border-color: #2c5aa0; outline: none; }
-        .zuordnung-select.correct { border-color: #2a7a4b; background: #e8f5e9; }
-        .zuordnung-select.incorrect { border-color: #c62828; background: #ffebee; }
+        .locked-display.niveau-1 { background: #e8f5e9; border-color: #2a7a4b; color: #2a7a4b; }
+        .locked-display.niveau-2 { background: #e3f2fd; border-color: #2c5aa0; color: #2c5aa0; }
+        .locked-display.niveau-3 { background: #f3e5f5; border-color: #7b1fa2; color: #7b1fa2; }
 
-        /* Rechenweg */
-        .rechenweg { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin: 15px 0; border-radius: 4px; }
-        .rechenweg-schritt { display: flex; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-        .rechenweg-schritt > * + * { margin-left: 10px; }
-        .rechenweg-label { min-width: 80px; font-weight: 600; }
+        /* Progress */
+        .progress-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            margin-top: 10px;
+        }
+        .progress-fill {
+            background: #2c5aa0;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 0.9em;
+            color: #666;
+        }
 
-        /* Formel-Box */
-        .formel-box { background: #e8f0fa; border: 2px solid #2c5aa0; padding: 15px; margin: 15px 0; text-align: center; border-radius: 4px; }
-        .formel-box .formel { font-size: 1.3em; font-weight: 600; color: #2c5aa0; }
+        /* Fragen */
+        .question {
+            background: #fff;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            display: none;
+        }
+        .question.visible { display: block; }
+        .question.unanswered { background: #fff3e0 !important; }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .question-title {
+            color: #2c5aa0;
+            font-weight: 600;
+        }
+        .question-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .question-niveau {
+            padding: 2px 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points {
+            color: #888;
+            font-size: 0.85em;
+        }
+        .question-text { margin-bottom: 12px; -webkit-user-select: text; user-select: text; }
+        .question-result {
+            padding: 3px 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
 
-        /* Feedback */
-        .feedback { padding: 12px 15px; border-radius: 4px; margin-top: 15px; display: none; }
-        .feedback.show { display: block; }
-        .feedback.correct { background: #e8f5e9; border: 1px solid #2a7a4b; color: #1b5e20; }
-        .feedback.incorrect { background: #ffebee; border: 1px solid #c62828; color: #c62828; }
+        /* Optionen */
+        .options label {
+            display: block;
+            padding: 10px 12px;
+            margin: 4px 0;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .options label:hover { background: #e8f4fd; }
+        .options label.selected { background: #e3f2fd; border-color: #2c5aa0; }
+        .options label.correct { background: #e8f5e9 !important; border-color: #2a7a4b !important; }
+        .options label.incorrect { background: #ffebee !important; border-color: #c62828 !important; }
+        .options input[type="radio"] { margin-right: 10px; }
+
+        /* Inputs */
+        input[type="number"], input[type="text"] {
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            width: 100px;
+            margin: 0 5px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+        select {
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: auto;
+            user-select: auto;
+        }
+        select.correct { border: 2px solid #2a7a4b !important; background: #e8f5e9; }
+        select.incorrect { border: 2px solid #c62828 !important; background: #ffebee; }
+        select.unanswered { border: 2px solid #b35c00 !important; }
+        .inline-answer {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        .calc-row {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #eee;
+        }
 
         /* Buttons */
-        .btn { padding: 12px 24px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; min-height: 48px; transition: all 0.2s; }
-        .btn-primary { background: #2c5aa0; color: white; }
-        .btn-primary:hover { background: #1e4080; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
-        .btn-success { background: #2a7a4b; color: white; }
-        .btn-success:hover { background: #1e5a38; }
-
-        /* Hinweis */
-        .hinweis-box { background: #fff3e0; border-left: 4px solid #b35c00; padding: 12px 15px; margin: 15px 0; font-size: 0.9em; }
-
-        /* Ergebnis */
-        .ergebnis-box { background: white; border: 2px solid #2c5aa0; padding: 25px; text-align: center; border-radius: 4px; display: none; }
-        .ergebnis-box.show { display: block; }
-        .ergebnis-punkte { font-size: 3em; font-weight: 700; color: #2c5aa0; }
-        .ergebnis-note { font-size: 1.5em; margin: 15px 0; }
-        .ergebnis-details { text-align: left; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; }
-        .ergebnis-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .pruefcode { font-family: monospace; font-size: 1.3em; font-weight: 700; color: #2c5aa0; background: #e8f0fa; padding: 8px 16px; border-radius: 4px; display: inline-block; margin: 10px 0; letter-spacing: 2px; }
-
-        /* Name Input */
-        .name-input-container { background: white; border: 1px solid #ddd; padding: 20px; margin-bottom: 15px; text-align: center; }
-        .name-input { padding: 12px 20px; font-size: 1.1em; border: 2px solid #ddd; border-radius: 4px; width: 100%; max-width: 300px; margin: 10px 0; min-height: 44px; }
-        .name-input:focus { border-color: #2c5aa0; outline: none; }
-
-        /* Tab-Warnung Overlay */
-        .tab-warnung {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(198,40,40,0.95); color: white; z-index: 9999;
-            justify-content: center; align-items: center; text-align: center;
-            flex-direction: column; padding: 40px;
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px 5px 5px 0;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
-        .tab-warnung h2 { font-size: 2em; margin-bottom: 15px; }
-        .tab-warnung p { font-size: 1.2em; margin-bottom: 20px; }
-        .tab-warnung .btn { background: white; color: #c62828; font-weight: 700; }
+        .btn:hover { background: #1e4a8a; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-success { background: #2a7a4b; }
+        .btn-success:hover { background: #1e5a35; }
+        .btn-small { padding: 10px 16px; font-size: 0.85em; min-height: 44px; }
 
-        /* Abgabe-Modal */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 9998;
-            justify-content: center; align-items: center;
+        /* Feedback */
+        .feedback-box {
+            padding: 12px 15px;
+            margin: 10px 0;
+            display: none;
         }
-        .modal-overlay.show { display: flex; }
-        .modal-box {
-            background: white; border-radius: 8px; padding: 30px; max-width: 400px; width: 90%;
-            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        .modal-box h3 { color: #2c5aa0; margin-bottom: 10px; }
-        .modal-box p { color: #555; margin-bottom: 20px; }
-        .modal-buttons { display: flex; gap: 12px; justify-content: center; }
-        .modal-buttons .btn { min-width: 120px; }
-        .btn-cancel { background: #eee; color: #333; }
-        .btn-cancel:hover { background: #ddd; }
+        .feedback-box.correct { background: #e8f5e9; border: 1px solid #2a7a4b; color: #1b5e20; }
+        .feedback-box.incorrect { background: #ffebee; border: 1px solid #c62828; color: #b71c1c; }
+        .feedback-box.show { display: block; }
 
-        /* Responsive */
-        @media (max-width: 500px) {
-            .aufgabe { padding: 15px; }
-            .input-field { width: 100px; }
-            .zuordnung-row { flex-direction: column; align-items: flex-start; }
-            .zuordnung-row > * + * { margin-top: 8px; }
-            .zuordnung-select { width: 100%; }
+        /* Ergebnisse */
+        .results {
+            background: #fff;
+            border: 2px solid #2c5aa0;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        .results h2 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+        }
+        .results-score {
+            font-size: 1.8em;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin: 15px 0;
+        }
+        .results-np {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin: 10px 0;
+            padding: 10px 15px;
+            display: inline-block;
+        }
+        .results-np.good { background: #e8f5e9; color: #2a7a4b; }
+        .results-np.ok { background: #fff3e0; color: #b35c00; }
+        .results-np.weak { background: #ffebee; color: #c62828; }
+
+        /* Notentabelle */
+        .grade-table {
+            margin: 15px 0;
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 0.85em;
+        }
+        .grade-table th, .grade-table td {
+            border: 1px solid #ddd;
+            padding: 4px 6px;
+            text-align: center;
+        }
+        .grade-table th { background: #f5f5f5; }
+        .current-grade { background: #e3f2fd !important; font-weight: bold; }
+
+        /* ISO 80000 */
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        .einheit { font-family: sans-serif; font-style: normal; }
+        .bruch-inline {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.85em;
+            line-height: 1.1;
+        }
+        .bruch-inline .zi {
+            display: block;
+            border-bottom: 1px solid currentColor;
+            padding: 0 2px 1px;
+        }
+        .bruch-inline .ni {
+            display: block;
+            padding: 1px 2px 0;
+        }
+
+        /* Lehrer-Bereich */
+        .teacher-section {
+            margin-top: 40px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 1px dashed #999;
+        }
+        .teacher-section summary {
+            cursor: pointer;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* === FRAGEN AUSBLENDEN BIS FREIGABE === */
+        #questionsContainer { display: none; }
+        #questionsContainer.unlocked { display: block; }
+        .unlock-hint {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            color: #b35c00;
+        }
+
+        /* PDF-Abgabe-Box */
+        .pdf-upload-box {
+            display: none;
+            margin: 24px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border: 2px solid #2c5aa0;
+            border-radius: 12px;
+        }
+        .pdf-upload-box h3 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 14px;
+        }
+        .pdf-upload-box.visible { display: block; }
+        .pdf-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pdf-steps li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #bbdefb;
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+        .pdf-steps li:last-child { border-bottom: none; }
+        .step-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+        }
+        .step-text { flex: 1; }
+        .step-text strong { color: #1565c0; }
+        .btn-pdf {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+            padding: 14px 24px;
+            background: #2c5aa0;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            min-height: 48px;
+            min-width: 48px;
+        }
+        .btn-pdf:active { background: #1a3d6e; }
+
+        @media print {
+            .timer-bar, .selection-section, .progress-container, button, .teacher-section, .pdf-upload-box { display: none; }
+            body { padding-top: 0; }
+            .question { page-break-inside: avoid; }
+            .question.visible { display: block !important; }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Minitest: Stromkosten & Energie</h1>
-        <div class="meta">Physik Klasse 8 | 25 Minuten | 25 Punkte | ohne Taschenrechner</div>
-    </header>
-
-    <!-- Tab-Warnung Overlay -->
-    <div class="tab-warnung" id="tabWarnung">
-        <h2>Tab-Wechsel erkannt!</h2>
-        <p>Du hast den Test-Tab verlassen.<br>Das wurde registriert: <strong id="tabCount">0</strong> Mal</p>
-        <button class="btn" onclick="closeTabWarnung()">Zurück zum Test</button>
+    <!-- Timer-Leiste -->
+    <div class="timer-bar" id="timerBar">
+        <span class="timer-label">Test: Stromkosten &amp; Energie</span>
+        <span class="timer-display" id="timerDisplay">25:00</span>
     </div>
-
-    <!-- Abgabe-Bestätigung Modal -->
-    <div class="modal-overlay" id="abgabeModal">
-        <div class="modal-box">
-            <h3>Test abgeben?</h3>
-            <p>Du kannst danach nichts mehr ändern.</p>
-            <div class="modal-buttons">
-                <button class="btn btn-cancel" onclick="closeAbgabeModal()">Abbrechen</button>
-                <button class="btn btn-success" onclick="confirmAbgabe()">Abgeben</button>
-            </div>
-        </div>
+    <div class="tab-warning" id="tabWarning">
+        <span id="tabWarningText"></span>
+        <button class="tab-warning-close" onclick="hideTabWarning()" aria-label="Schlie&szlig;en">&times;</button>
     </div>
 
     <div class="container">
-        <!-- Name eingeben -->
-        <div class="name-input-container" id="nameContainer">
-            <h3>Bitte trage deinen Namen ein:</h3>
-            <input type="text" class="name-input" id="nameInput" placeholder="Vorname Nachname" autocomplete="off">
-            <br>
-            <button class="btn btn-primary" onclick="startTest()">Test starten</button>
+        <header>
+            <h1>Test: Stromkosten &amp; Energie</h1>
+            <div class="meta">Physik Klasse 8 | Differenziert (&#9733;/&#9733;&#9733;/&#9733;&#9733;&#9733;) | 25 Minuten</div>
+        </header>
+
+        <!-- AUSWAHL: Platz + Niveau -->
+        <div class="selection-section" id="selectionSection">
+            <h2>Vor dem Start</h2>
+
+            <div class="selection-row" id="seatRow">
+                <label>Platznummer:</label>
+                <select id="seatSelect">
+                    <option value="">-- Platz w&auml;hlen --</option>
+                    <script>for(var i=1;i<=30;i++){document.write('<option value="'+i+'">P'+i+'</option>');}</script>
+                </select>
+                <button class="btn btn-small" onclick="confirmSeat()">Best&auml;tigen</button>
+            </div>
+            <div id="seatLocked" style="display:none;"></div>
+
+            <div class="selection-row" id="niveauRow">
+                <label>Niveau:</label>
+                <select id="niveauSelect">
+                    <option value="">-- Niveau w&auml;hlen --</option>
+                    <option value="1">&#9733; Basis (25 BE)</option>
+                    <option value="2">&#9733;&#9733; Standard (29 BE)</option>
+                    <option value="3">&#9733;&#9733;&#9733; Erweitert (31 BE)</option>
+                </select>
+                <button class="btn btn-small" onclick="confirmNiveau()">Best&auml;tigen</button>
+            </div>
+            <div id="niveauLocked" style="display:none;"></div>
         </div>
 
-        <!-- Timer Bar -->
-        <div class="timer-bar" id="timerBar" style="display: none;">
-            <div class="progress-info">
-                <span>6 Aufgaben | 25 Punkte</span>
+        <!-- FORTSCHRITT -->
+        <div class="progress-container" id="progressContainer" style="display:none;">
+            <div class="progress-text" id="progressText">0 / 0 beantwortet</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
             </div>
-            <div class="timer" id="timer">25:00</div>
         </div>
 
-        <!-- AUFGABE 1: MC Formeln ★ (4 BE) -->
-        <div class="aufgabe" id="aufgabe1" style="display: none;">
-            <div class="aufgabe-header">
-                <span class="aufgabe-nummer">Aufgabe 1</span>
-                <span><span class="aufgabe-niveau">★</span> <span class="aufgabe-punkte">4 Punkte</span></span>
-            </div>
-            <h3>Welche Aussagen sind richtig?</h3>
-            <p>Kreuze alle richtigen Aussagen an:</p>
-            <div class="mc-options" id="mc1">
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc1a">
-                    <label for="mc1a">Die elektrische Leistung berechnet man mit <em>P</em> = <em>U</em> · <em>I</em></label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc1b">
-                    <label for="mc1b">Die elektrische Energie berechnet man mit <em>E</em> = <em>P</em> · <em>t</em></label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc1c">
-                    <label for="mc1c">Die Einheit der elektrischen Energie ist Watt (W)</label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc1d">
-                    <label for="mc1d">Auf der Stromrechnung wird die Energie in Kilowattstunden (kWh) angegeben</label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc1e">
-                    <label for="mc1e">1 kWh = 100 Wh</label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc1f">
-                    <label for="mc1f">Die Leistung eines Geräts wird in Kilowattstunden (kWh) gemessen</label>
-                </div>
-            </div>
-            <div class="feedback" id="feedback1"></div>
+        <!-- UNLOCK-HINWEIS -->
+        <div class="unlock-hint" id="unlockHint">
+            <strong>Bitte best&auml;tige zuerst:</strong><br>
+            1. Deine Platznummer (mit OK)<br>
+            2. Dein Niveau (mit OK)<br><br>
+            Danach werden die Aufgaben angezeigt.
         </div>
 
-        <!-- AUFGABE 2: Zuordnung Geräte ★ (4 BE) -->
-        <div class="aufgabe" id="aufgabe2" style="display: none;">
-            <div class="aufgabe-header">
-                <span class="aufgabe-nummer">Aufgabe 2</span>
-                <span><span class="aufgabe-niveau">★</span> <span class="aufgabe-punkte">4 Punkte</span></span>
+        <!-- FRAGEN-CONTAINER -->
+        <div id="questionsContainer">
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- ★ NIVEAU 1: BASISAUFGABEN (25 BE) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <!-- F1: Formel für die Leistung (1 BE) -->
+            <div class="question" id="q1" data-niveau="1" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 1: Formel f&uuml;r die Leistung</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Die elektrische Leistung berechnet man mit:
+                </div>
+                <div class="options" id="q1-options">
+                    <label class="option" data-value="a"><input type="radio" name="q1" value="a"> <span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span></label>
+                    <label class="option" data-value="b"><input type="radio" name="q1" value="b"> <span class="fz">P</span> = <span class="fz">E</span> &middot; <span class="fz">t</span></label>
+                    <label class="option" data-value="c"><input type="radio" name="q1" value="c"> <span class="fz">P</span> = <span class="fz">U</span> / <span class="fz">I</span></label>
+                    <label class="option" data-value="d"><input type="radio" name="q1" value="d"> <span class="fz">P</span> = <span class="fz">I</span> &middot; <span class="fz">R</span></label>
+                </div>
+                <div class="feedback-box correct" id="q1-fb-correct">Richtig! <span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span></div>
+                <div class="feedback-box incorrect" id="q1-fb-incorrect">Die Leistung berechnet man mit <span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span></div>
             </div>
-            <h3>Ordne die Geräte ihrer typischen Leistung zu</h3>
-            <p>Wähle für jedes Gerät die passende Leistung aus.</p>
-            <div class="zuordnung-table">
-                <div class="zuordnung-row" id="zr1">
-                    <span class="zuordnung-geraet">Wasserkocher</span>
-                    <select class="zuordnung-select" id="z1" onchange="saveState()">
-                        <option value="">-- wählen --</option>
-                        <option value="20">20 W</option>
-                        <option value="800">800 W</option>
-                        <option value="10">10 W</option>
-                        <option value="2000">2000 W</option>
-                    </select>
+
+            <!-- F2: Formel für die Energie (1 BE) -->
+            <div class="question" id="q2" data-niveau="1" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 2: Formel f&uuml;r die Energie</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
                 </div>
-                <div class="zuordnung-row" id="zr2">
-                    <span class="zuordnung-geraet">LED-Lampe</span>
-                    <select class="zuordnung-select" id="z2" onchange="saveState()">
-                        <option value="">-- wählen --</option>
-                        <option value="2000">2000 W</option>
-                        <option value="10">10 W</option>
-                        <option value="800">800 W</option>
-                        <option value="20">20 W</option>
-                    </select>
+                <div class="question-text">
+                    Die elektrische Energie berechnet man mit:
                 </div>
-                <div class="zuordnung-row" id="zr3">
-                    <span class="zuordnung-geraet">USB-Ladegerät (5 V)</span>
-                    <select class="zuordnung-select" id="z3" onchange="saveState()">
-                        <option value="">-- wählen --</option>
-                        <option value="800">800 W</option>
-                        <option value="2000">2000 W</option>
-                        <option value="20">20 W</option>
-                        <option value="10">10 W</option>
-                    </select>
+                <div class="options" id="q2-options">
+                    <label class="option" data-value="a"><input type="radio" name="q2" value="a"> <span class="fz">E</span> = <span class="fz">U</span> &middot; <span class="fz">I</span></label>
+                    <label class="option" data-value="b"><input type="radio" name="q2" value="b"> <span class="fz">E</span> = <span class="fz">P</span> &middot; <span class="fz">t</span></label>
+                    <label class="option" data-value="c"><input type="radio" name="q2" value="c"> <span class="fz">E</span> = <span class="fz">P</span> / <span class="fz">t</span></label>
+                    <label class="option" data-value="d"><input type="radio" name="q2" value="d"> <span class="fz">E</span> = <span class="fz">U</span> &middot; <span class="fz">t</span></label>
                 </div>
-                <div class="zuordnung-row" id="zr4">
-                    <span class="zuordnung-geraet">Staubsauger</span>
-                    <select class="zuordnung-select" id="z4" onchange="saveState()">
-                        <option value="">-- wählen --</option>
-                        <option value="10">10 W</option>
-                        <option value="20">20 W</option>
-                        <option value="2000">2000 W</option>
-                        <option value="800">800 W</option>
-                    </select>
-                </div>
+                <div class="feedback-box correct" id="q2-fb-correct">Richtig! <span class="fz">E</span> = <span class="fz">P</span> &middot; <span class="fz">t</span></div>
+                <div class="feedback-box incorrect" id="q2-fb-incorrect">Die Energie berechnet man mit <span class="fz">E</span> = <span class="fz">P</span> &middot; <span class="fz">t</span></div>
             </div>
-            <div class="feedback" id="feedback2"></div>
+
+            <!-- F3: Einheiten zuordnen (3 BE) -->
+            <div class="question" id="q3" data-niveau="1" data-points="3">
+                <div class="question-header">
+                    <div class="question-title">Frage 3: Einheiten zuordnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">3 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Ordne zu:</strong> Welche Einheit geh&ouml;rt zu welcher Gr&ouml;&szlig;e?
+                </div>
+                <div style="margin: 15px 0;">
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">Leistung <span class="fz">P</span>:</span>
+                        <select id="q3a">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="W">W (Watt)</option>
+                            <option value="Wh">Wh (Wattstunde)</option>
+                            <option value="A">A (Ampere)</option>
+                            <option value="V">V (Volt)</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">Energie <span class="fz">E</span>:</span>
+                        <select id="q3b">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="A">A (Ampere)</option>
+                            <option value="W">W (Watt)</option>
+                            <option value="Wh">Wh (Wattstunde)</option>
+                            <option value="V">V (Volt)</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">Stromst&auml;rke <span class="fz">I</span>:</span>
+                        <select id="q3c">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="V">V (Volt)</option>
+                            <option value="Wh">Wh (Wattstunde)</option>
+                            <option value="W">W (Watt)</option>
+                            <option value="A">A (Ampere)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="feedback-box correct" id="q3-fb-correct">Alle richtig! <span class="fz">P</span> in <span class="einheit">W</span>, <span class="fz">E</span> in <span class="einheit">Wh</span> (oder <span class="einheit">kWh</span>), <span class="fz">I</span> in <span class="einheit">A</span>.</div>
+                <div class="feedback-box incorrect" id="q3-fb-incorrect"><span class="fz">P</span> &rarr; Watt (<span class="einheit">W</span>), <span class="fz">E</span> &rarr; Wattstunde (<span class="einheit">Wh</span>), <span class="fz">I</span> &rarr; Ampere (<span class="einheit">A</span>)</div>
+            </div>
+
+            <!-- F4: kWh-Umrechnung (1 BE) -->
+            <div class="question" id="q4" data-niveau="1" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 4: kWh-Umrechnung</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    1 Kilowattstunde (<span class="einheit">kWh</span>) entspricht:
+                </div>
+                <div class="options" id="q4-options">
+                    <label class="option" data-value="a"><input type="radio" name="q4" value="a"> 100 <span class="einheit">Wh</span></label>
+                    <label class="option" data-value="b"><input type="radio" name="q4" value="b"> 1000 <span class="einheit">Wh</span></label>
+                    <label class="option" data-value="c"><input type="radio" name="q4" value="c"> 10 000 <span class="einheit">Wh</span></label>
+                    <label class="option" data-value="d"><input type="radio" name="q4" value="d"> 1 000 000 <span class="einheit">Wh</span></label>
+                </div>
+                <div class="feedback-box correct" id="q4-fb-correct">Richtig! 1 <span class="einheit">kWh</span> = 1000 <span class="einheit">Wh</span></div>
+                <div class="feedback-box incorrect" id="q4-fb-incorrect">1 <span class="einheit">kWh</span> = 1000 <span class="einheit">Wh</span> (nicht 100 oder 10 000!)</div>
+            </div>
+
+            <!-- F5: Geräte-Leistung zuordnen (4 BE) -->
+            <div class="question" id="q5" data-niveau="1" data-points="4">
+                <div class="question-header">
+                    <div class="question-title">Frage 5: Ger&auml;te-Leistung zuordnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">4 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Ordne zu:</strong> Welche typische Leistung hat jedes Ger&auml;t?
+                </div>
+                <div style="margin: 15px 0;">
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">Wasserkocher:</span>
+                        <select id="q5a">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="20">20 W</option>
+                            <option value="800">800 W</option>
+                            <option value="10">10 W</option>
+                            <option value="2000">2000 W</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">LED-Lampe:</span>
+                        <select id="q5b">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="2000">2000 W</option>
+                            <option value="10">10 W</option>
+                            <option value="800">800 W</option>
+                            <option value="20">20 W</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">USB-Ladeger&auml;t:</span>
+                        <select id="q5c">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="800">800 W</option>
+                            <option value="2000">2000 W</option>
+                            <option value="20">20 W</option>
+                            <option value="10">10 W</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">Staubsauger:</span>
+                        <select id="q5d">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="10">10 W</option>
+                            <option value="20">20 W</option>
+                            <option value="2000">2000 W</option>
+                            <option value="800">800 W</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="feedback-box correct" id="q5-fb-correct">Alle richtig!</div>
+                <div class="feedback-box incorrect" id="q5-fb-incorrect">Wasserkocher = 2000 <span class="einheit">W</span>, LED = 10 <span class="einheit">W</span>, USB = 20 <span class="einheit">W</span>, Staubsauger = 800 <span class="einheit">W</span></div>
+            </div>
+
+            <!-- F6: Stromrechnung (1 BE) -->
+            <div class="question" id="q6" data-niveau="1" data-points="1">
+                <div class="question-header">
+                    <div class="question-title">Frage 6: Stromrechnung</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">1 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Auf der Stromrechnung wird die verbrauchte Energie in welcher Einheit angegeben?
+                </div>
+                <div class="options" id="q6-options">
+                    <label class="option" data-value="a"><input type="radio" name="q6" value="a"> Watt (<span class="einheit">W</span>)</label>
+                    <label class="option" data-value="b"><input type="radio" name="q6" value="b"> Ampere (<span class="einheit">A</span>)</label>
+                    <label class="option" data-value="c"><input type="radio" name="q6" value="c"> Kilowattstunde (<span class="einheit">kWh</span>)</label>
+                    <label class="option" data-value="d"><input type="radio" name="q6" value="d"> Volt (<span class="einheit">V</span>)</label>
+                </div>
+                <div class="feedback-box correct" id="q6-fb-correct">Richtig! Die Stromrechnung zeigt <span class="einheit">kWh</span>.</div>
+                <div class="feedback-box incorrect" id="q6-fb-incorrect">Auf der Stromrechnung steht die Energie in Kilowattstunden (<span class="einheit">kWh</span>).</div>
+            </div>
+
+            <!-- F7: Leistung berechnen 230V 2A (2 BE) -->
+            <div class="question" id="q7" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 7: Leistung berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die elektrische Leistung. Formel: <span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span><br>
+                    <span class="fz">U</span> = 230 <span class="einheit">V</span>, &nbsp; <span class="fz">I</span> = 2 <span class="einheit">A</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">P</span> =
+                    <input type="text" inputmode="decimal" id="q7v" style="width:80px;">
+                    <span class="einheit">W</span>
+                </div>
+                <div class="feedback-box correct" id="q7-fb-correct">Richtig! 230 <span class="einheit">V</span> &middot; 2 <span class="einheit">A</span> = 460 <span class="einheit">W</span></div>
+                <div class="feedback-box incorrect" id="q7-fb-incorrect"><span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span> = 230 &middot; 2 = <strong>460 <span class="einheit">W</span></strong></div>
+            </div>
+
+            <!-- F8: Leistung berechnen 12V 0,5A (2 BE) -->
+            <div class="question" id="q8" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 8: Leistung berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die elektrische Leistung. Formel: <span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span><br>
+                    <span class="fz">U</span> = 12 <span class="einheit">V</span>, &nbsp; <span class="fz">I</span> = 0,5 <span class="einheit">A</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">P</span> =
+                    <input type="text" inputmode="decimal" id="q8v" style="width:80px;">
+                    <span class="einheit">W</span>
+                </div>
+                <div class="feedback-box correct" id="q8-fb-correct">Richtig! 12 <span class="einheit">V</span> &middot; 0,5 <span class="einheit">A</span> = 6 <span class="einheit">W</span></div>
+                <div class="feedback-box incorrect" id="q8-fb-incorrect"><span class="fz">P</span> = <span class="fz">U</span> &middot; <span class="fz">I</span> = 12 &middot; 0,5 = <strong>6 <span class="einheit">W</span></strong></div>
+            </div>
+
+            <!-- F9: Energie berechnen 100W 4h (2 BE) -->
+            <div class="question" id="q9" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 9: Energie berechnen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Berechne</strong> die elektrische Energie. Formel: <span class="fz">E</span> = <span class="fz">P</span> &middot; <span class="fz">t</span><br>
+                    <span class="fz">P</span> = 100 <span class="einheit">W</span>, &nbsp; <span class="fz">t</span> = 4 <span class="einheit">h</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">E</span> =
+                    <input type="text" inputmode="decimal" id="q9v" style="width:80px;">
+                    <span class="einheit">Wh</span>
+                </div>
+                <div class="feedback-box correct" id="q9-fb-correct">Richtig! 100 <span class="einheit">W</span> &middot; 4 <span class="einheit">h</span> = 400 <span class="einheit">Wh</span></div>
+                <div class="feedback-box incorrect" id="q9-fb-incorrect"><span class="fz">E</span> = <span class="fz">P</span> &middot; <span class="fz">t</span> = 100 &middot; 4 = <strong>400 <span class="einheit">Wh</span></strong></div>
+            </div>
+
+            <!-- F10: Umrechnung 400 Wh → kWh (2 BE) -->
+            <div class="question" id="q10" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 10: Umrechnung Wh &rarr; kWh</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Rechne um.</strong> Tipp: 1 <span class="einheit">kWh</span> = 1000 <span class="einheit">Wh</span><br>
+                    400 <span class="einheit">Wh</span> = ? <span class="einheit">kWh</span>
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">E</span> =
+                    <input type="text" inputmode="decimal" id="q10v" style="width:80px;">
+                    <span class="einheit">kWh</span>
+                </div>
+                <div class="feedback-box correct" id="q10-fb-correct">Richtig! 400 <span class="einheit">Wh</span> &divide; 1000 = 0,4 <span class="einheit">kWh</span></div>
+                <div class="feedback-box incorrect" id="q10-fb-incorrect">400 <span class="einheit">Wh</span> &divide; 1000 = <strong>0,4 <span class="einheit">kWh</span></strong></div>
+            </div>
+
+            <!-- F11: Energie pro Monat (2 BE) -->
+            <div class="question" id="q11" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 11: Energie pro Monat</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Fernseher verbraucht 0,4 <span class="einheit">kWh</span> pro Tag. Wie viel Energie verbraucht er in einem Monat (30 Tage)?
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">E</span> =
+                    <input type="text" inputmode="decimal" id="q11v" style="width:80px;">
+                    <span class="einheit">kWh</span>
+                </div>
+                <div class="feedback-box correct" id="q11-fb-correct">Richtig! 0,4 <span class="einheit">kWh</span> &times; 30 = 12 <span class="einheit">kWh</span></div>
+                <div class="feedback-box incorrect" id="q11-fb-incorrect">0,4 <span class="einheit">kWh</span> &times; 30 Tage = <strong>12 <span class="einheit">kWh</span></strong></div>
+            </div>
+
+            <!-- F12: Stromkosten (2 BE) -->
+            <div class="question" id="q12" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 12: Stromkosten</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Fernseher verbraucht 12 <span class="einheit">kWh</span> pro Monat. Berechne die Stromkosten.<br>
+                    Strompreis: 0,30 &euro;/<span class="einheit">kWh</span>
+                </div>
+                <div class="inline-answer">
+                    Kosten =
+                    <input type="text" inputmode="decimal" id="q12v" style="width:80px;">
+                    &euro;
+                </div>
+                <div class="feedback-box correct" id="q12-fb-correct">Richtig! 12 <span class="einheit">kWh</span> &times; 0,30 &euro;/<span class="einheit">kWh</span> = 3,60 &euro;</div>
+                <div class="feedback-box incorrect" id="q12-fb-incorrect">Kosten = 12 &times; 0,30 = <strong>3,60 &euro;</strong></div>
+            </div>
+
+            <!-- F13: Energiesparen (2 BE) -->
+            <div class="question" id="q13" data-niveau="1" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 13: Energiesparen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-1">&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <strong>Ordne zu:</strong> Welche Aussage ist richtig?
+                </div>
+                <div style="margin: 15px 0;">
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">&bdquo;Eine LED-Lampe verbraucht im Vergleich zur Gl&uuml;hlampe bei gleicher Helligkeit...&ldquo;</span>
+                        <select id="q13a">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="weniger">weniger Energie</option>
+                            <option value="mehr">mehr Energie</option>
+                            <option value="gleich">gleich viel Energie</option>
+                        </select>
+                    </div>
+                    <div class="inline-answer">
+                        <span style="min-width:220px;">&bdquo;Ger&auml;te im Standby-Modus...&ldquo;</span>
+                        <select id="q13b">
+                            <option value="">-- w&auml;hlen --</option>
+                            <option value="nein">verbrauchen keinen Strom</option>
+                            <option value="ja">verbrauchen trotzdem Strom</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="feedback-box correct" id="q13-fb-correct">Richtig! LED spart Energie, Standby verbraucht trotzdem Strom.</div>
+                <div class="feedback-box incorrect" id="q13-fb-incorrect">LED-Lampen verbrauchen <strong>weniger</strong> als Gl&uuml;hlampen. Standby-Ger&auml;te verbrauchen <strong>trotzdem Strom</strong>!</div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- ★★ NIVEAU 2: STANDARD (+4 BE = 29 BE) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <!-- F14: Gaming-PC Kosten (2 BE) -->
+            <div class="question" id="q14" data-niveau="2" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 14: Gaming-PC Kosten</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-2">&#9733;&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Gaming-PC hat eine Leistung von 500 <span class="einheit">W</span> und l&auml;uft t&auml;glich 2 Stunden. Berechne die monatlichen Stromkosten (30 Tage).<br>
+                    Strompreis: 0,30 &euro;/<span class="einheit">kWh</span>
+                </div>
+                <div class="inline-answer">
+                    Kosten =
+                    <input type="text" inputmode="decimal" id="q14v" style="width:80px;">
+                    &euro;
+                </div>
+                <div class="feedback-box correct" id="q14-fb-correct">Richtig! 500 <span class="einheit">W</span> &times; 2 <span class="einheit">h</span> &times; 30 = 30 <span class="einheit">kWh</span> &rarr; 30 &times; 0,30 = 9,00 &euro;</div>
+                <div class="feedback-box incorrect" id="q14-fb-incorrect"><span class="fz">E</span> = 500 &times; 2 = 1000 <span class="einheit">Wh</span>/Tag &rarr; 30 <span class="einheit">kWh</span>/Monat &rarr; 30 &times; 0,30 = <strong>9,00 &euro;</strong></div>
+            </div>
+
+            <!-- F15: Umkehrrechnung (2 BE) -->
+            <div class="question" id="q15" data-niveau="2" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 15: Umkehrrechnung</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-2">&#9733;&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Eine Familie zahlt 5,40 &euro; pro Monat f&uuml;r den K&uuml;hlschrank.<br>
+                    Strompreis: 0,30 &euro;/<span class="einheit">kWh</span>. Wie viel Energie verbraucht der K&uuml;hlschrank pro Monat?
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">E</span> =
+                    <input type="text" inputmode="decimal" id="q15v" style="width:80px;">
+                    <span class="einheit">kWh</span>
+                </div>
+                <div class="feedback-box correct" id="q15-fb-correct">Richtig! 5,40 &euro; &divide; 0,30 &euro;/<span class="einheit">kWh</span> = 18 <span class="einheit">kWh</span></div>
+                <div class="feedback-box incorrect" id="q15-fb-incorrect"><span class="fz">E</span> = 5,40 &divide; 0,30 = <strong>18 <span class="einheit">kWh</span></strong></div>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- ★★★ NIVEAU 3: ERWEITERT (+2 BE = 31 BE) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+
+            <!-- F16: Transfer - Leistung aus Kosten (2 BE) -->
+            <div class="question" id="q16" data-niveau="3" data-points="2">
+                <div class="question-header">
+                    <div class="question-title">Frage 16: Leistung bestimmen</div>
+                    <div class="question-meta">
+                        <span class="question-niveau niveau-3">&#9733;&#9733;&#9733;</span>
+                        <span class="question-points">2 BE</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    Ein Ger&auml;t verursacht Stromkosten von 2,70 &euro; pro Monat (30 Tage).<br>
+                    Strompreis: 0,30 &euro;/<span class="einheit">kWh</span>. Das Ger&auml;t l&auml;uft 3 Stunden pro Tag.<br><br>
+                    <strong>Berechne</strong> die Leistung des Ger&auml;ts in Watt.
+                </div>
+                <div class="inline-answer">
+                    <span class="fz">P</span> =
+                    <input type="text" inputmode="decimal" id="q16v" style="width:80px;">
+                    <span class="einheit">W</span>
+                </div>
+                <div class="feedback-box correct" id="q16-fb-correct">Richtig! 9 <span class="einheit">kWh</span> &rarr; 300 <span class="einheit">Wh</span>/Tag &rarr; 100 <span class="einheit">W</span></div>
+                <div class="feedback-box incorrect" id="q16-fb-incorrect">2,70 &divide; 0,30 = 9 <span class="einheit">kWh</span>/Monat &rarr; 0,3 <span class="einheit">kWh</span>/Tag = 300 <span class="einheit">Wh</span>/Tag &rarr; 300 &divide; 3 = <strong>100 <span class="einheit">W</span></strong></div>
+            </div>
+
+        </div><!-- /questionsContainer -->
+
+        <!-- SUBMIT -->
+        <div id="submitSection" style="display:none; margin: 20px 0;">
+            <button class="btn btn-success" onclick="submitTest()">Auswerten</button>
         </div>
 
-        <!-- AUFGABE 3: Berechnung Energie ★/★★ (6 BE) -->
-        <div class="aufgabe" id="aufgabe3" style="display: none;">
-            <div class="aufgabe-header">
-                <span class="aufgabe-nummer">Aufgabe 3</span>
-                <span><span class="aufgabe-niveau">★/★★</span> <span class="aufgabe-punkte">6 Punkte</span></span>
-            </div>
-            <h3>Energieberechnung</h3>
-            <p>Ein Fernseher hat eine Leistung von <strong>100 W</strong>. Er läuft <strong>4 Stunden</strong> pro Tag.</p>
-            <div class="formel-box">
-                <div class="formel"><em>E</em> = <em>P</em> · <em>t</em></div>
-            </div>
-            <p><strong>a) ★</strong> Berechne die verbrauchte Energie in Wattstunden (Wh):</p>
-            <div class="rechenweg">
-                <div class="input-group">
-                    <span><em>E</em> =</span>
-                    <input type="number" class="input-field" id="a3a" placeholder="?">
-                    <span class="input-unit">Wh</span>
-                </div>
-            </div>
-            <p class="teilaufgabe"><strong>b) ★</strong> Rechne in Kilowattstunden (kWh) um:</p>
-            <div class="hinweis-box">
-                <strong>Tipp:</strong> 1 kWh = 1000 Wh. Um Wh in kWh umzurechnen, teile durch 1000.
-            </div>
-            <div class="rechenweg">
-                <div class="input-group">
-                    <span><em>E</em> =</span>
-                    <input type="number" class="input-field" id="a3b" step="0.1" placeholder="?">
-                    <span class="input-unit">kWh</span>
-                </div>
-            </div>
-            <p class="teilaufgabe"><strong>c) ★★</strong> Wie viel Energie verbraucht der Fernseher in einem Monat (30 Tage)?</p>
-            <div class="rechenweg">
-                <div class="input-group">
-                    <span><em>E</em> =</span>
-                    <input type="number" class="input-field" id="a3c" placeholder="?">
-                    <span class="input-unit">kWh</span>
-                </div>
-            </div>
-            <div class="feedback" id="feedback3"></div>
+        <!-- ERGEBNISSE -->
+        <div class="results" id="results">
+            <h2>Ergebnis</h2>
+            <div class="results-score" id="scoreDisplay"></div>
+            <div id="npDisplay"></div>
+
+            <h3 style="margin-top: 20px; color: #2c5aa0;">Bewertung (14-NP)</h3>
+            <table class="grade-table" id="gradeTable">
+                <tr>
+                    <th>NP</th>
+                    <th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th>
+                    <th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+                </tr>
+                <tr id="gradeRow">
+                    <td>%</td>
+                    <td>100</td><td>96</td><td>91</td><td>86</td><td>80</td><td>73</td><td>67</td>
+                    <td>60</td><td>53</td><td>47</td><td>40</td><td>33</td><td>27</td><td>20</td><td>&lt;20</td>
+                </tr>
+            </table>
         </div>
 
-        <!-- AUFGABE 4: Stromkosten ★★ (5 BE) -->
-        <div class="aufgabe" id="aufgabe4" style="display: none;">
-            <div class="aufgabe-header">
-                <span class="aufgabe-nummer">Aufgabe 4</span>
-                <span><span class="aufgabe-niveau">★★</span> <span class="aufgabe-punkte">5 Punkte</span></span>
-            </div>
-            <h3>Stromkosten berechnen</h3>
-            <p>Der Strompreis beträgt <strong>0,30 Euro pro kWh</strong>.</p>
-            <div class="hinweis-box">
-                <strong>Formel:</strong> Kosten = Energie · Strompreis
-            </div>
-            <p><strong>a)</strong> Was kostet der Fernseher pro Monat? (Nutze dein Ergebnis aus Aufgabe 3c.)</p>
-            <div class="input-group">
-                <span>Kosten =</span>
-                <input type="number" class="input-field" id="a4a" step="0.01" placeholder="?">
-                <span class="input-unit">Euro</span>
-            </div>
-            <p class="teilaufgabe"><strong>b)</strong> Ein Gaming-PC verbraucht 500 W und läuft 2 Stunden täglich. Was kostet er pro Monat?</p>
-            <div class="rechenweg">
-                <div class="rechenweg-schritt">
-                    <span class="rechenweg-label">Energie/Tag:</span>
-                    <input type="number" class="input-field" id="a4b1" placeholder="?">
-                    <span class="input-unit">Wh</span>
-                </div>
-                <div class="rechenweg-schritt">
-                    <span class="rechenweg-label">Energie/Monat:</span>
-                    <input type="number" class="input-field" id="a4b2" step="0.1" placeholder="?">
-                    <span class="input-unit">kWh</span>
-                </div>
-                <div class="rechenweg-schritt">
-                    <span class="rechenweg-label">Kosten:</span>
-                    <input type="number" class="input-field" id="a4b3" step="0.01" placeholder="?">
-                    <span class="input-unit">Euro</span>
-                </div>
-            </div>
-            <div class="feedback" id="feedback4"></div>
+        <!-- PDF-ABGABE -->
+        <div class="pdf-upload-box" id="pdfUploadBox">
+            <h3>&#128203; Ergebnis abgeben</h3>
+            <ol class="pdf-steps">
+                <li>
+                    <span class="step-icon">&#9312;</span>
+                    <span class="step-text">Tippe unten auf <strong>Drucken / PDF speichern</strong></span>
+                </li>
+                <li>
+                    <span class="step-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2c5aa0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></span>
+                    <span class="step-text">In der Druckvorschau: Tippe auf das <strong>Teilen-Symbol</strong> <svg style="vertical-align:middle" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> (Quadrat mit Pfeil nach oben)</span>
+                </li>
+                <li>
+                    <span class="step-icon">&#128193;</span>
+                    <span class="step-text">W&auml;hle <strong>&bdquo;In Dateien sichern&ldquo;</strong> und speichere die PDF</span>
+                </li>
+                <li>
+                    <span class="step-icon">&#9757;</span>
+                    <span class="step-text">&Ouml;ffne die <strong>Bildungscloud</strong>, gehe zur Aufgabe und lade die PDF hoch</span>
+                </li>
+            </ol>
+            <button class="btn-pdf" onclick="window.print()">&#128424; Drucken / PDF speichern</button>
         </div>
 
-        <!-- AUFGABE 5: Stromrechnung ★/★★/★★★ (4 BE) -->
-        <div class="aufgabe" id="aufgabe5" style="display: none;">
-            <div class="aufgabe-header">
-                <span class="aufgabe-nummer">Aufgabe 5</span>
-                <span><span class="aufgabe-niveau">★/★★/★★★</span> <span class="aufgabe-punkte">4 Punkte</span></span>
-            </div>
-            <h3>Stromrechnung verstehen</h3>
-            <p>Eine Familie verbraucht <strong>3600 kWh</strong> pro Jahr. Der Strompreis beträgt <strong>0,30 Euro/kWh</strong>.</p>
-            <p><strong>a) ★</strong> Wie hoch sind die Stromkosten pro Jahr?</p>
-            <div class="input-group">
-                <input type="number" class="input-field" id="a5a" step="0.01" placeholder="?">
-                <span class="input-unit">Euro</span>
-            </div>
-            <p class="teilaufgabe"><strong>b) ★★</strong> Wie viel zahlt die Familie durchschnittlich pro Monat?</p>
-            <div class="input-group">
-                <input type="number" class="input-field" id="a5b" step="0.01" placeholder="?">
-                <span class="input-unit">Euro</span>
-            </div>
-            <p class="teilaufgabe"><strong>c) ★★★</strong> Ein Gerät verursacht Stromkosten von 2,70 € pro Monat (bei 0,30 €/kWh und 30 Tagen). Es läuft 3 Stunden täglich. Berechne die Leistung des Geräts in Watt.</p>
-            <div class="input-group">
-                <input type="number" class="input-field" id="a5c" step="1" placeholder="?">
-                <span class="input-unit">Watt</span>
-            </div>
-            <div class="feedback" id="feedback5"></div>
-        </div>
+        <!-- LEHRER-BEREICH -->
+        <details class="teacher-section">
+            <summary>Lehrerbereich</summary>
+            <button class="btn btn-small" onclick="teacherReset()">Platz zur&uuml;cksetzen</button>
+        </details>
 
-        <!-- AUFGABE 6: Energiesparen ★ (2 BE) -->
-        <div class="aufgabe" id="aufgabe6" style="display: none;">
-            <div class="aufgabe-header">
-                <span class="aufgabe-nummer">Aufgabe 6</span>
-                <span><span class="aufgabe-niveau">★</span> <span class="aufgabe-punkte">2 Punkte</span></span>
-            </div>
-            <h3>Energiesparen</h3>
-            <p>Welche Aussagen zum Energiesparen sind richtig?</p>
-            <div class="mc-options" id="mc6">
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc6a">
-                    <label for="mc6a">LED-Lampen verbrauchen weniger Energie als Glühlampen bei gleicher Helligkeit</label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc6b">
-                    <label for="mc6b">Geräte im Standby-Modus verbrauchen keinen Strom</label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc6c">
-                    <label for="mc6c">Ein Kühlschrank der Energieeffizienzklasse A verbraucht weniger als einer mit Klasse G</label>
-                </div>
-                <div class="mc-option" onclick="toggleMC(this)">
-                    <input type="checkbox" id="mc6d">
-                    <label for="mc6d">Wenn man ein Gerät nur kurz einschaltet, verbraucht es keinen Strom</label>
-                </div>
-            </div>
-            <div class="feedback" id="feedback6"></div>
-        </div>
-
-        <!-- Abgabe -->
-        <div id="abgabeContainer" style="display: none; text-align: center; margin: 20px 0;">
-            <button class="btn btn-success" onclick="abgeben()" style="font-size: 1.2em; padding: 15px 40px;">
-                Test abgeben
-            </button>
-        </div>
-
-        <!-- Ergebnis -->
-        <div class="ergebnis-box" id="ergebnisBox">
-            <h2>Testergebnis</h2>
-            <div class="ergebnis-punkte" id="ergebnisPunkte">0/25</div>
-            <div class="ergebnis-note" id="ergebnisNote"></div>
-            <div class="pruefcode" id="ergebnisPruefcode"></div>
-            <p id="ergebnisTabInfo" style="color: #c62828; font-weight: 600; margin-top: 5px;"></p>
-            <div class="ergebnis-details" id="ergebnisDetails">
-                <div class="ergebnis-row"><span>Aufgabe 1 – Formeln ★</span><span id="punkte1">-/4</span></div>
-                <div class="ergebnis-row"><span>Aufgabe 2 – Zuordnung ★</span><span id="punkte2">-/4</span></div>
-                <div class="ergebnis-row"><span>Aufgabe 3 – Energie ★/★★</span><span id="punkte3">-/6</span></div>
-                <div class="ergebnis-row"><span>Aufgabe 4 – Kosten ★★</span><span id="punkte4">-/5</span></div>
-                <div class="ergebnis-row"><span>Aufgabe 5 – Stromrechnung ★/★★/★★★</span><span id="punkte5">-/4</span></div>
-                <div class="ergebnis-row"><span>Aufgabe 6 – Energiesparen ★</span><span id="punkte6">-/2</span></div>
-            </div>
-            <p style="margin-top: 20px; color: #666; font-size: 0.9em;">
-                Name: <span id="ergebnisName"></span><br>
-                Abgegeben: <span id="ergebnisZeit"></span>
-            </p>
-        </div>
-    </div>
+    </div><!-- /container -->
 
     <script>
-    (function() {
-        // === CONFIG ===
-        var TESTZEIT = 25 * 60;
-        var SK = 'mt04-stromkosten-v2';
+        // ============================================================
+        // KONFIGURATION
+        // ============================================================
 
-        // === STATE ===
-        var zeitVerbleibend = TESTZEIT;
+        var STORAGE_KEY = 'mt-physik-kl8-04-stromkosten-v1';
+        var TIME_LIMIT = 25 * 60;
+        var timeRemaining = TIME_LIMIT;
         var timerInterval = null;
-        var testGestartet = false;
-        var testBeendet = false;
-        var schuelerName = '';
-        var startTime = null;
-        var tabWechsel = 0;
-        var tabSekunden = 0;
-        var tabLeaveTime = null;
-        var saveTimeout = null;
-        var audioCtx = null;
+        var selectedNiveau = 0;
+        var testSubmitted = false;
 
-        // === HELPERS ===
-        function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+        // Tab-Wechsel-Protokoll (Anti-Betrug)
+        var tabSwitchCount = 0;
+        var tabSwitchStart = 0;
+        var tabSwitchSeconds = 0;
+        var tabWarningTimer = null;
 
-        function checkTol(val, correct, tol) {
-            var v = parseFloat(String(val).replace(',', '.'));
-            if (isNaN(v)) return false;
-            tol = tol || 0.05;
-            return Math.abs(v - correct) <= Math.abs(correct * tol) + 0.01;
+        // ===== ZEITSTEMPEL-FORMATIERUNG (Anti-Betrug) =====
+        function formatTimestamp(ts) {
+            if (!ts) return '\u2014';
+            var d = new Date(parseInt(ts));
+            var day = d.getDate();
+            var month = d.getMonth() + 1;
+            var year = d.getFullYear();
+            var hours = d.getHours();
+            var minutes = d.getMinutes();
+            return (day < 10 ? '0' : '') + day + '.' +
+                   (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+                   (hours < 10 ? '0' : '') + hours + ':' +
+                   (minutes < 10 ? '0' : '') + minutes + ' Uhr';
         }
 
-        function hashStr(s) {
-            var h = 0;
-            for (var i = 0; i < s.length; i++) {
-                h = ((h << 5) - h) + s.charCodeAt(i);
-                h = h & 0xFFFFFFFF;
-            }
-            return Math.abs(h);
+        // ===== TAB-WECHSEL-PROTOKOLL (Anti-Betrug) =====
+        function initTabSwitchTracking() {
+            var savedCount = localStorage.getItem(STORAGE_KEY + '-tabswitches');
+            var savedSeconds = localStorage.getItem(STORAGE_KEY + '-tabseconds');
+            if (savedCount) tabSwitchCount = parseInt(savedCount);
+            if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+            document.addEventListener('visibilitychange', function() {
+                if (testSubmitted) return;
+
+                if (document.hidden) {
+                    tabSwitchStart = Date.now();
+                    tabSwitchCount++;
+                    localStorage.setItem(STORAGE_KEY + '-tabswitches', tabSwitchCount);
+                } else {
+                    if (tabSwitchStart > 0) {
+                        var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                        tabSwitchSeconds += duration;
+                        localStorage.setItem(STORAGE_KEY + '-tabseconds', tabSwitchSeconds);
+                        tabSwitchStart = 0;
+                        showTabWarning();
+                    }
+                }
+            });
         }
 
-        function pruefcode(name, punkte) {
-            var c = hashStr('MT04|' + name + '|' + punkte + '|k8phy25').toString(36).toUpperCase();
-            while (c.length < 6) c = '0' + c;
-            return 'MT04-' + c.substring(0, 6);
+        function showTabWarning() {
+            var el = document.getElementById('tabWarning');
+            var txt = document.getElementById('tabWarningText');
+            if (!el || !txt) return;
+            txt.textContent = 'Tab-Wechsel erkannt! (' + tabSwitchCount + '. Mal) \u2013 wird protokolliert.';
+            el.classList.add('visible');
+            if (tabWarningTimer) clearTimeout(tabWarningTimer);
+            tabWarningTimer = setTimeout(function() { hideTabWarning(); }, 4000);
         }
 
-        // === SESSION SAVE/RESTORE ===
-        function saveState() {
-            if (!testGestartet || testBeendet) return;
-            var state = { n: schuelerName, st: startTime, tw: tabWechsel, ts: tabSekunden, inp: {}, mc1: [], mc6: [], zu: {} };
-            var fields = document.querySelectorAll('.input-field');
-            for (var i = 0; i < fields.length; i++) state.inp[fields[i].id] = fields[i].value;
-            var m1 = document.querySelectorAll('#mc1 .mc-option.selected');
-            for (var i = 0; i < m1.length; i++) state.mc1.push(m1[i].querySelector('input').id);
-            var m6 = document.querySelectorAll('#mc6 .mc-option.selected');
-            for (var i = 0; i < m6.length; i++) state.mc6.push(m6[i].querySelector('input').id);
-            var sels = document.querySelectorAll('.zuordnung-select');
-            for (var i = 0; i < sels.length; i++) state.zu[sels[i].id] = sels[i].value;
-            try { localStorage.setItem(SK + '-sess', JSON.stringify(state)); } catch(e) {}
-        }
-        window.saveState = saveState;
-
-        function restoreState() {
-            var raw = null;
-            try { raw = localStorage.getItem(SK + '-sess'); } catch(e) {}
-            if (!raw) return false;
-            try {
-                var s = JSON.parse(raw);
-                if (!s.n || !s.st) return false;
-                schuelerName = s.n;
-                startTime = s.st;
-                tabWechsel = s.tw || 0;
-                tabSekunden = s.ts || 0;
-                var elapsed = Math.floor((Date.now() - startTime) / 1000);
-                zeitVerbleibend = Math.max(0, TESTZEIT - elapsed);
-                document.getElementById('nameInput').value = schuelerName;
-                showTest();
-                if (s.inp) { for (var id in s.inp) { var el = document.getElementById(id); if (el) el.value = s.inp[id]; } }
-                if (s.mc1) { for (var i = 0; i < s.mc1.length; i++) { var cb = document.getElementById(s.mc1[i]); if (cb) { cb.checked = true; cb.parentElement.classList.add('selected'); } } }
-                if (s.mc6) { for (var i = 0; i < s.mc6.length; i++) { var cb = document.getElementById(s.mc6[i]); if (cb) { cb.checked = true; cb.parentElement.classList.add('selected'); } } }
-                if (s.zu) { for (var id in s.zu) { var sel = document.getElementById(id); if (sel) sel.value = s.zu[id]; } }
-                testGestartet = true;
-                // Init AudioContext on restore (user already interacted previously)
-                try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-                startTimer();
-                if (zeitVerbleibend <= 0) abgeben();
-                return true;
-            } catch(e) { return false; }
+        function hideTabWarning() {
+            var el = document.getElementById('tabWarning');
+            if (el) el.classList.remove('visible');
+            if (tabWarningTimer) { clearTimeout(tabWarningTimer); tabWarningTimer = null; }
         }
 
-        function showTest() {
-            document.getElementById('nameContainer').style.display = 'none';
-            document.getElementById('timerBar').style.display = 'flex';
-            for (var i = 1; i <= 6; i++) document.getElementById('aufgabe' + i).style.display = 'block';
-            document.getElementById('abgabeContainer').style.display = 'block';
+        function formatDuration(seconds) {
+            if (seconds < 60) return seconds + ' Sek.';
+            var min = Math.floor(seconds / 60);
+            var sec = seconds % 60;
+            return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
         }
 
-        // === START ===
-        window.startTest = function() {
-            schuelerName = document.getElementById('nameInput').value.trim();
-            if (!schuelerName) { alert('Bitte gib deinen Namen ein!'); return; }
-            startTime = Date.now();
-            zeitVerbleibend = TESTZEIT;
-            // Init AudioContext on user gesture (required for iOS Safari)
-            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-            showTest();
-            testGestartet = true;
-            startTimer();
-            saveState();
+        var niveauPoints = {
+            1: 25,  // ★ Basis
+            2: 29,  // ★★ Standard
+            3: 31   // ★★★ Erweitert
         };
 
-        // === ENTER KEY for name input ===
-        document.getElementById('nameInput').addEventListener('keydown', function(e) {
-            if (e.keyCode === 13) { window.startTest(); }
-        });
+        var answers = {
+            q1: 'a', q2: 'b',
+            q3a: 'W', q3b: 'Wh', q3c: 'A',
+            q4: 'b',
+            q5a: '2000', q5b: '10', q5c: '20', q5d: '800',
+            q6: 'c',
+            q7: 460, q8: 6, q9: 400,
+            q10: 0.4, q11: 12, q12: 3.6,
+            q13a: 'weniger', q13b: 'ja',
+            q14: 9, q15: 18,
+            q16: 100
+        };
 
-        // === TIMER ===
+        function parseNumber(val) {
+            if (val === '' || val === null || val === undefined) return NaN;
+            return parseFloat(String(val).replace(',', '.'));
+        }
+
+        // ============================================================
+        // TIMER
+        // ============================================================
+
         function startTimer() {
-            updateTimer();
+            var savedTime = localStorage.getItem(STORAGE_KEY + '-time');
+            if (savedTime) timeRemaining = parseInt(savedTime);
+            updateTimerDisplay();
             timerInterval = setInterval(function() {
-                if (startTime) {
-                    var elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    zeitVerbleibend = Math.max(0, TESTZEIT - elapsed);
-                }
-                updateTimer();
-                if (zeitVerbleibend <= 0) { clearInterval(timerInterval); abgeben(); }
+                if (testSubmitted) { clearInterval(timerInterval); return; }
+                timeRemaining--;
+                if (timeRemaining < 0) timeRemaining = 0;
+                localStorage.setItem(STORAGE_KEY + '-time', timeRemaining);
+                updateTimerDisplay();
             }, 1000);
         }
 
-        function updateTimer() {
-            var m = Math.floor(zeitVerbleibend / 60);
-            var s = zeitVerbleibend % 60;
-            var el = document.getElementById('timer');
-            el.textContent = m + ':' + pad2(s);
-            el.className = zeitVerbleibend <= 60 ? 'timer danger' : zeitVerbleibend <= 300 ? 'timer warning' : 'timer';
+        function updateTimerDisplay() {
+            var timerBar = document.getElementById('timerBar');
+            var timerDisplay = document.getElementById('timerDisplay');
+            if (timeRemaining <= 0) {
+                timerDisplay.textContent = 'Zeit zum Abgeben!';
+                timerBar.className = 'timer-bar expired';
+                return;
+            }
+            var m = Math.floor(timeRemaining / 60);
+            var s = timeRemaining % 60;
+            timerDisplay.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            timerBar.classList.remove('warning', 'danger', 'expired');
+            if (timeRemaining <= 120) timerBar.classList.add('danger');
+            else if (timeRemaining <= 300) timerBar.classList.add('warning');
         }
 
-        // === MC TOGGLE ===
-        window.toggleMC = function(el) {
-            if (testBeendet) return;
-            el.classList.toggle('selected');
-            var cb = el.querySelector('input');
-            cb.checked = !cb.checked;
-            saveState();
-        };
+        // ============================================================
+        // PLATZ + NIVEAU SPERRUNG
+        // ============================================================
 
-        // === TAB-ALARM (Puls-Alarm, AudioContext from user gesture) ===
-        document.addEventListener('visibilitychange', function() {
-            if (!testGestartet || testBeendet) return;
-            if (document.hidden) {
-                if (tabLeaveTime) {
-                    tabSekunden += Math.floor((Date.now() - tabLeaveTime) / 1000);
-                }
-                tabWechsel++;
-                tabLeaveTime = Date.now();
-            } else if (tabWechsel > 0 && tabLeaveTime) {
-                tabSekunden += Math.floor((Date.now() - tabLeaveTime) / 1000);
-                tabLeaveTime = null;
-                document.getElementById('tabCount').textContent = tabWechsel;
-                document.getElementById('tabWarnung').style.display = 'flex';
-                // Puls-Alarm: 5x 800Hz, 0.5s an / 0.5s aus
-                if (audioCtx) {
-                    try {
-                        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
-                        var beepNum = 0;
-                        function doBeep() {
-                            if (beepNum >= 5 || !audioCtx) return;
-                            try {
-                                var osc = audioCtx.createOscillator();
-                                osc.frequency.value = 800;
-                                osc.connect(audioCtx.destination);
-                                osc.start();
-                                setTimeout(function() { try { osc.stop(); } catch(e) {} }, 500);
-                            } catch(e) {}
-                            beepNum++;
-                            if (beepNum < 5) setTimeout(doBeep, 1000);
-                        }
-                        doBeep();
-                    } catch(e) {}
-                }
-                saveState();
-            }
-        });
-        window.closeTabWarnung = function() { document.getElementById('tabWarnung').style.display = 'none'; };
-
-        // === AUTO-SAVE ===
-        document.addEventListener('input', function() {
-            if (testGestartet && !testBeendet) {
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(saveState, 500);
-            }
-        });
-
-        // === ABGABE-MODAL ===
-        window.closeAbgabeModal = function() { document.getElementById('abgabeModal').classList.remove('show'); };
-        window.confirmAbgabe = function() { document.getElementById('abgabeModal').classList.remove('show'); doAbgabe(); };
-
-        // === ABGEBEN ===
-        function abgeben() {
-            if (testBeendet) return;
-            if (zeitVerbleibend > 0) { document.getElementById('abgabeModal').classList.add('show'); return; }
-            doAbgabe();
+        function confirmSeat() {
+            var sel = document.getElementById('seatSelect');
+            var num = sel.value;
+            if (!num) { alert('Bitte Platznummer w\u00e4hlen!'); return; }
+            var ok = confirm('Platznummer P' + num + ' best\u00e4tigen?\n\nKann NICHT mehr ge\u00e4ndert werden!');
+            if (!ok) return;
+            localStorage.setItem(STORAGE_KEY + '-seat', num);
+            localStorage.setItem(STORAGE_KEY + '-seat-locked', 'true');
+            showLockedSeat(num);
+            checkUnlocked();
         }
 
-        function doAbgabe() {
-            if (testBeendet) return;
-            testBeendet = true;
-            clearInterval(timerInterval);
+        function showLockedSeat(num) {
+            document.getElementById('seatRow').style.display = 'none';
+            var locked = document.getElementById('seatLocked');
+            locked.innerHTML = '<div class="locked-display">Platz: <strong>P' + num + '</strong></div>';
+            locked.style.display = 'block';
+        }
 
-            // Disable all
-            var fi = document.querySelectorAll('.input-field');
-            for (var i = 0; i < fi.length; i++) fi[i].disabled = true;
-            var mc = document.querySelectorAll('.mc-option');
-            for (var i = 0; i < mc.length; i++) mc[i].style.pointerEvents = 'none';
-            var se = document.querySelectorAll('.zuordnung-select');
-            for (var i = 0; i < se.length; i++) se[i].disabled = true;
+        function confirmNiveau() {
+            var sel = document.getElementById('niveauSelect');
+            var val = sel.value;
+            if (!val) { alert('Bitte Niveau w\u00e4hlen!'); return; }
+            var stars = ['', '\u2605 Basis (25 BE)', '\u2605\u2605 Standard (29 BE)', '\u2605\u2605\u2605 Erweitert (31 BE)'][parseInt(val)];
+            var ok = confirm('Niveau "' + stars + '" best\u00e4tigen?\n\nKann NICHT mehr ge\u00e4ndert werden!');
+            if (!ok) return;
+            localStorage.setItem(STORAGE_KEY + '-niveau', val);
+            localStorage.setItem(STORAGE_KEY + '-niveau-locked', 'true');
+            selectedNiveau = parseInt(val);
+            showLockedNiveau(val);
+            activateNiveau(selectedNiveau);
+            checkUnlocked();
+        }
 
-            var gesamt = 0, max = 25;
+        function showLockedNiveau(val) {
+            document.getElementById('niveauRow').style.display = 'none';
+            var locked = document.getElementById('niveauLocked');
+            var stars = ['', '\u2605 Basis', '\u2605\u2605 Standard', '\u2605\u2605\u2605 Erweitert'][parseInt(val)];
+            locked.innerHTML = '<div class="locked-display niveau-' + val + '">Niveau: <strong>' + stars + '</strong> (' + niveauPoints[val] + ' BE)</div>';
+            locked.style.display = 'block';
+        }
 
-            // --- MC-Bewertung: +1 pro richtig, -1 pro falsch, min 0, max BE ---
-            function scoreMC(correctIds, selectedIds, maxBE) {
-                var hits = 0, misses = 0;
-                for (var i = 0; i < correctIds.length; i++) { if (selectedIds.indexOf(correctIds[i]) >= 0) hits++; }
-                for (var i = 0; i < selectedIds.length; i++) { if (correctIds.indexOf(selectedIds[i]) < 0) misses++; }
-                var raw = (hits - misses) / correctIds.length * maxBE;
-                return Math.max(0, Math.min(maxBE, Math.round(raw * 2) / 2));
-            }
+        // ===== FRAGEN FREISCHALTEN =====
+        function checkUnlocked() {
+            var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true';
+            var niveauLocked = localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true';
+            var container = document.getElementById('questionsContainer');
+            var hint = document.getElementById('unlockHint');
 
-            // --- Aufgabe 1: MC Formeln (4 BE, 3 richtig / 3 falsch) ---
-            var mc1ok = ['mc1a','mc1b','mc1d'];
-            var mc1sel = [];
-            var mc1s = document.querySelectorAll('#mc1 .mc-option.selected');
-            for (var i = 0; i < mc1s.length; i++) mc1sel.push(mc1s[i].querySelector('input').id);
-            var p1 = scoreMC(mc1ok, mc1sel, 4);
-            var mc1all = document.querySelectorAll('#mc1 .mc-option');
-            for (var i = 0; i < mc1all.length; i++) {
-                var id = mc1all[i].querySelector('input').id;
-                if (mc1ok.indexOf(id) >= 0) mc1all[i].classList.add('correct');
-                else if (mc1all[i].classList.contains('selected')) mc1all[i].classList.add('incorrect');
-            }
-            var fb1 = document.getElementById('feedback1');
-            fb1.innerHTML = '<strong>Lösung:</strong> P = U·I und E = P·t sind korrekt. Energie wird in kWh gemessen (1 kWh = 1000 Wh, nicht 100!). Watt ist die Einheit der <em>Leistung</em>, nicht der Energie. kWh ist eine Energieeinheit, keine Leistungseinheit.';
-            fb1.className = 'feedback show ' + (p1 >= 3 ? 'correct' : 'incorrect');
-
-            // --- Aufgabe 2: Zuordnung (4 BE) ---
-            var p2 = 0;
-            var zCorrect = {z1:'2000', z2:'10', z3:'20', z4:'800'};
-            for (var zid in zCorrect) {
-                var zsel = document.getElementById(zid);
-                var zrow = document.getElementById('zr' + zid.charAt(1));
-                if (zsel && zsel.value === zCorrect[zid]) { p2++; if (zrow) zrow.classList.add('correct'); if (zsel) zsel.classList.add('correct'); }
-                else { if (zrow) zrow.classList.add('incorrect'); if (zsel) zsel.classList.add('incorrect'); }
-            }
-            var fb2 = document.getElementById('feedback2');
-            fb2.innerHTML = '<strong>Lösung:</strong> Wasserkocher = 2000 W, LED-Lampe = 10 W, USB-Ladegerät (5 V) = 20 W, Staubsauger = 800 W.';
-            fb2.className = 'feedback show ' + (p2 >= 3 ? 'correct' : 'incorrect');
-
-            // --- Aufgabe 3: Energie (6 BE: a=2★, b=2★, c=2★★) ---
-            var p3 = 0;
-            var s3a = 100 * 4;          // 400 Wh
-            var s3b = s3a / 1000;       // 0.4 kWh
-            var s3c = s3b * 30;         // 12 kWh
-            var e3a = document.getElementById('a3a');
-            var e3b = document.getElementById('a3b');
-            var e3c = document.getElementById('a3c');
-            if (checkTol(e3a.value, s3a)) { p3 += 2; e3a.classList.add('correct'); } else e3a.classList.add('incorrect');
-            if (checkTol(e3b.value, s3b, 0.1)) { p3 += 2; e3b.classList.add('correct'); } else e3b.classList.add('incorrect');
-            if (checkTol(e3c.value, s3c)) { p3 += 2; e3c.classList.add('correct'); } else e3c.classList.add('incorrect');
-            var fb3 = document.getElementById('feedback3');
-            fb3.innerHTML = '<strong>Lösung:</strong> a) 100 W × 4 h = 400 Wh. b) 400 Wh ÷ 1000 = 0,4 kWh. c) 0,4 kWh × 30 Tage = 12 kWh.';
-            fb3.className = 'feedback show ' + (p3 >= 4 ? 'correct' : 'incorrect');
-
-            // --- Aufgabe 4: Kosten (5 BE: a=2★★ mit Folgefehler-Toleranz, b=3★★) ---
-            var p4 = 0;
-            var s4a = s3c * 0.30;              // 3.60 (Soll)
-            var s4b1 = 500 * 2;                 // 1000
-            var s4b2 = s4b1 * 30 / 1000;        // 30
-            var s4b3 = s4b2 * 0.30;             // 9.00
-
-            // Folgefehler-Toleranz: Schüler-Wert aus A3c verwenden wenn plausibel
-            var e4a = document.getElementById('a4a');
-            var schueler3c = parseFloat(String(e3c.value).replace(',', '.'));
-            var ref4a;
-            if (!isNaN(schueler3c) && schueler3c > 0 && schueler3c < 100) {
-                ref4a = schueler3c * 0.30;
+            if (seatLocked && niveauLocked) {
+                container.classList.add('unlocked');
+                hint.style.display = 'none';
             } else {
-                ref4a = s4a;
+                container.classList.remove('unlocked');
+                hint.style.display = 'block';
             }
-            if (checkTol(e4a.value, ref4a, 0.1)) { p4 += 2; e4a.classList.add('correct'); } else e4a.classList.add('incorrect');
-
-            var e4b1 = document.getElementById('a4b1');
-            var e4b2 = document.getElementById('a4b2');
-            var e4b3 = document.getElementById('a4b3');
-            if (checkTol(e4b1.value, s4b1)) { p4++; e4b1.classList.add('correct'); } else e4b1.classList.add('incorrect');
-            if (checkTol(e4b2.value, s4b2, 0.1)) { p4++; e4b2.classList.add('correct'); } else e4b2.classList.add('incorrect');
-            if (checkTol(e4b3.value, s4b3, 0.1)) { p4++; e4b3.classList.add('correct'); } else e4b3.classList.add('incorrect');
-            var fb4 = document.getElementById('feedback4');
-            fb4.innerHTML = '<strong>Lösung:</strong> a) 12 kWh × 0,30 €/kWh = 3,60 €. b) 500 W × 2 h = 1000 Wh pro Tag. 1000 × 30 = 30 000 Wh = 30 kWh. 30 × 0,30 = 9,00 €.';
-            fb4.className = 'feedback show ' + (p4 >= 3 ? 'correct' : 'incorrect');
-
-            // --- Aufgabe 5: Stromrechnung (4 BE: a=2★, b=1★★, c=1★★★) ---
-            var p5 = 0;
-            var s5a = 3600 * 0.30;      // 1080
-            var s5b = s5a / 12;          // 90
-            var s5c = 100;               // 2.70/0.30=9kWh, 9/30=0.3kWh/d=300Wh/d, 300/3h=100W
-            var e5a = document.getElementById('a5a');
-            var e5b = document.getElementById('a5b');
-            var e5c = document.getElementById('a5c');
-            if (checkTol(e5a.value, s5a, 0.02)) { p5 += 2; e5a.classList.add('correct'); } else e5a.classList.add('incorrect');
-            if (checkTol(e5b.value, s5b, 0.05)) { p5++; e5b.classList.add('correct'); } else e5b.classList.add('incorrect');
-            if (checkTol(e5c.value, s5c, 0.05)) { p5++; e5c.classList.add('correct'); } else e5c.classList.add('incorrect');
-            var fb5 = document.getElementById('feedback5');
-            fb5.innerHTML = '<strong>Lösung:</strong> a) 3600 kWh × 0,30 €/kWh = 1080 €. b) 1080 € ÷ 12 = 90 €/Monat. c) 2,70 € ÷ 0,30 €/kWh = 9 kWh/Monat. 9 ÷ 30 = 0,3 kWh/Tag = 300 Wh/Tag. 300 Wh ÷ 3 h = <strong>100 W</strong>.';
-            fb5.className = 'feedback show ' + (p5 >= 3 ? 'correct' : 'incorrect');
-
-            // --- Aufgabe 6: MC Energiesparen (2 BE) ---
-            var mc6ok = ['mc6a','mc6c'];
-            var mc6sel = [];
-            var mc6s = document.querySelectorAll('#mc6 .mc-option.selected');
-            for (var i = 0; i < mc6s.length; i++) mc6sel.push(mc6s[i].querySelector('input').id);
-            var p6 = scoreMC(mc6ok, mc6sel, 2);
-            var mc6all = document.querySelectorAll('#mc6 .mc-option');
-            for (var i = 0; i < mc6all.length; i++) {
-                var id6 = mc6all[i].querySelector('input').id;
-                if (mc6ok.indexOf(id6) >= 0) mc6all[i].classList.add('correct');
-                else if (mc6all[i].classList.contains('selected')) mc6all[i].classList.add('incorrect');
-            }
-            var fb6 = document.getElementById('feedback6');
-            fb6.innerHTML = '<strong>Lösung:</strong> LED-Lampen verbrauchen weniger als Glühlampen (richtig). Geräte im Standby verbrauchen trotzdem Strom (falsch). Energieeffizienzklasse A verbraucht weniger als G (richtig). Auch kurzes Einschalten verbraucht Strom — je kürzer die Zeit, desto weniger Energie (E = P · t).';
-            fb6.className = 'feedback show ' + (p6 >= 1 ? 'correct' : 'incorrect');
-
-            // === GESAMT ===
-            gesamt = Math.round((p1 + p2 + p3 + p4 + p5 + p6) * 10) / 10;
-            gesamt = Math.min(max, gesamt);
-
-            document.getElementById('punkte1').textContent = p1 + '/4';
-            document.getElementById('punkte2').textContent = p2 + '/4';
-            document.getElementById('punkte3').textContent = p3 + '/6';
-            document.getElementById('punkte4').textContent = p4 + '/5';
-            document.getElementById('punkte5').textContent = p5 + '/4';
-            document.getElementById('punkte6').textContent = p6 + '/2';
-
-            document.getElementById('ergebnisPunkte').textContent = gesamt + '/' + max;
-
-            // Notenskala 25 BE (MR-Standard)
-            var note;
-            if (gesamt >= 24) note = '1 (sehr gut)';
-            else if (gesamt >= 20) note = '2 (gut)';
-            else if (gesamt >= 15) note = '3 (befriedigend)';
-            else if (gesamt >= 10) note = '4 (ausreichend)';
-            else if (gesamt >= 5) note = '5 (mangelhaft)';
-            else note = '6 (ungenügend)';
-            document.getElementById('ergebnisNote').textContent = 'Note: ' + note;
-
-            document.getElementById('ergebnisName').textContent = schuelerName;
-            document.getElementById('ergebnisZeit').textContent = new Date().toLocaleString('de-DE');
-            document.getElementById('ergebnisPruefcode').textContent = pruefcode(schuelerName, gesamt);
-
-            if (tabWechsel > 0) {
-                document.getElementById('ergebnisTabInfo').textContent = 'Tab-Wechsel: ' + tabWechsel + ' (' + tabSekunden + ' Sek. außerhalb)';
-            }
-
-            document.getElementById('abgabeContainer').style.display = 'none';
-            document.getElementById('ergebnisBox').classList.add('show');
-            document.getElementById('ergebnisBox').scrollIntoView({ behavior: 'smooth' });
-
-            // Save final
-            try { localStorage.removeItem(SK + '-sess'); } catch(e) {}
-            try {
-                localStorage.setItem(SK + '-result', JSON.stringify({
-                    name: schuelerName, punkte: gesamt, max: max, note: note,
-                    code: pruefcode(schuelerName, gesamt), tabWechsel: tabWechsel,
-                    tabSekunden: tabSekunden, zeit: new Date().toISOString()
-                }));
-            } catch(e) {}
         }
-        window.abgeben = abgeben;
 
-        // === INIT ===
-        if (!restoreState()) {
-            // Fresh start — wait for name
+        function activateNiveau(niveau) {
+            var questions = document.querySelectorAll('.question');
+            for (var i = 0; i < questions.length; i++) {
+                var qNiveau = parseInt(questions[i].dataset.niveau);
+                if (qNiveau <= niveau) {
+                    questions[i].classList.add('visible');
+                }
+            }
+            document.getElementById('progressContainer').style.display = 'block';
+            document.getElementById('submitSection').style.display = 'block';
+            updateProgress();
         }
-    })();
+
+        // ============================================================
+        // FORTSCHRITT
+        // ============================================================
+
+        function isAnswered(qId) {
+            switch(qId) {
+                case 'q1': case 'q2': case 'q4': case 'q6':
+                    return !!document.querySelector('input[name="' + qId + '"]:checked');
+                case 'q3':
+                    return document.getElementById('q3a').value && document.getElementById('q3b').value && document.getElementById('q3c').value;
+                case 'q5':
+                    return document.getElementById('q5a').value && document.getElementById('q5b').value && document.getElementById('q5c').value && document.getElementById('q5d').value;
+                case 'q13':
+                    return document.getElementById('q13a').value && document.getElementById('q13b').value;
+                case 'q7': return document.getElementById('q7v').value !== '';
+                case 'q8': return document.getElementById('q8v').value !== '';
+                case 'q9': return document.getElementById('q9v').value !== '';
+                case 'q10': return document.getElementById('q10v').value !== '';
+                case 'q11': return document.getElementById('q11v').value !== '';
+                case 'q12': return document.getElementById('q12v').value !== '';
+                case 'q14': return document.getElementById('q14v').value !== '';
+                case 'q15': return document.getElementById('q15v').value !== '';
+                case 'q16': return document.getElementById('q16v').value !== '';
+                default: return false;
+            }
+        }
+
+        function updateProgress() {
+            if (selectedNiveau === 0) return;
+            var answered = 0, total = 0;
+            var questions = document.querySelectorAll('.question');
+            for (var i = 0; i < questions.length; i++) {
+                var qNiveau = parseInt(questions[i].dataset.niveau);
+                if (qNiveau <= selectedNiveau) {
+                    total++;
+                    if (isAnswered(questions[i].id)) answered++;
+                }
+            }
+            var pct = total > 0 ? (answered / total) * 100 : 0;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressText').textContent = answered + ' / ' + total + ' beantwortet (' + niveauPoints[selectedNiveau] + ' BE)';
+        }
+
+        // ============================================================
+        // PERSISTENZ
+        // ============================================================
+
+        function saveProgress() {
+            if (testSubmitted) return;
+            var inputs = document.querySelectorAll('input, select');
+            for (var i = 0; i < inputs.length; i++) {
+                var el = inputs[i];
+                if (el.type === 'radio') {
+                    if (el.checked) localStorage.setItem(STORAGE_KEY + '-' + el.name, el.value);
+                } else if (el.id) {
+                    localStorage.setItem(STORAGE_KEY + '-' + el.id, el.value);
+                }
+            }
+        }
+
+        function loadProgress() {
+            var wasSubmitted = localStorage.getItem(STORAGE_KEY + '-submitted') === 'true';
+
+            // Load seat (immer)
+            if (localStorage.getItem(STORAGE_KEY + '-seat-locked') === 'true') {
+                var seat = localStorage.getItem(STORAGE_KEY + '-seat');
+                if (seat) showLockedSeat(seat);
+            }
+
+            // Load niveau (immer)
+            if (localStorage.getItem(STORAGE_KEY + '-niveau-locked') === 'true') {
+                var niveau = localStorage.getItem(STORAGE_KEY + '-niveau');
+                if (niveau) {
+                    selectedNiveau = parseInt(niveau);
+                    showLockedNiveau(niveau);
+                    activateNiveau(selectedNiveau);
+                }
+            }
+
+            // Load answers (IMMER - auch nach Abgabe!)
+            var inputs = document.querySelectorAll('input, select');
+            for (var i = 0; i < inputs.length; i++) {
+                var el = inputs[i];
+                if (el.type === 'radio') {
+                    var saved = localStorage.getItem(STORAGE_KEY + '-' + el.name);
+                    if (saved && el.value === saved) el.checked = true;
+                } else if (el.id) {
+                    var saved = localStorage.getItem(STORAGE_KEY + '-' + el.id);
+                    if (saved) el.value = saved;
+                }
+            }
+
+            // Nach Abgabe: Ergebnisse anzeigen (NACHDEM Antworten geladen wurden!)
+            if (wasSubmitted) {
+                testSubmitted = true;
+                displayResults();
+            }
+        }
+
+        document.addEventListener('change', function() {
+            saveProgress();
+            updateProgress();
+        });
+
+        // ============================================================
+        // AUSWERTUNG
+        // ============================================================
+
+        function submitTest() {
+            if (testSubmitted) return;
+            if (selectedNiveau === 0) { alert('Bitte erst Niveau w\u00e4hlen!'); return; }
+
+            var seatLocked = localStorage.getItem(STORAGE_KEY + '-seat-locked');
+            if (seatLocked !== 'true') { alert('Bitte erst Platznummer best\u00e4tigen!'); return; }
+
+            var submitBtn = document.querySelector('#submitSection .btn');
+            if (submitBtn) submitBtn.disabled = true;
+
+            testSubmitted = true;
+            localStorage.setItem(STORAGE_KEY + '-submitted', 'true');
+            localStorage.setItem(STORAGE_KEY + '-submit-time', Date.now());
+            clearInterval(timerInterval);
+            displayResults();
+        }
+
+        function displayResults() {
+            var score = 0;
+            var maxPts = niveauPoints[selectedNiveau];
+
+            // ★ NIVEAU 1
+            if (selectedNiveau >= 1) {
+                score += evalRadio('q1', 'a', 1);
+                score += evalRadio('q2', 'b', 1);
+                score += evalQ3();
+                score += evalRadio('q4', 'b', 1);
+                score += evalQ5();
+                score += evalRadio('q6', 'c', 1);
+                score += evalNumeric('q7v', 460, 2);
+                score += evalNumeric('q8v', 6, 2);
+                score += evalNumeric('q9v', 400, 2);
+                score += evalNumeric('q10v', 0.4, 2);
+                score += evalNumeric('q11v', 12, 2);
+                score += evalNumeric('q12v', 3.6, 2);
+                score += evalQ13();
+            }
+
+            // ★★ NIVEAU 2
+            if (selectedNiveau >= 2) {
+                score += evalNumeric('q14v', 9, 2);
+                score += evalNumeric('q15v', 18, 2);
+            }
+
+            // ★★★ NIVEAU 3
+            if (selectedNiveau >= 3) {
+                score += evalNumeric('q16v', 100, 2);
+            }
+
+            // Ergebnis anzeigen
+            document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPts + ' BE';
+
+            // NP berechnen
+            var pct = (score / maxPts) * 100;
+            var np = calcNP(pct);
+            var npClass = np >= 10 ? 'good' : (np >= 5 ? 'ok' : 'weak');
+            document.getElementById('npDisplay').innerHTML = '<div class="results-np ' + npClass + '">' + np + ' Notenpunkte (' + Math.round(pct) + '%)</div>';
+
+            // Tabelle markieren
+            markGradeTable(np);
+
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('submitSection').style.display = 'none';
+            document.getElementById('pdfUploadBox').classList.add('visible');
+
+            // Zeitstempel anzeigen (Anti-Betrug)
+            var startTS = localStorage.getItem(STORAGE_KEY + '-start');
+            var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
+            var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
+            var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
+            var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+                '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
+                '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+                '<div><strong>Tab-Wechsel:</strong> ' + switches + '\u00d7 (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+                '</div>';
+            var resultsEl = document.getElementById('results');
+            if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+            disableAllInputs();
+        }
+
+        function evalRadio(name, correct, pts) {
+            var sel = document.querySelector('input[name="' + name + '"]:checked');
+            var val = sel ? sel.value : '';
+            var isCorrect = val === correct;
+            markRadioOptions(name, correct, val);
+            showFeedback(name, isCorrect);
+            showResult(name, isCorrect ? pts : 0, pts);
+            return isCorrect ? pts : 0;
+        }
+
+        function evalNumeric(id, correct, pts) {
+            var el = document.getElementById(id);
+            var val = parseNumber(el.value);
+            var isCorrect = Math.abs(val - correct) < 0.01;
+            el.style.border = isCorrect ? '2px solid #2a7a4b' : '2px solid #c62828';
+            el.style.background = isCorrect ? '#e8f5e9' : '#ffebee';
+            var qId = id.replace('v', '');
+            showFeedback(qId, isCorrect);
+            showResult(qId, isCorrect ? pts : 0, pts);
+            return isCorrect ? pts : 0;
+        }
+
+        function evalQ3() {
+            var score = 0;
+            var q3a = document.getElementById('q3a');
+            var q3b = document.getElementById('q3b');
+            var q3c = document.getElementById('q3c');
+
+            if (q3a.value === 'W') { score++; q3a.classList.add('correct'); }
+            else { q3a.classList.add('incorrect'); }
+
+            if (q3b.value === 'Wh') { score++; q3b.classList.add('correct'); }
+            else { q3b.classList.add('incorrect'); }
+
+            if (q3c.value === 'A') { score++; q3c.classList.add('correct'); }
+            else { q3c.classList.add('incorrect'); }
+
+            showFeedback('q3', score === 3);
+            showResult('q3', score, 3);
+            return score;
+        }
+
+        function evalQ5() {
+            var score = 0;
+            var q5a = document.getElementById('q5a');
+            var q5b = document.getElementById('q5b');
+            var q5c = document.getElementById('q5c');
+            var q5d = document.getElementById('q5d');
+
+            if (q5a.value === '2000') { score++; q5a.classList.add('correct'); }
+            else { q5a.classList.add('incorrect'); }
+
+            if (q5b.value === '10') { score++; q5b.classList.add('correct'); }
+            else { q5b.classList.add('incorrect'); }
+
+            if (q5c.value === '20') { score++; q5c.classList.add('correct'); }
+            else { q5c.classList.add('incorrect'); }
+
+            if (q5d.value === '800') { score++; q5d.classList.add('correct'); }
+            else { q5d.classList.add('incorrect'); }
+
+            showFeedback('q5', score === 4);
+            showResult('q5', score, 4);
+            return score;
+        }
+
+        function evalQ13() {
+            var score = 0;
+            var q13a = document.getElementById('q13a');
+            var q13b = document.getElementById('q13b');
+
+            if (q13a.value === 'weniger') { score++; q13a.classList.add('correct'); }
+            else { q13a.classList.add('incorrect'); }
+
+            if (q13b.value === 'ja') { score++; q13b.classList.add('correct'); }
+            else { q13b.classList.add('incorrect'); }
+
+            showFeedback('q13', score === 2);
+            showResult('q13', score, 2);
+            return score;
+        }
+
+        function markRadioOptions(name, correct, selected) {
+            var opts = document.querySelectorAll('#' + name + '-options .option');
+            for (var i = 0; i < opts.length; i++) {
+                var val = opts[i].dataset.value;
+                if (val === correct) opts[i].classList.add('correct');
+                else if (val === selected && val !== correct) opts[i].classList.add('incorrect');
+            }
+        }
+
+        function showFeedback(qId, isCorrect) {
+            var fbC = document.getElementById(qId + '-fb-correct');
+            var fbI = document.getElementById(qId + '-fb-incorrect');
+            if (isCorrect && fbC) fbC.classList.add('show');
+            else if (!isCorrect && fbI) fbI.classList.add('show');
+        }
+
+        function showResult(qId, achieved, maxPts) {
+            var q = document.getElementById(qId);
+            var meta = q.querySelector('.question-meta');
+            var res = document.createElement('span');
+            res.className = 'question-result';
+            if (achieved === maxPts) res.classList.add('full');
+            else if (achieved > 0) res.classList.add('partial');
+            else res.classList.add('zero');
+            res.textContent = achieved + '/' + maxPts + ' BE';
+            meta.appendChild(res);
+        }
+
+        function calcNP(pct) {
+            var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+            for (var i = 0; i < thresholds.length; i++) {
+                if (pct >= thresholds[i]) return 14 - i;
+            }
+            return 0;
+        }
+
+        function markGradeTable(np) {
+            var cells = document.getElementById('gradeRow').cells;
+            var idx = 15 - np;
+            if (idx >= 1 && idx < cells.length) {
+                cells[idx].classList.add('current-grade');
+            }
+        }
+
+        function disableAllInputs() {
+            var inputs = document.querySelectorAll('input, select');
+            for (var i = 0; i < inputs.length; i++) {
+                inputs[i].disabled = true;
+            }
+        }
+
+        // ============================================================
+        // LEHRER-RESET
+        // ============================================================
+
+        function teacherReset() {
+            var code = prompt('Lehrer-Code eingeben:');
+            if (code === '2024') {
+                var keys = [];
+                for (var i = 0; i < localStorage.length; i++) {
+                    var key = localStorage.key(i);
+                    if (key && key.indexOf(STORAGE_KEY) === 0) keys.push(key);
+                }
+                for (var j = 0; j < keys.length; j++) {
+                    localStorage.removeItem(keys[j]);
+                }
+                alert('Platz zur\u00fcckgesetzt. Seite wird neu geladen.');
+                location.reload();
+            } else if (code !== null) {
+                alert('Falscher Code!');
+            }
+        }
+
+        // ============================================================
+        // PERSISTENZ-ABLAUF (16 Stunden)
+        // ============================================================
+
+        var EXPIRY_MS = 16 * 60 * 60 * 1000; // 16 Stunden in Millisekunden
+
+        function checkExpiry() {
+            var startTime = localStorage.getItem(STORAGE_KEY + '-start');
+            if (startTime) {
+                var elapsed = Date.now() - parseInt(startTime);
+                if (elapsed > EXPIRY_MS) {
+                    clearAllData();
+                    return true;
+                }
+            } else {
+                // Erste Nutzung: Startzeit setzen
+                localStorage.setItem(STORAGE_KEY + '-start', Date.now());
+            }
+            return false;
+        }
+
+        function clearAllData() {
+            var keys = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf(STORAGE_KEY) === 0) keys.push(key);
+            }
+            for (var j = 0; j < keys.length; j++) {
+                localStorage.removeItem(keys[j]);
+            }
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+
+        initTabSwitchTracking();
+
+        // Pruefen ob Session abgelaufen (16h)
+        if (checkExpiry()) {
+            // Daten wurden geloescht, Seite neu laden fuer frischen Start
+            location.reload();
+        } else {
+            loadProgress();
+            if (!testSubmitted) {
+                startTimer();
+            }
+            checkUnlocked();
+        }
     </script>
 </body>
 </html>
