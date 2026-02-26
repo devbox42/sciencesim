@@ -1076,9 +1076,15 @@
         </div>
 
         <!-- LEHRER-BEREICH -->
-        <details class="teacher-section">
+        <details class="teacher-section" id="teacherDetails">
             <summary>Lehrerbereich</summary>
-            <button class="btn btn-small" onclick="teacherReset()">Platz zur&uuml;cksetzen</button>
+            <div id="teacherLocked" style="margin:10px 0;">
+                <button class="btn btn-small" onclick="teacherUnlock()">Entsperren</button>
+            </div>
+            <div id="teacherActions" style="display:none; margin:10px 0;">
+                <button class="btn btn-small" onclick="teacherReset()">Platz zur&uuml;cksetzen</button>
+                <button class="btn btn-small" style="background:#b35c00;" onclick="teacherExtendTime()">+5 Min (Nachteilsausgleich)</button>
+            </div>
         </details>
 
     </div><!-- /container -->
@@ -1654,22 +1660,41 @@
         // LEHRER-RESET
         // ============================================================
 
-        function teacherReset() {
+        function teacherUnlock() {
             var code = prompt('Lehrer-Code eingeben:');
             if (code === '2024') {
-                var keys = [];
-                for (var i = 0; i < localStorage.length; i++) {
-                    var key = localStorage.key(i);
-                    if (key && key.indexOf(STORAGE_KEY) === 0) keys.push(key);
-                }
-                for (var j = 0; j < keys.length; j++) {
-                    localStorage.removeItem(keys[j]);
-                }
-                alert('Platz zur\u00fcckgesetzt. Seite wird neu geladen.');
-                location.reload();
+                document.getElementById('teacherLocked').style.display = 'none';
+                document.getElementById('teacherActions').style.display = 'block';
             } else if (code !== null) {
                 alert('Falscher Code!');
             }
+        }
+
+        function teacherReset() {
+            var ok = confirm('Alle Daten f\u00fcr diesen Platz l\u00f6schen?');
+            if (!ok) return;
+            var keys = [];
+            for (var i = 0; i < localStorage.length; i++) {
+                var key = localStorage.key(i);
+                if (key && key.indexOf(STORAGE_KEY) === 0) keys.push(key);
+            }
+            for (var j = 0; j < keys.length; j++) {
+                localStorage.removeItem(keys[j]);
+            }
+            alert('Platz zur\u00fcckgesetzt. Seite wird neu geladen.');
+            location.reload();
+        }
+
+        function teacherExtendTime() {
+            if (testSubmitted) {
+                alert('Test bereits abgegeben!');
+                return;
+            }
+            timeRemaining += 5 * 60;
+            autoSubmitDone = false;
+            localStorage.setItem(STORAGE_KEY + '-time', timeRemaining);
+            updateTimerDisplay();
+            alert('+5 Minuten hinzugef\u00fcgt. Neue Restzeit: ' + Math.floor(timeRemaining / 60) + ':' + (timeRemaining % 60 < 10 ? '0' : '') + (timeRemaining % 60));
         }
 
         // ============================================================
