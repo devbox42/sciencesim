@@ -1043,17 +1043,46 @@
         alarmActive = false;
     }
 
-    function startPulseAlarm() {
+    function showTabWarningOverlay() {
+        document.getElementById('tabWarnCount').textContent = tabSwitchCount;
+        document.getElementById('tabWarnTime').textContent = formatDuration(tabSwitchSeconds);
         var btn = document.getElementById('tabWarnDismiss');
-        if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
-        var beepsDone = 0;
-        var alarmStarted = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
+        document.getElementById('tabWarning').classList.add('visible');
+    }
 
+    function dismissTabWarning() {
+        // Button-Klick = User-Geste → iOS gibt AudioContext frei!
+        var btn = document.getElementById('tabWarnDismiss');
+        if (btn && btn.disabled) return;
+        if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
+
+        // AudioContext per User-Geste starten/resumieren
+        if (!audioCtx) {
+            try { initAudioContext(); } catch(e) {}
+        }
+        ensureAudio(function() { startPulseAndClose(); });
+        // Falls Audio sofort bereit ist
+        if (audioCtx && audioCtx.state === 'running') {
+            startPulseAndClose();
+        } else {
+            // Fallback: nach 2s trotzdem schließen
+            setTimeout(function() {
+                if (document.getElementById('tabWarning').classList.contains('visible')) {
+                    document.getElementById('tabWarning').classList.remove('visible');
+                    stopAlarm();
+                }
+            }, 2000);
+        }
+    }
+
+    function startPulseAndClose() {
+        var beepsDone = 0;
         function doPulse() {
-            alarmStarted = true;
             if (beepsDone >= TAB_WARN_BEEPS) {
                 stopAlarm();
-                if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
+                document.getElementById('tabWarning').classList.remove('visible');
+                if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; }
                 return;
             }
             startAlarm();
@@ -1063,30 +1092,7 @@
                 pulseAlarmTimeout = setTimeout(doPulse, 500);
             }, 500);
         }
-
-        var ready = ensureAudio(function() { doPulse(); });
-        if (ready) doPulse();
-
-        // Fallback: falls AudioContext nie resumed
-        setTimeout(function() {
-            if (!alarmStarted && btn) {
-                btn.disabled = false;
-                btn.textContent = 'Zur\u00fcck zum Test';
-            }
-        }, 2000);
-    }
-
-    function showTabWarningOverlay() {
-        document.getElementById('tabWarnCount').textContent = tabSwitchCount;
-        document.getElementById('tabWarnTime').textContent = formatDuration(tabSwitchSeconds);
-        document.getElementById('tabWarning').classList.add('visible');
-    }
-
-    function dismissTabWarning() {
-        if (document.getElementById('tabWarnDismiss').disabled) return;
-        document.getElementById('tabWarning').classList.remove('visible');
-        if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; }
-        stopAlarm();
+        doPulse();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1258,7 +1264,6 @@
                     tabSwitchStart = 0;
                 }
                 showTabWarningOverlay();
-                startPulseAlarm();
             }
         });
     }
