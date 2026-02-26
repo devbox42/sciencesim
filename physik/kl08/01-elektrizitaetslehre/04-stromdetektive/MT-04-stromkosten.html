@@ -1537,12 +1537,15 @@
             var submitTS = localStorage.getItem(STORAGE_KEY + '-submit-time');
             var switches = localStorage.getItem(STORAGE_KEY + '-tabswitches') || '0';
             var switchSec = localStorage.getItem(STORAGE_KEY + '-tabseconds') || '0';
-            var timestampHtml = '<div style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
+            var timestampHtml = '<div id="timestamp-block" style="margin-top:20px; padding:12px; background:#f5f5f5; border:1px solid #ddd; text-align:left; font-size:0.85em;">' +
                 '<div><strong>Aufruf:</strong> ' + formatTimestamp(startTS) + '</div>' +
                 '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
                 '<div><strong>Tab-Wechsel:</strong> ' + switches + '\u00d7 (' + formatDuration(parseInt(switchSec)) + ')</div>' +
                 '</div>';
             var resultsEl = document.getElementById('results');
+            // Vorherigen Zeitstempel entfernen (Reload-Schutz)
+            var oldTS = document.getElementById('timestamp-block');
+            if (oldTS) oldTS.parentNode.removeChild(oldTS);
             if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
 
             disableAllInputs();
@@ -1666,6 +1669,9 @@
         function showResult(qId, achieved, maxPts) {
             var q = document.getElementById(qId);
             var meta = q.querySelector('.question-meta');
+            // Vorherige Ergebnis-Badges entfernen (Reload-Schutz)
+            var old = meta.querySelector('.question-result');
+            if (old) old.parentNode.removeChild(old);
             var res = document.createElement('span');
             res.className = 'question-result';
             if (achieved === maxPts) res.classList.add('full');
@@ -1685,6 +1691,10 @@
 
         function markGradeTable(np) {
             var cells = document.getElementById('gradeRow').cells;
+            // Vorherige Markierung entfernen (Reload-Schutz)
+            for (var c = 0; c < cells.length; c++) {
+                cells[c].classList.remove('current-grade');
+            }
             var idx = 15 - np;
             if (idx >= 1 && idx < cells.length) {
                 cells[idx].classList.add('current-grade');
@@ -1694,6 +1704,10 @@
             var maxPts = niveauPoints[selectedNiveau];
             var thresholdPcts = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
             var beRow = document.getElementById('gradeRowBE');
+            // Vorherige BE-Zellen entfernen (Reload-Schutz)
+            while (beRow.cells.length > 1) {
+                beRow.removeChild(beRow.lastChild);
+            }
             // Entferne den Platzhalter-colspan-Cell
             var placeholder = document.getElementById('gradeRowBECells');
             if (placeholder) placeholder.parentNode.removeChild(placeholder);
