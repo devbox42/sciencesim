@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Von der Rakete zu F = m·a | Physik 10E</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px; line-height: 1.6; color: #222; background: #f5f5f5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        :root {
+            --physik: #2c5aa0; --physik-light: #e8f0fa;
+            --success: #2a7a4b; --success-light: #e8f5e9;
+            --warning: #b35c00; --warning-light: #fff3e0;
+            --error: #c62828; --error-light: #ffebee;
+            --gray: #666; --border: #ddd;
+        }
+        header { background: var(--physik); color: white; padding: 20px; text-align: center; }
+        header h1 { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        header .meta { font-size: 0.85em; opacity: 0.9; }
+        .progress-bar { background: #ddd; height: 8px; width: 100%; }
+        .progress-fill { background: var(--physik); height: 100%; width: 0%; transition: width 0.3s; }
+        .step-indicator { display: flex; justify-content: center; gap: 8px; padding: 15px; background: white; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .step-dot { width: 12px; height: 12px; border-radius: 50%; background: #ddd; cursor: pointer; transition: all 0.2s; }
+        .step-dot:hover { transform: scale(1.2); }
+        .step-dot.active { background: var(--physik); }
+        .step-dot.completed { background: var(--success); }
+        .step { display: none; background: white; padding: 25px; margin: 20px 0; border: 1px solid var(--border); }
+        .step.active { display: block; }
+        .step h2 { color: var(--physik); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--physik-light); }
+        .step h3 { font-size: 1.1em; margin: 20px 0 10px 0; color: #333; }
+        .info-box { background: var(--physik-light); border-left: 4px solid var(--physik); padding: 15px; margin: 15px 0; }
+        .ab-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px; margin: 15px 0; }
+        .formel-box { background: #f9f9f9; border: 2px solid var(--physik); padding: 20px; margin: 20px 0; text-align: center; font-size: 1.3em; }
+        .merksatz { background: var(--success-light); border-left: 4px solid var(--success); padding: 15px; margin: 15px 0; font-weight: 500; }
+        .wichtig { background: var(--warning-light); border: 2px solid var(--warning); padding: 15px; margin: 15px 0; }
+        .sim-container { background: #f9f9f9; border: 1px solid var(--border); padding: 15px; margin: 20px 0; }
+        .sim-container h4 { color: var(--physik); margin-bottom: 10px; font-size: 1em; }
+        canvas { display: block; margin: 10px auto; background: white; border: 1px solid var(--border); touch-action: none; }
+        .sim-controls { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; align-items: center; justify-content: center; }
+        .sim-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.9em; min-height: 44px; padding: 4px 8px; cursor: pointer; }
+        .sim-controls input[type="checkbox"] { width: 24px; height: 24px; min-width: 24px; }
+        .view-toggle { display: flex; gap: 10px; margin-bottom: 10px; justify-content: center; flex-wrap: wrap; }
+        .view-toggle label { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border: 2px solid var(--border); cursor: pointer; min-height: 44px; font-weight: 500; transition: all 0.2s; }
+        .view-toggle input[type="radio"] { width: 20px; height: 20px; min-width: 20px; }
+        .view-toggle label.active-view { border-color: var(--physik); background: var(--physik-light); }
+        .sim-controls input[type="range"] { width: 140px; height: 44px; }
+        button { padding: 10px 20px; font-size: 1em; cursor: pointer; border: none; background: var(--physik); color: white; min-height: 44px; }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: white; color: var(--physik); border: 2px solid var(--physik); }
+        .btn-success { background: var(--success); }
+        .btn-warning { background: var(--warning); }
+        .var { font-style: italic; }
+        .exercise { background: #fafafa; border: 1px solid var(--border); padding: 20px; margin: 20px 0; }
+        .exercise-title { font-weight: 600; color: var(--physik); margin-bottom: 10px; }
+        .niveau-badge { font-size: 0.8em; padding: 2px 8px; border-radius: 3px; background: var(--physik-light); color: var(--physik); }
+        .quiz-option { display: block; padding: 12px 15px; margin: 8px 0; background: white; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; min-height: 44px; }
+        .quiz-option:hover { border-color: var(--physik); }
+        .quiz-option.selected { border-color: var(--physik); background: var(--physik-light); }
+        .quiz-option.correct { border-color: var(--success); background: var(--success-light); }
+        .quiz-option.wrong { border-color: var(--error); background: var(--error-light); }
+        .feedback { margin-top: 15px; padding: 12px; display: none; }
+        .feedback.correct { display: block; background: var(--success-light); border-left: 4px solid var(--success); color: var(--success); }
+        .feedback.incorrect { display: block; background: var(--error-light); border-left: 4px solid var(--error); color: #333; }
+        .feedback.hint { display: block; background: var(--warning-light); border-left: 4px solid var(--warning); color: #333; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .messwert-tabelle { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .messwert-tabelle th, .messwert-tabelle td { border: 1px solid var(--border); padding: 10px; text-align: center; }
+        .messwert-tabelle th { background: var(--physik-light); color: var(--physik); font-weight: 600; }
+        .messwert-tabelle td.filled { background: var(--success-light); }
+        .messwert-tabelle input { width: 80px; padding: 6px; text-align: center; border: 1px solid var(--border); font-size: 1em; }
+        .graph-container { background: white; border: 1px solid var(--border); padding: 10px; margin: 15px 0; text-align: center; }
+        .input-inline { display: inline-block; padding: 6px 12px; border: 1px solid var(--border); font-size: 1em; width: 100px; text-align: center; }
+        .scenario-card { background: white; border: 2px solid var(--border); padding: 20px; margin: 15px 0; transition: border-color 0.2s; }
+        .scenario-card.solved { border-color: var(--success); }
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .step { padding: 15px; }
+            canvas { max-width: 100%; height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Von der Rakete zu F = m · a</h1>
+    <div class="meta">Physik 10E | DS 5 | Newton I & II – Resultierende Kraft, Trägheit, Grundgesetz</div>
+</header>
+
+<div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+</div>
+<div class="step-indicator" id="stepIndicator"></div>
+
+<div class="container">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 1: RECAP + RAKETE-FKB MIT LUFTWIDERSTAND
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step active" id="step1">
+        <h2>1. Rückblick: Die Rakete und ihr Freikörperbild</h2>
+
+        <div class="info-box">
+            <strong>Letzte Stunde</strong> hast du das Freikörperbild (FKB) einer startenden Rakete gezeichnet.
+            Heute knüpfen wir dort an: <strong>Welche Kräfte wirken – und was bewirken sie?</strong>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Recap: Newton III</div>
+            <p><strong>Frage 1:</strong> Die Rakete stößt Abgase nach unten aus. Die Abgase drücken die Rakete nach oben. Wie nennt man dieses Prinzip?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="recap1" value="a"> Trägheitsgesetz</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="recap1" value="b"> Wechselwirkungsgesetz (Newton III)</label>
+                <label class="quiz-option"><input type="radio" name="recap1" value="c"> Grundgesetz der Mechanik</label>
+            </div>
+        </div>
+
+        <h3>Perspektivwechsel: Von der Wechselwirkung zum Freikörperbild</h3>
+
+        <div class="wichtig">
+            <strong>Letzte Stunde (Newton III):</strong> Du hast <em>Wechselwirkungspaare</em> gezeichnet – Kräfte zwischen <strong>zwei verschiedenen</strong> Körpern. Kraft und Gegenkraft sind gleich groß, wirken aber auf <strong>unterschiedliche</strong> Körper!
+            <br><br>
+            <strong>Heute:</strong> Wir wechseln die Perspektive. Wir schauen nur noch auf <strong>einen einzigen</strong> Körper – die Rakete – und fragen: Welche Kräfte wirken <strong>auf sie</strong>?
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+            <div style="background: #ffebee; padding: 15px; border: 2px solid #c62828;">
+                <strong>Newton III – Wechselwirkung:</strong><br>
+                Kräfte zwischen <strong>ZWEI</strong> Körpern
+                <ul style="margin: 8px 0 0 20px; font-size: 0.9em;">
+                    <li>Rakete drückt Abgase ↓</li>
+                    <li>Abgase drücken Rakete ↑</li>
+                </ul>
+                <span style="font-size: 0.85em; color: var(--gray);">Gleich groß, verschiedene Körper!</span>
+            </div>
+            <div style="background: #e3f2fd; padding: 15px; border: 2px solid #1565c0;">
+                <strong>Freikörperbild (FKB):</strong><br>
+                Alle Kräfte auf <strong>EINEN</strong> Körper
+                <ul style="margin: 8px 0 0 20px; font-size: 0.9em;">
+                    <li><span class="var">F</span><sub>Schub</sub> (von Abgasen) ↑</li>
+                    <li><span class="var">F</span><sub>G</sub> (von der Erde) ↓</li>
+                    <li><span class="var">F</span><sub>Luft</sub> (von der Luft) ↓</li>
+                </ul>
+                <span style="font-size: 0.85em;">→ bestimmt die <strong>Bewegung</strong>!</span>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Schlüsselfrage</div>
+            <p>Ein Schüler sagt: <em>"Kraft und Gegenkraft heben sich doch auf – warum bewegt sich die Rakete?"</em></p>
+            <p style="margin-top: 10px;">Warum ist das <strong>falsch</strong>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true"><input type="radio" name="perspektive" value="a"> Kraft und Gegenkraft wirken auf verschiedene Körper (Rakete und Abgase) – sie heben sich nicht auf!</label>
+                <label class="quiz-option"><input type="radio" name="perspektive" value="b"> Die Gegenkraft ist kleiner als die Kraft</label>
+                <label class="quiz-option"><input type="radio" name="perspektive" value="c"> Kraft und Gegenkraft wirken nacheinander, nicht gleichzeitig</label>
+            </div>
+            <button onclick="checkMC('perspektive', this)" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-perspektive"></div>
+        </div>
+
+        <h3>Das vollständige FKB der Rakete</h3>
+
+        <p>Jetzt schauen wir nur auf die Rakete. In der Atmosphäre wirken drei Kräfte <strong>auf sie</strong>:</p>
+
+        <div class="sim-container">
+            <h4>Interaktiv: Rakete – Perspektivwechsel</h4>
+            <div class="view-toggle">
+                <label id="lblN3" class="active-view"><input type="radio" name="raketenView" value="n3" checked> Newton III (2 Körper)</label>
+                <label id="lblFKB"><input type="radio" name="raketenView" value="fkb"> Freikörperbild (1 Körper)</label>
+            </div>
+            <canvas id="canvasRakete" width="500" height="400"></canvas>
+            <div class="sim-controls" id="fkbControls" style="display: none;">
+                <label><input type="checkbox" id="chkSchub" checked> <span class="var">F</span><sub>Schub</sub> (Antrieb)</label>
+                <label><input type="checkbox" id="chkGrav" checked> <span class="var">F</span><sub>G</sub> (Gewicht)</label>
+                <label><input type="checkbox" id="chkLuft"> <span class="var">F</span><sub>Luft</sub> (Luftwiderstand)</label>
+            </div>
+            <p id="raketenHint" style="margin-top: 10px; font-size: 0.9em; color: var(--warning);">Schau dir zuerst die Newton-III-Ansicht an, dann wechsle zum Freikörperbild!</p>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Frage 2:</strong> Warum können wir den Luftwiderstand beim Raketenstart oft vernachlässigen?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true"><input type="radio" name="recap2" value="a"> Beim Start ist die Geschwindigkeit noch gering → F<sub>Luft</sub> sehr klein</label>
+                <label class="quiz-option"><input type="radio" name="recap2" value="b"> Im Weltraum gibt es keine Luft</label>
+                <label class="quiz-option"><input type="radio" name="recap2" value="c"> Die Rakete ist zu schwer für Luftwiderstand</label>
+            </div>
+        </div>
+
+        <button onclick="checkStep1()" style="margin-top: 15px;">Antworten prüfen</button>
+        <div class="feedback" id="fb-step1"></div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Bearbeite <strong>Aufgabe A1</strong>: Beantworte die Schlüsselfrage (A1b), zeichne das FKB (A1c) und begründe die Vereinfachung (A1d).
+        </div>
+
+        <div class="nav-buttons">
+            <span></span>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 2: RESULTIERENDE KRAFT
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step2">
+        <h2>2. Die resultierende Kraft</h2>
+
+        <div class="info-box">
+            Auf die Rakete wirken mehrere Kräfte. Aber wie bestimmt man, <strong>was tatsächlich passiert</strong>?
+            <br>→ Man fasst alle Kräfte zu einer einzigen Kraft zusammen: der <strong>resultierenden Kraft</strong> <span class="var">F</span><sub>res</sub>.
+        </div>
+
+        <div class="formel-box">
+            <span class="var">F</span>⃗<sub>res</sub> = Summe aller Kräfte auf einen Körper
+        </div>
+
+        <h3>Drei Szenarien berechnen</h3>
+
+        <div class="scenario-card" id="sc1">
+            <p><strong>Szenario 1: Buch auf Tisch</strong></p>
+            <p><span class="var">F</span><sub>G</sub> = 5 N (↓) und <span class="var">F</span><sub>N</sub> = 5 N (↑)</p>
+            <p style="margin-top: 10px;"><span class="var">F</span><sub>res</sub> = <input type="text" class="input-inline" id="fres1" placeholder="? N"> <span style="color: var(--gray);">(Betrag und Richtung)</span></p>
+            <button onclick="checkFres(1, '0', 'Richtig! F_res = 0 N – das Buch bleibt in Ruhe.')" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-fres1"></div>
+        </div>
+
+        <div class="scenario-card" id="sc2">
+            <p><strong>Szenario 2: Fallender Apfel</strong></p>
+            <p>Nur <span class="var">F</span><sub>G</sub> = 1 N (↓)</p>
+            <p style="margin-top: 10px;"><span class="var">F</span><sub>res</sub> = <input type="text" class="input-inline" id="fres2" placeholder="? N"> <span style="color: var(--gray);">(Betrag und Richtung)</span></p>
+            <button onclick="checkFres(2, '1', 'Richtig! F_res = 1 N nach unten – der Apfel beschleunigt.')" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-fres2"></div>
+        </div>
+
+        <div class="scenario-card" id="sc3">
+            <p><strong>Szenario 3: Startende Rakete</strong> (vereinfacht, ohne Luftwiderstand)</p>
+            <p><span class="var">F</span><sub>Schub</sub> = 35.000 kN (↑) und <span class="var">F</span><sub>G</sub> = 30.000 kN (↓)</p>
+            <p style="margin-top: 10px;"><span class="var">F</span><sub>res</sub> = <input type="text" class="input-inline" id="fres3" placeholder="? kN"> <span style="color: var(--gray);">(Betrag und Richtung)</span></p>
+            <button onclick="checkFres(3, '5000', 'Richtig! F_res = 5.000 kN nach oben – die Rakete beschleunigt!')" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-fres3"></div>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Schlüsselfrage</div>
+            <p>Was bedeutet <span class="var">F</span><sub>res</sub> = 0 für die Bewegung eines Körpers?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="fres0" value="a"> Der Körper bewegt sich nicht</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="fres0" value="b"> Der Körper behält seinen Bewegungszustand bei (Ruhe oder gleichförmige Bewegung)</label>
+                <label class="quiz-option"><input type="radio" name="fres0" value="c"> Der Körper wird langsamer</label>
+            </div>
+            <button onclick="checkMC('fres0', this)" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-fres0"></div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Bearbeite <strong>Aufgabe A2</strong> – die drei Szenarien und die Schlüsselfrage.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 3: NEWTON I + INERTIALSYSTEM (KOMPAKT)
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step3">
+        <h2>3. Newton I: Das Trägheitsgesetz</h2>
+
+        <div class="wichtig">
+            <strong>Die Erkenntnis aus Schritt 2:</strong> Wenn <span class="var">F</span><sub>res</sub> = 0, ändert sich der Bewegungszustand nicht. Das hat einen Namen:
+        </div>
+
+        <h3>Simulation: Trägheit erleben</h3>
+
+        <div class="sim-container">
+            <h4>Experiment 1: Person im Bus</h4>
+            <canvas id="canvasBus" width="500" height="250"></canvas>
+            <div class="sim-controls">
+                <button id="btnBusBrake" onclick="busBrake()">Bus bremst!</button>
+                <button class="btn-secondary" onclick="busReset()">Zurücksetzen</button>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);">Beobachte: Was passiert mit der stehenden Person, wenn der Bus plötzlich bremst?</p>
+        </div>
+
+        <div class="sim-container">
+            <h4>Experiment 2: Münze auf Pappe</h4>
+            <canvas id="canvasMuenze" width="500" height="250"></canvas>
+            <div class="sim-controls">
+                <button id="btnFlick" onclick="flickCard()">Pappe wegschnipsen!</button>
+                <button class="btn-secondary" onclick="muenzeReset()">Zurücksetzen</button>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);">Beobachte: Was passiert mit der Münze, wenn die Pappe weggezogen wird?</p>
+        </div>
+
+        <div class="formel-box">
+            <strong>Newton I – Trägheitsgesetz:</strong><br><br>
+            Wenn <span class="var">F</span>⃗<sub>res</sub> = 0⃗, dann gilt: <span class="var">v</span>⃗ = konstant
+            <br><br>
+            <span style="font-size: 0.85em; color: var(--gray);">Ein Körper verharrt in Ruhe oder bewegt sich geradlinig gleichförmig, solange keine resultierende Kraft auf ihn wirkt.</span>
+        </div>
+
+        <h3>Inertialsystem (kurz)</h3>
+
+        <div class="info-box">
+            Newton I gilt nur in einem <strong>Inertialsystem (IS)</strong> – einem Bezugssystem, in dem kräftefreie Körper sich geradlinig gleichförmig bewegen.
+            <br><br>
+            <strong>Beispiel:</strong> Im Karussell scheint eine Fliehkraft zu wirken – aber das ist eine Scheinkraft. Das Karussell ist <em>kein</em> Inertialsystem.
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Schnell-Check: IS oder kein IS?</div>
+            <div style="display: grid; gap: 10px; margin-top: 10px;">
+                <label class="quiz-option" data-is="ja" style="padding: 10px 15px;"><input type="radio" name="is1" value="ja"> Labor auf der Erde (näherungsweise) → <strong>IS</strong></label>
+                <label class="quiz-option" data-is="nein" style="padding: 10px 15px;"><input type="radio" name="is2" value="nein"> Beschleunigendes Auto → <strong>kein IS</strong></label>
+                <label class="quiz-option" data-is="ja" style="padding: 10px 15px;"><input type="radio" name="is3" value="ja"> ICE mit konstanter Geschwindigkeit → <strong>IS</strong></label>
+                <label class="quiz-option" data-is="nein" style="padding: 10px 15px;"><input type="radio" name="is4" value="nein"> Karussell → <strong>kein IS</strong></label>
+            </div>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);">Merke: IS = gleichförmige Bewegung oder Ruhe. Kein IS = beschleunigtes Bezugssystem.</p>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Bearbeite <strong>Aufgabe A2</strong> (Newton I + IS-Tabelle).
+        </div>
+
+        <div class="merksatz">
+            <strong>Zusammengefasst:</strong> Newton I beantwortet die Frage "Was passiert bei F<sub>res</sub> = 0?"
+            <br>Jetzt kommt die spannendere Frage: <strong>Was passiert bei F<sub>res</sub> ≠ 0?</strong>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 4: NEWTON II – PHÄNOMEN + HYPOTHESE
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step4">
+        <h2>4. Die große Frage: Wie stark beschleunigt die Rakete?</h2>
+
+        <div class="wichtig">
+            <strong>Zurück zur Rakete:</strong> Wir wissen jetzt, dass <span class="var">F</span><sub>res</sub> = 5.000 kN nach oben wirkt.
+            <br><br>
+            Die Rakete beschleunigt also – aber <strong>wie stark?</strong> Wovon hängt die Beschleunigung ab?
+        </div>
+
+        <h3>Deine Hypothesen</h3>
+
+        <div class="exercise">
+            <div class="exercise-title">Hypothese 1: Kraft und Beschleunigung</div>
+            <p>Stell dir einen Wagen auf einer glatten Bahn vor. Du schiebst ihn mit einer Kraft <span class="var">F</span>.</p>
+            <p style="margin-top: 10px;"><strong>Vermutung:</strong> Was passiert mit der Beschleunigung <span class="var">a</span>, wenn du die Kraft <strong>verdoppelst</strong>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="hyp1" value="a"> a bleibt gleich</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="hyp1" value="b"> a verdoppelt sich</label>
+                <label class="quiz-option"><input type="radio" name="hyp1" value="c"> a vervierfacht sich</label>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Hypothese 2: Masse und Beschleunigung</div>
+            <p>Gleiche Kraft, aber der Wagen wird <strong>doppelt so schwer</strong> beladen.</p>
+            <p style="margin-top: 10px;"><strong>Vermutung:</strong> Was passiert mit der Beschleunigung <span class="var">a</span>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="hyp2" value="a"> a bleibt gleich</label>
+                <label class="quiz-option"><input type="radio" name="hyp2" value="b"> a verdoppelt sich</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="hyp2" value="c"> a halbiert sich</label>
+            </div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Notiere deine Hypothesen in <strong>Aufgabe A3a</strong>, bevor du zum Experiment weitergehst!
+        </div>
+
+        <div class="info-box">
+            <strong>Jetzt prüfen wir deine Vermutungen</strong> mit einem Simulationsexperiment am Newton-Wagen.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Zum Experiment →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 5: SIMULATIONSEXPERIMENT – NEWTON-WAGEN
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step5">
+        <h2>5. Simulationsexperiment: Der Newton-Wagen</h2>
+
+        <div class="info-box">
+            <strong>Ziel:</strong> Finde den Zusammenhang zwischen Kraft <span class="var">F</span>, Masse <span class="var">m</span> und Beschleunigung <span class="var">a</span>.
+            <br>Führe zwei Messreihen durch und notiere die Ergebnisse auf dem Arbeitsblatt.
+        </div>
+
+        <div class="sim-container">
+            <h4>Newton-Wagen auf reibungsfreier Bahn</h4>
+            <canvas id="canvasWagen" width="600" height="220"></canvas>
+            <div class="sim-controls">
+                <label>Kraft <span class="var">F</span> = <span id="valF">3</span> N
+                    <input type="range" id="sliderF" min="1" max="10" value="3" step="1">
+                </label>
+                <label>Masse <span class="var">m</span> = <span id="valM">1.0</span> kg
+                    <input type="range" id="sliderM" min="0.5" max="5" value="1" step="0.5">
+                </label>
+            </div>
+            <div class="sim-controls" style="margin-top: 10px;">
+                <button id="btnStart" onclick="wagenStart()">Start</button>
+                <button class="btn-secondary" onclick="wagenReset()">Zurücksetzen</button>
+                <span style="font-size: 1.1em; font-weight: 600; color: var(--physik);" id="aDisplay">a = – m/s²</span>
+            </div>
+        </div>
+
+        <h3>Messreihe 1: Kraft variieren (Masse konstant = 1 kg)</h3>
+
+        <p>Stelle die Masse auf <strong>1,0 kg</strong>. Variiere die Kraft und lies die Beschleunigung ab.</p>
+
+        <table class="messwert-tabelle" id="tabelle1">
+            <thead>
+                <tr>
+                    <th>Messung</th>
+                    <th><span class="var">F</span> in N</th>
+                    <th><span class="var">m</span> in kg</th>
+                    <th><span class="var">a</span> in m/s²</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>1</td><td>1,0</td><td><input type="number" step="0.1" class="messwert" id="mr1-a1"></td></tr>
+                <tr><td>2</td><td>2</td><td>1,0</td><td><input type="number" step="0.1" class="messwert" id="mr1-a2"></td></tr>
+                <tr><td>3</td><td>4</td><td>1,0</td><td><input type="number" step="0.1" class="messwert" id="mr1-a3"></td></tr>
+                <tr><td>4</td><td>6</td><td>1,0</td><td><input type="number" step="0.1" class="messwert" id="mr1-a4"></td></tr>
+                <tr><td>5</td><td>10</td><td>1,0</td><td><input type="number" step="0.1" class="messwert" id="mr1-a5"></td></tr>
+            </tbody>
+        </table>
+
+        <h3>Messreihe 2: Masse variieren (Kraft konstant = 6 N)</h3>
+
+        <p>Stelle die Kraft auf <strong>6 N</strong>. Variiere die Masse und lies die Beschleunigung ab.</p>
+
+        <table class="messwert-tabelle" id="tabelle2">
+            <thead>
+                <tr>
+                    <th>Messung</th>
+                    <th><span class="var">F</span> in N</th>
+                    <th><span class="var">m</span> in kg</th>
+                    <th><span class="var">a</span> in m/s²</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>6</td><td>1,0</td><td><input type="number" step="0.1" class="messwert" id="mr2-a1"></td></tr>
+                <tr><td>2</td><td>6</td><td>1,5</td><td><input type="number" step="0.1" class="messwert" id="mr2-a2"></td></tr>
+                <tr><td>3</td><td>6</td><td>2,0</td><td><input type="number" step="0.1" class="messwert" id="mr2-a3"></td></tr>
+                <tr><td>4</td><td>6</td><td>3,0</td><td><input type="number" step="0.1" class="messwert" id="mr2-a4"></td></tr>
+                <tr><td>5</td><td>6</td><td>5,0</td><td><input type="number" step="0.1" class="messwert" id="mr2-a5"></td></tr>
+            </tbody>
+        </table>
+
+        <button onclick="showGraphs()" style="margin-top: 15px;">Graphen anzeigen</button>
+
+        <div id="graphArea" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                <div class="graph-container">
+                    <h4 style="color: var(--physik);">a(F) bei m = const</h4>
+                    <canvas id="graphAF" width="280" height="220"></canvas>
+                </div>
+                <div class="graph-container">
+                    <h4 style="color: var(--physik);">a(m) bei F = const</h4>
+                    <canvas id="graphAM" width="280" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Übertrage alle Messwerte in die Tabellen in <strong>Aufgabe A3b</strong>.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Zur Auswertung →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 6: AUSWERTUNG + NEWTON II HERLEITUNG
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step6">
+        <h2>6. Auswertung: Newton II – Das Grundgesetz der Mechanik</h2>
+
+        <h3>Was zeigen die Messwerte?</h3>
+
+        <div class="exercise">
+            <div class="exercise-title">Deutung Messreihe 1</div>
+            <p>Bei konstanter Masse: Wie hängt <span class="var">a</span> von <span class="var">F</span> ab?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true"><input type="radio" name="deut1" value="a"> a ist proportional zu F (doppelte Kraft → doppelte Beschleunigung)</label>
+                <label class="quiz-option"><input type="radio" name="deut1" value="b"> a ist proportional zu F² (doppelte Kraft → vierfache Beschleunigung)</label>
+                <label class="quiz-option"><input type="radio" name="deut1" value="c"> Es gibt keinen klaren Zusammenhang</label>
+            </div>
+            <button onclick="checkMC('deut1', this)" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-deut1"></div>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Deutung Messreihe 2</div>
+            <p>Bei konstanter Kraft: Wie hängt <span class="var">a</span> von <span class="var">m</span> ab?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="deut2" value="a"> a ist proportional zu m</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="deut2" value="b"> a ist umgekehrt proportional zu m (doppelte Masse → halbe Beschleunigung)</label>
+                <label class="quiz-option"><input type="radio" name="deut2" value="c"> a hängt nicht von m ab</label>
+            </div>
+            <button onclick="checkMC('deut2', this)" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-deut2"></div>
+        </div>
+
+        <h3>Die Verallgemeinerung</h3>
+
+        <div class="info-box">
+            <strong>Aus den Messungen folgt:</strong>
+            <br>• <span class="var">a</span> ~ <span class="var">F</span> (bei konstantem <span class="var">m</span>)
+            <br>• <span class="var">a</span> ~ 1/<span class="var">m</span> (bei konstantem <span class="var">F</span>)
+            <br><br>
+            Kombiniert: <span class="var">a</span> = <span class="var">F</span> / <span class="var">m</span> — oder umgestellt:
+        </div>
+
+        <div class="formel-box">
+            <strong>Newton II – Grundgesetz der Mechanik:</strong><br><br>
+            <span style="font-size: 1.8em;"><span class="var">F</span>⃗ = <span class="var">m</span> · <span class="var">a</span>⃗</span>
+        </div>
+
+        <div class="merksatz">
+            <strong>Drei wichtige Aussagen:</strong>
+            <br>1. Je größer die Kraft, desto größer die Beschleunigung
+            <br>2. Je größer die Masse, desto kleiner die Beschleunigung (Trägheit!)
+            <br>3. <strong>Die Beschleunigung hat die gleiche Richtung wie die resultierende Kraft</strong>
+        </div>
+
+        <h3>Einheiten-Check</h3>
+
+        <div class="exercise">
+            <p>[<span class="var">F</span>] = [<span class="var">m</span>] · [<span class="var">a</span>] = kg · m/s² = <strong>1 Newton (N)</strong></p>
+            <p style="margin-top: 10px;">Ein Newton ist die Kraft, die einen Körper der Masse 1 kg mit 1 m/s² beschleunigt.</p>
+            <p style="margin-top: 10px;"><strong>Frage:</strong> Welche Kraft beschleunigt 2 kg mit 3 m/s²?</p>
+            <p style="margin-top: 10px;">F = <input type="text" class="input-inline" id="einheit1" placeholder="? N"></p>
+            <button onclick="checkEinheit()" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-einheit"></div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Vervollständige den Merksatz in <strong>Aufgabe A4</strong>.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Weiter: Übungen →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 7: UMSTELLÜBUNGEN + ANWENDUNG
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step7">
+        <h2>7. Übungen: F = m · a anwenden</h2>
+
+        <div class="info-box">
+            Die Formel <span class="var">F</span> = <span class="var">m</span> · <span class="var">a</span> lässt sich nach jeder Größe umstellen:
+            <br><br>
+            <span class="var">a</span> = <span class="var">F</span> / <span class="var">m</span> &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+            <span class="var">m</span> = <span class="var">F</span> / <span class="var">a</span> &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+            <span class="var">F</span> = <span class="var">m</span> · <span class="var">a</span>
+        </div>
+
+        <h3>Umstellübungen</h3>
+
+        <div class="exercise">
+            <div class="exercise-title">Übung 1: Berechne <span class="var">a</span> <span class="niveau-badge">★★</span></div>
+            <p>Ein PKW (<span class="var">m</span> = 1.400 kg) wird mit <span class="var">F</span><sub>res</sub> = 4.200 N beschleunigt.</p>
+            <p style="margin-top: 10px;"><span class="var">a</span> = <input type="text" class="input-inline" id="ue1" placeholder="? m/s²"></p>
+            <button onclick="checkUe(1, 3, 'a = F/m = 4200 N / 1400 kg = 3 m/s²')" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-ue1"></div>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Übung 2: Berechne <span class="var">m</span> <span class="niveau-badge">★★</span></div>
+            <p>Eine Beschleunigung von <span class="var">a</span> = 5 m/s² erfordert <span class="var">F</span> = 3.000 N.</p>
+            <p style="margin-top: 10px;"><span class="var">m</span> = <input type="text" class="input-inline" id="ue2" placeholder="? kg"></p>
+            <button onclick="checkUe(2, 600, 'm = F/a = 3000 N / 5 m/s² = 600 kg')" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-ue2"></div>
+        </div>
+
+        <div class="exercise">
+            <div class="exercise-title">Übung 3: Berechne <span class="var">F</span> <span class="niveau-badge">★★</span></div>
+            <p>Ein Crash-Dummy (<span class="var">m</span> = 75 kg) erfährt beim Aufprall <span class="var">a</span> = 140 m/s².</p>
+            <p style="margin-top: 10px;"><span class="var">F</span> = <input type="text" class="input-inline" id="ue3" placeholder="? N"></p>
+            <button onclick="checkUe(3, 10500, 'F = m·a = 75 kg · 140 m/s² = 10.500 N ≈ 10,5 kN. Das ist das 14-fache der Gewichtskraft!')" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-ue3"></div>
+        </div>
+
+        <h3>Anwendung: Die Rakete komplett</h3>
+
+        <div class="exercise">
+            <div class="exercise-title">Die Startbeschleunigung <span class="niveau-badge">★★★</span></div>
+            <p>Rakete: <span class="var">m</span> = 3.000.000 kg, <span class="var">F</span><sub>res</sub> = 5.000 kN (= 5.000.000 N)</p>
+            <p style="margin-top: 10px;">a) Beschleunigung: <span class="var">a</span> = <input type="text" class="input-inline" id="rak1" placeholder="? m/s²"></p>
+            <button onclick="checkUe('rak1', 1.67, 'a = F/m = 5.000.000 N / 3.000.000 kg ≈ 1,67 m/s²')" style="margin-top: 5px;">Prüfen</button>
+            <div class="feedback" id="fb-rak1"></div>
+
+            <p style="margin-top: 15px;">b) Wie viele <em>g</em> sind das? (1 <em>g</em> = 9,81 m/s²)</p>
+            <p><input type="text" class="input-inline" id="rak2" placeholder="? g"> <em>g</em></p>
+            <button onclick="checkUe('rak2', 0.17, '1,67 / 9,81 ≈ 0,17 g – die Rakete beschleunigt anfangs mit weniger als 1 g!')" style="margin-top: 5px;">Prüfen</button>
+            <div class="feedback" id="fb-rak2"></div>
+
+            <p style="margin-top: 15px;">c) Die Rakete verbraucht Treibstoff und wird leichter. Was passiert mit <span class="var">a</span>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="rak3" value="a"> a sinkt (weniger Treibstoff = weniger Schub)</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="rak3" value="b"> a steigt (gleicher Schub, aber weniger Masse → a = F/m wird größer)</label>
+                <label class="quiz-option"><input type="radio" name="rak3" value="c"> a bleibt gleich</label>
+            </div>
+            <button onclick="checkMC('rak3', this)" style="margin-top: 10px;">Prüfen</button>
+            <div class="feedback" id="fb-rak3"></div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Bearbeite <strong>Aufgaben A5</strong> (Umstellübungen) und <strong>A6</strong> (Rakete).
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button onclick="nextStep()">Zur Zusammenfassung →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCHRITT 8: ZUSAMMENFASSUNG + ABSCHLUSSQUIZ
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="step" id="step8">
+        <h2>8. Zusammenfassung: Newton I, II & III</h2>
+
+        <div style="display: grid; gap: 15px; margin: 20px 0;">
+            <div class="formel-box" style="border-color: var(--error); text-align: left; font-size: 1em;">
+                <strong>Newton III – Wechselwirkungsgesetz:</strong><br>
+                <span class="var">F</span>⃗<sub>A→B</sub> = −<span class="var">F</span>⃗<sub>B→A</sub>
+                <br><span style="font-size: 0.85em; color: var(--gray);">Kräfte treten immer paarweise auf (gleich groß, entgegengesetzt, gleiche Kraftart)</span>
+            </div>
+            <div class="formel-box" style="border-color: var(--success); text-align: left; font-size: 1em;">
+                <strong>Newton I – Trägheitsgesetz:</strong><br>
+                <span class="var">F</span>⃗<sub>res</sub> = 0⃗ → <span class="var">v</span>⃗ = konstant
+                <br><span style="font-size: 0.85em; color: var(--gray);">Ohne resultierende Kraft: Ruhe oder gleichförmige Bewegung (nur im IS!)</span>
+            </div>
+            <div class="formel-box" style="text-align: left; font-size: 1em;">
+                <strong>Newton II – Grundgesetz der Mechanik:</strong><br>
+                <span class="var">F</span>⃗ = <span class="var">m</span> · <span class="var">a</span>⃗
+                <br><span style="font-size: 0.85em; color: var(--gray);">Beschleunigung = Kraft / Masse. Richtung von a⃗ = Richtung von F⃗<sub>res</sub></span>
+            </div>
+        </div>
+
+        <h3>Abschlussquiz</h3>
+
+        <div class="exercise">
+            <p><strong>Frage 1:</strong> Ein LKW und ein PKW stoßen zusammen. Die Kräfte aufeinander sind...</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="quiz1" value="a"> größer auf den PKW (er ist leichter)</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz1" value="b"> gleich groß (Newton III) – aber der PKW wird stärker beschleunigt (Newton II: kleineres m)</label>
+                <label class="quiz-option"><input type="radio" name="quiz1" value="c"> größer auf den LKW (er hat mehr Masse)</label>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Frage 2:</strong> Ein Astronaut schwebt kräftefrei in der ISS. Was gilt?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="quiz2" value="a"> Er wird langsamer</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz2" value="b"> Er behält seine Geschwindigkeit bei (Newton I)</label>
+                <label class="quiz-option"><input type="radio" name="quiz2" value="c"> Er beschleunigt immer weiter</label>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Frage 3:</strong> Zwei identische Motoren ziehen jeweils einen Wagen. Wagen A hat 500 kg, Wagen B hat 1000 kg. Welcher beschleunigt stärker?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz3" value="a"> Wagen A (halb so schwer → doppelte Beschleunigung)</label>
+                <label class="quiz-option"><input type="radio" name="quiz3" value="b"> Wagen B (mehr Masse → mehr Schwung)</label>
+                <label class="quiz-option"><input type="radio" name="quiz3" value="c"> Beide gleich (gleiche Motorkraft)</label>
+            </div>
+        </div>
+
+        <button onclick="checkFinalQuiz()" style="margin-top: 15px;">Quiz auswerten</button>
+        <div class="feedback" id="fb-final"></div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Vervollständige die Zusammenfassung in <strong>Aufgabe A7</strong>.
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--success-light); border: 2px solid var(--success);">
+            <p style="font-size: 1.2em; color: var(--success);"><strong>Geschafft!</strong></p>
+            <p style="margin-top: 10px;">Du kennst jetzt alle drei Newton'schen Gesetze und kannst mit F = m · a rechnen.</p>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);">Nächste Stunde: Kräfte addieren – das Kräfteparallelogramm</p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">← Zurück</button>
+            <button class="btn-success" onclick="finish()">Abschließen</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+    // === KONFIGURATION ===
+    var TOTAL_STEPS = 8;
+    var PREFIX = 'lp-03-newton2';
+    var currentStep = 1;
+
+    // === NAVIGATION ===
+    function initSteps() {
+        var ind = document.getElementById('stepIndicator');
+        ind.innerHTML = '';
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var dot = document.createElement('div');
+            dot.className = 'step-dot' + (i === 1 ? ' active' : '');
+            dot.setAttribute('data-step', i);
+            dot.addEventListener('click', (function(s) {
+                return function() { if (s <= currentStep) goToStep(s); };
+            })(i));
+            ind.appendChild(dot);
+        }
+    }
+
+    function goToStep(n) {
+        var steps = document.querySelectorAll('.step');
+        var dots = document.querySelectorAll('.step-dot');
+        for (var i = 0; i < steps.length; i++) {
+            steps[i].classList.remove('active');
+            dots[i].classList.remove('active');
+            if (i < n - 1) dots[i].classList.add('completed');
+        }
+        steps[n - 1].classList.add('active');
+        dots[n - 1].classList.add('active');
+        currentStep = n;
+        document.getElementById('progressFill').style.width = ((n / TOTAL_STEPS) * 100) + '%';
+        localStorage.setItem(PREFIX + '-step', n);
+        window.scrollTo(0, 0);
+    }
+
+    window.nextStep = function() { if (currentStep < TOTAL_STEPS) goToStep(currentStep + 1); };
+    window.prevStep = function() { if (currentStep > 1) goToStep(currentStep - 1); };
+    window.finish = function() {
+        localStorage.setItem(PREFIX + '-done', 'true');
+        alert('Lernpfad abgeschlossen! Vergiss nicht, dein Arbeitsblatt fertig auszufüllen.');
+    };
+
+    // === MC-CHECKER (generisch) ===
+    window.checkMC = function(name, btn) {
+        var opts = document.querySelectorAll('input[name="' + name + '"]');
+        var fb = document.getElementById('fb-' + name);
+        var correct = false;
+        for (var i = 0; i < opts.length; i++) {
+            var label = opts[i].closest('.quiz-option');
+            if (opts[i].checked) {
+                if (label.getAttribute('data-correct') === 'true') {
+                    label.classList.add('correct');
+                    correct = true;
+                } else {
+                    label.classList.add('wrong');
+                }
+            }
+            if (label.getAttribute('data-correct') === 'true' && !correct) {
+                label.classList.add('correct');
+            }
+        }
+        if (fb) {
+            fb.className = 'feedback ' + (correct ? 'correct' : 'incorrect');
+            fb.textContent = correct ? 'Richtig!' : 'Nicht ganz. Die richtige Antwort ist markiert.';
+            fb.style.display = 'block';
+        }
+    };
+
+    // === SCHRITT 1: RECAP + RAKETE ===
+    window.checkStep1 = function() {
+        checkMC('recap1', null);
+        checkMC('recap2', null);
+        var fb = document.getElementById('fb-step1');
+        fb.className = 'feedback correct';
+        fb.textContent = 'Gut erinnert! Jetzt geht es weiter mit der resultierenden Kraft.';
+        fb.style.display = 'block';
+    };
+
+    // Rakete Canvas – Zwei Ansichten: Newton III und FKB
+    var raketenView = 'n3';
+
+    function drawRakete() {
+        var c = document.getElementById('canvasRakete');
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // Himmel
+        ctx.fillStyle = '#e3f2fd';
+        ctx.fillRect(0, 0, w, h);
+
+        if (raketenView === 'n3') {
+            drawRaketeN3(ctx, w, h);
+        } else {
+            drawRaketeFKB(ctx, w, h);
+        }
+    }
+
+    function drawRaketeBody(ctx, cx, cy, s) {
+        s = s || 1;
+        ctx.fillStyle = '#555';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 60 * s);
+        ctx.lineTo(cx - 20 * s, cy + 40 * s);
+        ctx.lineTo(cx + 20 * s, cy + 40 * s);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#64b5f6';
+        ctx.beginPath();
+        ctx.arc(cx, cy - 20 * s, 8 * s, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#c62828';
+        ctx.beginPath();
+        ctx.moveTo(cx - 20 * s, cy + 20 * s);
+        ctx.lineTo(cx - 35 * s, cy + 45 * s);
+        ctx.lineTo(cx - 20 * s, cy + 40 * s);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(cx + 20 * s, cy + 20 * s);
+        ctx.lineTo(cx + 35 * s, cy + 45 * s);
+        ctx.lineTo(cx + 20 * s, cy + 40 * s);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function drawRaketeN3(ctx, w, h) {
+        // Newton III: Wechselwirkung – zwei Körper, gleich große Kräfte
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Wechselwirkung: Rakete \u2194 Abgase', w / 2, 25);
+
+        var leftX = w * 0.3, rightX = w * 0.7;
+        var centerY = h / 2;
+
+        // Rakete (links)
+        drawRaketeBody(ctx, leftX, centerY - 10, 0.85);
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Rakete', leftX, centerY - 75);
+
+        // Flamme an Rakete (dekorativ)
+        ctx.fillStyle = '#ff9800';
+        ctx.beginPath();
+        ctx.moveTo(leftX - 8, centerY + 25);
+        ctx.lineTo(leftX, centerY + 50);
+        ctx.lineTo(leftX + 8, centerY + 25);
+        ctx.closePath();
+        ctx.fill();
+
+        // Abgase (rechts) – Wolke
+        ctx.fillStyle = 'rgba(255, 152, 0, 0.25)';
+        ctx.save();
+        ctx.translate(rightX, centerY + 20);
+        ctx.scale(1.7, 1);
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.restore();
+        ctx.fill();
+        ctx.strokeStyle = '#ff9800';
+        ctx.lineWidth = 2;
+        ctx.save();
+        ctx.translate(rightX, centerY + 20);
+        ctx.scale(1.7, 1);
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.restore();
+        ctx.stroke();
+        ctx.fillStyle = '#e65100';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Abgase', rightX, centerY + 25);
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText('Abgase', rightX, centerY + 70);
+
+        // Wechselwirkungspaar – GLEICH lange Pfeile!
+        var arrowLen = 70;
+
+        // Kraft auf Rakete: nach oben (von Abgasen)
+        drawArrow(ctx, leftX + 35, centerY + 5, leftX + 35, centerY + 5 - arrowLen, '#2a7a4b', 3);
+        ctx.fillStyle = '#2a7a4b';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('F\u2192 auf Rakete', leftX + 42, centerY - 35);
+        ctx.font = '11px sans-serif';
+        ctx.fillText('(von Abgasen)', leftX + 42, centerY - 22);
+
+        // Kraft auf Abgase: nach unten (von Rakete)
+        drawArrow(ctx, rightX - 35, centerY - 5, rightX - 35, centerY - 5 + arrowLen, '#2a7a4b', 3);
+        ctx.fillStyle = '#2a7a4b';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('F\u2192 auf Abgase', rightX - 42, centerY + 40);
+        ctx.font = '11px sans-serif';
+        ctx.fillText('(von Rakete)', rightX - 42, centerY + 53);
+
+        // Gleichheitszeichen
+        ctx.fillStyle = '#333';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('=', w / 2, centerY);
+
+        // Erklärung unten
+        ctx.fillStyle = '#c62828';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText('Gleich gro\u00df, entgegengesetzt, verschiedene K\u00f6rper!', w / 2, h - 40);
+        ctx.fillStyle = '#555';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('Newton III: Actio = Reactio \u2013 aber auf ZWEI verschiedene K\u00f6rper', w / 2, h - 20);
+    }
+
+    function drawRaketeFKB(ctx, w, h) {
+        // FKB: Nur Kräfte auf die Rakete (ein Körper)
+        var rx = w / 2, ry = h / 2 - 10;
+
+        // System-Rahmen (gestrichelt)
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 6]);
+        ctx.strokeRect(rx - 55, ry - 80, 110, 145);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#999';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('System: Rakete', rx - 53, ry - 85);
+
+        // Rakete
+        drawRaketeBody(ctx, rx, ry, 1);
+
+        // Flamme (dekorativ – KEIN Kraftpfeil!)
+        ctx.fillStyle = '#ff9800';
+        ctx.beginPath();
+        ctx.moveTo(rx - 10, ry + 40);
+        ctx.lineTo(rx, ry + 65);
+        ctx.lineTo(rx + 10, ry + 40);
+        ctx.closePath();
+        ctx.fill();
+
+        var showSchub = document.getElementById('chkSchub').checked;
+        var showGrav = document.getElementById('chkGrav').checked;
+        var showLuft = document.getElementById('chkLuft').checked;
+
+        // Proportionale Pfeillängen:
+        // F_Schub = 35.000 kN → 80px, F_G = 30.000 kN → 69px, F_Luft = 500 kN → ~1px (min 8px)
+        var maxArrow = 80;
+        var fSchubPx = maxArrow;
+        var fGPx = Math.round(maxArrow * 30000 / 35000);
+        var fLuftPx = 8; // Minimum für Sichtbarkeit
+
+        // F_Schub ↑ (grün) – links neben der Rakete
+        if (showSchub) {
+            drawArrow(ctx, rx - 45, ry + 10, rx - 45, ry + 10 - fSchubPx, '#2a7a4b', 3);
+            ctx.fillStyle = '#2a7a4b';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('F_Schub', rx - 52, ry + 10 - fSchubPx / 2 - 5);
+            ctx.font = '11px sans-serif';
+            ctx.fillText('35.000 kN', rx - 52, ry + 10 - fSchubPx / 2 + 9);
+        }
+
+        // F_G ↓ (blau) – rechts neben der Rakete
+        if (showGrav) {
+            drawArrow(ctx, rx + 45, ry - 5, rx + 45, ry - 5 + fGPx, '#1565c0', 3);
+            ctx.fillStyle = '#1565c0';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('F_G', rx + 52, ry - 5 + fGPx / 2 - 5);
+            ctx.font = '11px sans-serif';
+            ctx.fillText('30.000 kN', rx + 52, ry - 5 + fGPx / 2 + 9);
+        }
+
+        // F_Luft ↓ (orange) – weiter rechts, kurzer Pfeil mit Hinweis
+        if (showLuft) {
+            var fLuftX = rx + 85;
+            var fLuftY = ry + 5;
+            drawArrow(ctx, fLuftX, fLuftY, fLuftX, fLuftY + fLuftPx, '#b35c00', 2);
+            ctx.fillStyle = '#b35c00';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('F_Luft', fLuftX + 8, fLuftY + fLuftPx / 2 + 3);
+            ctx.font = '10px sans-serif';
+            ctx.fillText('500 kN', fLuftX + 8, fLuftY + fLuftPx / 2 + 16);
+            ctx.fillStyle = '#999';
+            ctx.font = '9px sans-serif';
+            ctx.fillText('(\u00fcbertrieben!)', fLuftX + 8, fLuftY + fLuftPx / 2 + 28);
+        }
+
+        // F_res Berechnung + Pfeil
+        if (showSchub || showGrav || showLuft) {
+            var fRes = (showSchub ? 35000 : 0) - (showGrav ? 30000 : 0) - (showLuft ? 500 : 0);
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.textAlign = 'center';
+            var dir = fRes > 0 ? '\u2191' : (fRes < 0 ? '\u2193' : '');
+            ctx.fillText('F_res = ' + Math.abs(fRes).toLocaleString('de-DE') + ' kN ' + dir, rx, h - 12);
+
+            // F_res-Pfeil (rot, dicker)
+            if (fRes !== 0) {
+                var fResPx = Math.max(5, Math.abs(fRes) / 35000 * maxArrow);
+                if (fRes > 0) {
+                    drawArrow(ctx, rx, ry - 90, rx, ry - 90 - fResPx, '#c62828', 4);
+                    ctx.fillStyle = '#c62828';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('F_res \u2191', rx, ry - 95 - fResPx);
+                } else {
+                    drawArrow(ctx, rx, ry + 75, rx, ry + 75 + fResPx, '#c62828', 4);
+                    ctx.fillStyle = '#c62828';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('F_res \u2193', rx, ry + 92 + fResPx);
+                }
+            }
+        }
+    }
+
+    function drawArrow(ctx, x1, y1, x2, y2, color, width) {
+        var headLen = 12;
+        var angle = Math.atan2(y2 - y1, x2 - x1);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
+        ctx.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // View-Toggle für Newton III / FKB
+    var viewRadios = document.querySelectorAll('input[name="raketenView"]');
+    for (var vi = 0; vi < viewRadios.length; vi++) {
+        viewRadios[vi].addEventListener('change', function() {
+            raketenView = this.value;
+            document.getElementById('fkbControls').style.display = (raketenView === 'fkb') ? 'flex' : 'none';
+            document.getElementById('lblN3').className = (raketenView === 'n3') ? 'active-view' : '';
+            document.getElementById('lblFKB').className = (raketenView === 'fkb') ? 'active-view' : '';
+            var hint = document.getElementById('raketenHint');
+            if (raketenView === 'fkb') {
+                hint.textContent = 'Schalte die Kr\u00e4fte einzeln ein und aus. Beobachte F_res!';
+                hint.style.color = '#2a7a4b';
+            } else {
+                hint.textContent = 'Wechsle zum Freik\u00f6rperbild, um alle Kr\u00e4fte auf die Rakete zu sehen.';
+                hint.style.color = 'var(--warning)';
+            }
+            drawRakete();
+        });
+    }
+    document.getElementById('chkSchub').addEventListener('change', drawRakete);
+    document.getElementById('chkGrav').addEventListener('change', drawRakete);
+    document.getElementById('chkLuft').addEventListener('change', drawRakete);
+
+    // === SCHRITT 2: F_RES CHECKER ===
+    window.checkFres = function(nr, expected, msg) {
+        var input = document.getElementById('fres' + nr);
+        var fb = document.getElementById('fb-fres' + nr);
+        var val = input.value.replace(/\s/g, '').replace(',', '.');
+        var numVal = parseFloat(val);
+        var expVal = parseFloat(expected);
+        var ok = Math.abs(numVal - expVal) < 0.5;
+        fb.className = 'feedback ' + (ok ? 'correct' : 'incorrect');
+        fb.textContent = ok ? msg : 'Versuche es nochmal. Addiere die Kräfte mit Vorzeichen (↑ positiv, ↓ negativ).';
+        fb.style.display = 'block';
+        if (ok) document.getElementById('sc' + nr).classList.add('solved');
+    };
+
+    // === SCHRITT 3: BUS + MÜNZE SIMULATIONEN ===
+    var busState = 'idle';
+    var busX = 50, personAngle = 0, busAnimId = null;
+
+    function drawBus() {
+        var c = document.getElementById('canvasBus');
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        // Straße
+        ctx.fillStyle = '#888';
+        ctx.fillRect(0, 190, c.width, 60);
+        ctx.strokeStyle = '#fff';
+        ctx.setLineDash([20, 15]);
+        ctx.beginPath();
+        ctx.moveTo(0, 220);
+        ctx.lineTo(c.width, 220);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Bus
+        ctx.fillStyle = '#ffb300';
+        var bx = busX;
+        ctx.fillRect(bx, 120, 150, 70);
+        ctx.fillStyle = '#64b5f6';
+        ctx.fillRect(bx + 20, 130, 35, 30);
+        ctx.fillRect(bx + 65, 130, 35, 30);
+        ctx.fillRect(bx + 110, 130, 30, 30);
+        // Räder
+        ctx.fillStyle = '#333';
+        ctx.beginPath(); ctx.arc(bx + 35, 190, 12, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(bx + 120, 190, 12, 0, Math.PI * 2); ctx.fill();
+
+        // Person (Strichmännchen)
+        var px = bx + 80;
+        var py = 120;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(personAngle * Math.PI / 180);
+        ctx.strokeStyle = '#c62828';
+        ctx.lineWidth = 3;
+        // Kopf
+        ctx.beginPath(); ctx.arc(0, -35, 8, 0, Math.PI * 2); ctx.stroke();
+        // Körper
+        ctx.beginPath(); ctx.moveTo(0, -27); ctx.lineTo(0, -5); ctx.stroke();
+        // Arme
+        ctx.beginPath(); ctx.moveTo(-12, -20); ctx.lineTo(12, -20); ctx.stroke();
+        // Beine
+        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(-8, 5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(8, 5); ctx.stroke();
+        ctx.restore();
+
+        // Status
+        ctx.fillStyle = '#333';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'left';
+        if (busState === 'braking') {
+            ctx.fillStyle = '#c62828';
+            ctx.fillText('Bus bremst! Person kippt nach vorne (Trägheit)', 10, 25);
+        } else {
+            ctx.fillText('Bus fährt gleichförmig →', 10, 25);
+        }
+    }
+
+    window.busBrake = function() {
+        if (busState === 'braking') return;
+        busState = 'braking';
+        var frame = 0;
+        function animate() {
+            frame++;
+            if (frame < 40) {
+                busX -= 2;
+                personAngle = Math.min(frame * 0.8, 25);
+            }
+            drawBus();
+            if (frame < 50) busAnimId = requestAnimationFrame(animate);
+        }
+        animate();
+    };
+
+    window.busReset = function() {
+        busState = 'idle';
+        busX = 50;
+        personAngle = 0;
+        if (busAnimId) cancelAnimationFrame(busAnimId);
+        drawBus();
+    };
+
+    // Münze
+    var muenzeState = 'idle';
+    var cardX = 0, coinY = 0, muenzeAnimId = null;
+
+    function drawMuenze() {
+        var c = document.getElementById('canvasMuenze');
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        var baseY = 160;
+        // Glas
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(200, baseY);
+        ctx.lineTo(200, baseY + 60);
+        ctx.lineTo(300, baseY + 60);
+        ctx.lineTo(300, baseY);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(100,181,246,0.15)';
+        ctx.fillRect(201, baseY + 1, 98, 58);
+
+        // Pappe
+        if (muenzeState === 'idle' || muenzeState === 'ready') {
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(180 + cardX, baseY - 8, 140, 8);
+        } else if (muenzeState === 'flicking') {
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(180 + cardX, baseY - 8, 140, 8);
+        }
+
+        // Münze
+        ctx.fillStyle = '#ffd54f';
+        ctx.strokeStyle = '#f9a825';
+        ctx.lineWidth = 2;
+        var coinCenterX = 250;
+        var coinCenterY = baseY - 12 + coinY;
+        ctx.beginPath();
+        ctx.arc(coinCenterX, coinCenterY, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#f57f17';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('1€', coinCenterX, coinCenterY + 5);
+
+        // Beschriftung
+        ctx.fillStyle = '#333';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'left';
+        if (muenzeState === 'done') {
+            ctx.fillStyle = '#2a7a4b';
+            ctx.fillText('Die Münze fällt ins Glas! (Trägheit: Sie behält ihren Ruhezustand)', 10, 25);
+        } else {
+            ctx.fillText('Münze auf Pappe auf Glas', 10, 25);
+        }
+    }
+
+    window.flickCard = function() {
+        if (muenzeState !== 'idle') return;
+        muenzeState = 'flicking';
+        var frame = 0;
+        function animate() {
+            frame++;
+            if (frame < 15) {
+                cardX += 15;
+            } else if (frame < 40) {
+                coinY += 3;
+            } else {
+                muenzeState = 'done';
+                drawMuenze();
+                return;
+            }
+            drawMuenze();
+            muenzeAnimId = requestAnimationFrame(animate);
+        }
+        animate();
+    };
+
+    window.muenzeReset = function() {
+        muenzeState = 'idle';
+        cardX = 0;
+        coinY = 0;
+        if (muenzeAnimId) cancelAnimationFrame(muenzeAnimId);
+        drawMuenze();
+    };
+
+    // === SCHRITT 5: NEWTON-WAGEN SIMULATION ===
+    var wagenRunning = false;
+    var wagenX = 50;
+    var wagenV = 0;
+    var wagenAnimId = null;
+    var wagenTime = 0;
+
+    var sliderF = document.getElementById('sliderF');
+    var sliderM = document.getElementById('sliderM');
+
+    sliderF.addEventListener('input', function() {
+        document.getElementById('valF').textContent = this.value;
+        if (!wagenRunning) drawWagen();
+    });
+    sliderM.addEventListener('input', function() {
+        document.getElementById('valM').textContent = this.value;
+        if (!wagenRunning) drawWagen();
+    });
+
+    function drawWagen() {
+        var c = document.getElementById('canvasWagen');
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var w = c.width, h = c.height;
+        ctx.clearRect(0, 0, w, h);
+
+        var F = parseFloat(sliderF.value);
+        var m = parseFloat(sliderM.value);
+        var a = F / m;
+
+        // Bahn
+        ctx.fillStyle = '#e0e0e0';
+        ctx.fillRect(30, 150, w - 60, 10);
+
+        // Skala
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 1;
+        for (var i = 0; i <= 10; i++) {
+            var sx = 30 + i * (w - 60) / 10;
+            ctx.beginPath();
+            ctx.moveTo(sx, 160);
+            ctx.lineTo(sx, 170);
+            ctx.stroke();
+            ctx.fillStyle = '#999';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText((i * 0.5).toFixed(1) + ' m', sx, 182);
+        }
+
+        // Wagen
+        var ww = 40 + m * 10; // Größe proportional zur Masse
+        var wh = 35;
+        var wy = 150 - wh;
+        ctx.fillStyle = '#1565c0';
+        ctx.fillRect(wagenX, wy, ww, wh);
+        // Räder
+        ctx.fillStyle = '#333';
+        ctx.beginPath(); ctx.arc(wagenX + 12, 150, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(wagenX + ww - 12, 150, 8, 0, Math.PI * 2); ctx.fill();
+        // Masse-Label
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(m.toFixed(1) + ' kg', wagenX + ww / 2, wy + wh / 2 + 5);
+
+        // Kraftpfeil
+        if (F > 0) {
+            var arrowLen = F * 5;
+            drawArrow(ctx, wagenX + ww + 5, wy + wh / 2, wagenX + ww + 5 + arrowLen, wy + wh / 2, '#c62828', 3);
+            ctx.fillStyle = '#c62828';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('F = ' + F + ' N', wagenX + ww + 10, wy + wh / 2 - 10);
+        }
+
+        // Beschleunigungsanzeige
+        if (wagenRunning) {
+            ctx.fillStyle = '#2a7a4b';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText('a = ' + a.toFixed(2) + ' m/s²', w - 20, 30);
+            ctx.fillStyle = '#666';
+            ctx.font = '13px sans-serif';
+            ctx.fillText('v = ' + wagenV.toFixed(2) + ' m/s', w - 20, 50);
+            ctx.fillText('t = ' + wagenTime.toFixed(1) + ' s', w - 20, 68);
+        }
+    }
+
+    window.wagenStart = function() {
+        if (wagenRunning) return;
+        wagenRunning = true;
+        wagenX = 50;
+        wagenV = 0;
+        wagenTime = 0;
+        var F = parseFloat(sliderF.value);
+        var m = parseFloat(sliderM.value);
+        var a = F / m;
+
+        document.getElementById('aDisplay').textContent = 'a = ' + a.toFixed(2) + ' m/s²';
+
+        var dt = 1 / 60;
+        var scale = 100; // 1m = 100px
+
+        function animate() {
+            wagenTime += dt;
+            wagenV += a * dt;
+            wagenX += wagenV * dt * scale;
+
+            drawWagen();
+
+            if (wagenX < 500 && wagenTime < 5) {
+                wagenAnimId = requestAnimationFrame(animate);
+            } else {
+                wagenRunning = false;
+            }
+        }
+        animate();
+    };
+
+    window.wagenReset = function() {
+        wagenRunning = false;
+        if (wagenAnimId) cancelAnimationFrame(wagenAnimId);
+        wagenX = 50;
+        wagenV = 0;
+        wagenTime = 0;
+        document.getElementById('aDisplay').textContent = 'a = – m/s²';
+        drawWagen();
+    };
+
+    // === SCHRITT 5: GRAPHEN ===
+    window.showGraphs = function() {
+        document.getElementById('graphArea').style.display = 'block';
+
+        // Graph 1: a(F) bei m=1
+        var c1 = document.getElementById('graphAF');
+        var ctx1 = c1.getContext('2d');
+        drawGraph(ctx1, c1.width, c1.height,
+            [1, 2, 4, 6, 10],
+            ['mr1-a1', 'mr1-a2', 'mr1-a3', 'mr1-a4', 'mr1-a5'],
+            'F in N', 'a in m/s²', 10, 12
+        );
+
+        // Graph 2: a(m) bei F=6
+        var c2 = document.getElementById('graphAM');
+        var ctx2 = c2.getContext('2d');
+        drawGraph(ctx2, c2.width, c2.height,
+            [1, 1.5, 2, 3, 5],
+            ['mr2-a1', 'mr2-a2', 'mr2-a3', 'mr2-a4', 'mr2-a5'],
+            'm in kg', 'a in m/s²', 5, 8
+        );
+    };
+
+    function drawGraph(ctx, w, h, xVals, inputIds, xLabel, yLabel, xMax, yMax) {
+        var pad = { l: 50, r: 15, t: 15, b: 40 };
+        var gw = w - pad.l - pad.r;
+        var gh = h - pad.t - pad.b;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Achsen
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t);
+        ctx.lineTo(pad.l, h - pad.b);
+        ctx.lineTo(w - pad.r, h - pad.b);
+        ctx.stroke();
+
+        // Achsenbeschriftung
+        ctx.fillStyle = '#333';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(xLabel, pad.l + gw / 2, h - 5);
+        ctx.save();
+        ctx.translate(12, pad.t + gh / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+
+        // Gitterlinien + Werte
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        ctx.font = '10px sans-serif';
+        for (var i = 0; i <= 5; i++) {
+            var yv = yMax * i / 5;
+            var yp = h - pad.b - (yv / yMax) * gh;
+            ctx.beginPath(); ctx.moveTo(pad.l, yp); ctx.lineTo(w - pad.r, yp); ctx.stroke();
+            ctx.fillStyle = '#666';
+            ctx.textAlign = 'right';
+            ctx.fillText(yv.toFixed(0), pad.l - 5, yp + 4);
+        }
+
+        // Datenpunkte
+        var points = [];
+        for (var j = 0; j < xVals.length; j++) {
+            var el = document.getElementById(inputIds[j]);
+            var val = el ? parseFloat(el.value) : NaN;
+            if (!isNaN(val)) {
+                var px = pad.l + (xVals[j] / xMax) * gw;
+                var py = h - pad.b - (val / yMax) * gh;
+                points.push({ x: px, y: py });
+
+                ctx.fillStyle = '#c62828';
+                ctx.beginPath();
+                ctx.arc(px, py, 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Verbindungslinie
+        if (points.length > 1) {
+            ctx.strokeStyle = '#2c5aa0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (var k = 1; k < points.length; k++) {
+                ctx.lineTo(points[k].x, points[k].y);
+            }
+            ctx.stroke();
+        }
+    }
+
+    // === SCHRITT 6: EINHEITEN-CHECK ===
+    window.checkEinheit = function() {
+        var val = parseFloat(document.getElementById('einheit1').value.replace(',', '.'));
+        var fb = document.getElementById('fb-einheit');
+        var ok = Math.abs(val - 6) < 0.5;
+        fb.className = 'feedback ' + (ok ? 'correct' : 'incorrect');
+        fb.textContent = ok ? 'Richtig! F = 2 kg · 3 m/s² = 6 N' : 'Setze ein: F = m · a = 2 kg · 3 m/s²';
+        fb.style.display = 'block';
+    };
+
+    // === SCHRITT 7: UMSTELLÜBUNGEN ===
+    window.checkUe = function(nr, expected, msg) {
+        var id = (typeof nr === 'string') ? nr : 'ue' + nr;
+        var input = document.getElementById(id);
+        var fb = document.getElementById('fb-' + id);
+        var val = parseFloat(input.value.replace(/\s/g, '').replace(',', '.'));
+        var tol = expected * 0.1 + 0.5;
+        var ok = Math.abs(val - expected) < tol;
+        fb.className = 'feedback ' + (ok ? 'correct' : 'incorrect');
+        fb.textContent = ok ? msg : 'Nicht ganz. Tipp: Stelle die Formel F = m · a nach der gesuchten Größe um.';
+        fb.style.display = 'block';
+    };
+
+    // === SCHRITT 8: ABSCHLUSSQUIZ ===
+    window.checkFinalQuiz = function() {
+        var score = 0;
+        var names = ['quiz1', 'quiz2', 'quiz3'];
+        for (var i = 0; i < names.length; i++) {
+            var opts = document.querySelectorAll('input[name="' + names[i] + '"]');
+            for (var j = 0; j < opts.length; j++) {
+                var label = opts[j].closest('.quiz-option');
+                if (opts[j].checked && label.getAttribute('data-correct') === 'true') {
+                    label.classList.add('correct');
+                    score++;
+                } else if (opts[j].checked) {
+                    label.classList.add('wrong');
+                }
+                if (label.getAttribute('data-correct') === 'true') {
+                    label.classList.add('correct');
+                }
+            }
+        }
+        var fb = document.getElementById('fb-final');
+        fb.className = 'feedback ' + (score >= 2 ? 'correct' : 'incorrect');
+        fb.textContent = score + '/3 richtig. ' + (score === 3 ? 'Perfekt!' : score >= 2 ? 'Fast geschafft!' : 'Lies die Zusammenfassung oben nochmal durch.');
+        fb.style.display = 'block';
+    };
+
+    // === INITIALISIERUNG ===
+    initSteps();
+    drawRakete();
+    drawBus();
+    drawMuenze();
+    drawWagen();
+
+    // Restore
+    var saved = localStorage.getItem(PREFIX + '-step');
+    if (saved && parseInt(saved) > 1) {
+        goToStep(parseInt(saved));
+    }
+
+})();
+</script>
+
+</body>
+</html>
