@@ -992,55 +992,70 @@
     var timerInterval = null;
 
     // ═══════════════════════════════════════════════════════════════
-    // AUDIO ALARM (Tab-Wechsel Puls-Alarm)
+    // AUDIO ALARM (Tab-Wechsel) — HTMLAudioElement + WAV-Blob (iOS-kompatibel)
     // ═══════════════════════════════════════════════════════════════
-    var audioCtx = null;
-    var alarmOsc = null;
-    var alarmGain = null;
-    var alarmActive = false;
     var sessionReady = false;
-    var TAB_WARN_BEEPS = 5;
+    var beepAudio = null;
     var pulseAlarmTimeout = null;
+    var TAB_WARN_BEEPS = 5;
+    var OVERLAY_SECONDS = 8;
 
-    function initAudioContext() {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        var buf = audioCtx.createBuffer(1, 1, 22050);
-        var src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        src.connect(audioCtx.destination);
-        src.start(0);
+    // WAV-Blob erzeugen: 800Hz Square-Wave, 0.4s, 8kHz Mono 8-Bit
+    function createBeepBlob() {
+        var sampleRate = 8000;
+        var duration = 0.4;
+        var freq = 800;
+        var numSamples = Math.floor(sampleRate * duration);
+        var halfPeriod = Math.floor(sampleRate / freq / 2);
+        // WAV-Header (44 Bytes) + PCM-Daten
+        var dataSize = numSamples;
+        var buffer = new ArrayBuffer(44 + dataSize);
+        var view = new DataView(buffer);
+        // RIFF Header
+        var writeStr = function(offset, str) {
+            for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);       // chunk size
+        view.setUint16(20, 1, true);        // PCM
+        view.setUint16(22, 1, true);        // mono
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate, true); // byte rate
+        view.setUint16(32, 1, true);        // block align
+        view.setUint16(34, 8, true);        // bits per sample
+        writeStr(36, 'data');
+        view.setUint32(40, dataSize, true);
+        // Square-Wave Samples (8-bit unsigned: 128=silence, 200=high, 56=low)
+        for (var i = 0; i < numSamples; i++) {
+            var phase = Math.floor(i / halfPeriod) % 2;
+            view.setUint8(44 + i, phase === 0 ? 200 : 56);
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
     }
 
-    function ensureAudio(callback) {
-        if (!audioCtx) {
-            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-        }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume().then(function() { if (callback) callback(); });
-            return false;
-        }
-        return true;
+    // Audio-Element vorbereiten (einmalig bei User-Geste)
+    function initBeepAudio() {
+        if (beepAudio) return;
+        var blob = createBeepBlob();
+        var url = URL.createObjectURL(blob);
+        beepAudio = new Audio(url);
+        beepAudio.volume = 0.5;
+        // iOS: stummes Play bei User-Geste "entsperrt" Audio
+        beepAudio.play().then(function() {
+            beepAudio.pause();
+            beepAudio.currentTime = 0;
+        }).catch(function() {});
     }
 
-    function startAlarm() {
-        if (!audioCtx || alarmActive) return;
-        alarmOsc = audioCtx.createOscillator();
-        alarmGain = audioCtx.createGain();
-        alarmOsc.connect(alarmGain);
-        alarmGain.connect(audioCtx.destination);
-        alarmOsc.frequency.value = 800;
-        alarmOsc.type = 'square';
-        alarmGain.gain.value = 0.15;
-        alarmOsc.start();
-        alarmActive = true;
-    }
-
-    function stopAlarm() {
-        if (alarmOsc) {
-            try { alarmOsc.stop(); } catch(e) {}
-            alarmOsc = null;
-        }
-        alarmActive = false;
+    function playBeep() {
+        if (!beepAudio) return;
+        try {
+            beepAudio.currentTime = 0;
+            beepAudio.play().catch(function() {});
+        } catch(e) {}
     }
 
     function showTabWarningOverlay() {
@@ -1052,47 +1067,36 @@
     }
 
     function dismissTabWarning() {
-        // Button-Klick = User-Geste → iOS gibt AudioContext frei!
         var btn = document.getElementById('tabWarnDismiss');
         if (btn && btn.disabled) return;
-        if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten\u2026'; }
 
-        // AudioContext per User-Geste starten/resumieren
-        if (!audioCtx) {
-            try { initAudioContext(); } catch(e) {}
-        }
-        ensureAudio(function() { startPulseAndClose(); });
-        // Falls Audio sofort bereit ist
-        if (audioCtx && audioCtx.state === 'running') {
-            startPulseAndClose();
-        } else {
-            // Fallback: nach 2s trotzdem schließen
-            setTimeout(function() {
-                if (document.getElementById('tabWarning').classList.contains('visible')) {
-                    document.getElementById('tabWarning').classList.remove('visible');
-                    stopAlarm();
-                }
-            }, 2000);
-        }
-    }
+        // Button-Klick = User-Geste → Audio entsperren falls nötig
+        if (!beepAudio) initBeepAudio();
 
-    function startPulseAndClose() {
-        var beepsDone = 0;
-        function doPulse() {
-            if (beepsDone >= TAB_WARN_BEEPS) {
-                stopAlarm();
+        // Sofort ersten Beep abspielen (User-Geste = iOS erlaubt es)
+        playBeep();
+
+        // Button deaktivieren + Countdown starten
+        var remaining = OVERLAY_SECONDS;
+        if (btn) { btn.disabled = true; btn.textContent = 'Warte ' + remaining + 's\u2026'; }
+
+        // Puls-Beeps: alle 1s ein Beep während Countdown
+        var beepCount = 1;
+        pulseAlarmTimeout = setInterval(function() {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(pulseAlarmTimeout);
+                pulseAlarmTimeout = null;
                 document.getElementById('tabWarning').classList.remove('visible');
-                if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; }
                 return;
             }
-            startAlarm();
-            pulseAlarmTimeout = setTimeout(function() {
-                stopAlarm();
-                beepsDone++;
-                pulseAlarmTimeout = setTimeout(doPulse, 500);
-            }, 500);
-        }
-        doPulse();
+            if (btn) btn.textContent = 'Warte ' + remaining + 's\u2026';
+            // Beep bei jeder Sekunde (max TAB_WARN_BEEPS)
+            if (beepCount < TAB_WARN_BEEPS) {
+                playBeep();
+                beepCount++;
+            }
+        }, 1000);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1304,8 +1308,8 @@
         var platzNum = parseInt(num.replace('P', ''));
         applySeedShuffle(platzNum);
         document.getElementById('aufgabenBlock').classList.add('visible');
-        // Audio-Context initialisieren (braucht User-Geste)
-        try { initAudioContext(); } catch(e) {}
+        // Audio vorbereiten (braucht User-Geste für iOS)
+        try { initBeepAudio(); } catch(e) {}
         sessionReady = true;
         startTimer();
     }
