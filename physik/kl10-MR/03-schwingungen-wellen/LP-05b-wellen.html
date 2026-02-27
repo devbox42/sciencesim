@@ -1009,6 +1009,31 @@
                 <strong>AB Checkliste:</strong> Prüfe, ob Aufgabe 1–6 auf dem AB vollständig ausgefüllt sind.
             </div>
 
+            <div style="margin-top: 30px; padding: 20px; border: 2px dashed var(--fach); border-radius: 8px; background: #f0f4ff;">
+                <h3 style="color: var(--fach); margin-top: 0;">Bonus: Für Schnelle</h3>
+
+                <h4>1. Stehende Welle (Interferenz)</h4>
+                <p>Was passiert, wenn zwei gleiche Wellen <strong>gegeneinander</strong> laufen? Sie überlagern sich &ndash; das nennt man <strong>Interferenz</strong>. Das Ergebnis ist eine <strong>stehende Welle</strong>: An manchen Stellen schwingt es maximal (<strong>Bäuche</strong>), an anderen gar nicht (<strong>Knoten</strong>).</p>
+
+                <div style="margin: 10px 0;">
+                    <label>Wellenlänge λ: <span id="standLambdaVal">120</span> cm</label><br>
+                    <input type="range" id="standLambdaSlider" min="60" max="240" step="10" value="120" style="width: 100%;">
+                </div>
+                <canvas id="standingCanvas" width="560" height="180"></canvas>
+                <p style="font-size: 0.85em; color: #666; margin-top: 4px;">
+                    <span style="color: #2c5aa0;">— — Welle →</span> &nbsp;
+                    <span style="color: #c62828;">— — Welle ←</span> &nbsp;
+                    <span style="font-weight: 600;">━━ Stehende Welle (Summe)</span>
+                </p>
+                <p><strong>Beobachte:</strong> Wo sind die Knoten (Nullstellen)? In welchem Abstand liegen sie? Verändere λ &ndash; was passiert mit den Knoten?</p>
+
+                <h4 style="margin-top: 20px;">2. Umkehr-Challenge</h4>
+                <p>Geh zurück zu <strong>Schritt 3</strong> (Wellenwanne). Stelle genau <strong>v = 300 cm/s</strong> ein. Finde <strong>3 verschiedene</strong> λ/f-Kombinationen und notiere sie. Was fällt dir auf?</p>
+
+                <h4 style="margin-top: 20px;">3. Denkaufgabe: Blitz und Donner</h4>
+                <p>Warum siehst du den <strong>Blitz sofort</strong>, hörst den Donner aber erst Sekunden später &ndash; obwohl beides gleichzeitig am selben Ort entsteht?</p>
+            </div>
+
             <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--fach-light);">
                 <p style="font-size: 1.1em; font-weight: 600; color: var(--fach);">Lernpfad abgeschlossen!</p>
                 <p>Du bist bereit für den Test zu Schwingungen und Wellen.</p>
@@ -1531,6 +1556,109 @@
 
     updateNav();
     updateGateButtons();
+
+    // ═══════════════════════════════════════════════════════════════
+    // BONUS: Stehende Welle (Interferenz)
+    // ═══════════════════════════════════════════════════════════════
+
+    var standCanvas = document.getElementById('standingCanvas');
+    var standCtx = standCanvas ? standCanvas.getContext('2d') : null;
+    var standLambda = 120;
+    var standTime = 0;
+    var standRunning = false;
+
+    document.getElementById('standLambdaSlider').addEventListener('input', function() {
+        standLambda = parseInt(this.value);
+        document.getElementById('standLambdaVal').textContent = standLambda;
+    });
+
+    function drawStandingWave(timestamp) {
+        if (!standCtx) return;
+        if (currentStep !== 7) { requestAnimationFrame(drawStandingWave); return; }
+
+        standTime += 0.03;
+        var ctx = standCtx;
+        var w = standCanvas.width;
+        var h = standCanvas.height;
+        var cy = h / 2;
+        var amp = 40;
+        var k = 2 * Math.PI / standLambda;
+        var omega = 2 * Math.PI * 0.8;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#f0f4ff';
+        ctx.fillRect(0, 0, w, h);
+
+        // Ruhelinie
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.moveTo(0, cy);
+        ctx.lineTo(w, cy);
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Welle 1 (nach rechts, gestrichelt blau)
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = 'rgba(44, 90, 160, 0.5)';
+        ctx.lineWidth = 1.5;
+        for (var x = 0; x < w; x++) {
+            var y1 = cy - amp * 0.5 * Math.sin(k * x - omega * standTime);
+            if (x === 0) ctx.moveTo(x, y1); else ctx.lineTo(x, y1);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Welle 2 (nach links, gestrichelt rot)
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = 'rgba(198, 40, 40, 0.5)';
+        ctx.lineWidth = 1.5;
+        for (var x2 = 0; x2 < w; x2++) {
+            var y2 = cy - amp * 0.5 * Math.sin(k * x2 + omega * standTime);
+            if (x2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Stehende Welle (Summe, fett schwarz)
+        ctx.beginPath();
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 3;
+        for (var x3 = 0; x3 < w; x3++) {
+            var ys = cy - amp * Math.sin(k * x3) * Math.cos(omega * standTime);
+            if (x3 === 0) ctx.moveTo(x3, ys); else ctx.lineTo(x3, ys);
+        }
+        ctx.stroke();
+
+        // Knoten markieren
+        ctx.fillStyle = '#c62828';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        var halfLambda = standLambda / 2;
+        for (var n = 0; n * halfLambda < w; n++) {
+            var xn = n * halfLambda;
+            if (xn > 10 && xn < w - 10) {
+                ctx.beginPath();
+                ctx.arc(xn, cy, 4, 0, Math.PI * 2);
+                ctx.fillStyle = (n % 2 === 0) ? '#c62828' : '#2c5aa0';
+                ctx.fill();
+                if (n % 2 === 0) {
+                    ctx.fillStyle = '#c62828';
+                    ctx.fillText('K', xn, cy + 16);
+                } else {
+                    ctx.fillStyle = '#2c5aa0';
+                    ctx.fillText('B', xn, cy + 16);
+                }
+            }
+        }
+
+        requestAnimationFrame(drawStandingWave);
+    }
+    requestAnimationFrame(drawStandingWave);
+
     </script>
 </body>
 </html>
