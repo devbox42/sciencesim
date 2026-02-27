@@ -337,6 +337,33 @@
         .db-table td:first-child { text-align: left; padding-left: 12px; }
         .db-table .danger { background: var(--error-bg); }
         .db-table .warning { background: var(--warning-bg); }
+
+        /* Tab-Warning Overlay */
+        .tab-warning-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 10000;
+            justify-content: center; align-items: center;
+        }
+        .tab-warning-overlay.visible { display: flex; }
+        .tab-warning-box {
+            background: #fff; border-radius: 12px; padding: 30px 40px;
+            text-align: center; max-width: 420px; width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .tab-warning-box h2 { color: var(--error); margin: 0 0 10px; font-size: 1.4em; }
+        .tab-warning-box p { color: #555; margin: 0 0 15px; }
+        .tab-warning-box .warn-stats {
+            background: var(--error-bg); border: 1px solid var(--error);
+            padding: 8px 12px; margin: 10px 0 15px; font-size: 0.9em;
+        }
+        .tab-warning-box button {
+            background: var(--fach); color: #fff; border: none; padding: 12px 28px;
+            font-size: 1em; cursor: pointer; min-height: 44px;
+        }
+        .tab-warning-box button:disabled {
+            background: #999; cursor: not-allowed;
+        }
+        @media print { .tab-warning-overlay { display: none !important; } }
     </style>
 </head>
 <body>
@@ -1046,6 +1073,19 @@
         </div>
     </div>
 
+    <!-- Tab-Warning Overlay -->
+    <div class="tab-warning-overlay" id="tabWarning">
+        <div class="tab-warning-box">
+            <h2>Tab-Wechsel erkannt!</h2>
+            <p>Du hast den Lernpfad verlassen. Alle Tab-Wechsel werden protokolliert.</p>
+            <div class="warn-stats">
+                <strong>Tab-Wechsel:</strong> <span id="tabWarnCount">0</span>&times; |
+                <strong>Zeit au&szlig;erhalb:</strong> <span id="tabWarnTime">0s</span>
+            </div>
+            <button id="tabWarnDismiss" onclick="dismissTabWarning()">Zur&uuml;ck zum Lernpfad</button>
+        </div>
+    </div>
+
     <script>
     // ═══════════════════════════════════════════════════════════════
     // LP-05b Wellen und Schall | ES5 JavaScript | MR Klasse 10
@@ -1053,6 +1093,136 @@
 
     var currentStep = 1;
     var totalSteps = 7;
+    var LP_ID = 'lp-05b-wellen';
+    var lpCompleted = false;
+
+    // ═══════════════════════════════════════════════════════════════
+    // TAB-WECHSEL ALARM (Puls-Beep + Overlay)
+    // ═══════════════════════════════════════════════════════════════
+    var sessionReady = false;
+    var beepAudio = null;
+    var pulseAlarmTimeout = null;
+    var TAB_WARN_BEEPS = 5;
+    var OVERLAY_SECONDS = 8;
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    // WAV-Blob: 800Hz Square-Wave, 0.4s, 8kHz Mono 8-Bit
+    function createBeepBlob() {
+        var sampleRate = 8000;
+        var duration = 0.4;
+        var freq = 800;
+        var numSamples = Math.floor(sampleRate * duration);
+        var halfPeriod = Math.floor(sampleRate / freq / 2);
+        var dataSize = numSamples;
+        var buffer = new ArrayBuffer(44 + dataSize);
+        var view = new DataView(buffer);
+        var writeStr = function(offset, str) {
+            for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate, true);
+        view.setUint16(32, 1, true);
+        view.setUint16(34, 8, true);
+        writeStr(36, 'data');
+        view.setUint32(40, dataSize, true);
+        for (var i = 0; i < numSamples; i++) {
+            var phase = Math.floor(i / halfPeriod) % 2;
+            view.setUint8(44 + i, phase === 0 ? 200 : 56);
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    function initBeepAudio() {
+        if (beepAudio) return;
+        var blob = createBeepBlob();
+        var url = URL.createObjectURL(blob);
+        beepAudio = new Audio(url);
+        beepAudio.volume = 0.5;
+        beepAudio.play().then(function() {
+            beepAudio.pause();
+            beepAudio.currentTime = 0;
+        }).catch(function() {});
+    }
+
+    function playBeep() {
+        if (!beepAudio) return;
+        try {
+            beepAudio.currentTime = 0;
+            beepAudio.play().catch(function() {});
+        } catch(e) {}
+    }
+
+    function showTabWarningOverlay() {
+        document.getElementById('tabWarnCount').textContent = tabSwitchCount;
+        document.getElementById('tabWarnTime').textContent = formatTabDuration(tabSwitchSeconds);
+        var btn = document.getElementById('tabWarnDismiss');
+        if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Lernpfad'; }
+        document.getElementById('tabWarning').classList.add('visible');
+    }
+
+    function dismissTabWarning() {
+        var btn = document.getElementById('tabWarnDismiss');
+        if (btn && btn.disabled) return;
+        if (!beepAudio) initBeepAudio();
+        playBeep();
+        var remaining = OVERLAY_SECONDS;
+        if (btn) { btn.disabled = true; btn.textContent = 'Warte ' + remaining + 's\u2026'; }
+        var beepCount = 1;
+        pulseAlarmTimeout = setInterval(function() {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(pulseAlarmTimeout);
+                pulseAlarmTimeout = null;
+                document.getElementById('tabWarning').classList.remove('visible');
+                return;
+            }
+            if (btn) btn.textContent = 'Warte ' + remaining + 's\u2026';
+            if (beepCount < TAB_WARN_BEEPS) {
+                playBeep();
+                beepCount++;
+            }
+        }, 1000);
+    }
+
+    function formatTabDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(LP_ID + '-tabswitches');
+        var savedSeconds = localStorage.getItem(LP_ID + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (!sessionReady || lpCompleted) return;
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(LP_ID + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(LP_ID + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+                showTabWarningOverlay();
+            }
+        });
+    }
 
     // Gatekeeper: Welche Schritte haben ein AB-Checkbox-Gate?
     var stepGates = { 1: 'gate1', 3: 'gate3', 4: 'gate4', 5: 'gate5', 6: 'gate6' };
@@ -1658,6 +1828,16 @@
         requestAnimationFrame(drawStandingWave);
     }
     requestAnimationFrame(drawStandingWave);
+
+    // ═══════════════════════════════════════════════════════════════
+    // INIT: Tab-Tracking aktivieren
+    // ═══════════════════════════════════════════════════════════════
+    initTabSwitchTracking();
+    sessionReady = true;
+
+    // Audio bei erster User-Geste entsperren (iOS)
+    document.addEventListener('click', function() { initBeepAudio(); }, { once: true });
+    document.addEventListener('touchstart', function() { initBeepAudio(); }, { once: true });
 
     </script>
 </body>
