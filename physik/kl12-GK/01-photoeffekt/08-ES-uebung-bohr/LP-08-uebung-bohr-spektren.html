@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>LP-08 | Übung: Bohr-Rechnungen &amp; Spektralanalyse</title>
+<style>
+:root {
+  --accent: #2c5aa0;
+  --accent-light: #e8ecf2;
+  --success: #2a7a4b;
+  --success-bg: #e6f4ec;
+  --warning: #b35c00;
+  --warning-bg: #fff3e0;
+  --error: #c0392b;
+  --error-bg: #fde8e8;
+  --bg: #f5f7fa;
+  --card: #ffffff;
+  --text: #1a1a1a;
+  --text-light: #555;
+  --border: #d0d5dd;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 680px; margin: 0 auto; padding: 12px; }
+
+/* Header */
+.header { background: var(--accent); color: #fff; padding: 16px; border-radius: 12px; margin-bottom: 16px; text-align: center; }
+.header h1 { font-size: 1.2em; margin-bottom: 4px; }
+.header .meta { font-size: 0.85em; opacity: 0.9; }
+
+/* Progress */
+.progress-bar { background: var(--border); border-radius: 8px; height: 8px; margin-bottom: 8px; overflow: hidden; }
+.progress-fill { background: var(--accent); height: 100%; width: 0%; transition: width 0.4s; border-radius: 8px; }
+.step-nav { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+.step-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); background: var(--card); display: flex; align-items: center; justify-content: center; font-size: 0.8em; font-weight: 600; cursor: pointer; transition: all 0.3s; min-width: 36px; }
+.step-dot.active { border-color: var(--accent); background: var(--accent); color: #fff; }
+.step-dot.done { border-color: var(--success); background: var(--success-bg); color: var(--success); }
+
+/* Sections */
+.section { display: none; background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+.section.active { display: block; }
+.section h2 { color: var(--accent); font-size: 1.15em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent-light); }
+.section h3 { font-size: 1em; margin: 12px 0 8px; color: var(--text); }
+
+/* Boxes */
+.formel-box { background: #eef3fb; border-left: 4px solid var(--accent); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; font-family: 'Georgia', serif; }
+.formel-box .formel { font-size: 1.05em; margin: 4px 0; }
+.hinweis-box { background: var(--warning-bg); border-left: 4px solid var(--warning); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+.success-box { background: var(--success-bg); border-left: 4px solid var(--success); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+.hefter-hinweis { background: #f0e6ff; border-left: 4px solid #7c3aed; padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.9em; }
+.hefter-hinweis strong { color: #7c3aed; }
+
+/* Quiz elements */
+.quiz-group { margin: 12px 0; }
+.quiz-group label { font-weight: 600; display: block; margin-bottom: 6px; }
+.fill-blank { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.fill-blank input[type="text"] { width: 140px; padding: 8px 10px; border: 2px solid var(--border); border-radius: 8px; font-size: 1em; text-align: center; font-family: 'Georgia', serif; }
+.fill-blank input.correct { border-color: var(--success); background: var(--success-bg); }
+.fill-blank input.wrong { border-color: var(--error); background: var(--error-bg); }
+.fill-blank .unit { color: var(--text-light); font-family: 'Georgia', serif; }
+
+.mc-options { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.mc-btn { padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px; background: var(--card); font-size: 0.95em; text-align: left; cursor: pointer; transition: all 0.2s; min-height: 44px; }
+.mc-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+.mc-btn.selected { border-color: var(--accent); background: var(--accent-light); font-weight: 600; }
+.mc-btn.correct { border-color: var(--success); background: var(--success-bg); }
+.mc-btn.wrong { border-color: var(--error); background: var(--error-bg); }
+.mc-btn[disabled] { cursor: default; opacity: 0.85; }
+
+.feedback { margin: 8px 0; padding: 10px 14px; border-radius: 8px; font-size: 0.9em; display: none; }
+.feedback.show { display: block; }
+.feedback.ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+.feedback.err { background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+
+/* Rechnung steps */
+.rechnung { background: #fafbfc; border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin: 10px 0; }
+.rechnung .step { margin: 6px 0; font-family: 'Georgia', serif; }
+.rechnung .step .label { font-weight: 600; color: var(--accent); font-family: -apple-system, sans-serif; font-size: 0.85em; }
+.rechnung .result { font-weight: 700; color: var(--accent); font-size: 1.05em; margin-top: 8px; }
+
+/* Spektrallabor */
+.spektrum-container { margin: 12px 0; }
+.spektrum-canvas { width: 100%; height: 80px; border-radius: 8px; border: 1px solid var(--border); cursor: crosshair; touch-action: none; }
+.spektrum-label { display: flex; justify-content: space-between; font-size: 0.75em; color: var(--text-light); margin-top: 2px; }
+.spektrum-info { text-align: center; font-size: 0.85em; color: var(--text-light); margin-top: 4px; min-height: 1.2em; }
+.line-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.9em; }
+.line-table th { background: var(--accent-light); padding: 6px 8px; text-align: left; font-size: 0.85em; }
+.line-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.color-swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; vertical-align: middle; border: 1px solid #ccc; }
+
+/* Check button */
+.check-btn { background: var(--accent); color: #fff; border: none; padding: 12px 24px; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; min-height: 44px; min-width: 44px; margin: 8px 0; transition: background 0.2s; }
+.check-btn:hover { background: #1e4080; }
+.check-btn:disabled { background: #aaa; cursor: default; }
+
+/* Navigation */
+.nav-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.nav-btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 1em; font-weight: 600; cursor: pointer; min-height: 48px; transition: all 0.2s; }
+.nav-btn.prev { background: var(--accent-light); color: var(--accent); }
+.nav-btn.next { background: var(--accent); color: #fff; }
+.nav-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Checklist */
+.checklist { list-style: none; padding: 0; }
+.checklist li { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.checklist input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; accent-color: var(--success); }
+.checklist .item-text { flex: 1; }
+
+/* Score display */
+.score-display { text-align: center; padding: 16px; margin: 12px 0; border-radius: 12px; }
+.score-display .score { font-size: 2em; font-weight: 700; }
+.score-display .label { font-size: 0.9em; color: var(--text-light); }
+
+/* Responsive */
+@media (max-width: 500px) {
+  .container { padding: 8px; }
+  .section { padding: 14px; }
+  .fill-blank input[type="text"] { width: 110px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>Übung: Bohr-Rechnungen &amp; Spektralanalyse</h1>
+  <div class="meta">11-12 GK Physik | ES | Vorbereitung Test T2</div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="step-nav" id="stepNav"></div>
+
+<!-- ═══════════ SECTION 1: Formel-Warm-up ═══════════ -->
+<div class="section" id="sec1">
+  <h2>1. Formel-Warm-up</h2>
+  <p>Vervollständige die vier Schlüsselformeln des Bohr-Modells aus dem Gedächtnis.</p>
+
+  <div class="formel-box">
+    <div class="quiz-group">
+      <label>Energie des n-ten Niveaus:</label>
+      <div class="fill-blank">
+        E<sub>n</sub> = <input type="text" id="f1" data-answer="-13,6" placeholder="?" style="width:80px"> eV &divide;
+        <input type="text" id="f1b" data-answer="n^2" placeholder="?" style="width:70px">
+      </div>
+    </div>
+
+    <div class="quiz-group" style="margin-top:10px">
+      <label>Energiedifferenz bei Übergang:</label>
+      <div class="fill-blank">
+        &Delta;E = |E<sub>Ende</sub> &minus;
+        <input type="text" id="f2" data-answer="E_Anfang" placeholder="?" style="width:100px">|
+      </div>
+    </div>
+
+    <div class="quiz-group" style="margin-top:10px">
+      <label>Wellenlänge aus Energie:</label>
+      <div class="fill-blank">
+        &lambda; = <input type="text" id="f3" data-answer="1240" placeholder="?" style="width:80px">
+        eV&middot;nm &divide; &Delta;E
+      </div>
+    </div>
+
+    <div class="quiz-group" style="margin-top:10px">
+      <label>Z-Erweiterung (wasserstoffähnliche Ionen):</label>
+      <div class="fill-blank">
+        E<sub>n</sub>(Z) = &minus;13,6 eV &middot;
+        <input type="text" id="f4" data-answer="Z^2" placeholder="?" style="width:70px">
+        &divide; n&sup2;
+      </div>
+    </div>
+  </div>
+
+  <button class="check-btn" onclick="checkFormeln()">Prüfen</button>
+  <div class="feedback" id="fb1"></div>
+
+  <div class="hefter-hinweis">
+    <strong>Hefter-Hinweis:</strong> Trage die vier Formeln in die Formelsammlung auf dem Arbeitsblatt ein (Aufgabe 1).
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn prev" disabled>&larr; Zurück</button>
+    <button class="nav-btn next" onclick="goTo(2)">Weiter &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 2: Rechentraining Übergänge ═══════════ -->
+<div class="section" id="sec2">
+  <h2>2. Rechentraining: Übergänge</h2>
+
+  <h3>Vorgerechnetes Beispiel: n = 4 &rarr; 2 (Balmer H&beta;)</h3>
+  <div class="rechnung">
+    <div class="step"><span class="label">Schritt 1:</span> Energieniveaus ablesen</div>
+    <div class="step" style="margin-left:20px">E<sub>4</sub> = &minus;13,6 eV / 4&sup2; = &minus;13,6 / 16 = <b>&minus;0,85 eV</b></div>
+    <div class="step" style="margin-left:20px">E<sub>2</sub> = &minus;13,6 eV / 2&sup2; = &minus;13,6 / 4 = <b>&minus;3,40 eV</b></div>
+    <div class="step" style="margin-top:6px"><span class="label">Schritt 2:</span> Energiedifferenz</div>
+    <div class="step" style="margin-left:20px">&Delta;E = |E<sub>2</sub> &minus; E<sub>4</sub>| = |&minus;3,40 &minus; (&minus;0,85)| = <b>2,55 eV</b></div>
+    <div class="step" style="margin-top:6px"><span class="label">Schritt 3:</span> Wellenlänge</div>
+    <div class="step" style="margin-left:20px">&lambda; = 1240 eV&middot;nm / 2,55 eV = <b>486 nm</b></div>
+    <div class="step" style="margin-top:6px"><span class="label">Schritt 4:</span> Farbe zuordnen</div>
+    <div class="step" style="margin-left:20px">486 nm &rarr; <span style="color:#00bfff; font-weight:700">cyan/blaugrün</span> (sichtbar!)</div>
+    <div class="result">Ergebnis: H&beta;-Linie der Balmer-Serie, &lambda; = 486 nm, cyan</div>
+  </div>
+
+  <h3>Jetzt du: n = 5 &rarr; 2 (Balmer H&gamma;)</h3>
+  <p>Berechne Energiedifferenz, Wellenlänge und Farbe.</p>
+
+  <div class="quiz-group">
+    <label>E<sub>5</sub> = &minus;13,6 / 25 =</label>
+    <div class="fill-blank">
+      <input type="text" id="r1" data-answer="-0,544" placeholder="? eV" style="width:100px"> <span class="unit">eV</span>
+    </div>
+  </div>
+  <div class="quiz-group">
+    <label>&Delta;E = |E<sub>2</sub> &minus; E<sub>5</sub>| =</label>
+    <div class="fill-blank">
+      <input type="text" id="r2" data-answer="2,856" data-alt="2,86" placeholder="? eV" style="width:100px"> <span class="unit">eV</span>
+    </div>
+  </div>
+  <div class="quiz-group">
+    <label>&lambda; = 1240 / &Delta;E =</label>
+    <div class="fill-blank">
+      <input type="text" id="r3" data-answer="434" data-alt="434,2" placeholder="? nm" style="width:100px"> <span class="unit">nm</span>
+    </div>
+  </div>
+  <div class="quiz-group">
+    <label>Farbe:</label>
+    <div class="mc-options" id="mc-farbe">
+      <button class="mc-btn" onclick="pickMC(this,'mc-farbe',false)">rot (ca. 650 nm)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-farbe',false)">grün (ca. 530 nm)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-farbe',true)">violett (ca. 434 nm)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-farbe',false)">infrarot (nicht sichtbar)</button>
+    </div>
+  </div>
+
+  <button class="check-btn" onclick="checkRechnung()">Rechnung prüfen</button>
+  <div class="feedback" id="fb2"></div>
+
+  <div class="hefter-hinweis">
+    <strong>Hefter-Hinweis:</strong> Löse Aufgabe 2a und 2b auf dem Arbeitsblatt (weitere Übergänge berechnen).
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn prev" onclick="goTo(1)">&larr; Zurück</button>
+    <button class="nav-btn next" onclick="goTo(3)">Weiter &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 3: Ionisierung + Z-Erweiterung ═══════════ -->
+<div class="section" id="sec3">
+  <h2>3. Ionisierung &amp; Z-Erweiterung</h2>
+
+  <h3>Ionisierungsenergie</h3>
+  <p>Die <b>Ionisierungsenergie</b> E<sub>ion</sub> ist die Energie, die nötig ist, um das Elektron vollständig vom Atom zu lösen (n &rarr; &infin;, E<sub>&infin;</sub> = 0).</p>
+
+  <div class="formel-box">
+    <div class="formel">E<sub>ion</sub> = 0 &minus; E<sub>n</sub> = |E<sub>n</sub>|</div>
+  </div>
+
+  <div class="quiz-group">
+    <label>Ionisierungsenergie aus dem Grundzustand (n = 1):</label>
+    <div class="fill-blank">
+      E<sub>ion</sub> = |E<sub>1</sub>| = <input type="text" id="ion1" data-answer="13,6" placeholder="?" style="width:80px"> <span class="unit">eV</span>
+    </div>
+  </div>
+  <div class="quiz-group">
+    <label>Ionisierungsenergie aus n = 3:</label>
+    <div class="fill-blank">
+      E<sub>ion</sub> = |E<sub>3</sub>| = <input type="text" id="ion2" data-answer="1,51" placeholder="?" style="width:80px"> <span class="unit">eV</span>
+    </div>
+  </div>
+
+  <button class="check-btn" onclick="checkIon()">Prüfen</button>
+  <div class="feedback" id="fb3a"></div>
+
+  <h3 style="margin-top:18px">Z-Erweiterung: He<sup>+</sup> (Z = 2)</h3>
+  <p>Für wasserstoffähnliche Ionen (ein Elektron, Kernladung Z) gilt:</p>
+  <div class="formel-box">
+    <div class="formel">E<sub>n</sub>(Z) = &minus;13,6 eV &middot; Z&sup2; / n&sup2;</div>
+  </div>
+
+  <div class="quiz-group">
+    <label>Grundzustand He<sup>+</sup> (Z = 2, n = 1):</label>
+    <div class="fill-blank">
+      E<sub>1</sub> = &minus;13,6 &middot; 4 / 1 = <input type="text" id="z1" data-answer="-54,4" placeholder="?" style="width:90px"> <span class="unit">eV</span>
+    </div>
+  </div>
+  <div class="quiz-group">
+    <label>Übergang He<sup>+</sup>: n = 3 &rarr; 2, &Delta;E = ?</label>
+    <div class="fill-blank">
+      E<sub>3</sub> = &minus;13,6 &middot; 4 / 9 = <input type="text" id="z2" data-answer="-6,04" data-alt="-6,044" placeholder="?" style="width:90px"> eV
+    </div>
+    <div class="fill-blank" style="margin-top:4px">
+      E<sub>2</sub> = &minus;13,6 &middot; 4 / 4 = <input type="text" id="z3" data-answer="-13,6" placeholder="?" style="width:90px"> eV
+    </div>
+    <div class="fill-blank" style="margin-top:4px">
+      &Delta;E = <input type="text" id="z4" data-answer="7,56" data-alt="7,6" placeholder="?" style="width:90px"> eV
+      &rarr; &lambda; = <input type="text" id="z5" data-answer="164" data-alt="164,0" placeholder="?" style="width:90px"> nm
+    </div>
+  </div>
+
+  <div class="quiz-group">
+    <label>Ist diese Strahlung sichtbar?</label>
+    <div class="mc-options" id="mc-sichtbar">
+      <button class="mc-btn" onclick="pickMC(this,'mc-sichtbar',false)">Ja, violettes Licht</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-sichtbar',true)">Nein, ultraviolett (UV)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-sichtbar',false)">Nein, infrarot (IR)</button>
+    </div>
+  </div>
+
+  <button class="check-btn" onclick="checkZ()">Alles prüfen</button>
+  <div class="feedback" id="fb3b"></div>
+
+  <div class="hefter-hinweis">
+    <strong>Hefter-Hinweis:</strong> Bearbeite Aufgabe 3 auf dem Arbeitsblatt (Ionisierung + He<sup>+</sup>-Rechnung).
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn prev" onclick="goTo(2)">&larr; Zurück</button>
+    <button class="nav-btn next" onclick="goTo(4)">Weiter &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 4: Spektrallabor ═══════════ -->
+<div class="section" id="sec4">
+  <h2>4. Spektrallabor</h2>
+  <p>Identifiziere Spektrallinien und ordne sie den richtigen Übergängen zu.</p>
+
+  <h3>Wasserstoff-Emissionsspektrum (Balmer-Serie)</h3>
+  <p>Tippe auf eine Linie, um die Wellenlänge abzulesen.</p>
+  <div class="spektrum-container">
+    <canvas class="spektrum-canvas" id="cvEmission" width="640" height="80"></canvas>
+    <div class="spektrum-label"><span>380 nm</span><span>violett &larr; &rarr; rot</span><span>700 nm</span></div>
+    <div class="spektrum-info" id="emissionInfo">Tippe auf eine Linie</div>
+  </div>
+
+  <h3 style="margin-top:14px">Zuordnung: Welcher Übergang erzeugt welche Linie?</h3>
+  <table class="line-table">
+    <tr><th>Linie</th><th>&lambda;</th><th>Farbe</th><th>Übergang</th></tr>
+    <tr>
+      <td>H&alpha;</td><td>656 nm</td>
+      <td><span class="color-swatch" style="background:#ff0000"></span> rot</td>
+      <td>
+        <select id="sel1" style="padding:6px;border-radius:6px;font-size:0.9em;min-height:36px">
+          <option value="">wählen...</option>
+          <option value="32">n=3 &rarr; 2</option>
+          <option value="42">n=4 &rarr; 2</option>
+          <option value="52">n=5 &rarr; 2</option>
+          <option value="62">n=6 &rarr; 2</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>H&beta;</td><td>486 nm</td>
+      <td><span class="color-swatch" style="background:#00bfff"></span> cyan</td>
+      <td>
+        <select id="sel2" style="padding:6px;border-radius:6px;font-size:0.9em;min-height:36px">
+          <option value="">wählen...</option>
+          <option value="32">n=3 &rarr; 2</option>
+          <option value="42">n=4 &rarr; 2</option>
+          <option value="52">n=5 &rarr; 2</option>
+          <option value="62">n=6 &rarr; 2</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>H&gamma;</td><td>434 nm</td>
+      <td><span class="color-swatch" style="background:#7b00ff"></span> violett</td>
+      <td>
+        <select id="sel3" style="padding:6px;border-radius:6px;font-size:0.9em;min-height:36px">
+          <option value="">wählen...</option>
+          <option value="32">n=3 &rarr; 2</option>
+          <option value="42">n=4 &rarr; 2</option>
+          <option value="52">n=5 &rarr; 2</option>
+          <option value="62">n=6 &rarr; 2</option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td>H&delta;</td><td>410 nm</td>
+      <td><span class="color-swatch" style="background:#6600cc"></span> violett</td>
+      <td>
+        <select id="sel4" style="padding:6px;border-radius:6px;font-size:0.9em;min-height:36px">
+          <option value="">wählen...</option>
+          <option value="32">n=3 &rarr; 2</option>
+          <option value="42">n=4 &rarr; 2</option>
+          <option value="52">n=5 &rarr; 2</option>
+          <option value="62">n=6 &rarr; 2</option>
+        </select>
+      </td>
+    </tr>
+  </table>
+
+  <button class="check-btn" onclick="checkSpektrum()">Zuordnung prüfen</button>
+  <div class="feedback" id="fb4a"></div>
+
+  <h3 style="margin-top:18px">Fraunhofer-Linien: Absorption im Sonnenspektrum</h3>
+  <p>Im Sonnenspektrum fehlen bestimmte Wellenlängen (dunkle Linien). Hier siehst du einen Ausschnitt:</p>
+
+  <div class="spektrum-container">
+    <canvas class="spektrum-canvas" id="cvAbsorption" width="640" height="80"></canvas>
+    <div class="spektrum-label"><span>380 nm</span><span>Absorptionsspektrum (Sonne)</span><span>700 nm</span></div>
+    <div class="spektrum-info" id="absorptionInfo">Tippe auf eine dunkle Linie</div>
+  </div>
+
+  <div class="quiz-group" style="margin-top:10px">
+    <label>Die Fraunhofer-Linie C bei 656 nm stammt von:</label>
+    <div class="mc-options" id="mc-fraun">
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun',true)">Wasserstoff (H&alpha;, n=3&rarr;2)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun',false)">Natrium (Na D-Linie)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun',false)">Calcium (Ca K-Linie)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun',false)">Helium</button>
+    </div>
+  </div>
+
+  <div class="quiz-group">
+    <label>Die Fraunhofer D-Linien bei 589 nm stammen von:</label>
+    <div class="mc-options" id="mc-fraun2">
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun2',false)">Wasserstoff</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun2',true)">Natrium (Na, 3p&rarr;3s)</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun2',false)">Sauerstoff</button>
+      <button class="mc-btn" onclick="pickMC(this,'mc-fraun2',false)">Eisen</button>
+    </div>
+  </div>
+
+  <div class="hinweis-box">
+    <b>Merke:</b> Jedes Element hat ein einzigartiges Spektrum &ndash; wie ein Fingerabdruck. Emissionslinien eines Elements liegen bei denselben Wellenlängen wie seine Absorptionslinien.
+  </div>
+
+  <div class="hefter-hinweis">
+    <strong>Hefter-Hinweis:</strong> Bearbeite Aufgabe 4 auf dem Arbeitsblatt (Fraunhofer-Linien zuordnen + Rechnung).
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn prev" onclick="goTo(3)">&larr; Zurück</button>
+    <button class="nav-btn next" onclick="goTo(5)">Weiter &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══════════ SECTION 5: Test-Vorbereitung ═══════════ -->
+<div class="section" id="sec5">
+  <h2>5. Test-Vorbereitung</h2>
+
+  <div class="hinweis-box">
+    <b>Test T2</b> am Freitag, 06.03.2026 &ndash; Thema: Bohr-Modell &amp; Spektralanalyse (~25 BE)
+  </div>
+
+  <h3>Selbstcheck: Wo stehst du?</h3>
+  <p>Hake ab, was du sicher kannst. Bereite offene Punkte gezielt vor.</p>
+
+  <ul class="checklist" id="checklist">
+    <li><input type="checkbox" id="ck1"><span class="item-text">Drei Bohr-Postulate benennen und erklären</span></li>
+    <li><input type="checkbox" id="ck2"><span class="item-text">E<sub>n</sub> = &minus;13,6 eV / n&sup2; anwenden</span></li>
+    <li><input type="checkbox" id="ck3"><span class="item-text">&Delta;E bei Übergängen berechnen</span></li>
+    <li><input type="checkbox" id="ck4"><span class="item-text">&lambda; = 1240 eV&middot;nm / &Delta;E umrechnen</span></li>
+    <li><input type="checkbox" id="ck5"><span class="item-text">Ionisierungsenergie berechnen</span></li>
+    <li><input type="checkbox" id="ck6"><span class="item-text">Z-Erweiterung (He<sup>+</sup>, Li<sup>2+</sup>) anwenden</span></li>
+    <li><input type="checkbox" id="ck7"><span class="item-text">Balmer-Serie: 4 sichtbare Linien (&lambda; + Farbe)</span></li>
+    <li><input type="checkbox" id="ck8"><span class="item-text">Emissions- und Absorptionsspektren unterscheiden</span></li>
+    <li><input type="checkbox" id="ck9"><span class="item-text">Fraunhofer-Linien (C, D, F) zuordnen</span></li>
+    <li><input type="checkbox" id="ck10"><span class="item-text">Stärken und Grenzen des Bohr-Modells</span></li>
+  </ul>
+
+  <div id="scoreArea" style="margin-top:12px"></div>
+
+  <div class="formel-box" style="margin-top:14px">
+    <b>Formelsammlung für den Test:</b><br>
+    E<sub>n</sub> = &minus;13,6 eV / n&sup2; &nbsp;|&nbsp;
+    &Delta;E = |E<sub>Ende</sub> &minus; E<sub>Anfang</sub>| &nbsp;|&nbsp;
+    &lambda; = 1240 eV&middot;nm / &Delta;E<br>
+    E<sub>n</sub>(Z) = &minus;13,6 eV &middot; Z&sup2; / n&sup2; &nbsp;|&nbsp;
+    E = h &middot; f &nbsp;|&nbsp;
+    c = &lambda; &middot; f
+  </div>
+
+  <div class="success-box" style="margin-top:12px">
+    <b>Tipp:</b> Übe besonders die Rechenaufgaben &ndash; sie machen den Großteil der Punkte aus. Nutze das Arbeitsblatt als zusätzliche Übung.
+  </div>
+
+  <div class="hefter-hinweis">
+    <strong>Hefter-Hinweis:</strong> Übertrage deinen Selbstcheck in Aufgabe 5 auf dem Arbeitsblatt. Markiere offene Punkte mit „?".
+  </div>
+
+  <div class="nav-row">
+    <button class="nav-btn prev" onclick="goTo(4)">&larr; Zurück</button>
+    <button class="nav-btn next" disabled style="background:var(--success)">Geschafft!</button>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ====== LP-08 Übung Bohr + Spektralanalyse ====== */
+/* ES5-kompatibel */
+(function() {
+  var TOTAL = 5;
+  var PREFIX = 'lp-08-uebung-bohr';
+  var current = 1;
+
+  /* === Persistence === */
+  function sKey(k) { return PREFIX + '-' + k; }
+  function save(k, v) { try { localStorage.setItem(sKey(k), JSON.stringify(v)); } catch(e){} }
+  function load(k, d) { try { var v = localStorage.getItem(sKey(k)); return v !== null ? JSON.parse(v) : d; } catch(e){ return d; } }
+
+  /* === Navigation === */
+  function updateUI() {
+    for (var i = 1; i <= TOTAL; i++) {
+      var sec = document.getElementById('sec' + i);
+      var dot = document.getElementById('dot' + i);
+      if (sec) sec.className = i === current ? 'section active' : 'section';
+      if (dot) {
+        dot.className = 'step-dot';
+        if (i === current) dot.className += ' active';
+        else if (load('done' + i, false)) dot.className += ' done';
+      }
+    }
+    var pct = 0;
+    for (var j = 1; j <= TOTAL; j++) { if (load('done' + j, false)) pct++; }
+    document.getElementById('progressFill').style.width = (pct / TOTAL * 100) + '%';
+    save('current', current);
+  }
+
+  window.goTo = function(n) {
+    if (n >= 1 && n <= TOTAL) { current = n; updateUI(); window.scrollTo(0, 0); }
+  };
+
+  /* Build step dots */
+  var nav = document.getElementById('stepNav');
+  for (var i = 1; i <= TOTAL; i++) {
+    var d = document.createElement('div');
+    d.className = 'step-dot';
+    d.id = 'dot' + i;
+    d.textContent = i;
+    d.setAttribute('onclick', 'goTo(' + i + ')');
+    nav.appendChild(d);
+  }
+
+  /* === Checking helpers === */
+  function normalize(s) {
+    return s.replace(/\s/g, '').replace(/,/g, '.').replace(/−/g, '-').toLowerCase();
+  }
+
+  function checkInput(id) {
+    var el = document.getElementById(id);
+    if (!el) return false;
+    var val = normalize(el.value);
+    var ans = normalize(el.getAttribute('data-answer'));
+    var alt = el.getAttribute('data-alt');
+    var ok = val === ans;
+    if (!ok && alt) {
+      var alts = alt.split('|');
+      for (var i = 0; i < alts.length; i++) {
+        if (val === normalize(alts[i])) { ok = true; break; }
+      }
+    }
+    /* Numeric tolerance: ±2% */
+    if (!ok && !isNaN(parseFloat(val)) && !isNaN(parseFloat(ans))) {
+      var nv = parseFloat(val), na = parseFloat(ans);
+      if (Math.abs(nv - na) / Math.max(Math.abs(na), 0.001) < 0.025) ok = true;
+    }
+    el.className = ok ? 'correct' : 'wrong';
+    return ok;
+  }
+
+  function showFB(id, ok, msgOk, msgErr) {
+    var fb = document.getElementById(id);
+    fb.className = 'feedback show ' + (ok ? 'ok' : 'err');
+    fb.textContent = ok ? msgOk : msgErr;
+  }
+
+  /* === Section 1: Formeln === */
+  window.checkFormeln = function() {
+    var ids = ['f1', 'f1b', 'f2', 'f3', 'f4'];
+    var score = 0;
+    for (var i = 0; i < ids.length; i++) { if (checkInput(ids[i])) score++; }
+    var ok = score >= 4;
+    showFB('fb1', ok,
+      score + '/5 richtig! Die Formeln sitzen.',
+      score + '/5 richtig. Korrigiere die roten Felder. Hinweise: E_n braucht -13,6; Nenner ist n²; λ = 1240/ΔE; Z-Erweiterung hat Z² im Zähler.');
+    if (ok) { save('done1', true); updateUI(); }
+  };
+
+  /* === Section 2: Rechnung === */
+  window.checkRechnung = function() {
+    var ids = ['r1', 'r2', 'r3'];
+    var score = 0;
+    for (var i = 0; i < ids.length; i++) { if (checkInput(ids[i])) score++; }
+    var ok = score === 3;
+    showFB('fb2', ok,
+      'Perfekt! n=5→2 ergibt λ = 434 nm (violett) – die Hγ-Linie.',
+      score + '/3 Rechnungen richtig. Tipp: E₅ = -13,6/25 = -0,544 eV; ΔE = |-3,4-(-0,544)| = 2,856 eV; λ = 1240/2,856 ≈ 434 nm');
+    if (ok) { save('done2', true); updateUI(); }
+  };
+
+  /* === Section 3: Ionisierung + Z === */
+  window.checkIon = function() {
+    var ok = checkInput('ion1') && checkInput('ion2');
+    showFB('fb3a', ok,
+      'Richtig! E_ion(n=1) = 13,6 eV, E_ion(n=3) = 1,51 eV.',
+      'Ionisierungsenergie = |E_n|. Also E_ion(n=1) = 13,6 eV und E_ion(n=3) = 1,51 eV.');
+  };
+
+  window.checkZ = function() {
+    var ids = ['z1', 'z2', 'z3', 'z4', 'z5'];
+    var score = 0;
+    for (var i = 0; i < ids.length; i++) { if (checkInput(ids[i])) score++; }
+    var ok = score >= 4;
+    showFB('fb3b', ok,
+      score + '/5 richtig! He⁺ (n=3→2): ΔE = 7,56 eV → λ = 164 nm (UV).',
+      score + '/5 richtig. Lösungsweg: E₃ = -13,6·4/9 = -6,04 eV; E₂ = -13,6·4/4 = -13,6 eV; ΔE = 7,56 eV; λ = 1240/7,56 = 164 nm.');
+    if (ok) { save('done3', true); updateUI(); }
+  };
+
+  /* === Section 4: Spektrum === */
+  window.pickMC = function(btn, groupId, isCorrect) {
+    var group = document.getElementById(groupId);
+    var btns = group.querySelectorAll('.mc-btn');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].disabled = true;
+      btns[i].className = 'mc-btn';
+    }
+    btn.className = 'mc-btn ' + (isCorrect ? 'correct' : 'wrong');
+    /* Show correct if wrong */
+    if (!isCorrect) {
+      for (var j = 0; j < btns.length; j++) {
+        if (btns[j].getAttribute('onclick') && btns[j].getAttribute('onclick').indexOf('true') > -1) {
+          btns[j].className = 'mc-btn correct';
+        }
+      }
+    }
+  };
+
+  window.checkSpektrum = function() {
+    var answers = { sel1: '32', sel2: '42', sel3: '52', sel4: '62' };
+    var score = 0;
+    for (var id in answers) {
+      var el = document.getElementById(id);
+      if (el.value === answers[id]) {
+        score++;
+        el.style.borderColor = '#2a7a4b';
+        el.style.background = '#e6f4ec';
+      } else {
+        el.style.borderColor = '#c0392b';
+        el.style.background = '#fde8e8';
+      }
+    }
+    var ok = score === 4;
+    showFB('fb4a', ok,
+      'Alle 4 Zuordnungen richtig! Merke: Größeres Δn → kürzere Wellenlänge.',
+      score + '/4 richtig. Regel: Hα(3→2)=656nm, Hβ(4→2)=486nm, Hγ(5→2)=434nm, Hδ(6→2)=410nm.');
+    if (ok) { save('done4', true); updateUI(); }
+  };
+
+  /* === Section 5: Checklist === */
+  var ckIds = ['ck1','ck2','ck3','ck4','ck5','ck6','ck7','ck8','ck9','ck10'];
+  function updateChecklist() {
+    var checked = 0;
+    for (var i = 0; i < ckIds.length; i++) {
+      var cb = document.getElementById(ckIds[i]);
+      if (cb && cb.checked) checked++;
+      save(ckIds[i], cb ? cb.checked : false);
+    }
+    var area = document.getElementById('scoreArea');
+    var pct = Math.round(checked / 10 * 100);
+    var color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--error)';
+    area.innerHTML = '<div class="score-display" style="border:2px solid ' + color + ';color:' + color + '">' +
+      '<div class="score">' + checked + '/10</div>' +
+      '<div class="label">' + (pct >= 80 ? 'Gute Vorbereitung!' : pct >= 50 ? 'Noch etwas üben!' : 'Gezielt wiederholen!') + '</div></div>';
+    if (checked >= 7) { save('done5', true); updateUI(); }
+  }
+  for (var i = 0; i < ckIds.length; i++) {
+    var cb = document.getElementById(ckIds[i]);
+    if (cb) {
+      cb.checked = load(ckIds[i], false);
+      cb.addEventListener('change', updateChecklist);
+    }
+  }
+  updateChecklist();
+
+  /* === Spectrum Canvas Drawing === */
+  function nmToRGB(nm) {
+    var r = 0, g = 0, b = 0;
+    if (nm >= 380 && nm < 440) { r = -(nm-440)/(440-380); b = 1; }
+    else if (nm >= 440 && nm < 490) { g = (nm-440)/(490-440); b = 1; }
+    else if (nm >= 490 && nm < 510) { g = 1; b = -(nm-510)/(510-490); }
+    else if (nm >= 510 && nm < 580) { r = (nm-510)/(580-510); g = 1; }
+    else if (nm >= 580 && nm < 645) { r = 1; g = -(nm-645)/(645-580); }
+    else if (nm >= 645 && nm <= 700) { r = 1; }
+    /* Intensity falloff at edges */
+    var f = 1.0;
+    if (nm >= 380 && nm < 420) f = 0.3 + 0.7 * (nm-380)/(420-380);
+    else if (nm > 645 && nm <= 700) f = 0.3 + 0.7 * (700-nm)/(700-645);
+    return [Math.round(r*f*255), Math.round(g*f*255), Math.round(b*f*255)];
+  }
+
+  function drawSpectrum(canvasId, infoId, absorptionLines) {
+    var cv = document.getElementById(canvasId);
+    if (!cv) return;
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    var nmMin = 380, nmMax = 700;
+
+    /* Draw continuous spectrum */
+    for (var x = 0; x < W; x++) {
+      var nm = nmMin + (nmMax - nmMin) * x / W;
+      var rgb = nmToRGB(nm);
+      ctx.fillStyle = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+      ctx.fillRect(x, 0, 1, H);
+    }
+
+    /* Draw absorption or emission lines */
+    var lines = absorptionLines || [];
+    var isAbsorption = canvasId === 'cvAbsorption';
+
+    if (!isAbsorption) {
+      /* Emission: dark background with bright lines */
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    for (var i = 0; i < lines.length; i++) {
+      var lnm = lines[i].nm;
+      var lx = (lnm - nmMin) / (nmMax - nmMin) * W;
+      if (isAbsorption) {
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillRect(lx - 1.5, 0, 3, H);
+      } else {
+        var lrgb = nmToRGB(lnm);
+        ctx.fillStyle = 'rgb(' + lrgb[0] + ',' + lrgb[1] + ',' + lrgb[2] + ')';
+        ctx.shadowColor = 'rgb(' + lrgb[0] + ',' + lrgb[1] + ',' + lrgb[2] + ')';
+        ctx.shadowBlur = 6;
+        ctx.fillRect(lx - 2, 0, 4, H);
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    /* Touch/click interaction */
+    function handleTap(e) {
+      e.preventDefault();
+      var rect = cv.getBoundingClientRect();
+      var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      var x = (clientX - rect.left) / rect.width * W;
+      var nm = nmMin + (nmMax - nmMin) * x / W;
+
+      /* Find nearest line */
+      var nearest = null, minDist = 999;
+      for (var j = 0; j < lines.length; j++) {
+        var d = Math.abs(lines[j].nm - nm);
+        if (d < minDist) { minDist = d; nearest = lines[j]; }
+      }
+
+      var info = document.getElementById(infoId);
+      if (nearest && minDist < 15) {
+        info.innerHTML = '<b>' + nearest.nm + ' nm</b> – ' + nearest.label;
+      } else {
+        info.textContent = Math.round(nm) + ' nm';
+      }
+    }
+    cv.addEventListener('click', handleTap);
+    cv.addEventListener('touchstart', handleTap);
+  }
+
+  /* Hydrogen emission lines (Balmer) */
+  var balmerLines = [
+    { nm: 410, label: 'H\u03B4 (n=6\u21922)' },
+    { nm: 434, label: 'H\u03B3 (n=5\u21922)' },
+    { nm: 486, label: 'H\u03B2 (n=4\u21922)' },
+    { nm: 656, label: 'H\u03B1 (n=3\u21922)' }
+  ];
+
+  /* Fraunhofer absorption lines */
+  var fraunhoferLines = [
+    { nm: 393, label: 'K (Ca\u00B2\u207A)' },
+    { nm: 397, label: 'H (Ca\u00B2\u207A)' },
+    { nm: 410, label: 'H\u03B4 (Wasserstoff)' },
+    { nm: 434, label: 'H\u03B3 (Wasserstoff)' },
+    { nm: 486, label: 'F – H\u03B2 (Wasserstoff)' },
+    { nm: 518, label: 'b\u2081 (Magnesium)' },
+    { nm: 527, label: 'E\u2082 (Eisen)' },
+    { nm: 589, label: 'D – Natrium (Na)' },
+    { nm: 656, label: 'C – H\u03B1 (Wasserstoff)' },
+    { nm: 687, label: 'B (O\u2082, Erdatmosphäre)' }
+  ];
+
+  /* Init canvases after DOM ready */
+  drawSpectrum('cvEmission', 'emissionInfo', balmerLines);
+  drawSpectrum('cvAbsorption', 'absorptionInfo', fraunhoferLines);
+
+  /* Restore state */
+  current = load('current', 1);
+  /* Restore inputs */
+  var allInputs = document.querySelectorAll('input[type="text"]');
+  for (var k = 0; k < allInputs.length; k++) {
+    var inp = allInputs[k];
+    var stored = load('input-' + inp.id, '');
+    if (stored) inp.value = stored;
+    inp.addEventListener('input', function() { save('input-' + this.id, this.value); });
+  }
+  /* Restore selects */
+  var allSelects = document.querySelectorAll('select');
+  for (var s = 0; s < allSelects.length; s++) {
+    var sel = allSelects[s];
+    var sv = load('sel-' + sel.id, '');
+    if (sv) sel.value = sv;
+    sel.addEventListener('change', function() { save('sel-' + this.id, this.value); });
+  }
+
+  updateUI();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Wellen und Schall</title>
+    <style>
+        :root {
+            --fach: #2c5aa0;
+            --fach-light: #e3f0ff;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: var(--fach);
+            color: var(--white);
+            padding: 15px 20px;
+            margin: -20px -20px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .platz-field select {
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-width: 80px;
+            min-height: 44px;
+        }
+        .aufgabe {
+            background: var(--white);
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .aufgabe-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--fach);
+        }
+        .aufgabe-title { font-weight: 600; color: var(--fach); }
+        .aufgabe-punkte {
+            font-size: 0.85em;
+            background: var(--fach-light);
+            color: var(--fach);
+            padding: 3px 10px;
+        }
+        .operator { font-weight: 600; color: var(--fach); }
+        .fz { font-family: "Times New Roman", Times, serif; font-style: italic; }
+        p { margin-bottom: 10px; }
+        .mc-options { margin: 15px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+        .mc-option:hover { border-color: var(--fach); }
+        .mc-option.selected {
+            border-color: var(--fach);
+            background: var(--fach-light);
+        }
+        .mc-option.correct-answer {
+            border-color: var(--success);
+            background: var(--success-bg);
+        }
+        .mc-option.wrong-answer {
+            border-color: var(--error);
+            background: var(--error-bg);
+        }
+        .mc-option input { margin-right: 10px; }
+        .matching-container { margin: 15px 0; }
+        .matching-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 15px;
+        }
+        .matching-left {
+            width: 180px;
+            font-weight: 600;
+        }
+        .matching-select {
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-width: 180px;
+            min-height: 44px;
+        }
+        .matching-select.correct { border-color: var(--success); background: var(--success-bg); }
+        .matching-select.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .calc-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .calc-input {
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            font-size: 1em;
+            width: 100px;
+            min-height: 44px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .calc-input:focus {
+            outline: 2px solid var(--fach);
+            border-color: var(--fach);
+        }
+        .calc-input.correct { border-color: var(--success); background: var(--success-bg); }
+        .calc-input.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .unit-select {
+            padding: 10px 12px;
+            font-size: 1em;
+            border: 1px solid var(--border);
+            min-height: 44px;
+        }
+        .unit-select.correct { border-color: var(--success); background: var(--success-bg); }
+        .unit-select.incorrect { border-color: var(--error); background: var(--error-bg); }
+        .feedback {
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .feedback.correct {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            color: var(--success);
+            display: block;
+        }
+        .feedback.partial {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            display: block;
+        }
+        .feedback.incorrect {
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            color: var(--error);
+            display: block;
+        }
+        .solution-box {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-left: 3px solid var(--fach);
+            font-size: 0.9em;
+            display: none;
+        }
+        .solution-box.visible { display: block; }
+        .solution-box strong { color: var(--fach); }
+        .results {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .results h2 { color: var(--fach); margin-bottom: 15px; }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .result-box {
+            text-align: center;
+            padding: 15px;
+            background: var(--fach-light);
+        }
+        .result-box .value { font-size: 1.8em; font-weight: 600; color: var(--fach); }
+        .result-box .label { font-size: 0.85em; color: var(--text-muted); }
+        .grade-display {
+            text-align: center;
+            padding: 20px;
+            background: var(--fach);
+            color: var(--white);
+        }
+        .grade-display .grade { font-size: 3em; font-weight: 700; }
+        .grade-display .label { font-size: 0.9em; opacity: 0.9; }
+        .grading-table {
+            margin-top: 15px;
+            font-size: 0.8em;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .grading-table th, .grading-table td {
+            border: 1px solid var(--border);
+            padding: 5px 8px;
+            text-align: center;
+        }
+        .grading-table th { background: var(--bg); }
+        .btn {
+            background: var(--fach);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-secondary {
+            background: var(--white);
+            color: var(--fach);
+            border: 1px solid var(--fach);
+        }
+        .btn-print { background: var(--text-muted); }
+        .button-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .hinweis {
+            background: var(--fach-light);
+            border-left: 3px solid var(--fach);
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        .hinweis-mini {
+            background: #f9f9f9;
+            border: 1px dashed var(--border);
+            padding: 6px 10px;
+            margin: 8px 0;
+            font-size: 0.85em;
+            color: var(--text-muted);
+        }
+        .bruch {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .bruch .zaehler {
+            display: block;
+            border-bottom: 1px solid currentColor;
+            padding: 0 3px 2px;
+        }
+        .bruch .nenner {
+            display: block;
+            padding: 2px 3px 0;
+        }
+        .locked-notice {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning);
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .locked-notice.visible { display: block; }
+        .timer-display {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: var(--fach);
+            white-space: nowrap;
+        }
+        .timer-display.timer-warning { color: var(--warning); }
+        .timer-display.timer-critical {
+            color: var(--error);
+            animation: timer-blink 1s infinite;
+        }
+        @keyframes timer-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .formel-kasten {
+            background: var(--white);
+            border: 2px solid var(--fach);
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .formel-zeile {
+            margin: 8px 0;
+            font-size: 1.1em;
+        }
+        .formel-label {
+            display: inline-block;
+            min-width: 110px;
+            font-weight: 600;
+        }
+        #aufgabenBlock { display: none; }
+        #aufgabenBlock.visible { display: block; }
+        .formel-zusatz {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .diagram-container {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .diagram-svg {
+            max-width: 100%;
+            height: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: center;
+        }
+        .data-table th {
+            background: var(--fach-light);
+            font-weight: 600;
+        }
+        .scenario-box {
+            background: var(--warning-bg);
+            border-left: 4px solid var(--warning);
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+        .scenario-box strong { color: var(--warning); }
+        /* Tab-Warning Overlay */
+        .tab-warning-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(198, 40, 40, 0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #fff;
+        }
+        .tab-warning-overlay.visible {
+            display: flex;
+        }
+        .tab-warning-box {
+            background: #fff;
+            color: var(--text);
+            padding: 30px 40px;
+            max-width: 440px;
+            width: 90%;
+        }
+        .tab-warning-box h2 {
+            color: var(--error);
+            margin-bottom: 12px;
+            font-size: 1.3em;
+        }
+        .tab-warning-box p {
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        .tab-warning-box .warn-stats {
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            padding: 10px;
+            margin: 12px 0;
+            font-size: 0.9em;
+        }
+        .tab-warning-box button {
+            background: var(--error);
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .tab-warning-box button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        @media print {
+            body { background: white; font-size: 11pt; }
+            .container { max-width: 100%; padding: 10px; }
+            .btn, .button-row { display: none !important; }
+            .aufgabe { break-inside: avoid; page-break-inside: avoid; border: 1px solid #ccc; }
+            .results { border: 2px solid #333; }
+            .grade-display { background: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .locked-notice { display: none !important; }
+            .tab-warning-overlay { display: none !important; }
+            .timer-display { display: none !important; }
+            header { background: #2c5aa0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Test: Wellen und Schall</h1>
+            <p>Physik Klasse 10 MR | MT-05b | 25 Minuten | 25 BE</p>
+        </header>
+
+        <div class="locked-notice" id="lockedNotice">
+            <strong>Test bereits abgegeben!</strong> Ergebnisse werden unten angezeigt.
+        </div>
+
+        <div class="info-bar">
+            <div class="platz-field" id="seatRow">
+                Platz: <select id="platzNummer">
+                    <option value="">-- w&auml;hlen --</option>
+                    <option value="P1">P1</option>
+                    <option value="P2">P2</option>
+                    <option value="P3">P3</option>
+                    <option value="P4">P4</option>
+                    <option value="P5">P5</option>
+                    <option value="P6">P6</option>
+                    <option value="P7">P7</option>
+                    <option value="P8">P8</option>
+                    <option value="P9">P9</option>
+                    <option value="P10">P10</option>
+                    <option value="P11">P11</option>
+                    <option value="P12">P12</option>
+                    <option value="P13">P13</option>
+                    <option value="P14">P14</option>
+                    <option value="P15">P15</option>
+                    <option value="P16">P16</option>
+                    <option value="P17">P17</option>
+                    <option value="P18">P18</option>
+                    <option value="P19">P19</option>
+                    <option value="P20">P20</option>
+                    <option value="P21">P21</option>
+                    <option value="P22">P22</option>
+                    <option value="P23">P23</option>
+                    <option value="P24">P24</option>
+                </select>
+                <button onclick="confirmSeat()" style="margin-left:8px; padding:10px 16px; min-height:44px; cursor:pointer;">OK</button>
+            </div>
+            <div class="timer-display" id="timerDisplay" style="display:none;">&#9201; <span id="timerValue">25:00</span></div>
+            <div>Datum: <span id="currentDate"></span></div>
+        </div>
+
+        <div id="aufgabenBlock">
+
+        <div class="hinweis">
+            <strong>Formeln:</strong>
+            <span class="fz">v</span> = &#955; &middot; <span class="fz">f</span> &nbsp;|&nbsp;
+            <span class="fz">f</span> = <span class="bruch"><span class="zaehler">1</span><span class="nenner"><span class="fz">T</span></span></span> &nbsp;|&nbsp;
+            <span class="fz">s</span> = <span class="fz">v</span> &middot; <span class="fz">t</span> &nbsp;|&nbsp;
+            <span class="fz">v</span><sub>Schall</sub> &asymp; 340 m/s &nbsp;|&nbsp;
+            <span class="fz">v</span><sub>Wasser</sub> &asymp; 1 500 m/s &nbsp;|&nbsp;
+            Echolot: Tiefe = <span class="bruch"><span class="zaehler"><span class="fz">v</span> &middot; <span class="fz">t</span></span><span class="nenner">2</span></span>
+        </div>
+        <div class="hinweis" style="background: var(--error-bg); border-left-color: var(--error);">
+            <strong style="color: var(--error);">&#9888; Taschenrechner sind NICHT zugelassen.</strong> Alle Aufgaben sind im Kopf l&ouml;sbar.
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 1: Wellentypen Zuordnung (3 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe1">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 1</span>
+                <span class="aufgabe-punkte" id="punkte1">__/3 BE</span>
+            </div>
+            <p><span class="operator">Ordne zu</span>: Welcher Wellentyp liegt vor?</p>
+
+            <div class="matching-container" id="matching1">
+                <div class="matching-row" data-key="m1a">
+                    <span class="matching-left">Seilwelle</span>
+                    <select class="matching-select" id="m1a">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="trans">Transversalwelle</option>
+                        <option value="long">Longitudinalwelle</option>
+                        <option value="misch">Mischform (kreisf&ouml;rmig)</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m1b">
+                    <span class="matching-left">Schallwelle in Luft</span>
+                    <select class="matching-select" id="m1b">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="trans">Transversalwelle</option>
+                        <option value="long">Longitudinalwelle</option>
+                        <option value="misch">Mischform (kreisf&ouml;rmig)</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m1c">
+                    <span class="matching-left">Wasserwelle (Oberfl&auml;che)</span>
+                    <select class="matching-select" id="m1c">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="trans">Transversalwelle</option>
+                        <option value="long">Longitudinalwelle</option>
+                        <option value="misch">Mischform (kreisf&ouml;rmig)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb1"></div>
+            <div class="solution-box" id="sol1">
+                <strong>L&ouml;sung:</strong> Seilwelle &#8594; Transversal (senkrecht zur Ausbreitung) | Schall &#8594; Longitudinal (Verdichtungen + Verd&uuml;nnungen) | Wasserwelle &#8594; Mischform (kreisf&ouml;rmige Bewegung der Teilchen)
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 2: Schwingung vs. Welle (2 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe2">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 2</span>
+                <span class="aufgabe-punkte" id="punkte2">__/2 BE</span>
+            </div>
+            <p><span class="operator">W&auml;hle</span> alle korrekten Aussagen &uuml;ber den Unterschied zwischen Schwingung und Welle:</p>
+
+            <div class="mc-options" id="mc2-options">
+                <label class="mc-option" data-value="a">
+                    <input type="checkbox" name="mc2" value="a">
+                    Eine Welle transportiert Energie, aber keine Materie.
+                </label>
+                <label class="mc-option" data-value="b">
+                    <input type="checkbox" name="mc2" value="b">
+                    Eine Schwingung findet an einem festen Ort statt, eine Welle breitet sich aus.
+                </label>
+                <label class="mc-option" data-value="c">
+                    <input type="checkbox" name="mc2" value="c">
+                    Eine Welle transportiert Materie von Ort zu Ort.
+                </label>
+                <label class="mc-option" data-value="d">
+                    <input type="checkbox" name="mc2" value="d">
+                    Das y(t)-Diagramm zeigt die Schwingung, das y(s)-Diagramm zeigt die Welle.
+                </label>
+            </div>
+            <div class="feedback" id="fb2"></div>
+            <div class="solution-box" id="sol2">
+                <strong>L&ouml;sung:</strong> Richtig: Welle transportiert Energie, nicht Materie &#10003; | Schwingung = ein Ort, Welle breitet sich aus &#10003; | y(t) = Schwingung, y(s) = Welle &#10003; | FALSCH: Welle transportiert KEINE Materie.
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 3: y(s)-Diagramm ablesen (3 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe3">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 3</span>
+                <span class="aufgabe-punkte" id="punkte3">__/3 BE</span>
+            </div>
+            <p><span class="operator">Analysiere</span> das y(s)-Diagramm einer Welle:</p>
+
+            <div class="diagram-container">
+                <svg class="diagram-svg" width="440" height="210" viewBox="0 0 440 210">
+                    <!-- Hintergrund -->
+                    <rect x="50" y="30" width="320" height="140" fill="#fefefe"/>
+                    <!-- Vertikale Rasterlinien: minor (0.5m = 40px) -->
+                    <line x1="90" y1="30" x2="90" y2="170" stroke="#e8e8e8" stroke-width="0.5"/>
+                    <line x1="170" y1="30" x2="170" y2="170" stroke="#e8e8e8" stroke-width="0.5"/>
+                    <line x1="250" y1="30" x2="250" y2="170" stroke="#e8e8e8" stroke-width="0.5"/>
+                    <line x1="330" y1="30" x2="330" y2="170" stroke="#e8e8e8" stroke-width="0.5"/>
+                    <!-- Vertikale Rasterlinien: major (1m = 80px) -->
+                    <line x1="130" y1="30" x2="130" y2="170" stroke="#d0d0d0" stroke-width="0.8"/>
+                    <line x1="210" y1="30" x2="210" y2="170" stroke="#d0d0d0" stroke-width="0.8"/>
+                    <line x1="290" y1="30" x2="290" y2="170" stroke="#d0d0d0" stroke-width="0.8"/>
+                    <line x1="370" y1="30" x2="370" y2="170" stroke="#d0d0d0" stroke-width="0.8"/>
+                    <!-- Horizontale Rasterlinien -->
+                    <line x1="50" y1="65" x2="370" y2="65" stroke="#d0d0d0" stroke-width="0.8"/>
+                    <line x1="50" y1="135" x2="370" y2="135" stroke="#d0d0d0" stroke-width="0.8"/>
+                    <line x1="50" y1="30" x2="370" y2="30" stroke="#bbb" stroke-width="1"/>
+                    <line x1="50" y1="170" x2="370" y2="170" stroke="#bbb" stroke-width="1"/>
+                    <!-- Achsen -->
+                    <line x1="50" y1="100" x2="380" y2="100" stroke="#333" stroke-width="1.5"/>
+                    <line x1="50" y1="25" x2="50" y2="175" stroke="#333" stroke-width="1.5"/>
+                    <!-- Pfeilspitzen -->
+                    <polygon points="380,100 375,97 375,103" fill="#333"/>
+                    <polygon points="50,25 47,30 53,30" fill="#333"/>
+                    <!-- Achsenbeschriftung -->
+                    <text x="385" y="104" font-size="12" fill="#333" font-style="italic">s</text>
+                    <text x="395" y="104" font-size="10" fill="#666">(m)</text>
+                    <text x="30" y="22" font-size="12" fill="#333" font-style="italic">y</text>
+                    <text x="20" y="34" font-size="10" fill="#666">(cm)</text>
+                    <!-- y-Achse Werte: +/-5cm, +/-10cm -->
+                    <text x="35" y="34" font-size="10" fill="#666" text-anchor="end">10</text>
+                    <line x1="47" y1="30" x2="53" y2="30" stroke="#333" stroke-width="1"/>
+                    <text x="35" y="69" font-size="10" fill="#666" text-anchor="end">5</text>
+                    <line x1="47" y1="65" x2="53" y2="65" stroke="#333" stroke-width="1"/>
+                    <text x="35" y="104" font-size="10" fill="#666" text-anchor="end">0</text>
+                    <text x="35" y="139" font-size="10" fill="#666" text-anchor="end">-5</text>
+                    <line x1="47" y1="135" x2="53" y2="135" stroke="#333" stroke-width="1"/>
+                    <text x="35" y="174" font-size="10" fill="#666" text-anchor="end">-10</text>
+                    <line x1="47" y1="170" x2="53" y2="170" stroke="#333" stroke-width="1"/>
+                    <!-- s-Achse: 0 bis 4m (1m = 80px) -->
+                    <text x="130" y="190" font-size="10" fill="#666" text-anchor="middle">1</text>
+                    <line x1="130" y1="97" x2="130" y2="103" stroke="#333" stroke-width="1"/>
+                    <text x="210" y="190" font-size="10" fill="#666" text-anchor="middle">2</text>
+                    <line x1="210" y1="97" x2="210" y2="103" stroke="#333" stroke-width="1"/>
+                    <text x="290" y="190" font-size="10" fill="#666" text-anchor="middle">3</text>
+                    <line x1="290" y1="97" x2="290" y2="103" stroke="#333" stroke-width="1"/>
+                    <text x="370" y="190" font-size="10" fill="#666" text-anchor="middle">4</text>
+                    <line x1="370" y1="97" x2="370" y2="103" stroke="#333" stroke-width="1"/>
+                    <!-- minor ticks (0.5m) -->
+                    <line x1="90" y1="98" x2="90" y2="102" stroke="#666" stroke-width="0.5"/>
+                    <line x1="170" y1="98" x2="170" y2="102" stroke="#666" stroke-width="0.5"/>
+                    <line x1="250" y1="98" x2="250" y2="102" stroke="#666" stroke-width="0.5"/>
+                    <line x1="330" y1="98" x2="330" y2="102" stroke="#666" stroke-width="0.5"/>
+                    <!-- Sinuskurve: A=5cm, lambda=2m, 2 vollstaendige Wellen in 4m -->
+                    <!-- y(s) = 5*sin(2*pi*s/2) = 5*sin(pi*s) -->
+                    <!-- SVG: y_svg = 100 - 35*sin(pi*(x-50)/80) where 80px=1m -->
+                    <!-- Exakt: Periode = 160px (=2m), Start bei x=50 -->
+                    <polyline points="50,100 54,97 58,92 62,86 66,80 70,74 74,69 78,66 82,63 86,62 90,62 94,63 98,66 102,69 106,74 110,80 114,86 118,92 122,97 126,100 130,103 134,108 138,114 142,120 146,126 150,131 154,134 158,137 162,138 166,138 170,138 174,137 178,134 182,131 186,126 190,120 194,114 198,108 202,103 206,100 210,97 214,92 218,86 222,80 226,74 230,69 234,66 238,63 242,62 246,62 250,63 254,66 258,69 262,74 266,80 270,86 274,92 278,97 282,100 286,103 290,108 294,114 298,120 302,126 306,131 310,134 314,137 318,138 322,138 326,138 330,137 334,134 338,131 342,126 346,120 350,114 354,108 358,103 362,100 366,97 370,92"
+                          fill="none" stroke="#2c5aa0" stroke-width="2.5" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <div class="calc-row">
+                <span>Amplitude <span class="fz">A</span> = </span>
+                <input type="text" class="calc-input" id="calc3a" inputmode="decimal">
+                <span>cm</span>
+            </div>
+            <div class="calc-row">
+                <span>Wellenl&auml;nge &#955; = </span>
+                <input type="text" class="calc-input" id="calc3b" inputmode="decimal">
+                <span>m</span>
+            </div>
+            <div class="calc-row">
+                <span>Berechne <span class="fz">v</span>, wenn <span class="fz">f</span> = 5 Hz: <span class="fz">v</span> = </span>
+                <input type="text" class="calc-input" id="calc3c" inputmode="decimal">
+                <span>m/s</span>
+            </div>
+            <div class="feedback" id="fb3"></div>
+            <div class="solution-box" id="sol3">
+                <strong>L&ouml;sung:</strong> A = 5 cm (maximale Auslenkung) | &#955; = 2 m (Abstand Wellenberg zu Wellenberg) | v = &#955; &middot; f = 2 &middot; 5 = <strong>10 m/s</strong>
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 4: Amplitude/Frequenz → Lautstärke/Tonhöhe (2 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe4">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 4</span>
+                <span class="aufgabe-punkte" id="punkte4">__/2 BE</span>
+            </div>
+
+            <p><span class="operator">Ordne zu</span>: Welche Eigenschaft des Schalls wird beeinflusst?</p>
+
+            <div class="matching-container" id="matching4">
+                <div class="matching-row" data-key="m4a">
+                    <span class="matching-left">Gr&ouml;&szlig;ere Amplitude</span>
+                    <select class="matching-select" id="m4a">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="laut">Lauterer Ton</option>
+                        <option value="hoch">H&ouml;herer Ton</option>
+                        <option value="schnell">Schnellerer Schall</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m4b">
+                    <span class="matching-left">H&ouml;here Frequenz</span>
+                    <select class="matching-select" id="m4b">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="laut">Lauterer Ton</option>
+                        <option value="hoch">H&ouml;herer Ton</option>
+                        <option value="schnell">Schnellerer Schall</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb4"></div>
+            <div class="solution-box" id="sol4">
+                <strong>L&ouml;sung:</strong> Amplitude bestimmt Lautst&auml;rke, Frequenz bestimmt Tonh&ouml;he.
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 5: Blitz und Donner (3 BE) - variabel -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe5">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 5</span>
+                <span class="aufgabe-punkte" id="punkte5">__/3 BE</span>
+            </div>
+
+            <div class="scenario-box">
+                <strong>Gewitter:</strong> Du siehst einen Blitz und h&ouml;rst den Donner <span id="a5-zeit">6</span> Sekunden sp&auml;ter.
+            </div>
+
+            <p><span class="operator">Berechne</span> die Entfernung des Gewitters:</p>
+
+            <div class="calc-row">
+                <span><span class="fz">s</span> = </span>
+                <input type="text" class="calc-input" id="calc5a" inputmode="decimal">
+                <span>m</span>
+            </div>
+            <div class="calc-row">
+                <span>Das sind ungef&auml;hr </span>
+                <input type="text" class="calc-input" id="calc5b" inputmode="decimal" style="width:80px;">
+                <span>km</span>
+            </div>
+            <div class="feedback" id="fb5"></div>
+            <div class="solution-box" id="sol5"></div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 6: Hoerbereich MC (2 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe6">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 6</span>
+                <span class="aufgabe-punkte" id="punkte6">__/2 BE</span>
+            </div>
+            <p><span class="operator">W&auml;hle aus</span>: Welche Aussage zum H&ouml;rbereich ist korrekt?</p>
+
+            <div class="mc-options" id="mc6-options">
+                <label class="mc-option" data-value="0">
+                    <input type="radio" name="mc6" value="0">
+                    Der Mensch h&ouml;rt Frequenzen von 20 Hz bis 20 000 Hz.
+                </label>
+                <label class="mc-option" data-value="1">
+                    <input type="radio" name="mc6" value="1">
+                    Der Mensch h&ouml;rt Frequenzen von 200 Hz bis 200 000 Hz.
+                </label>
+                <label class="mc-option" data-value="2">
+                    <input type="radio" name="mc6" value="2">
+                    Der Mensch h&ouml;rt Frequenzen von 2 Hz bis 2 000 Hz.
+                </label>
+                <label class="mc-option" data-value="3">
+                    <input type="radio" name="mc6" value="3">
+                    Der Mensch h&ouml;rt Frequenzen von 20 Hz bis 2 000 Hz.
+                </label>
+            </div>
+            <div class="feedback" id="fb6"></div>
+            <div class="solution-box" id="sol6">
+                <strong>L&ouml;sung:</strong> Der H&ouml;rbereich des Menschen reicht von <strong>20 Hz bis 20 000 Hz</strong>. Darunter = Infraschall, dar&uuml;ber = Ultraschall.
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 7: Ton/Klang/Geraeusch/Knall Zuordnung (2 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe7">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 7</span>
+                <span class="aufgabe-punkte" id="punkte7">__/2 BE</span>
+            </div>
+            <p><span class="operator">Ordne zu</span>: Welches Schallereignis liegt vor?</p>
+
+            <div class="matching-container" id="matching7">
+                <div class="matching-row" data-key="m7a">
+                    <span class="matching-left">Stimmgabel</span>
+                    <select class="matching-select" id="m7a">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="ton">Ton</option>
+                        <option value="klang">Klang</option>
+                        <option value="geraeusch">Ger&auml;usch</option>
+                        <option value="knall">Knall</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m7b">
+                    <span class="matching-left">Gitarre</span>
+                    <select class="matching-select" id="m7b">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="ton">Ton</option>
+                        <option value="klang">Klang</option>
+                        <option value="geraeusch">Ger&auml;usch</option>
+                        <option value="knall">Knall</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m7c">
+                    <span class="matching-left">Stra&szlig;enverkehr</span>
+                    <select class="matching-select" id="m7c">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="ton">Ton</option>
+                        <option value="klang">Klang</option>
+                        <option value="geraeusch">Ger&auml;usch</option>
+                        <option value="knall">Knall</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m7d">
+                    <span class="matching-left">Silvesterb&ouml;ller</span>
+                    <select class="matching-select" id="m7d">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="ton">Ton</option>
+                        <option value="klang">Klang</option>
+                        <option value="geraeusch">Ger&auml;usch</option>
+                        <option value="knall">Knall</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb7"></div>
+            <div class="solution-box" id="sol7">
+                <strong>L&ouml;sung:</strong> Stimmgabel &#8594; Ton (eine Frequenz) | Gitarre &#8594; Klang (Grundton + Obert&ouml;ne) | Stra&szlig;enverkehr &#8594; Ger&auml;usch (viele unregelm&auml;&szlig;ige Frequenzen) | Silvesterb&ouml;ller &#8594; Knall (kurzer Drucksto&szlig;)
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 8: Umkehr-Echolot (3 BE) - variabel -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe8">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 8</span>
+                <span class="aufgabe-punkte" id="punkte8">__/3 BE</span>
+            </div>
+
+            <div class="scenario-box">
+                <strong>U-Boot:</strong> Ein U-Boot befindet sich in <span id="a8-tiefe">750</span> m Tiefe und sendet einen Schallimpuls zum Meeresboden. Das Echo kommt zur&uuml;ck. (<span class="fz">v</span><sub>Wasser</sub> = 1 500 m/s)
+            </div>
+
+            <p><span class="operator">Berechne</span> die Laufzeit des Echos:</p>
+
+            <div class="calc-row">
+                <span><span class="fz">t</span> = </span>
+                <input type="text" class="calc-input" id="calc8" inputmode="decimal" style="width:120px;">
+                <span>s</span>
+            </div>
+            <div class="feedback" id="fb8"></div>
+            <div class="solution-box" id="sol8"></div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 9: Laermschutz (3 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe9">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 9</span>
+                <span class="aufgabe-punkte" id="punkte9">__/3 BE</span>
+            </div>
+            <p>L&auml;rm kann durch 3 Ma&szlig;nahmen reduziert werden.</p>
+            <p><span class="operator">Ordne zu</span>: Wo setzt die Ma&szlig;nahme an?</p>
+
+            <div class="matching-container" id="matching9">
+                <div class="matching-row" data-key="m9a">
+                    <span class="matching-left">Ohrst&ouml;psel tragen</span>
+                    <select class="matching-select" id="m9a">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="quelle">An der Quelle</option>
+                        <option value="weg">Auf dem Weg</option>
+                        <option value="ohr">Am Ohr</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m9b">
+                    <span class="matching-left">L&auml;rmschutzwand</span>
+                    <select class="matching-select" id="m9b">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="quelle">An der Quelle</option>
+                        <option value="weg">Auf dem Weg</option>
+                        <option value="ohr">Am Ohr</option>
+                    </select>
+                </div>
+                <div class="matching-row" data-key="m9c">
+                    <span class="matching-left">Schalld&auml;mpfer am Auspuff</span>
+                    <select class="matching-select" id="m9c">
+                        <option value="">-- w&auml;hlen --</option>
+                        <option value="quelle">An der Quelle</option>
+                        <option value="weg">Auf dem Weg</option>
+                        <option value="ohr">Am Ohr</option>
+                    </select>
+                </div>
+            </div>
+            <div class="feedback" id="fb9"></div>
+            <div class="solution-box" id="sol9">
+                <strong>L&ouml;sung:</strong> Ohrst&ouml;psel &#8594; Am Ohr | L&auml;rmschutzwand &#8594; Auf dem Weg | Schalld&auml;mpfer &#8594; An der Quelle
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUFGABE 10: Fehlvorstellung beurteilen (2 BE) -->
+        <!-- ================================================================= -->
+        <div class="aufgabe" id="aufgabe10">
+            <div class="aufgabe-header">
+                <span class="aufgabe-title">Aufgabe 10</span>
+                <span class="aufgabe-punkte" id="punkte10">__/2 BE</span>
+            </div>
+
+            <p>Ein Sch&uuml;ler behauptet: <em>&bdquo;Wenn man die Frequenz einer Schallwelle verdoppelt, wird der Schall doppelt so schnell.&ldquo;</em></p>
+            <p><span class="operator">Beurteile</span> diese Aussage:</p>
+
+            <div class="mc-options" id="mc10-options">
+                <label class="mc-option" data-value="a">
+                    <input type="radio" name="mc10" value="a">
+                    Richtig &mdash; h&ouml;here Frequenz bedeutet mehr Energie, also schnellere Ausbreitung.
+                </label>
+                <label class="mc-option" data-value="b">
+                    <input type="radio" name="mc10" value="b">
+                    Falsch &mdash; die Geschwindigkeit bleibt gleich (340 m/s), nur die Wellenl&auml;nge halbiert sich.
+                </label>
+                <label class="mc-option" data-value="c">
+                    <input type="radio" name="mc10" value="c">
+                    Falsch &mdash; die Geschwindigkeit h&auml;ngt nur von der Amplitude ab.
+                </label>
+                <label class="mc-option" data-value="d">
+                    <input type="radio" name="mc10" value="d">
+                    Richtig &mdash; das folgt direkt aus v = &#955; &middot; f.
+                </label>
+            </div>
+            <div class="feedback" id="fb10"></div>
+            <div class="solution-box" id="sol10">
+                <strong>L&ouml;sung:</strong> Falsch. v<sub>Schall</sub> ist konstant (~340 m/s). Aus v = &#955; &middot; f folgt: f verdoppelt &#8594; &#955; halbiert, v bleibt gleich.
+            </div>
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- AUSWERTUNG -->
+        <!-- ================================================================= -->
+        <div class="button-row" id="submitButtons">
+            <button class="btn" id="btnSubmit" onclick="submitTest()">Abgeben</button>
+            <button class="btn btn-secondary" onclick="resetTest()">Zur&uuml;cksetzen</button>
+        </div>
+
+        </div><!-- /aufgabenBlock -->
+
+        <div class="results" id="results">
+            <h2>Ergebnis</h2>
+            <div class="results-grid">
+                <div class="result-box">
+                    <div class="value" id="resPunkte">0</div>
+                    <div class="label">von 25 BE</div>
+                </div>
+                <div class="result-box">
+                    <div class="value" id="resProzent">0%</div>
+                    <div class="label">erreicht</div>
+                </div>
+                <div class="result-box">
+                    <div class="value" id="resRichtig">0</div>
+                    <div class="label">von 10 Aufgaben</div>
+                </div>
+            </div>
+            <div class="grade-display">
+                <div class="grade" id="resNote">&ndash;</div>
+                <div class="label">Note (MR Klasse 10)</div>
+            </div>
+            <div class="button-row">
+                <button class="btn btn-print" onclick="window.print()">Drucken / PDF</button>
+                <button onclick="teacherReset()" style="background:none; border:none; color:#999; font-size:0.75em; cursor:pointer; margin-left:20px;">&#10227; Lehrer-Reset</button>
+            </div>
+            <table class="grading-table">
+                <tr>
+                    <th>Note</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>
+                </tr>
+                <tr>
+                    <th>ab %</th><td>&ge;96</td><td>&ge;80</td><td>&ge;60</td><td>&ge;40</td><td>&ge;20</td><td>&lt;20</td>
+                </tr>
+                <tr>
+                    <th>ab BE</th><td>&ge;24</td><td>&ge;20</td><td>&ge;15</td><td>&ge;10</td><td>&ge;5</td><td>&lt;5</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab-Warning Overlay -->
+    <div class="tab-warning-overlay" id="tabWarning">
+        <div class="tab-warning-box">
+            <h2>Tab-Wechsel erkannt!</h2>
+            <p>Du hast den Test verlassen. Alle Tab-Wechsel werden protokolliert.</p>
+            <div class="warn-stats">
+                <strong>Tab-Wechsel:</strong> <span id="tabWarnCount">0</span>&times; |
+                <strong>Zeit au&szlig;erhalb:</strong> <span id="tabWarnTime">0s</span>
+            </div>
+            <button id="tabWarnDismiss" onclick="dismissTabWarning()">Zur&uuml;ck zum Test</button>
+        </div>
+    </div>
+
+    <script>
+    // =================================================================
+    // MT-05b Wellen und Schall | ES5 JavaScript | 25 BE | MR Klasse 10
+    // =================================================================
+
+    var TOTAL_POINTS = 25;
+    var QUIZ_ID = 'mt05b-wellen-v1';
+    var testSubmitted = false;
+    var TIMER_DURATION = 25 * 60; // 25 Minuten in Sekunden
+    var timerInterval = null;
+
+    // =================================================================
+    // AUDIO ALARM (Tab-Wechsel) — HTMLAudioElement + WAV-Blob (iOS-kompatibel)
+    // =================================================================
+    var sessionReady = false;
+    var beepAudio = null;
+    var pulseAlarmTimeout = null;
+    var TAB_WARN_BEEPS = 5;
+    var OVERLAY_SECONDS = 8;
+
+    // WAV-Blob erzeugen: 800Hz Square-Wave, 0.4s, 8kHz Mono 8-Bit
+    function createBeepBlob() {
+        var sampleRate = 8000;
+        var duration = 0.4;
+        var freq = 800;
+        var numSamples = Math.floor(sampleRate * duration);
+        var halfPeriod = Math.floor(sampleRate / freq / 2);
+        var dataSize = numSamples;
+        var buffer = new ArrayBuffer(44 + dataSize);
+        var view = new DataView(buffer);
+        var writeStr = function(offset, str) {
+            for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate, true);
+        view.setUint16(32, 1, true);
+        view.setUint16(34, 8, true);
+        writeStr(36, 'data');
+        view.setUint32(40, dataSize, true);
+        for (var i = 0; i < numSamples; i++) {
+            var phase = Math.floor(i / halfPeriod) % 2;
+            view.setUint8(44 + i, phase === 0 ? 200 : 56);
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    function initBeepAudio() {
+        if (beepAudio) return;
+        var blob = createBeepBlob();
+        var url = URL.createObjectURL(blob);
+        beepAudio = new Audio(url);
+        beepAudio.volume = 0.5;
+        beepAudio.play().then(function() {
+            beepAudio.pause();
+            beepAudio.currentTime = 0;
+        }).catch(function() {});
+    }
+
+    function playBeep() {
+        if (!beepAudio) return;
+        try {
+            beepAudio.currentTime = 0;
+            beepAudio.play().catch(function() {});
+        } catch(e) {}
+    }
+
+    function showTabWarningOverlay() {
+        document.getElementById('tabWarnCount').textContent = tabSwitchCount;
+        document.getElementById('tabWarnTime').textContent = formatDuration(tabSwitchSeconds);
+        var btn = document.getElementById('tabWarnDismiss');
+        if (btn) { btn.disabled = false; btn.textContent = 'Zur\u00fcck zum Test'; }
+        document.getElementById('tabWarning').classList.add('visible');
+    }
+
+    function dismissTabWarning() {
+        var btn = document.getElementById('tabWarnDismiss');
+        if (btn && btn.disabled) return;
+        if (!beepAudio) initBeepAudio();
+        playBeep();
+        var remaining = OVERLAY_SECONDS;
+        if (btn) { btn.disabled = true; btn.textContent = 'Warte ' + remaining + 's\u2026'; }
+        var beepCount = 1;
+        pulseAlarmTimeout = setInterval(function() {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(pulseAlarmTimeout);
+                pulseAlarmTimeout = null;
+                document.getElementById('tabWarning').classList.remove('visible');
+                return;
+            }
+            if (btn) btn.textContent = 'Warte ' + remaining + 's\u2026';
+            if (beepCount < TAB_WARN_BEEPS) {
+                playBeep();
+                beepCount++;
+            }
+        }, 1000);
+    }
+
+    // =================================================================
+    // SEED-RANDOMISIERUNG: Platz-basierter RNG (wie BLP-System)
+    // =================================================================
+    function createRNG(seed) {
+        var s = seed;
+        return function() {
+            s = (s * 16807 + 0) % 2147483647;
+            return (s - 1) / 2147483646;
+        };
+    }
+
+    function shuffleWithRNG(arr, rng) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(rng() * (i + 1));
+            var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+        }
+        return a;
+    }
+
+    function shuffleMcOptions(containerId, rng) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var labels = [];
+        var opts = container.querySelectorAll('.mc-option');
+        for (var i = 0; i < opts.length; i++) { labels.push(opts[i]); }
+        var shuffled = shuffleWithRNG(labels, rng);
+        for (var j = 0; j < shuffled.length; j++) { container.appendChild(shuffled[j]); }
+    }
+
+    function shuffleMatchingRows(containerId, rng) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var rows = [];
+        var rowEls = container.querySelectorAll('.matching-row');
+        for (var i = 0; i < rowEls.length; i++) { rows.push(rowEls[i]); }
+        var shuffled = shuffleWithRNG(rows, rng);
+        for (var j = 0; j < shuffled.length; j++) { container.appendChild(shuffled[j]); }
+    }
+
+    function shuffleAufgabenBlock(rng) {
+        // Block A: A1+A2 (fest, Anfang) — Block B: A3-A8 (mischbar) — Block C: A9+A10 (fest, Ende)
+        var parent = document.getElementById('aufgabe1').parentNode;
+        var middleIds = ['aufgabe3', 'aufgabe4', 'aufgabe5', 'aufgabe6', 'aufgabe7', 'aufgabe8'];
+        var middleEls = [];
+        for (var i = 0; i < middleIds.length; i++) { middleEls.push(document.getElementById(middleIds[i])); }
+        var shuffled = shuffleWithRNG(middleEls, rng);
+        var aufgabe9 = document.getElementById('aufgabe9');
+        for (var j = 0; j < shuffled.length; j++) { parent.insertBefore(shuffled[j], aufgabe9); }
+        // Aufgabennummern neu beschriften (1-10 durchlaufend)
+        var allAufgaben = parent.querySelectorAll('.aufgabe');
+        var nr = 1;
+        for (var k = 0; k < allAufgaben.length; k++) {
+            var title = allAufgaben[k].querySelector('.aufgabe-title');
+            if (title) title.textContent = 'Aufgabe ' + nr;
+            nr++;
+        }
+    }
+
+    // =================================================================
+    // ZAHLEN-VARIANTEN: Seed-basierte Aufgabenzahlen
+    // =================================================================
+    var VARIANTS = {
+        a5: [
+            { t: 6, s: 2040, skm: 2, tol_s: 100, tol_km: 0.3, solS: '2040', solKm: '2' },
+            { t: 9, s: 3060, skm: 3, tol_s: 100, tol_km: 0.3, solS: '3060', solKm: '3' },
+            { t: 3, s: 1020, skm: 1, tol_s: 100, tol_km: 0.3, solS: '1020', solKm: '1' }
+        ],
+        a8: [
+            { tiefe: 750, t: 1, tHalf: 0.5, tol: 0.2, sol: '2\u00d7750=1500, 1500/1500=1' },
+            { tiefe: 1500, t: 2, tHalf: 1, tol: 0.3, sol: '2\u00d71500=3000, 3000/1500=2' },
+            { tiefe: 3000, t: 4, tHalf: 2, tol: 0.5, sol: '2\u00d73000=6000, 6000/1500=4' }
+        ]
+    };
+
+    var activeVariants = { a5: 0, a8: 0 };
+
+    function applyVariants(platzNum) {
+        var i5 = (platzNum + 1) % VARIANTS.a5.length;
+        var i8 = (platzNum + 2) % VARIANTS.a8.length;
+        activeVariants = { a5: i5, a8: i8 };
+
+        // A5: Zeit
+        var v5 = VARIANTS.a5[i5];
+        document.getElementById('a5-zeit').textContent = v5.t;
+
+        // A8: Tiefe
+        var v8 = VARIANTS.a8[i8];
+        document.getElementById('a8-tiefe').textContent = v8.tiefe;
+
+        localStorage.setItem(QUIZ_ID + '-variants', JSON.stringify(activeVariants));
+    }
+
+    function applySeedShuffle(platzNum) {
+        var seed = platzNum * 7919;
+        var rng = createRNG(seed);
+        // 1) MC-Optionen und Zuordnungszeilen mischen
+        shuffleMatchingRows('matching1', rng);
+        shuffleMcOptions('mc2-options', rng);
+        shuffleMatchingRows('matching4', rng);
+        shuffleMcOptions('mc6-options', rng);
+        shuffleMatchingRows('matching7', rng);
+        shuffleMatchingRows('matching9', rng);
+        shuffleMcOptions('mc10-options', rng);
+        // 2) Aufgabenreihenfolge im Mittelblock mischen
+        shuffleAufgabenBlock(rng);
+        // 3) Zahlenvarianten setzen
+        applyVariants(platzNum);
+    }
+
+    // =================================================================
+    // ANTI-BETRUG: Tab-Wechsel-Protokoll
+    // =================================================================
+    var tabSwitchCount = 0;
+    var tabSwitchStart = 0;
+    var tabSwitchSeconds = 0;
+
+    function initTabSwitchTracking() {
+        var savedCount = localStorage.getItem(QUIZ_ID + '-tabswitches');
+        var savedSeconds = localStorage.getItem(QUIZ_ID + '-tabseconds');
+        if (savedCount) tabSwitchCount = parseInt(savedCount);
+        if (savedSeconds) tabSwitchSeconds = parseInt(savedSeconds);
+
+        document.addEventListener('visibilitychange', function() {
+            if (!sessionReady || testSubmitted) return;
+
+            if (document.hidden) {
+                tabSwitchStart = Date.now();
+                tabSwitchCount++;
+                localStorage.setItem(QUIZ_ID + '-tabswitches', tabSwitchCount);
+            } else {
+                if (tabSwitchStart > 0) {
+                    var duration = Math.round((Date.now() - tabSwitchStart) / 1000);
+                    tabSwitchSeconds += duration;
+                    localStorage.setItem(QUIZ_ID + '-tabseconds', tabSwitchSeconds);
+                    tabSwitchStart = 0;
+                }
+                showTabWarningOverlay();
+            }
+        });
+    }
+
+    function formatDuration(seconds) {
+        if (seconds < 60) return seconds + ' Sek.';
+        var min = Math.floor(seconds / 60);
+        var sec = seconds % 60;
+        return min + ':' + (sec < 10 ? '0' : '') + sec + ' Min.';
+    }
+
+    function formatTimestamp(ts) {
+        if (!ts) return '\u2014';
+        var d = new Date(parseInt(ts));
+        var day = d.getDate();
+        var month = d.getMonth() + 1;
+        var year = d.getFullYear();
+        var hours = d.getHours();
+        var minutes = d.getMinutes();
+        return (day < 10 ? '0' : '') + day + '.' +
+               (month < 10 ? '0' : '') + month + '.' + year + ' ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
+               (minutes < 10 ? '0' : '') + minutes + ' Uhr';
+    }
+
+    // =================================================================
+    // ANTI-BETRUG: Platznummer-Sperrung
+    // =================================================================
+    function confirmSeat() {
+        var select = document.getElementById('platzNummer');
+        var num = select.value;
+        if (!num) { alert('Bitte w\u00e4hle zuerst eine Platznummer!'); return; }
+        var ok = confirm('Platznummer ' + num + ' best\u00e4tigen?\n\nDiese Auswahl kann NICHT mehr ge\u00e4ndert werden!');
+        if (!ok) return;
+        localStorage.setItem(QUIZ_ID + '-seat', num);
+        localStorage.setItem(QUIZ_ID + '-seat-locked', 'true');
+        showLockedSeat(num);
+        var platzNum = parseInt(num.replace('P', ''));
+        applySeedShuffle(platzNum);
+        document.getElementById('aufgabenBlock').classList.add('visible');
+        try { initBeepAudio(); } catch(e) {}
+        sessionReady = true;
+        startTimer();
+    }
+
+    function showLockedSeat(num) {
+        var seatRow = document.getElementById('seatRow');
+        if (seatRow) {
+            seatRow.innerHTML = 'Platz: <strong style="color: var(--fach);">' + num + '</strong> (gesperrt)';
+        }
+    }
+
+    function checkSeatLocked() {
+        var saved = localStorage.getItem(QUIZ_ID + '-seat');
+        var locked = localStorage.getItem(QUIZ_ID + '-seat-locked');
+        if (saved && locked === 'true') {
+            showLockedSeat(saved);
+            return true;
+        }
+        return false;
+    }
+
+    // =================================================================
+    // TIMER: 25 Minuten Countdown
+    // =================================================================
+    function startTimer() {
+        var startTime = localStorage.getItem(QUIZ_ID + '-timer-start');
+        if (!startTime) {
+            startTime = Date.now();
+            localStorage.setItem(QUIZ_ID + '-timer-start', String(startTime));
+        }
+        document.getElementById('timerDisplay').style.display = '';
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(updateTimer, 1000);
+        updateTimer();
+    }
+
+    function updateTimer() {
+        var startTime = parseInt(localStorage.getItem(QUIZ_ID + '-timer-start'));
+        if (!startTime || isNaN(startTime)) return;
+        var elapsed = Math.floor((Date.now() - startTime) / 1000);
+        var remaining = TIMER_DURATION - elapsed;
+        var display = document.getElementById('timerDisplay');
+        var value = document.getElementById('timerValue');
+
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            value.textContent = '0:00';
+            display.className = 'timer-display timer-critical';
+            if (!testSubmitted) {
+                alert('Die Zeit ist abgelaufen! Der Test wird jetzt abgegeben.');
+                submitTest();
+            }
+            return;
+        }
+
+        var min = Math.floor(remaining / 60);
+        var sec = remaining % 60;
+        value.textContent = min + ':' + (sec < 10 ? '0' : '') + sec;
+
+        if (remaining <= 60) {
+            display.className = 'timer-display timer-critical';
+        } else if (remaining <= 300) {
+            display.className = 'timer-display timer-warning';
+        } else {
+            display.className = 'timer-display';
+        }
+    }
+
+    // =================================================================
+    // ANTI-BETRUG: Lehrer-Reset (Code: 2024)
+    // =================================================================
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2024') {
+            if (confirm('Wirklich alle Daten f\u00fcr diesen Platz l\u00f6schen?')) {
+                localStorage.removeItem(QUIZ_ID);
+                localStorage.removeItem(QUIZ_ID + '-result');
+                localStorage.removeItem(QUIZ_ID + '-seat');
+                localStorage.removeItem(QUIZ_ID + '-seat-locked');
+                localStorage.removeItem(QUIZ_ID + '-start');
+                localStorage.removeItem(QUIZ_ID + '-submit-time');
+                localStorage.removeItem(QUIZ_ID + '-tabswitches');
+                localStorage.removeItem(QUIZ_ID + '-tabseconds');
+                localStorage.removeItem(QUIZ_ID + '-timer-start');
+                localStorage.removeItem(QUIZ_ID + '-variants');
+                alert('Platz wurde zur\u00fcckgesetzt. Seite wird neu geladen.');
+                location.reload();
+            }
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
+
+    function getNote(percent) {
+        if (percent >= 96) return '1';
+        if (percent >= 80) return '2';
+        if (percent >= 60) return '3';
+        if (percent >= 40) return '4';
+        if (percent >= 20) return '5';
+        return '6';
+    }
+
+    function parseNumber(val) {
+        if (val === '' || val === null || val === undefined) return NaN;
+        return parseFloat(String(val).replace(',', '.'));
+    }
+
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('de-DE');
+
+    // MC-Optionen klickbar (Radio + Checkbox)
+    var allMcOptions = document.querySelectorAll('.mc-option');
+    for (var oi = 0; oi < allMcOptions.length; oi++) {
+        (function(opt) {
+            opt.addEventListener('click', function() {
+                if (testSubmitted) return;
+                var input = this.querySelector('input');
+                if (input.type === 'radio') {
+                    var name = input.name;
+                    var radios = document.querySelectorAll('input[name="' + name + '"]');
+                    for (var ri = 0; ri < radios.length; ri++) {
+                        radios[ri].closest('.mc-option').classList.remove('selected');
+                    }
+                    this.classList.add('selected');
+                    input.checked = true;
+                } else if (input.type === 'checkbox') {
+                    input.checked = !input.checked;
+                    this.classList.toggle('selected', input.checked);
+                }
+                saveProgress();
+            });
+        })(allMcOptions[oi]);
+    }
+
+    var allInputsAndSelects = document.querySelectorAll('input, select');
+    for (var ii = 0; ii < allInputsAndSelects.length; ii++) {
+        (function(el) {
+            el.addEventListener('change', function() { if (!testSubmitted) saveProgress(); });
+            el.addEventListener('input', function() { if (!testSubmitted) saveProgress(); });
+        })(allInputsAndSelects[ii]);
+    }
+
+    function saveProgress() {
+        if (testSubmitted) return;
+        var data = {};
+        var textAndSelect = document.querySelectorAll('input[type="text"], select');
+        for (var i = 0; i < textAndSelect.length; i++) {
+            var el = textAndSelect[i];
+            if (el.id) data[el.id] = el.value;
+        }
+        var radios = document.querySelectorAll('input[type="radio"]:checked');
+        for (var r = 0; r < radios.length; r++) {
+            data[radios[r].name] = radios[r].value;
+        }
+        var checkboxes = [];
+        var cbs = document.querySelectorAll('input[type="checkbox"]:checked');
+        for (var c = 0; c < cbs.length; c++) {
+            checkboxes.push(cbs[c].value);
+        }
+        data['mc2_checked'] = checkboxes;
+        localStorage.setItem(QUIZ_ID, JSON.stringify(data));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem(QUIZ_ID);
+        if (!saved) return;
+        try {
+            var data = JSON.parse(saved);
+            for (var key in data) {
+                if (key === 'mc2_checked') continue;
+                var el = document.getElementById(key);
+                if (el) el.value = data[key];
+                var radio = document.querySelector('input[name="' + key + '"][value="' + data[key] + '"]');
+                if (radio) {
+                    radio.checked = true;
+                    radio.closest('.mc-option').classList.add('selected');
+                }
+            }
+            if (data['mc2_checked']) {
+                for (var ci = 0; ci < data['mc2_checked'].length; ci++) {
+                    var cb = document.querySelector('input[name="mc2"][value="' + data['mc2_checked'][ci] + '"]');
+                    if (cb) {
+                        cb.checked = true;
+                        cb.closest('.mc-option').classList.add('selected');
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+
+    function getRadio(name) {
+        var sel = document.querySelector('input[name="' + name + '"]:checked');
+        return sel ? sel.value : null;
+    }
+
+    function getCheckboxes(name) {
+        var checked = [];
+        var cbs = document.querySelectorAll('input[name="' + name + '"]:checked');
+        for (var i = 0; i < cbs.length; i++) { checked.push(cbs[i].value); }
+        return checked;
+    }
+
+    function markMcCorrect(containerId, correctValue) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var opts = container.querySelectorAll('.mc-option');
+        for (var i = 0; i < opts.length; i++) {
+            var val = opts[i].getAttribute('data-value');
+            if (val === correctValue) opts[i].classList.add('correct-answer');
+            var input = opts[i].querySelector('input');
+            if (input && input.checked && val !== correctValue) opts[i].classList.add('wrong-answer');
+        }
+    }
+
+    function markCheckboxCorrect(containerId, correctValues) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var opts = container.querySelectorAll('.mc-option');
+        for (var i = 0; i < opts.length; i++) {
+            var val = opts[i].getAttribute('data-value');
+            var isCorrect = correctValues.indexOf(val) !== -1;
+            var input = opts[i].querySelector('input');
+            if (isCorrect) opts[i].classList.add('correct-answer');
+            if (input && input.checked && !isCorrect) opts[i].classList.add('wrong-answer');
+        }
+    }
+
+    function markInputCorrect(inputId, isCorrect) {
+        var el = document.getElementById(inputId);
+        if (el) el.classList.add(isCorrect ? 'correct' : 'incorrect');
+    }
+
+    function showSolutionBox(id) {
+        var box = document.getElementById(id);
+        if (box) box.classList.add('visible');
+    }
+
+    function disableAllInputs() {
+        var els = document.querySelectorAll('input, select');
+        for (var i = 0; i < els.length; i++) {
+            if (els[i].id !== 'platzNummer') els[i].disabled = true;
+        }
+    }
+
+    function submitTest() {
+        if (testSubmitted) return;
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+
+        var seatLocked = localStorage.getItem(QUIZ_ID + '-seat-locked');
+        var platz = localStorage.getItem(QUIZ_ID + '-seat');
+        if (seatLocked !== 'true' || !platz) {
+            alert('Bitte best\u00e4tige zuerst deine Platznummer mit OK!');
+            return;
+        }
+
+        var total = 0;
+        var richtig = 0;
+
+        // ─── Aufgabe 1: Wellentypen Zuordnung (3 BE) ───
+        var correct1 = {m1a: 'trans', m1b: 'long', m1c: 'misch'};
+        var p1 = 0;
+        for (var k1 in correct1) {
+            var val1 = document.getElementById(k1).value;
+            var isCorr1 = val1 === correct1[k1];
+            if (isCorr1) p1++;
+            markInputCorrect(k1, isCorr1);
+        }
+        var fb1 = document.getElementById('fb1');
+        fb1.className = 'feedback ' + (p1 === 3 ? 'correct' : (p1 > 0 ? 'partial' : 'incorrect'));
+        fb1.textContent = p1 === 3 ? 'Alle richtig! (3/3 BE)' : p1 + '/3 richtig.';
+        if (p1 === 3) richtig++;
+        showSolutionBox('sol1');
+        document.getElementById('punkte1').textContent = p1 + '/3 BE';
+        total += p1;
+
+        // ─── Aufgabe 2: Schwingung vs. Welle Checkboxes (2 BE) ───
+        var mc2 = getCheckboxes('mc2');
+        var correct2 = ['a', 'b', 'd']; // Energie, Ort vs. Ausbreitung, y(t)/y(s)
+        var p2 = 0;
+        for (var c2i = 0; c2i < correct2.length; c2i++) {
+            if (mc2.indexOf(correct2[c2i]) !== -1) p2 += 0.5;
+        }
+        for (var c2j = 0; c2j < mc2.length; c2j++) {
+            if (correct2.indexOf(mc2[c2j]) === -1) p2 -= 0.5;
+        }
+        p2 = Math.max(0, Math.min(2, Math.round(p2)));
+        markCheckboxCorrect('mc2-options', correct2);
+        var fb2 = document.getElementById('fb2');
+        fb2.className = 'feedback ' + (p2 === 2 ? 'correct' : (p2 > 0 ? 'partial' : 'incorrect'));
+        fb2.textContent = p2 === 2 ? 'Richtig! (2/2 BE)' : p2 + '/2 BE';
+        if (p2 === 2) richtig++;
+        showSolutionBox('sol2');
+        document.getElementById('punkte2').textContent = p2 + '/2 BE';
+        total += p2;
+
+        // ─── Aufgabe 3: y(s)-Diagramm (3 BE) ───
+        var v3a = parseNumber(document.getElementById('calc3a').value);
+        var v3b = parseNumber(document.getElementById('calc3b').value);
+        var v3c = parseNumber(document.getElementById('calc3c').value);
+        var p3 = 0;
+        var v3aCorr = Math.abs(v3a - 5) < 0.5;
+        var v3bCorr = Math.abs(v3b - 2) < 0.2;
+        var v3cCorr = Math.abs(v3c - 10) < 1;
+        if (v3aCorr) p3++;
+        if (v3bCorr) p3++;
+        if (v3cCorr) p3++;
+        markInputCorrect('calc3a', v3aCorr);
+        markInputCorrect('calc3b', v3bCorr);
+        markInputCorrect('calc3c', v3cCorr);
+        var fb3 = document.getElementById('fb3');
+        fb3.className = 'feedback ' + (p3 === 3 ? 'correct' : (p3 > 0 ? 'partial' : 'incorrect'));
+        fb3.textContent = p3 === 3 ? 'Richtig! (3/3 BE)' : p3 + '/3 richtig.';
+        if (p3 === 3) richtig++;
+        showSolutionBox('sol3');
+        document.getElementById('punkte3').textContent = p3 + '/3 BE';
+        total += p3;
+
+        // ─── Aufgabe 4: Amplitude/Frequenz Zuordnung (2 BE) ───
+        var correct4 = {m4a: 'laut', m4b: 'hoch'};
+        var p4 = 0;
+        for (var k4 in correct4) {
+            var val4 = document.getElementById(k4).value;
+            var isCorr4 = val4 === correct4[k4];
+            if (isCorr4) p4++;
+            markInputCorrect(k4, isCorr4);
+        }
+        var fb4 = document.getElementById('fb4');
+        fb4.className = 'feedback ' + (p4 === 2 ? 'correct' : (p4 > 0 ? 'partial' : 'incorrect'));
+        fb4.textContent = p4 === 2 ? 'Richtig! (2/2 BE)' : p4 + '/2 richtig.';
+        if (p4 === 2) richtig++;
+        showSolutionBox('sol4');
+        document.getElementById('punkte4').textContent = p4 + '/2 BE';
+        total += p4;
+
+        // ─── Aufgabe 5: Blitz und Donner (3 BE) - variabel ───
+        var vd5 = VARIANTS.a5[activeVariants.a5];
+        var v5a = parseNumber(document.getElementById('calc5a').value);
+        var v5b = parseNumber(document.getElementById('calc5b').value);
+        var p5 = 0;
+        var v5aCorr = Math.abs(v5a - vd5.s) < vd5.tol_s;
+        var v5bCorr = Math.abs(v5b - vd5.skm) < vd5.tol_km;
+        if (v5aCorr) p5 += 2;
+        if (v5bCorr) p5 += 1;
+        markInputCorrect('calc5a', v5aCorr);
+        markInputCorrect('calc5b', v5bCorr);
+        var fb5 = document.getElementById('fb5');
+        fb5.className = 'feedback ' + (p5 === 3 ? 'correct' : (p5 > 0 ? 'partial' : 'incorrect'));
+        fb5.textContent = p5 === 3 ? 'Richtig! (3/3 BE)' : p5 + '/3 richtig.';
+        if (p5 === 3) richtig++;
+        document.getElementById('sol5').innerHTML = '<strong>L\u00f6sung:</strong> s = 340 m/s \u00b7 ' + vd5.t + ' s = <strong>' + vd5.solS + ' m</strong> \u2248 <strong>' + vd5.solKm + ' km</strong>';
+        showSolutionBox('sol5');
+        document.getElementById('punkte5').textContent = p5 + '/3 BE';
+        total += p5;
+
+        // ─── Aufgabe 6: Hoerbereich MC (2 BE) ───
+        var mc6 = getRadio('mc6');
+        var p6 = mc6 === '0' ? 2 : 0;
+        var fb6 = document.getElementById('fb6');
+        fb6.className = 'feedback ' + (p6 === 2 ? 'correct' : 'incorrect');
+        fb6.textContent = p6 === 2 ? 'Richtig! (2/2 BE)' : 'Falsch. (0/2 BE)';
+        if (p6 === 2) richtig++;
+        markMcCorrect('mc6-options', '0');
+        showSolutionBox('sol6');
+        document.getElementById('punkte6').textContent = p6 + '/2 BE';
+        total += p6;
+
+        // ─── Aufgabe 7: Ton/Klang/Geraeusch/Knall Zuordnung (2 BE) ───
+        var correct7 = {m7a: 'ton', m7b: 'klang', m7c: 'geraeusch', m7d: 'knall'};
+        var p7raw = 0;
+        for (var k7 in correct7) {
+            var val7 = document.getElementById(k7).value;
+            var isCorr7 = val7 === correct7[k7];
+            if (isCorr7) p7raw++;
+            markInputCorrect(k7, isCorr7);
+        }
+        var p7 = Math.round(p7raw / 2);
+        var fb7 = document.getElementById('fb7');
+        fb7.className = 'feedback ' + (p7 === 2 ? 'correct' : (p7 > 0 ? 'partial' : 'incorrect'));
+        fb7.textContent = p7 === 2 ? 'Alle richtig! (2/2 BE)' : p7 + '/2 BE (' + p7raw + '/4 richtig)';
+        if (p7 === 2) richtig++;
+        showSolutionBox('sol7');
+        document.getElementById('punkte7').textContent = p7 + '/2 BE';
+        total += p7;
+
+        // ─── Aufgabe 8: Umkehr-Echolot (3 BE) - variabel ───
+        var vd8 = VARIANTS.a8[activeVariants.a8];
+        var v8 = parseNumber(document.getElementById('calc8').value);
+        var p8 = 0;
+        var v8Corr = Math.abs(v8 - vd8.t) < vd8.tol;
+        var v8Half = Math.abs(v8 - vd8.tHalf) < vd8.tol;
+        if (v8Corr) {
+            p8 = 3;
+        } else if (v8Half) {
+            p8 = 1;
+        }
+        markInputCorrect('calc8', v8Corr);
+        var fb8 = document.getElementById('fb8');
+        fb8.className = 'feedback ' + (p8 === 3 ? 'correct' : (p8 > 0 ? 'partial' : 'incorrect'));
+        fb8.textContent = p8 === 3 ? 'Richtig! (3/3 BE)' : (p8 === 1 ? 'Teilweise (1/3 BE) \u2014 Hin- und R\u00fcckweg beachten!' : 'Falsch. (0/3 BE)');
+        if (p8 === 3) richtig++;
+        document.getElementById('sol8').innerHTML = '<strong>L\u00f6sung:</strong> Gesamtstrecke = 2 \u00d7 ' + vd8.tiefe + ' = ' + (2 * vd8.tiefe) + ' m. t = s/v = ' + (2 * vd8.tiefe) + '/1500 = <strong>' + vd8.t + ' s</strong>';
+        showSolutionBox('sol8');
+        document.getElementById('punkte8').textContent = p8 + '/3 BE';
+        total += p8;
+
+        // ─── Aufgabe 9: Laermschutz Zuordnung (3 BE) ───
+        var correct9 = {m9a: 'ohr', m9b: 'weg', m9c: 'quelle'};
+        var p9 = 0;
+        for (var k9 in correct9) {
+            var val9 = document.getElementById(k9).value;
+            var isCorr9 = val9 === correct9[k9];
+            if (isCorr9) p9++;
+            markInputCorrect(k9, isCorr9);
+        }
+        var fb9 = document.getElementById('fb9');
+        fb9.className = 'feedback ' + (p9 === 3 ? 'correct' : (p9 > 0 ? 'partial' : 'incorrect'));
+        fb9.textContent = p9 === 3 ? 'Alle richtig! (3/3 BE)' : p9 + '/3 richtig.';
+        if (p9 === 3) richtig++;
+        showSolutionBox('sol9');
+        document.getElementById('punkte9').textContent = p9 + '/3 BE';
+        total += p9;
+
+        // ─── Aufgabe 10: Fehlvorstellung MC (2 BE) ───
+        var mc10 = getRadio('mc10');
+        var p10 = mc10 === 'b' ? 2 : 0;
+        var fb10 = document.getElementById('fb10');
+        fb10.className = 'feedback ' + (p10 === 2 ? 'correct' : 'incorrect');
+        fb10.textContent = p10 === 2 ? 'Richtig! (2/2 BE)' : 'Falsch. (0/2 BE)';
+        if (p10 === 2) richtig++;
+        markMcCorrect('mc10-options', 'b');
+        showSolutionBox('sol10');
+        document.getElementById('punkte10').textContent = p10 + '/2 BE';
+        total += p10;
+
+        // Ergebnis
+        var prozent = Math.round((total / TOTAL_POINTS) * 100);
+        document.getElementById('resPunkte').textContent = total;
+        document.getElementById('resProzent').textContent = prozent + '%';
+        document.getElementById('resRichtig').textContent = richtig;
+        document.getElementById('resNote').textContent = getNote(prozent);
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('btnSubmit').disabled = true;
+        document.getElementById('lockedNotice').classList.add('visible');
+        testSubmitted = true;
+        sessionReady = false;
+        disableAllInputs();
+
+        localStorage.setItem(QUIZ_ID + '-submit-time', Date.now());
+
+        var resultData = {
+            platz: platz, total: total, percent: prozent, note: getNote(prozent),
+            richtig: richtig, submitted: true, timestamp: new Date().toISOString()
+        };
+        localStorage.setItem(QUIZ_ID + '-result', JSON.stringify(resultData));
+
+        var startTS = localStorage.getItem(QUIZ_ID + '-start');
+        var submitTS = localStorage.getItem(QUIZ_ID + '-submit-time');
+        var switches = localStorage.getItem(QUIZ_ID + '-tabswitches') || '0';
+        var switchSec = localStorage.getItem(QUIZ_ID + '-tabseconds') || '0';
+
+        var timestampHtml = '<div style="margin-top:15px; padding:10px; background:#f5f5f5; border:1px solid #ddd; font-size:0.85em;">' +
+            '<div><strong>Platz:</strong> ' + platz + ' | <strong>Ergebnis:</strong> ' + total + '/' + TOTAL_POINTS + ' BE (' + prozent + '%) = Note ' + getNote(prozent) + '</div>' +
+            '<div><strong>Start:</strong> ' + formatTimestamp(startTS) + '</div>' +
+            '<div><strong>Abgabe:</strong> ' + formatTimestamp(submitTS) + '</div>' +
+            '<div><strong>Tab-Wechsel:</strong> ' + switches + '\u00d7 (' + formatDuration(parseInt(switchSec)) + ')</div>' +
+            '</div>';
+        var resultsEl = document.getElementById('results');
+        if (resultsEl) resultsEl.insertAdjacentHTML('beforeend', timestampHtml);
+
+        document.getElementById('results').scrollIntoView({behavior: 'smooth'});
+    }
+
+    function resetTest() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === '2024') {
+            if (!confirm('Alle Eingaben l\u00f6schen?')) return;
+            localStorage.removeItem(QUIZ_ID);
+            localStorage.removeItem(QUIZ_ID + '-result');
+            localStorage.removeItem(QUIZ_ID + '-seat');
+            localStorage.removeItem(QUIZ_ID + '-seat-locked');
+            localStorage.removeItem(QUIZ_ID + '-start');
+            localStorage.removeItem(QUIZ_ID + '-submit-time');
+            localStorage.removeItem(QUIZ_ID + '-tabswitches');
+            localStorage.removeItem(QUIZ_ID + '-tabseconds');
+            localStorage.removeItem(QUIZ_ID + '-timer-start');
+            localStorage.removeItem(QUIZ_ID + '-variants');
+            location.reload();
+        } else if (code !== null) {
+            alert('Falscher Code!');
+        }
+    }
+
+    function restoreSubmittedState() {
+        var resultSaved = localStorage.getItem(QUIZ_ID + '-result');
+        if (!resultSaved) return false;
+        try {
+            var result = JSON.parse(resultSaved);
+            if (result.submitted) {
+                loadProgress();
+                testSubmitted = false;
+                submitTest();
+                return true;
+            }
+        } catch(e) {}
+        return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var startTime = localStorage.getItem(QUIZ_ID + '-start');
+        if (!startTime) {
+            localStorage.setItem(QUIZ_ID + '-start', Date.now());
+        }
+
+        initTabSwitchTracking();
+
+        var seatWasLocked = checkSeatLocked();
+        if (seatWasLocked) {
+            var savedSeat = localStorage.getItem(QUIZ_ID + '-seat');
+            var platzNum = parseInt(savedSeat.replace('P', ''));
+            applySeedShuffle(platzNum);
+            document.getElementById('aufgabenBlock').classList.add('visible');
+            sessionReady = true;
+        }
+
+        var wasSubmitted = restoreSubmittedState();
+        if (!wasSubmitted) loadProgress();
+
+        if (seatWasLocked && !wasSubmitted) {
+            var timerStart = localStorage.getItem(QUIZ_ID + '-timer-start');
+            if (timerStart) startTimer();
+        }
+    });
+    </script>
+</body>
+</html>
