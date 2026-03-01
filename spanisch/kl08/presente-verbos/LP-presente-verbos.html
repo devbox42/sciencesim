@@ -55,21 +55,6 @@
         .start-card h2 { font-size: 1.6em; font-weight: 700; margin-bottom: 8px; }
         .start-card h2 span { color: var(--spanisch); }
         .start-card p { color: var(--text-muted); margin-bottom: 24px; }
-        .name-input {
-            font-family: inherit;
-            font-size: 1.1em;
-            padding: 12px 16px;
-            border: 2px solid var(--border);
-            text-align: center;
-            width: 260px;
-            max-width: 100%;
-            outline: none;
-            margin-bottom: 16px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .name-input:focus { border-color: var(--spanisch); }
 
         .btn {
             font-family: inherit;
@@ -95,10 +80,7 @@
             gap: 8px;
             margin-bottom: 12px;
         }
-        .player-name { font-weight: 600; color: var(--text-muted); }
-        .stats { display: flex; gap: 16px; font-weight: 600; }
-        .stat-score { color: var(--spanisch); }
-        .stat-streak { color: var(--warning); }
+        .q-counter { font-weight: 600; color: var(--text-muted); }
 
         .progress-bar {
             height: 8px;
@@ -194,20 +176,12 @@
         }
         .results-emoji { font-size: 3.5em; margin-bottom: 12px; }
         .results-card h2 { font-size: 1.5em; font-weight: 700; margin-bottom: 8px; }
-        .results-score {
-            font-size: 2.5em;
+        .results-summary {
+            font-size: 1.3em;
             font-weight: 700;
             color: var(--spanisch);
-            margin-bottom: 12px;
-        }
-        .results-details {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            color: var(--text-muted);
             margin-bottom: 20px;
         }
-        .results-details strong { color: var(--text-primary); }
 
         .results-breakdown {
             text-align: left;
@@ -257,12 +231,6 @@
         .review-item .review-given { color: var(--error); }
         .review-item .review-correct { color: var(--success); font-weight: 600; }
 
-        .highscore-info {
-            text-align: center;
-            color: var(--text-muted);
-            margin-top: 16px;
-            font-size: 0.9em;
-        }
 
         @media (max-width: 500px) {
             .options { grid-template-columns: 1fr; }
@@ -283,8 +251,6 @@
     <div class="start-card">
         <h2>Verbos en <span>Presente</span></h2>
         <p>Teste dein Wissen über spanische Verben im Präsens.<br>20 Fragen — wie viele schaffst du?</p>
-        <input type="text" class="name-input" id="nameInput" placeholder="Dein Name" maxlength="20" autocomplete="off">
-        <br>
         <button class="btn btn-primary" id="startBtn">¡Vamos!</button>
     </div>
 </div>
@@ -292,11 +258,7 @@
 <!-- GAME -->
 <div id="gameScreen" class="screen">
     <div class="game-header">
-        <span class="player-name" id="playerName"></span>
-        <div class="stats">
-            <span class="stat-score">Punkte: <span id="scoreDisplay">0</span></span>
-            <span class="stat-streak">Serie: <span id="streakDisplay">0</span></span>
-        </div>
+        <span class="q-counter" id="qCounter"></span>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     <div class="question-card">
@@ -313,11 +275,7 @@
     <div class="results-card">
         <div class="results-emoji" id="resultsEmoji"></div>
         <h2 id="resultsTitle"></h2>
-        <div class="results-score" id="resultsScore"></div>
-        <div class="results-details">
-            <span>Richtig: <strong id="correctCount"></strong></span>
-            <span>Beste Serie: <strong id="bestStreak"></strong></span>
-        </div>
+        <div class="results-summary" id="resultsSummary"></div>
         <div class="results-breakdown" id="resultsBreakdown"></div>
         <div class="review-section" id="reviewSection"></div>
         <button class="btn btn-primary" id="retryBtn">Nochmal spielen</button>
@@ -372,33 +330,10 @@ var questionBank = [
     { cat: "querer / poder", type: "Ergänze den Satz", prompt: "¿___ venir a mi fiesta?", answer: "Quieres", options: ["Quieres", "Quiere", "Quiero", "Queremos"], context: "(querer, tú)" }
 ];
 
-/* === STORAGE === */
-var STORAGE_KEY = 'lp-presente-verbos';
-
-function saveName(name) {
-    try { localStorage.setItem(STORAGE_KEY + '-name', name); } catch(e) {}
-}
-function loadName() {
-    try { return localStorage.getItem(STORAGE_KEY + '-name') || ''; } catch(e) { return ''; }
-}
-function saveHighScore(score) {
-    try {
-        var prev = parseInt(localStorage.getItem(STORAGE_KEY + '-high') || '0', 10);
-        if (score > prev) localStorage.setItem(STORAGE_KEY + '-high', String(score));
-    } catch(e) {}
-}
-function getHighScore() {
-    try { return parseInt(localStorage.getItem(STORAGE_KEY + '-high') || '0', 10); } catch(e) { return 0; }
-}
-
 /* === GAME STATE === */
 var state = {
-    name: '',
     questions: [],
     current: 0,
-    score: 0,
-    streak: 0,
-    bestStreak: 0,
     correctCount: 0,
     categoryScores: {},
     wrongAnswers: [],
@@ -431,9 +366,6 @@ function escapeHtml(str) {
 function initGame() {
     state.questions = shuffle(questionBank).slice(0, state.totalQuestions);
     state.current = 0;
-    state.score = 0;
-    state.streak = 0;
-    state.bestStreak = 0;
     state.correctCount = 0;
     state.categoryScores = {};
     state.wrongAnswers = [];
@@ -444,9 +376,6 @@ function initGame() {
         state.categoryScores[cat].total++;
     }
 
-    document.getElementById('playerName').textContent = state.name;
-    document.getElementById('scoreDisplay').textContent = '0';
-    document.getElementById('streakDisplay').textContent = '0';
     showScreen('gameScreen');
     renderQuestion();
 }
@@ -456,7 +385,8 @@ function renderQuestion() {
     var pct = (state.current / state.totalQuestions) * 100;
     document.getElementById('progressFill').style.width = pct + '%';
 
-    document.getElementById('qType').textContent = q.type + ' (' + (state.current + 1) + '/' + state.totalQuestions + ')';
+    document.getElementById('qCounter').textContent = 'Frage ' + (state.current + 1) + ' / ' + state.totalQuestions;
+    document.getElementById('qType').textContent = q.type;
 
     if (q.type === 'Ergänze den Satz' || q.type === 'ser oder estar?') {
         var parts = q.prompt.split('___');
@@ -494,9 +424,6 @@ function handleAnswer(btn, selected, correct) {
 
     if (selected === correct) {
         btn.classList.add('correct');
-        state.score += 10 + (state.streak * 2);
-        state.streak++;
-        state.bestStreak = Math.max(state.bestStreak, state.streak);
         state.correctCount++;
         state.categoryScores[q.cat].correct++;
 
@@ -508,15 +435,11 @@ function handleAnswer(btn, selected, correct) {
         for (var j = 0; j < allBtns.length; j++) {
             if (allBtns[j].textContent === correct) allBtns[j].classList.add('correct');
         }
-        state.streak = 0;
         state.wrongAnswers.push({ prompt: q.prompt, context: q.context || '', given: selected, correct: correct });
 
         fb.textContent = 'Richtige Antwort: ' + correct;
         fb.className = 'feedback-bar fb-wrong show';
     }
-
-    document.getElementById('scoreDisplay').textContent = state.score;
-    document.getElementById('streakDisplay').textContent = state.streak;
 
     setTimeout(function() {
         state.current++;
@@ -530,19 +453,16 @@ function handleAnswer(btn, selected, correct) {
 
 function showResults() {
     var pct = Math.round((state.correctCount / state.totalQuestions) * 100);
-    saveHighScore(state.score);
 
     var emoji, title;
-    if (pct >= 90) { emoji = '🏆'; title = '¡Increíble, ' + state.name + '!'; }
-    else if (pct >= 70) { emoji = '⭐'; title = '¡Muy bien, ' + state.name + '!'; }
-    else if (pct >= 50) { emoji = '💪'; title = 'Nicht schlecht, ' + state.name + '!'; }
-    else { emoji = '📚'; title = 'Weiter üben, ' + state.name + '!'; }
+    if (pct >= 90) { emoji = '🏆'; title = '¡Increíble!'; }
+    else if (pct >= 70) { emoji = '⭐'; title = '¡Muy bien!'; }
+    else if (pct >= 50) { emoji = '💪'; title = 'Nicht schlecht!'; }
+    else { emoji = '📚'; title = 'Weiter üben!'; }
 
     document.getElementById('resultsEmoji').textContent = emoji;
     document.getElementById('resultsTitle').textContent = title;
-    document.getElementById('resultsScore').textContent = state.score + ' Punkte (' + pct + '%)';
-    document.getElementById('correctCount').textContent = state.correctCount + '/' + state.totalQuestions;
-    document.getElementById('bestStreak').textContent = state.bestStreak;
+    document.getElementById('resultsSummary').textContent = state.correctCount + ' / ' + state.totalQuestions + ' richtig (' + pct + '%)';
 
     /* Category breakdown */
     var bd = document.getElementById('resultsBreakdown');
@@ -613,39 +533,18 @@ function showResults() {
         }
     }
 
-    /* Highscore */
-    var high = getHighScore();
-    if (high > 0) {
-        var hDiv = document.createElement('p');
-        hDiv.className = 'highscore-info';
-        hDiv.textContent = 'Dein Highscore: ' + high + ' Punkte';
-        rs.appendChild(hDiv);
-    }
-
     document.getElementById('progressFill').style.width = '100%';
     showScreen('resultsScreen');
 }
 
 /* === EVENT LISTENERS === */
 document.getElementById('startBtn').addEventListener('click', function() {
-    var name = document.getElementById('nameInput').value.trim();
-    if (!name) { document.getElementById('nameInput').focus(); return; }
-    state.name = name;
-    saveName(name);
     initGame();
-});
-
-document.getElementById('nameInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') document.getElementById('startBtn').click();
 });
 
 document.getElementById('retryBtn').addEventListener('click', function() {
     initGame();
 });
-
-/* Pre-fill name from localStorage */
-var savedName = loadName();
-if (savedName) document.getElementById('nameInput').value = savedName;
 </script>
 </body>
 </html>
