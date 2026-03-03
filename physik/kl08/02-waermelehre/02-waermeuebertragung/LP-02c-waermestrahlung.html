@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LP-02c: Wärmestrahlung und Wärmedämmung</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.5;
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 15px; }
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .progress-bar {
+            background: #ddd;
+            height: 8px;
+            margin: 15px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #2c5aa0, #4a7bc4);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 10px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .step-nav-item {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+        .step-nav-item:active { background: #e3f2fd; }
+        .step-nav-item.active { background: #2c5aa0; color: white; border-color: #2c5aa0; }
+        .step-nav-item.done { background: #2a7a4b; color: white; border-color: #2a7a4b; }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 18px;
+            margin-bottom: 15px;
+            display: none;
+            border-radius: 8px;
+        }
+        .section.active { display: block; }
+        .section h2 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+        .section h3 {
+            font-size: 0.95em;
+            margin: 15px 0 8px 0;
+            color: #333;
+        }
+        .section p { margin-bottom: 10px; }
+
+        /* Erkenntnisweg Labels */
+        .ew-label {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .ew-phaenomen { background: #e3f2fd; color: #1565c0; }
+        .ew-hypothese { background: #f3e5f5; color: #7b1fa2; }
+        .ew-experiment { background: #fff3e0; color: #e65100; }
+        .ew-auswertung { background: #ffebee; color: #c62828; }
+        .ew-deutung { background: #f1f8e9; color: #33691e; }
+        .ew-verallgemeinerung { background: #e8f5e9; color: #2e7d32; }
+        .ew-anwendung { background: #e8eaf6; color: #283593; }
+        .ew-sicherung { background: #fce4ec; color: #880e4f; }
+
+        /* Content Boxes */
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            border-radius: 0 8px 8px 0;
+        }
+        .merke-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 12px 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .merke-box::before {
+            content: "Merke";
+            display: inline-block;
+            background: #2a7a4b;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .warn-box {
+            background: #fff3e0;
+            border-left: 4px solid #b35c00;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Protokoll-Box (AB-Verweise) */
+        .protokoll-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .protokoll-box::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        /* Erkenntnis-Box */
+        .erkenntnis-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .erkenntnis-box::before {
+            content: "Erkenntnis";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        /* Predictions / Hypotheses */
+        .prediction-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .prediction-option:active { border-color: #2c5aa0; background: #e3f2fd; }
+        .prediction-option.selected { border-color: #2c5aa0; background: #e3f2fd; font-weight: 600; }
+        .prediction-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .prediction-option.wrong { border-color: #c62828; background: #ffebee; opacity: 0.6; }
+
+        .recall-box {
+            background: #f3e5f5;
+            border-left: 4px solid #7b1fa2;
+            padding: 12px 14px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+
+        /* Quiz Feedback */
+        .quiz-feedback {
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: none;
+            font-size: 0.9em;
+        }
+        .quiz-feedback.correct { background: #e8f5e9; color: #2e7d32; display: block; }
+        .quiz-feedback.wrong { background: #ffebee; color: #c62828; display: block; }
+
+        /* Simulation */
+        .sim-container {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .sim-container canvas {
+            border-radius: 4px;
+            max-width: 100%;
+            touch-action: none;
+            border: 1px solid #ccc;
+        }
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .sim-controls label { color: #444; font-size: 0.85em; }
+        .sim-controls input[type=range] {
+            width: 160px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .sim-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            background: #2c5aa0;
+            color: white;
+        }
+        .sim-btn:hover { background: #1e3d6f; }
+        .sim-btn.secondary { background: #777; color: white; }
+        .sim-value { color: #c62828; font-size: 1.1em; font-weight: 600; min-width: 40px; text-align: center; }
+
+        /* Badges & Tables */
+        .niveau-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .niveau-1 { background: #e8f5e9; color: #2e7d32; }
+        .niveau-2 { background: #fff3e0; color: #e65100; }
+        .niveau-3 { background: #ffebee; color: #c62828; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.85em;
+        }
+        .data-table th { background: #2c5aa0; color: white; padding: 10px; text-align: left; }
+        .data-table td { border: 1px solid #ddd; padding: 10px; }
+        .data-table tr:nth-child(even) { background: #f9f9f9; }
+
+        /* Fill-in-the-blank */
+        .fill-blank {
+            border: none;
+            border-bottom: 2px solid #2c5aa0;
+            background: transparent;
+            padding: 8px;
+            font-size: 1em;
+            width: 140px;
+            min-height: 44px;
+            text-align: center;
+            font-family: inherit;
+        }
+        .fill-blank:focus { outline: none; border-bottom-color: #2a7a4b; }
+        .fill-blank.correct { border-bottom-color: #2a7a4b; color: #2a7a4b; font-weight: 600; }
+
+        /* Collapsibles */
+        .collapsible-header {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 0 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .collapsible-header:hover { background: #eee; }
+        .collapsible-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .collapsible-content.open { display: block; }
+
+        /* Check Button */
+        .check-btn {
+            background: #2a7a4b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.9em;
+            min-height: 44px;
+        }
+        .check-btn:active { background: #1b5e20; }
+
+        /* Navigation Buttons (bottom of sections) */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid #ddd;
+            gap: 10px;
+        }
+        .nav-buttons button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 0.95em;
+            border-radius: 8px;
+            min-height: 46px;
+        }
+        .nav-buttons button:active { background: #1e3d6f; }
+        .nav-buttons button.btn-secondary {
+            background: white;
+            color: #2c5aa0;
+            border: 2px solid #2c5aa0;
+        }
+        .nav-buttons button.success { background: #2a7a4b; }
+
+        ul, ol { margin-left: 18px; margin-top: 8px; }
+        li { margin-bottom: 4px; font-size: 0.9em; }
+
+        @media (max-width: 600px) {
+            .section { padding: 14px; }
+            .sim-controls { flex-direction: column; }
+            .nav-buttons { flex-direction: column; }
+            .nav-buttons button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>LP-02c: Waermestrahlung und Waermedaemmung</h1>
+        <p>Physik Klasse 8 | Waermelehre | Waermeuebertragung Teil 3</p>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="step-nav" id="stepNav"></div>
+
+        <!-- ============================================================ -->
+        <!-- TEIL 1: Waermestrahlung (Schritte 1-5)                       -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 1: Phaenomen -->
+        <section class="section active" data-step="1" data-title="Phaenomen: Waerme durchs Vakuum">
+            <div class="ew-label ew-phaenomen">Phaenomen</div>
+            <h2>1. Waerme ueber Millionen Kilometer &mdash; ohne Medium?</h2>
+
+            <p>Die Sonne ist etwa <strong>150 Millionen Kilometer</strong> von der Erde entfernt. Dazwischen liegt das Weltall &mdash; ein fast perfektes <strong>Vakuum</strong>.</p>
+
+            <div class="warn-box">
+                <strong>Problem:</strong> Im Vakuum gibt es keine Teilchen!
+                <ul style="margin-top: 6px; padding-left: 20px;">
+                    <li><strong>Waermeleitung?</strong> Braucht Teilchen, die sich beruehren &rarr; geht nicht!</li>
+                    <li><strong>Konvektion?</strong> Braucht Fluessigkeit oder Gas &rarr; geht nicht!</li>
+                </ul>
+            </div>
+
+            <p>Trotzdem spueren wir die Waerme der Sonne. An einem sonnigen Tag wird es auf der Haut warm &mdash; sogar wenn der Wind kalt ist.</p>
+
+            <div class="info-box">
+                <strong>Noch ein Beispiel:</strong> Halte deine Hand <em>neben</em> (nicht ueber!) einen eingeschalteten Heizkoerper. Du spuerst Waerme &mdash; <strong>ohne Beruehrung und ohne Luftstroemung</strong>.
+            </div>
+
+            <p><strong>Es muss also eine dritte Art der Waermeuebertragung geben, die kein Medium braucht!</strong></p>
+
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 1</strong>: Notiere das Problem (Sonne erwaermt Erde durch Vakuum) und ueberlege, welche Waermeuebertragungsart das sein koennte.
+            </div>
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="goToStep(2)">Hypothese &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Hypothese -->
+        <section class="section" data-step="2" data-title="Hypothese: Wie kommt Sonnenwaerme zur Erde?">
+            <div class="ew-label ew-hypothese">Hypothese</div>
+            <h2>2. Was vermutest du?</h2>
+
+            <p><strong>Wie kommt die Waerme der Sonne zur Erde, wenn dazwischen nur Vakuum ist?</strong></p>
+
+            <div id="hypothesis1">
+                <button class="prediction-option" onclick="saveHypothesis(this, 'A')">A) Durch Waermeleitung der Luft zwischen Sonne und Erde</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'B')">B) Durch unsichtbare Strahlung, die kein Medium braucht</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'C')">C) Durch Luftstroemung (Konvektion) im Weltall</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'D')">D) Gar nicht &mdash; die Erde erzeugt ihre eigene Waerme</button>
+            </div>
+
+            <p style="margin-top: 15px; font-size: 0.85em; color: #666;">Merke dir deine Vermutung &mdash; wir ueberpruefen sie gleich mit einer Simulation!</p>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(1)">&larr; Zurueck</button>
+                <button onclick="goToStep(3)">Simulation &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Simulation Waermestrahlung -->
+        <section class="section" data-step="3" data-title="Simulation: Waermestrahlung">
+            <div class="ew-label ew-experiment">Experiment</div>
+            <h2>3. Simulation: Schwarzer vs. weisser Behaelter</h2>
+
+            <p>Zwei identische Behaelter werden von einem Infrarotstrahler bestrahlt. Der einzige Unterschied: die <strong>Farbe der Oberflaeche</strong>.</p>
+
+            <div class="info-box">
+                <strong>Auftrag:</strong>
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li>Schiebe den <strong>Zeitregler</strong> langsam nach rechts</li>
+                    <li>Beobachte die <strong>Thermometer</strong> beider Behaelter</li>
+                    <li>Lies die Temperaturen bei 50% und bei 100% ab</li>
+                    <li>Notiere die Werte auf dem Arbeitsblatt</li>
+                </ol>
+            </div>
+
+            <div class="sim-container">
+                <canvas id="radiationCanvas" width="760" height="380" style="display:block; width:100%;"></canvas>
+                <div class="sim-controls">
+                    <label>Bestrahlungsdauer:
+                        <input type="range" id="radiationTime" min="0" max="100" value="0" oninput="updateRadiation(this.value)">
+                    </label>
+                    <span class="sim-value" id="radiationTimeValue">0%</span>
+                    <button class="sim-btn secondary" onclick="resetRadiation()">&#8634; Reset</button>
+                </div>
+            </div>
+
+            <div class="protokoll-box">
+                Notiere deine Temperaturen in die Tabelle (<strong>Aufgabe 2</strong>): Schwarzer Behaelter bei 50% und 100%, weisser Behaelter bei 50% und 100%.
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(2)">&larr; Zurueck</button>
+                <button onclick="goToStep(4)">Beobachtung &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Beobachtung + Auswertung -->
+        <section class="section" data-step="4" data-title="Beobachtung: Temperaturen vergleichen">
+            <div class="ew-label ew-auswertung">Beobachtung &amp; Auswertung</div>
+            <h2>4. Was hast du beobachtet?</h2>
+
+            <div id="hypothesisRecall" class="recall-box">
+                <p id="hypothesisRecallText"></p>
+            </div>
+
+            <p>Welcher Behaelter hat sich schneller erwaermt?</p>
+
+            <div id="observationQuiz">
+                <button class="prediction-option" onclick="checkObservation(this, 'A')">A) Der schwarze Behaelter &mdash; er wurde deutlich waermer</button>
+                <button class="prediction-option" onclick="checkObservation(this, 'B')">B) Der weisse Behaelter &mdash; er wurde deutlich waermer</button>
+                <button class="prediction-option" onclick="checkObservation(this, 'C')">C) Beide wurden gleich warm</button>
+            </div>
+            <div class="quiz-feedback" id="observationFeedback"></div>
+
+            <div class="protokoll-box">
+                Trage deine abgelesenen Temperaturen in die Tabelle auf dem Arbeitsblatt ein (<strong>Aufgabe 2</strong>). Vergleiche die Werte fuer den schwarzen und weissen Behaelter.
+            </div>
+
+            <p style="font-size: 0.85em; color: #666; margin-top: 15px;">Hast du deine Werte eingetragen? Dann klappe die Kontroll-Tabelle auf:</p>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>Kontrolliere deine Werte</strong></span>
+                <span>&#9660;</span>
+            </div>
+            <div class="collapsible-content">
+                <table class="data-table">
+                    <tr>
+                        <th></th>
+                        <th>Schwarzer Behaelter</th>
+                        <th>Weisser Behaelter</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Starttemperatur</strong></td>
+                        <td>20 &#176;C</td>
+                        <td>20 &#176;C</td>
+                    </tr>
+                    <tr>
+                        <td><strong>bei 50%</strong></td>
+                        <td>ca. 50 &#176;C</td>
+                        <td>ca. 28 &#176;C</td>
+                    </tr>
+                    <tr>
+                        <td><strong>bei 100%</strong></td>
+                        <td>ca. 80 &#176;C</td>
+                        <td>ca. 35 &#176;C</td>
+                    </tr>
+                </table>
+                <p>Der schwarze Behaelter erwaermt sich <strong>viel staerker</strong> als der weisse.</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(3)">&larr; Zurueck</button>
+                <button onclick="goToStep(5)">Deutung &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 5: Deutung -->
+        <section class="section" data-step="5" data-title="Deutung: Waermestrahlung erklaeren">
+            <div class="ew-label ew-deutung">Deutung</div>
+            <h2>5. Warum wird der schwarze Behaelter waermer?</h2>
+
+            <p><strong>Jetzt bist du dran!</strong> Erklaere in eigenen Worten, warum der schwarze Behaelter sich staerker erwaermt als der weisse.</p>
+
+            <div class="protokoll-box">
+                Erklaere in eigenen Worten (<strong>Aufgabe 3</strong>): Warum wird der schwarze Behaelter waermer als der weisse, obwohl beide die gleiche Strahlung bekommen?
+            </div>
+
+            <p style="font-size: 0.85em; color: #666; margin-top: 15px;">Hast du deine Erklaerung aufgeschrieben? Dann klappe die Muster-Erklaerung auf und vergleiche:</p>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>Muster-Erklaerung aufklappen</strong></span>
+                <span>&#9660;</span>
+            </div>
+            <div class="collapsible-content">
+                <p>Die Waermequelle sendet <strong>Infrarotstrahlung</strong> (unsichtbare Waermestrahlung) aus. Diese Strahlung trifft auf beide Behaelter.</p>
+                <ul>
+                    <li>Der <strong>schwarze</strong> Behaelter <strong>absorbiert</strong> (verschluckt) den groessten Teil der Strahlung &rarr; er wird stark warm.</li>
+                    <li>Der <strong>weisse</strong> Behaelter <strong>reflektiert</strong> (spiegelt zurueck) den groessten Teil der Strahlung &rarr; er wird nur wenig warm.</li>
+                </ul>
+                <p>Das ist wie bei dunkler und heller Kleidung im Sommer: Ein schwarzes T-Shirt wird viel heisser als ein weisses.</p>
+            </div>
+
+            <div class="merke-box">
+                <strong>Waermestrahlung</strong> ist die Uebertragung von Waerme durch <strong>elektromagnetische Strahlung</strong> (Infrarotstrahlung). Sie braucht <strong>kein Medium</strong> und funktioniert auch im Vakuum. Jeder warme Koerper sendet Waermestrahlung aus &mdash; je heisser, desto mehr. <strong>Dunkle, matte</strong> Oberflaechen absorbieren und senden mehr Strahlung als helle, glatte.
+            </div>
+
+            <div class="protokoll-box" style="border-color: #2a7a4b;">
+                Uebernimm den Merksatz aus der gruenen Box oben in die <strong>Merksatz-Box</strong> auf deinem Arbeitsblatt (nach Aufgabe 3).
+            </div>
+
+            <h3>Rueckblick auf die Hypothese</h3>
+            <p><strong>Richtige Antwort:</strong> B) Durch unsichtbare Strahlung, die kein Medium braucht. Die Sonne sendet elektromagnetische Strahlung aus, die auch durch das Vakuum zur Erde gelangt.</p>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(4)">&larr; Zurueck</button>
+                <button onclick="goToStep(6)">Vergleich &rarr;</button>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- TEIL 2: Vergleich aller 3 Arten (Schritte 6-7)              -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 6: Vergleichstabelle -->
+        <section class="section" data-step="6" data-title="Vergleich: Drei Arten der Waermeuebertragung">
+            <div class="ew-label ew-verallgemeinerung">Verallgemeinerung</div>
+            <h2>6. Die drei Arten der Waermeuebertragung im Vergleich</h2>
+
+            <p>Jetzt kennst du alle drei Arten! Fuelle die <strong>Vergleichstabelle auf dem Arbeitsblatt</strong> aus. Nutze dein Wissen aus LP-02a (Leitung), LP-02b (Stroemung) und dieser Stunde (Strahlung).</p>
+
+            <p>Fuer jede Art: Was passiert? In welchen Stoffen? Braucht man ein Medium? Wie bewegen sich die Teilchen? Nenne ein Alltagsbeispiel.</p>
+
+            <div class="protokoll-box">
+                Fuelle die Vergleichstabelle aus (<strong>Aufgabe 4a</strong>): Trage fuer jede der drei Arten ein, was es ist, ob ein Medium noetig ist, und nenne ein Alltagsbeispiel.
+            </div>
+
+            <p style="font-size: 0.85em; color: #666; margin-top: 15px;">Hast du die Tabelle ausgefuellt? Dann vergleiche mit der Loesung:</p>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>Vergleichstabelle aufklappen (erst NACH dem AB!)</strong></span>
+                <span>&#9660;</span>
+            </div>
+            <div class="collapsible-content">
+                <table class="data-table">
+                    <tr>
+                        <th></th>
+                        <th>Waermeleitung</th>
+                        <th>Waermestroemung</th>
+                        <th>Waermestrahlung</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Was ist es?</strong></td>
+                        <td>Teilchen geben Energie an Nachbar-Teilchen weiter</td>
+                        <td>Warmes Material stroemt (Kreislauf)</td>
+                        <td>Elektromagnetische Wellen (Infrarot)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Medium noetig?</strong></td>
+                        <td>Ja (am besten Feststoffe)</td>
+                        <td>Ja (Fluessigkeit oder Gas)</td>
+                        <td>Nein &mdash; auch im Vakuum!</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Teilchen bewegen sich?</strong></td>
+                        <td>Nein (schwingen am Platz)</td>
+                        <td>Ja (stroemen mit)</td>
+                        <td>Keine Teilchen noetig</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Alltagsbeispiel</strong></td>
+                        <td>Heisser Loeffel im Topf</td>
+                        <td>Heizung erwaermt Zimmer</td>
+                        <td>Sonne erwaermt Erde</td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Lueckentext: Zusammenfassung <span class="niveau-badge niveau-1">&#9733;</span></h3>
+
+            <p>Waerme kann auf <strong>drei Arten</strong> uebertragen werden:</p>
+
+            <p>Bei der <input type="text" class="fill-blank" data-answer="Waermeleitung" id="fb1" onchange="checkFillBlank(this)">
+            geben Teilchen Energie an ihre Nachbarn weiter. Das funktioniert am besten in
+            <input type="text" class="fill-blank" data-answer="Feststoffen" id="fb2" onchange="checkFillBlank(this)">, besonders in Metallen.</p>
+
+            <p>Bei der <input type="text" class="fill-blank" data-answer="Waermestroemung" id="fb3" onchange="checkFillBlank(this)">
+            (Konvektion) stroemt warmes Material nach
+            <input type="text" class="fill-blank" data-answer="oben" id="fb4" onchange="checkFillBlank(this)">, weil es eine geringere Dichte hat.</p>
+
+            <p>Bei der <input type="text" class="fill-blank" data-answer="Waermestrahlung" id="fb5" onchange="checkFillBlank(this)">
+            wird Waerme durch <input type="text" class="fill-blank" data-answer="Infrarotstrahlung" id="fb6" onchange="checkFillBlank(this)">
+            uebertragen. Diese braucht kein <input type="text" class="fill-blank" data-answer="Medium" id="fb7" onchange="checkFillBlank(this)">.</p>
+
+            <div class="protokoll-box">
+                Vervollstaendige den Lueckentext auf dem Arbeitsblatt (<strong>Aufgabe 4b</strong>).
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(5)">&larr; Zurueck</button>
+                <button onclick="goToStep(7)">Waermedaemmung &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 7: Anwendung Waermedaemmung -->
+        <section class="section" data-step="7" data-title="Anwendung: Waermedaemmung (Thermoskanne)">
+            <div class="ew-label ew-anwendung">Anwendung</div>
+            <h2>7. Waermedaemmung &mdash; alle drei Arten stoppen</h2>
+
+            <p>Gute <strong>Waermedaemmung</strong> muss alle drei Arten der Waermeuebertragung verhindern. Das beste Beispiel dafuer ist die <strong>Thermoskanne</strong>.</p>
+
+            <h3>Die Thermoskanne &mdash; ein Meisterwerk der Daemmung <span class="niveau-badge niveau-2">&#9733;&#9733;</span></h3>
+
+            <div class="info-box">
+                Eine Thermoskanne nutzt <strong>alle drei Tricks</strong>:
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li><strong>Vakuum</strong> zwischen den Doppelwaenden &rarr; keine Leitung und keine Stroemung moeglich (keine Teilchen!)</li>
+                    <li><strong>Verspiegelte Innenwaende</strong> &rarr; reflektieren Waermestrahlung zurueck ins Innere</li>
+                    <li><strong>Verschluss oben</strong> &rarr; verhindert Konvektion (warmer Dampf kann nicht entweichen)</li>
+                </ol>
+            </div>
+
+            <table class="data-table">
+                <tr>
+                    <th>Waermeuebertragungsart</th>
+                    <th>Wie wird sie gestoppt?</th>
+                    <th>Weiteres Beispiel</th>
+                </tr>
+                <tr>
+                    <td>Leitung</td>
+                    <td>Isolierende Materialien (Luft, Styropor, Vakuum)</td>
+                    <td>Hausdaemmung mit Styropor</td>
+                </tr>
+                <tr>
+                    <td>Stroemung</td>
+                    <td>Luftbewegung verhindern</td>
+                    <td>Doppelglasfenster, Daunendecke</td>
+                </tr>
+                <tr>
+                    <td>Strahlung</td>
+                    <td>Reflektierende Oberflaechen</td>
+                    <td>Rettungsdecke (silbern)</td>
+                </tr>
+            </table>
+
+            <div class="protokoll-box">
+                Erklaere die Thermoskanne (<strong>Aufgabe 5</strong>): Welche Daemmmassnahme stoppt welche Waermeuebertragungsart?
+            </div>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>&#9733;&#9733;&#9733; Erweiterung:</strong> Treibhauseffekt</span>
+                <span>&#9660;</span>
+            </div>
+            <div class="collapsible-content">
+                <p>Der <strong>Treibhauseffekt</strong> ist ein Waermestrahlungs-Phaenomen:</p>
+                <ol style="padding-left: 20px;">
+                    <li><strong>Kurzwellige Sonnenstrahlung</strong> (sichtbares Licht) durchdringt die Atmosphaere und erwaermt den Erdboden.</li>
+                    <li>Der erwaermte Erdboden strahlt <strong>langwellige Infrarotstrahlung</strong> zurueck Richtung Weltall.</li>
+                    <li>Treibhausgase (CO&#8322;, H&#8322;O, Methan) in der Atmosphaere <strong>absorbieren</strong> einen Teil dieser Infrarotstrahlung.</li>
+                    <li>Sie strahlen die Waerme teilweise <strong>zurueck zur Erde</strong> &rarr; die Erde wird waermer als ohne Atmosphaere.</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>Mehr Treibhausgase &rarr; mehr Absorption &rarr; staerkere Erwaermung.</strong> Das ist der menschengemachte Klimawandel.</p>
+                <p style="font-size: 0.85em; color: #666;">Ohne den natuerlichen Treibhauseffekt waere die Erde durchschnittlich &minus;18 &#176;C kalt statt angenehmer +15 &#176;C.</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(6)">&larr; Zurueck</button>
+                <button onclick="goToStep(8)">Quiz &rarr;</button>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- TEIL 3: Abschluss-Quiz (Schritt 8)                          -->
+        <!-- ============================================================ -->
+
+        <!-- SECTION 8: Quiz -->
+        <section class="section" data-step="8" data-title="Quiz: Teste dein Wissen">
+            <div class="ew-label ew-sicherung">Sicherung</div>
+            <h2>8. Quiz: Alle drei Waermeuebertragungsarten</h2>
+
+            <p>Teste dein Wissen ueber <strong>Leitung, Stroemung und Strahlung</strong>!</p>
+
+            <!-- Quiz 1 -->
+            <h3>Frage 1 <span class="niveau-badge niveau-1">&#9733;</span></h3>
+            <p>Die Sonne erwaermt die Erde durch das Vakuum des Weltalls. Welche Art der Waermeuebertragung ist das?</p>
+            <div id="quiz1">
+                <button class="prediction-option" onclick="checkQuiz('quiz1', this, 'A', false)">A) Waermeleitung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz1', this, 'B', false)">B) Waermestroemung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz1', this, 'C', true)">C) Waermestrahlung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz1-feedback"></div>
+
+            <!-- Quiz 2 -->
+            <h3>Frage 2 <span class="niveau-badge niveau-1">&#9733;</span></h3>
+            <p>Ein Metalloeffel in einer heissen Suppe wird am Griff heiss. Welche Art der Waermeuebertragung ist das?</p>
+            <div id="quiz2">
+                <button class="prediction-option" onclick="checkQuiz('quiz2', this, 'A', true)">A) Waermeleitung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz2', this, 'B', false)">B) Waermestroemung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz2', this, 'C', false)">C) Waermestrahlung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz2-feedback"></div>
+
+            <!-- Quiz 3 -->
+            <h3>Frage 3 <span class="niveau-badge niveau-1">&#9733;</span></h3>
+            <p>Warme Luft steigt an der Heizung auf und verteilt sich im Zimmer. Welche Art?</p>
+            <div id="quiz3">
+                <button class="prediction-option" onclick="checkQuiz('quiz3', this, 'A', false)">A) Waermeleitung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz3', this, 'B', true)">B) Waermestroemung (Konvektion)</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz3', this, 'C', false)">C) Waermestrahlung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz3-feedback"></div>
+
+            <!-- Quiz 4 -->
+            <h3>Frage 4 <span class="niveau-badge niveau-2">&#9733;&#9733;</span></h3>
+            <p>Warum tragen Menschen in heissen Laendern oft <strong>helle Kleidung</strong>?</p>
+            <div id="quiz4">
+                <button class="prediction-option" onclick="checkQuiz('quiz4', this, 'A', false)">A) Helle Kleidung leitet Waerme besser ab</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz4', this, 'B', true)">B) Helle Kleidung reflektiert Waermestrahlung und absorbiert weniger</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz4', this, 'C', false)">C) Helle Kleidung ist duenner und laesst mehr Luft durch</button>
+            </div>
+            <div class="quiz-feedback" id="quiz4-feedback"></div>
+
+            <!-- Quiz 5 -->
+            <h3>Frage 5 <span class="niveau-badge niveau-2">&#9733;&#9733;</span></h3>
+            <p>Eine Thermoskanne haelt Tee stundenlang warm. Das <strong>Vakuum</strong> zwischen den Waenden verhindert...</p>
+            <div id="quiz5">
+                <button class="prediction-option" onclick="checkQuiz('quiz5', this, 'A', false)">A) ...nur Waermestrahlung</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz5', this, 'B', true)">B) ...Waermeleitung und Waermestroemung (kein Medium!)</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz5', this, 'C', false)">C) ...alle drei Arten der Waermeuebertragung</button>
+            </div>
+            <div class="quiz-feedback" id="quiz5-feedback"></div>
+
+            <!-- Quiz 6 -->
+            <h3>Frage 6 <span class="niveau-badge niveau-3">&#9733;&#9733;&#9733;</span></h3>
+            <p>Welche Aussage ueber Waermestrahlung ist <strong>richtig</strong>?</p>
+            <div id="quiz6">
+                <button class="prediction-option" onclick="checkQuiz('quiz6', this, 'A', false)">A) Nur die Sonne kann Waermestrahlung aussenden</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz6', this, 'B', false)">B) Waermestrahlung braucht Luft als Medium</button>
+                <button class="prediction-option" onclick="checkQuiz('quiz6', this, 'C', true)">C) Jeder warme Koerper sendet Waermestrahlung aus &mdash; je heisser, desto mehr</button>
+            </div>
+            <div class="quiz-feedback" id="quiz6-feedback"></div>
+
+            <!-- Ergebnis -->
+            <div id="quizResult" style="display:none; margin-top: 20px;">
+                <div class="merke-box">
+                    <strong>Ergebnis:</strong> <span id="quizScore"></span> von 6 Fragen richtig!
+                </div>
+            </div>
+
+            <div class="protokoll-box">
+                Vervollstaendige den Abschluss-Lueckentext auf dem Arbeitsblatt (<strong>Aufgabe 6</strong>).
+            </div>
+
+            <div style="margin-top: 25px;">
+                <div class="merke-box">
+                    <strong>LP-02c geschafft!</strong> Du kennst jetzt alle <strong>drei Arten der Waermeuebertragung</strong>: Leitung (Teilchen zu Teilchen), Stroemung (Massenstroemung) und Strahlung (elektromagnetische Wellen). Du weisst auch, wie <strong>Waermedaemmung</strong> (z.B. Thermoskanne) alle drei Arten stoppt. <strong>Naechste Stunde: Test!</strong>
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(7)">&larr; Zurueck</button>
+                <button class="success" onclick="finishLP()">&#10003; Lernpfad abschliessen</button>
+            </div>
+        </section>
+
+    </div><!-- /container -->
+
+    <script>
+        // ========== CONFIG ==========
+        var LS = 'kl08-waerme-02c';
+
+        // ========== NAVIGATION ==========
+        var currentStep = 1;
+        var sections = document.querySelectorAll('.section');
+        var totalSteps = sections.length;
+        var stepTitles = [];
+        sections.forEach(function(s, i) { stepTitles.push(s.dataset.title || 'Schritt ' + (i+1)); });
+
+        var stepNav = document.getElementById('stepNav');
+        for (var i = 1; i <= totalSteps; i++) {
+            var item = document.createElement('div');
+            item.className = 'step-nav-item' + (i === 1 ? ' active' : '');
+            item.textContent = i;
+            item.onclick = (function(n) { return function() { goToStep(n); }; })(i);
+            stepNav.appendChild(item);
+        }
+
+        function updateProgress() {
+            var progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+
+            var navItems = document.querySelectorAll('.step-nav-item');
+            navItems.forEach(function(item, i) {
+                item.classList.remove('active', 'done');
+                if (i + 1 < currentStep) item.classList.add('done');
+                else if (i + 1 === currentStep) item.classList.add('active');
+            });
+        }
+
+        function goToStep(num) {
+            if (num < 1 || num > totalSteps) return;
+            sections.forEach(function(s) { s.classList.remove('active'); });
+            sections.forEach(function(s) {
+                if (parseInt(s.dataset.step) === num) s.classList.add('active');
+            });
+            currentStep = num;
+            updateProgress();
+            localStorage.setItem(LS + '-step', num);
+            // Lazy-init simulation + animation management
+            if (num === 3 && !radiationInited) initRadiation();
+            else if (num === 3 && radiationInited) startRadiationAnim();
+            else if (radAnimId) { cancelAnimationFrame(radAnimId); radAnimId = null; }
+            if (num === 4) displayHypothesisRecall();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function finishLP() {
+            alert('Lernpfad abgeschlossen! Gib dein Arbeitsblatt zur Kontrolle ab.');
+            localStorage.setItem(LS + '-completed', 'true');
+        }
+
+        // Restore saved position
+        var saved = localStorage.getItem(LS + '-step');
+        if (saved) goToStep(parseInt(saved));
+        updateProgress();
+
+        // ========== HYPOTHESES ==========
+        function saveHypothesis(el, choice) {
+            document.querySelectorAll('#hypothesis1 .prediction-option').forEach(function(o) { o.classList.remove('selected'); });
+            el.classList.add('selected');
+            localStorage.setItem(LS + '-hyp1', choice);
+        }
+
+        function displayHypothesisRecall() {
+            var pred = localStorage.getItem(LS + '-hyp1');
+            var box = document.getElementById('hypothesisRecall');
+            var txt = document.getElementById('hypothesisRecallText');
+            if (pred) {
+                var labels = {
+                    A: 'Durch Waermeleitung der Luft',
+                    B: 'Durch unsichtbare Strahlung',
+                    C: 'Durch Konvektion im Weltall',
+                    D: 'Die Erde erzeugt eigene Waerme'
+                };
+                txt.innerHTML = '<strong>Deine Vermutung war:</strong> ' + pred + ') ' + (labels[pred] || pred);
+                box.style.display = 'block';
+            }
+        }
+
+        function loadHypotheses() {
+            var h1 = localStorage.getItem(LS + '-hyp1');
+            if (h1) {
+                document.querySelectorAll('#hypothesis1 .prediction-option').forEach(function(o) {
+                    if (o.textContent.trim().charAt(0) === h1) o.classList.add('selected');
+                });
+            }
+        }
+        loadHypotheses();
+
+        // ========== OBSERVATION QUIZ ==========
+        var observationAnswered = false;
+        function checkObservation(el, choice) {
+            if (observationAnswered) return;
+            observationAnswered = true;
+            var isCorrect = (choice === 'A');
+            var fb = document.getElementById('observationFeedback');
+            document.querySelectorAll('#observationQuiz .prediction-option').forEach(function(o) { o.classList.add('wrong'); });
+            if (isCorrect) {
+                el.classList.remove('wrong');
+                el.classList.add('correct');
+                fb.className = 'quiz-feedback correct';
+                fb.textContent = 'Richtig! Der schwarze Behaelter absorbiert deutlich mehr Waermestrahlung.';
+            } else {
+                el.classList.add('wrong');
+                document.querySelectorAll('#observationQuiz .prediction-option').forEach(function(o) {
+                    if (o.textContent.trim().charAt(0) === 'A') { o.classList.remove('wrong'); o.classList.add('correct'); }
+                });
+                fb.className = 'quiz-feedback wrong';
+                fb.textContent = 'Nicht ganz. Der schwarze Behaelter wird deutlich waermer, weil er mehr Strahlung absorbiert.';
+            }
+            localStorage.setItem(LS + '-obs', choice);
+        }
+
+        // Restore observation
+        var savedObs = localStorage.getItem(LS + '-obs');
+        if (savedObs) {
+            observationAnswered = true;
+            document.querySelectorAll('#observationQuiz .prediction-option').forEach(function(o) {
+                o.classList.add('wrong');
+                if (o.textContent.trim().charAt(0) === 'A') { o.classList.remove('wrong'); o.classList.add('correct'); }
+            });
+            var fb = document.getElementById('observationFeedback');
+            if (savedObs === 'A') {
+                fb.className = 'quiz-feedback correct';
+                fb.textContent = 'Richtig! Der schwarze Behaelter absorbiert deutlich mehr Waermestrahlung.';
+            } else {
+                fb.className = 'quiz-feedback wrong';
+                fb.textContent = 'Nicht ganz. Der schwarze Behaelter wird deutlich waermer, weil er mehr Strahlung absorbiert.';
+            }
+        }
+
+        // ========== FILL BLANKS ==========
+        function checkFillBlank(el) {
+            var answer = el.dataset.answer.toLowerCase().trim();
+            var val = el.value.toLowerCase().trim();
+            // Also accept versions with ae/oe/ue for umlauts
+            var normalizedAnswer = answer.replace(/ae/g,'ae').replace(/oe/g,'oe').replace(/ue/g,'ue');
+            var normalizedVal = val.replace(/ae/g,'ae').replace(/oe/g,'oe').replace(/ue/g,'ue');
+            // Also accept actual umlauts
+            var umlautAnswer = answer.replace(/ae/g,'\u00e4').replace(/oe/g,'\u00f6').replace(/ue/g,'\u00fc');
+            if (normalizedVal === normalizedAnswer || val === umlautAnswer) {
+                el.classList.add('correct'); el.classList.remove('wrong');
+            } else if (val.length > 0) { el.classList.remove('correct'); }
+            localStorage.setItem(LS + '-fb-' + el.id, el.value);
+        }
+        function loadFillBlanks() {
+            document.querySelectorAll('.fill-blank').forEach(function(el) {
+                var saved = localStorage.getItem(LS + '-fb-' + el.id);
+                if (saved) { el.value = saved; checkFillBlank(el); }
+            });
+        }
+        loadFillBlanks();
+
+        // ========== COLLAPSIBLE ==========
+        function toggleCollapsible(header) {
+            var content = header.nextElementSibling;
+            content.classList.toggle('open');
+            header.querySelector('span:last-child').textContent = content.classList.contains('open') ? '\u25B2' : '\u25BC';
+        }
+
+        // ========== QUIZ ==========
+        var quizAnswered = {};
+        var quizTotal = 6;
+        var quizCorrect = 0;
+
+        function checkQuiz(quizId, el, choice, isCorrect) {
+            if (quizAnswered[quizId]) return;
+            quizAnswered[quizId] = true;
+
+            var fb = document.getElementById(quizId + '-feedback');
+            var options = document.querySelectorAll('#' + quizId + ' .prediction-option');
+
+            options.forEach(function(o) { o.style.pointerEvents = 'none'; });
+
+            if (isCorrect) {
+                el.classList.add('correct');
+                fb.className = 'quiz-feedback correct';
+                fb.textContent = 'Richtig!';
+                quizCorrect++;
+            } else {
+                el.classList.add('wrong');
+                // Highlight correct
+                options.forEach(function(o) {
+                    var oc = o.getAttribute('onclick');
+                    if (oc && oc.indexOf('true') !== -1) o.classList.add('correct');
+                });
+                fb.className = 'quiz-feedback wrong';
+                var explanations = {
+                    quiz1: 'Die richtige Antwort ist C: Waermestrahlung. Nur Strahlung funktioniert im Vakuum.',
+                    quiz2: 'Die richtige Antwort ist A: Waermeleitung. Energie wird von Teilchen zu Teilchen durch den Loeffel weitergegeben.',
+                    quiz3: 'Die richtige Antwort ist B: Waermestroemung. Warme Luft steigt auf, kalte sinkt ab.',
+                    quiz4: 'Die richtige Antwort ist B: Helle Kleidung reflektiert Waermestrahlung und absorbiert weniger.',
+                    quiz5: 'Die richtige Antwort ist B: Im Vakuum gibt es keine Teilchen, daher keine Leitung und keine Stroemung. Strahlung geht aber durch!',
+                    quiz6: 'Die richtige Antwort ist C: Jeder warme Koerper sendet Waermestrahlung aus, nicht nur die Sonne.'
+                };
+                fb.textContent = explanations[quizId] || 'Leider falsch.';
+            }
+            localStorage.setItem(LS + '-' + quizId, choice);
+
+            // Check if all answered
+            var allDone = true;
+            for (var i = 1; i <= quizTotal; i++) {
+                if (!quizAnswered['quiz' + i]) { allDone = false; break; }
+            }
+            if (allDone) {
+                var resultDiv = document.getElementById('quizResult');
+                resultDiv.style.display = 'block';
+                document.getElementById('quizScore').textContent = quizCorrect;
+            }
+        }
+
+        // Restore quiz
+        function loadQuiz() {
+            for (var i = 1; i <= quizTotal; i++) {
+                var qId = 'quiz' + i;
+                var savedChoice = localStorage.getItem(LS + '-' + qId);
+                if (savedChoice) {
+                    var options = document.querySelectorAll('#' + qId + ' .prediction-option');
+                    options.forEach(function(o) {
+                        var oc = o.getAttribute('onclick');
+                        if (!oc) return;
+                        // Find this option's choice letter
+                        var match = oc.match(/'([A-D])'/);
+                        if (!match) return;
+                        var optChoice = match[1];
+                        var optCorrect = oc.indexOf('true') !== -1;
+                        if (optChoice === savedChoice) {
+                            if (optCorrect) {
+                                o.classList.add('correct');
+                                quizCorrect++;
+                            } else {
+                                o.classList.add('wrong');
+                            }
+                        }
+                        if (optCorrect && savedChoice !== optChoice && !optCorrect) {
+                            // nothing
+                        }
+                        if (optCorrect && savedChoice !== optChoice) {
+                            o.classList.add('correct');
+                        }
+                        o.style.pointerEvents = 'none';
+                    });
+                    quizAnswered[qId] = true;
+                    // Restore feedback
+                    var fb = document.getElementById(qId + '-feedback');
+                    var wasCorrect = false;
+                    options.forEach(function(o) {
+                        var oc = o.getAttribute('onclick');
+                        if (!oc) return;
+                        var m = oc.match(/'([A-D])'/);
+                        if (m && m[1] === savedChoice && oc.indexOf('true') !== -1) wasCorrect = true;
+                    });
+                    if (wasCorrect) {
+                        fb.className = 'quiz-feedback correct';
+                        fb.textContent = 'Richtig!';
+                    } else {
+                        fb.className = 'quiz-feedback wrong';
+                        fb.textContent = 'Leider falsch. Schau dir die gruene Antwort an.';
+                    }
+                }
+            }
+            // Show result if all done
+            var allDone = true;
+            for (var j = 1; j <= quizTotal; j++) {
+                if (!quizAnswered['quiz' + j]) { allDone = false; break; }
+            }
+            if (allDone) {
+                var resultDiv = document.getElementById('quizResult');
+                resultDiv.style.display = 'block';
+                document.getElementById('quizScore').textContent = quizCorrect;
+            }
+        }
+        loadQuiz();
+
+        // ========== SIMULATION: WAERMESTRAHLUNG ==========
+        var radiationInited = false;
+        var radAnimId = null;
+        var radAnimTime = 0;
+
+        function initRadiation() {
+            radiationInited = true;
+            radAnimTime = 0;
+            setTimeout(function() { drawRadiation(0); startRadiationAnim(); }, 100);
+        }
+
+        function resetRadiation() {
+            document.getElementById('radiationTime').value = 0;
+            document.getElementById('radiationTimeValue').textContent = '0%';
+            if (radiationInited) drawRadiation(0);
+        }
+
+        function updateRadiation(val) {
+            var pct = parseInt(val);
+            document.getElementById('radiationTimeValue').textContent = pct + '%';
+            drawRadiation(pct);
+        }
+
+        function startRadiationAnim() {
+            function tick() {
+                radAnimTime += 0.03;
+                var pct = parseFloat(document.getElementById('radiationTime').value);
+                drawRadiation(pct);
+                radAnimId = requestAnimationFrame(tick);
+            }
+            if (radAnimId) cancelAnimationFrame(radAnimId);
+            radAnimId = requestAnimationFrame(tick);
+        }
+
+        function drawRadiation(pct) {
+            var canvas = document.getElementById('radiationCanvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var W = canvas.width, H = canvas.height;
+            var frac = pct / 100;
+            var t = radAnimTime; // animation time for wave motion
+
+            ctx.clearRect(0, 0, W, H);
+
+            // Background
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fillRect(0, 0, W, H);
+
+            // ===== LAYOUT =====
+            // Source on the left, two containers stacked on the right
+            var srcCenterX = 80, srcCenterY = H / 2;
+            var blackContX = 340, blackContY = 40;
+            var whiteContX = 340, whiteContY = 215;
+            var contW = 110, contH = 90;
+
+            // ===== INFRARED SOURCE =====
+            // Heater body (vertical rectangle)
+            var heaterW = 50, heaterH = 160;
+            var hx = srcCenterX - heaterW / 2, hy = srcCenterY - heaterH / 2;
+            ctx.fillStyle = '#666';
+            ctx.fillRect(hx, hy, heaterW, heaterH);
+            // Inner face (glowing)
+            ctx.fillStyle = '#444';
+            ctx.fillRect(hx + 8, hy + 8, heaterW - 16, heaterH - 16);
+
+            // Heating coils (red/orange sine waves)
+            var numCoils = 5;
+            for (var c = 0; c < numCoils; c++) {
+                var coilY = hy + 20 + c * (heaterH - 40) / (numCoils - 1);
+                var glowR = 180 + Math.round(75 * (0.5 + 0.5 * Math.sin(t * 3 + c)));
+                ctx.strokeStyle = 'rgb(' + glowR + ', ' + Math.round(glowR * 0.3) + ', 0)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (var cx = 0; cx <= 24; cx++) {
+                    var px = hx + 13 + cx;
+                    var py = coilY + Math.sin(cx * 0.6 + t * 2) * 3;
+                    if (cx === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+            }
+
+            // Glow around heater
+            if (frac > 0 || true) {
+                var glowAlpha = 0.2 + frac * 0.3;
+                var glow = ctx.createRadialGradient(srcCenterX + 10, srcCenterY, 20, srcCenterX + 10, srcCenterY, 90);
+                glow.addColorStop(0, 'rgba(255, 80, 0, ' + glowAlpha + ')');
+                glow.addColorStop(0.6, 'rgba(255, 40, 0, ' + (glowAlpha * 0.3) + ')');
+                glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                ctx.fillStyle = glow;
+                ctx.fillRect(srcCenterX - 80, srcCenterY - 100, 200, 200);
+            }
+
+            // Source label
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Infrarot-', srcCenterX, srcCenterY + heaterH / 2 + 16);
+            ctx.fillText('strahler', srcCenterX, srcCenterY + heaterH / 2 + 30);
+
+            // ===== RADIATION WAVES (animated sinusoidal lines) =====
+            if (frac > 0) {
+                var waveOriginX = srcCenterX + heaterW / 2 + 5;
+                var targets = [
+                    { x: blackContX, y: blackContY + contH / 2 },
+                    { x: whiteContX, y: whiteContY + contH / 2 }
+                ];
+                var numWaveLines = 4; // per target
+
+                for (var ti = 0; ti < targets.length; ti++) {
+                    var tgt = targets[ti];
+                    var dx = tgt.x - waveOriginX;
+                    var dy = tgt.y - srcCenterY;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    var angle = Math.atan2(dy, dx);
+                    var perpX = -Math.sin(angle);
+                    var perpY = Math.cos(angle);
+
+                    for (var wl = 0; wl < numWaveLines; wl++) {
+                        // Each wave line at a different phase offset, traveling outward
+                        var phase = t * 4 + wl * (Math.PI * 2 / numWaveLines);
+                        var alpha = 0.2 + frac * 0.5;
+
+                        ctx.strokeStyle = 'rgba(255, 60, 0, ' + alpha + ')';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+
+                        var steps = 40;
+                        for (var s = 0; s < steps; s++) {
+                            var progress = s / steps;
+                            var px = waveOriginX + dx * progress;
+                            var py = srcCenterY + dy * progress;
+                            // Sinusoidal perpendicular displacement
+                            var amp = 6 * (1 - Math.abs(progress - 0.5) * 2); // fade at ends
+                            var wave = Math.sin(progress * dist * 0.06 - phase) * amp;
+                            px += perpX * wave;
+                            py += perpY * wave;
+                            if (s === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                        }
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // ===== BLACK CONTAINER =====
+            // Heat glow on black container
+            if (frac > 0) {
+                var heatAlpha = frac * 0.3;
+                var heatGrad = ctx.createRadialGradient(
+                    blackContX + contW/2, blackContY + contH/2, 10,
+                    blackContX + contW/2, blackContY + contH/2, contW * 0.8
+                );
+                heatGrad.addColorStop(0, 'rgba(255, 60, 0, ' + heatAlpha + ')');
+                heatGrad.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                ctx.fillStyle = heatGrad;
+                ctx.fillRect(blackContX - 20, blackContY - 20, contW + 40, contH + 40);
+            }
+
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(blackContX, blackContY, contW, contH);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(blackContX, blackContY, contW, contH);
+            // Label
+            ctx.fillStyle = '#ccc';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('SCHWARZ', blackContX + contW/2, blackContY + contH/2 + 5);
+
+            // ===== WHITE CONTAINER =====
+            ctx.fillStyle = '#f5f5f5';
+            ctx.fillRect(whiteContX, whiteContY, contW, contH);
+            ctx.strokeStyle = '#aaa';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(whiteContX, whiteContY, contW, contH);
+            // Reflection arrows for white container when radiation active
+            if (frac > 0) {
+                var refAlpha = 0.15 + frac * 0.3;
+                ctx.strokeStyle = 'rgba(255, 180, 50, ' + refAlpha + ')';
+                ctx.lineWidth = 1.5;
+                // Small reflected dashes
+                for (var r = 0; r < 3; r++) {
+                    var ry = whiteContY + 15 + r * 25;
+                    var rx = whiteContX - 5;
+                    var rAngle = -0.4 + r * 0.2 + Math.sin(t * 2 + r) * 0.1;
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    ctx.lineTo(rx - 20 * Math.cos(rAngle), ry + 20 * Math.sin(rAngle));
+                    ctx.stroke();
+                }
+            }
+            // Label
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('WEISS', whiteContX + contW/2, whiteContY + contH/2 + 5);
+
+            // ===== THERMOMETERS =====
+            var blackTemp = 20 + frac * 60;  // 20 -> 80
+            var whiteTemp = 20 + frac * 15;  // 20 -> 35
+
+            var thermoX = blackContX + contW + 50;
+            drawThermometer(ctx, thermoX, blackContY, 100, blackTemp);
+            drawThermometer(ctx, thermoX, whiteContY, 100, whiteTemp);
+
+            // ===== TEMPERATURE DISPLAY =====
+            var tempDispX = thermoX + 55;
+
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'left';
+
+            // Color based on temperature
+            var blackR = Math.min(255, Math.round(80 + frac * 175));
+            ctx.fillStyle = 'rgb(' + blackR + ', ' + Math.round(30 - frac * 20) + ', ' + Math.round(30 - frac * 20) + ')';
+            ctx.fillText(blackTemp.toFixed(1).replace('.', ',') + ' \u00b0C', tempDispX, blackContY + contH/2 + 6);
+
+            ctx.fillStyle = '#1565c0';
+            ctx.fillText(whiteTemp.toFixed(1).replace('.', ',') + ' \u00b0C', tempDispX, whiteContY + contH/2 + 6);
+
+            // ===== TIME/PERCENTAGE INDICATOR =====
+            var minutes = frac * 5;
+            ctx.fillStyle = '#555';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Bestrahlungszeit: ' + minutes.toFixed(1).replace('.', ',') + ' min', W/2, H - 12);
+
+            // ===== DIFFERENCE INDICATOR =====
+            if (frac > 0.1) {
+                var diff = blackTemp - whiteTemp;
+                ctx.fillStyle = '#888';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Unterschied: ' + diff.toFixed(1).replace('.', ',') + ' \u00b0C', W/2, H - 30);
+            }
+        }
+
+        function drawThermometer(ctx, x, y, height, temp) {
+            var thermoH = height - 20;
+            var thermoW = 14;
+            var bulbR = 10;
+            var maxTemp = 90;
+            var minTemp = 10;
+
+            // Tube background
+            ctx.fillStyle = '#e8e8e8';
+            ctx.fillRect(x - thermoW/2, y, thermoW, thermoH);
+            ctx.strokeStyle = '#bbb';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x - thermoW/2, y, thermoW, thermoH);
+
+            // Mercury level
+            var fillFrac = Math.max(0, Math.min(1, (temp - minTemp) / (maxTemp - minTemp)));
+            var fillH = fillFrac * (thermoH - 12);
+
+            if (fillH > 0) {
+                var mercuryGrad = ctx.createLinearGradient(0, y + thermoH - fillH, 0, y + thermoH);
+                mercuryGrad.addColorStop(0, '#ff5555');
+                mercuryGrad.addColorStop(1, '#cc0000');
+                ctx.fillStyle = mercuryGrad;
+                ctx.fillRect(x - thermoW/2 + 3, y + thermoH - fillH - 2, thermoW - 6, fillH + 2);
+            }
+
+            // Bulb
+            ctx.beginPath();
+            ctx.arc(x, y + thermoH + bulbR - 2, bulbR, 0, Math.PI * 2);
+            ctx.fillStyle = '#cc0000';
+            ctx.fill();
+            ctx.strokeStyle = '#bbb';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Scale marks
+            ctx.strokeStyle = '#bbb';
+            ctx.lineWidth = 0.5;
+            for (var tm = 20; tm <= 80; tm += 20) {
+                var markFrac = (tm - minTemp) / (maxTemp - minTemp);
+                var markY = y + thermoH - markFrac * (thermoH - 12) - 2;
+                ctx.beginPath();
+                ctx.moveTo(x + thermoW/2 + 1, markY);
+                ctx.lineTo(x + thermoW/2 + 5, markY);
+                ctx.stroke();
+                ctx.fillStyle = '#999';
+                ctx.font = '8px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(tm + '\u00b0', x + thermoW/2 + 6, markY + 3);
+            }
+        }
+
+        // Init simulation on step 3
+        if (currentStep === 3) initRadiation();
+
+    </script>
+</body>
+</html>

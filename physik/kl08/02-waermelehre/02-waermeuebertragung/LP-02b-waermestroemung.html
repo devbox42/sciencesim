@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LP-02b: Waermestroemung (Konvektion)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.5;
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 15px; }
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .progress-bar {
+            background: #ddd;
+            height: 8px;
+            margin: 15px 0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #2c5aa0, #4a7bc4);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .step-nav {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px 10px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .step-nav-item {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            background: white;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+        }
+        .step-nav-item:active { background: #e3f2fd; }
+        .step-nav-item.active { background: #2c5aa0; color: white; border-color: #2c5aa0; }
+        .step-nav-item.done { background: #2a7a4b; color: white; border-color: #2a7a4b; }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 18px;
+            margin-bottom: 15px;
+            display: none;
+            border-radius: 8px;
+        }
+        .section.active { display: block; }
+        .section h2 {
+            color: #2c5aa0;
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #2c5aa0;
+        }
+        .section h3 {
+            font-size: 0.95em;
+            margin: 15px 0 8px 0;
+            color: #333;
+        }
+        .section p { margin-bottom: 10px; }
+
+        /* Erkenntnisweg Labels */
+        .ew-label {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .ew-phaenomen { background: #e3f2fd; color: #1565c0; }
+        .ew-hypothese { background: #f3e5f5; color: #7b1fa2; }
+        .ew-experiment { background: #fff3e0; color: #e65100; }
+        .ew-beobachtung { background: #e0f2f1; color: #00695c; }
+        .ew-deutung { background: #f1f8e9; color: #33691e; }
+        .ew-verallgemeinerung { background: #e8f5e9; color: #2e7d32; }
+        .ew-anwendung { background: #e8eaf6; color: #283593; }
+
+        /* Content Boxes */
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2c5aa0;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            border-radius: 0 8px 8px 0;
+        }
+        .merke-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 12px 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .merke-box::before {
+            content: "Merke";
+            display: inline-block;
+            background: #2a7a4b;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+        .warn-box {
+            background: #fff3e0;
+            border-left: 4px solid #b35c00;
+            padding: 10px 14px;
+            margin: 12px 0;
+            font-size: 0.9em;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Protokoll-Box (AB-Verweise) */
+        .protokoll-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 12px 14px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .protokoll-box::before {
+            content: "Arbeitsblatt";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        /* Erkenntnis-Box */
+        .erkenntnis-box {
+            background: #fff3e0;
+            border: 2px solid #b35c00;
+            padding: 14px 16px;
+            margin: 14px 0;
+            border-radius: 8px;
+        }
+        .erkenntnis-box::before {
+            content: "Erkenntnis";
+            display: inline-block;
+            background: #b35c00;
+            color: white;
+            font-size: 0.75em;
+            font-weight: 600;
+            padding: 3px 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        /* Predictions / Hypotheses */
+        .prediction-option {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .prediction-option:active { border-color: #2c5aa0; background: #e3f2fd; }
+        .prediction-option.selected { border-color: #2c5aa0; background: #e3f2fd; font-weight: 600; }
+        .prediction-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .prediction-option.wrong { border-color: #c62828; background: #ffebee; opacity: 0.6; }
+        .recall-box {
+            background: #f3e5f5;
+            border-left: 4px solid #7b1fa2;
+            padding: 12px 14px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            display: none;
+        }
+
+        /* Simulation */
+        .sim-container {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .sim-container canvas {
+            border-radius: 4px;
+            max-width: 100%;
+            touch-action: none;
+            border: 1px solid #ccc;
+        }
+        .sim-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .sim-controls label { color: #444; font-size: 0.85em; }
+        .sim-controls input[type=range] {
+            width: 140px;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .sim-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            min-height: 44px;
+            min-width: 44px;
+            touch-action: manipulation;
+            background: #2c5aa0;
+            color: white;
+        }
+        .sim-btn:hover { background: #1e3d6f; }
+        .sim-btn.secondary { background: #777; color: white; }
+        .sim-btn.active-toggle { background: #2a7a4b; }
+        .sim-value { color: #c62828; font-size: 1.1em; font-weight: 600; min-width: 40px; text-align: center; }
+
+        /* Badges & Tables */
+        .niveau-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .niveau-1 { background: #e8f5e9; color: #2e7d32; }
+        .niveau-2 { background: #fff3e0; color: #e65100; }
+        .niveau-3 { background: #ffebee; color: #c62828; }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.85em;
+        }
+        .data-table th { background: #2c5aa0; color: white; padding: 10px; text-align: left; }
+        .data-table td { border: 1px solid #ddd; padding: 10px; }
+        .data-table tr:nth-child(even) { background: #f9f9f9; }
+
+        /* Fill-in-the-blank */
+        .fill-blank {
+            border: none;
+            border-bottom: 2px solid #2c5aa0;
+            background: transparent;
+            padding: 8px;
+            font-size: 1em;
+            width: 140px;
+            min-height: 44px;
+            text-align: center;
+            font-family: inherit;
+        }
+        .fill-blank:focus { outline: none; border-bottom-color: #2a7a4b; }
+        .fill-blank.correct { border-bottom-color: #2a7a4b; color: #2a7a4b; font-weight: 600; }
+
+        /* Collapsibles */
+        .collapsible-header {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin: 10px 0 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+        .collapsible-header:hover { background: #eee; }
+        .collapsible-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .collapsible-content.open { display: block; }
+
+        /* Quiz feedback */
+        .quiz-feedback {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+            font-weight: 600;
+        }
+        .quiz-feedback.correct-fb { background: #e8f5e9; color: #2e7d32; display: block; }
+        .quiz-feedback.wrong-fb { background: #ffebee; color: #c62828; display: block; }
+
+        /* Match game */
+        .match-container { margin: 15px 0; }
+        .match-item {
+            display: inline-block;
+            padding: 10px 14px;
+            margin: 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85em;
+            min-height: 44px;
+            touch-action: manipulation;
+            background: white;
+            transition: all 0.2s;
+        }
+        .match-item:active { border-color: #2c5aa0; }
+        .match-item.selected { border-color: #2c5aa0; background: #e3f2fd; }
+        .match-item.matched { border-color: #2a7a4b; background: #e8f5e9; opacity: 0.7; pointer-events: none; }
+        .match-item.wrong-flash { border-color: #c62828; background: #ffebee; }
+
+        /* Flashcard styles */
+        .flashcard-container { max-width: 420px; margin: 1.5rem auto; }
+        .flashcard-progress { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; font-size: 0.9rem; color: #555; }
+        .fc-progress-bar { flex: 1; height: 6px; background: #ddd; border-radius: 3px; margin: 0 1rem; overflow: hidden; }
+        .fc-progress-fill { height: 100%; background: #2a7a4b; transition: width 0.3s; }
+        .fc-streak { color: #b35c00; font-weight: bold; }
+        .flashcard-wrapper { perspective: 1000px; height: 220px; touch-action: pan-y; }
+        .flashcard { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.4s, left 0.1s; cursor: pointer; left: 0; }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .fc-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); text-align: center; }
+        .fc-front { background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%); color: white; }
+        .fc-back { background: white; color: #333; transform: rotateY(180deg); border: 2px solid #2c5aa0; }
+        .fc-term { font-size: 1.6rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .fc-hint { font-size: 0.85rem; opacity: 0.8; }
+        .fc-definition { font-size: 1.2rem; line-height: 1.4; }
+        .flashcard-buttons { display: flex; gap: 1rem; margin-top: 1rem; }
+        .btn-wrong, .btn-correct { flex: 1; padding: 0.8rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; touch-action: manipulation; }
+        .btn-wrong { background: #ffebee; color: #c62828; }
+        .btn-correct { background: #e8f5e9; color: #2e7d32; }
+        .btn-wrong:active, .btn-correct:active { transform: scale(0.95); }
+        .flashcard-complete { text-align: center; padding: 2rem; }
+        .complete-score { font-size: 3rem; font-weight: bold; color: #2a7a4b; }
+        .btn-restart { margin-top: 1rem; padding: 0.8rem 2rem; background: #2c5aa0; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; min-height: 44px; }
+
+        /* Navigation Buttons (bottom of sections) */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid #ddd;
+            gap: 10px;
+        }
+        .nav-buttons button {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            font-size: 0.95em;
+            border-radius: 8px;
+            min-height: 46px;
+        }
+        .nav-buttons button:active { background: #1e3d6f; }
+        .nav-buttons button.btn-secondary {
+            background: white;
+            color: #2c5aa0;
+            border: 2px solid #2c5aa0;
+        }
+        .nav-buttons button.success { background: #2a7a4b; }
+
+        ul, ol { margin-left: 18px; margin-top: 8px; }
+        li { margin-bottom: 4px; font-size: 0.9em; }
+
+        @media (max-width: 600px) {
+            .section { padding: 14px; }
+            .sim-controls { flex-direction: column; }
+            .nav-buttons { flex-direction: column; }
+            .nav-buttons button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Waermestroemung (Konvektion)</h1>
+        <p>Physik Klasse 8 | LP-02b | Waermeuebertragung Teil 2</p>
+    </header>
+
+    <div class="container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="step-nav" id="stepNav"></div>
+
+        <!-- SECTION 1: Phaenomen -->
+        <section class="section active" data-step="1" data-title="Phaenomen: Heizung und warmer Raum">
+            <div class="ew-label ew-phaenomen">Phaenomen</div>
+            <h2>1. Wie verteilt eine Heizung die Waerme im Raum?</h2>
+            <p>Stell dir vor: Es ist Winter. Die Heizung steht <strong>unten am Fenster</strong>. Trotzdem wird der <strong>ganze Raum</strong> warm &mdash; auch die hinterste Ecke weit weg von der Heizung.</p>
+            <div class="info-box">
+                <strong>Denkfrage:</strong> Wie kann die Waerme von der Heizung in die hinterste Ecke des Raumes gelangen? Die Heizung beruehrt ja nicht die Waende und Moebel!
+            </div>
+            <p>In LP-02a hast du gelernt: Luft ist ein <strong>schlechter Waermeleiter</strong> (Isolator). Waermeleitung allein kann also nicht erklaeren, wie der ganze Raum warm wird.</p>
+            <p>Es muss also noch eine <strong>andere Art der Waermeuebertragung</strong> geben...</p>
+            <div class="protokoll-box">
+                Bearbeite auf dem Arbeitsblatt <strong>Aufgabe 1</strong>: Notiere, wo die Heizung steht und was du beobachtest.
+            </div>
+            <div class="nav-buttons">
+                <span></span>
+                <button onclick="goToStep(2)">Hypothese &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 2: Hypothese -->
+        <section class="section" data-step="2" data-title="Hypothese: Warum wird der ganze Raum warm?">
+            <div class="ew-label ew-hypothese">Hypothese</div>
+            <h2>2. Was vermutest du?</h2>
+            <p><strong>Warum wird der ganze Raum warm, obwohl die Heizung nur unten am Fenster steht?</strong></p>
+            <div id="hypothesis1">
+                <button class="prediction-option" onclick="saveHypothesis(this, 'A')">A) Die Waerme wird durch die Wand geleitet</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'B')">B) Warme Luft steigt auf und verteilt sich im Raum</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'C')">C) Die Heizung strahlt Waerme in alle Richtungen ab</button>
+                <button class="prediction-option" onclick="saveHypothesis(this, 'D')">D) Waerme fliesst immer automatisch nach oben</button>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.85em; color: #666;">Merke dir deine Vermutung &mdash; wir ueberpruefen sie gleich mit einer Simulation!</p>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(1)">&larr; Zurueck</button>
+                <button onclick="goToStep(3)">Simulation &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 3: Simulation Konvektion -->
+        <section class="section" data-step="3" data-title="Simulation: Konvektion">
+            <div class="ew-label ew-experiment">Experiment</div>
+            <h2>3. Simulation: Waermestroemung in einem Behaelter</h2>
+            <p>Beobachte, wie sich Fluessigkeit in einem Behaelter bewegt, wenn sie von unten erhitzt wird. Die <strong>Farbe</strong> der Teilchen zeigt ihre Temperatur: <span style="color:#2255cc; font-weight:600;">blau = kalt</span>, <span style="color:#cc2222; font-weight:600;">rot = heiss</span>.</p>
+
+            <div class="info-box">
+                <strong>Auftrag:</strong>
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li>Stelle die Heizleistung auf ca. 50&ndash;80 %</li>
+                    <li>Beobachte die Teilchenbewegung &mdash; was passiert ueber der Waermequelle?</li>
+                    <li>Schalte danach die <strong>Stroemungspfeile</strong> ein und vergleiche</li>
+                    <li>Probiere verschiedene Heizleistungen aus</li>
+                </ol>
+            </div>
+
+            <div class="sim-container">
+                <canvas id="convectionCanvas" width="700" height="450"></canvas>
+                <div class="sim-controls">
+                    <label>Heizleistung:
+                        <input type="range" id="heatSlider" min="0" max="100" value="0" oninput="updateHeatDisplay(this.value)">
+                    </label>
+                    <span class="sim-value" id="heatValue">0 %</span>
+                    <button class="sim-btn" id="arrowToggle" onclick="toggleArrows()">Stroemungspfeile: AUS</button>
+                    <button class="sim-btn secondary" onclick="resetConvection()">Reset</button>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(2)">&larr; Zurueck</button>
+                <button onclick="goToStep(4)">Beobachtung &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 4: Beobachtung -->
+        <section class="section" data-step="4" data-title="Beobachtung: Was hast du gesehen?">
+            <div class="ew-label ew-beobachtung">Beobachtung</div>
+            <h2>4. Was hast du beobachtet?</h2>
+
+            <div id="hypothesisRecall" class="recall-box">
+                <p id="hypothesisRecallText"></p>
+            </div>
+
+            <p>Beschreibe in eigenen Worten, was du in der Simulation gesehen hast:</p>
+            <ul>
+                <li>Was passiert mit den Teilchen <strong>direkt ueber</strong> der Waermequelle?</li>
+                <li>Wohin bewegen sich die <strong>warmen (roten)</strong> Teilchen?</li>
+                <li>Was passiert mit den <strong>kalten (blauen)</strong> Teilchen an den Seiten?</li>
+                <li>Erkennst du ein <strong>kreisfoermiges Muster</strong>?</li>
+            </ul>
+
+            <div class="protokoll-box">
+                Notiere deine Beobachtung auf dem Arbeitsblatt (<strong>Aufgabe 2</strong>): Beschreibe in eigenen Worten, was du in der Simulation beobachtet hast. Zeichne Pfeile in den Behaelter auf dem AB!
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(3)">&larr; Zurueck</button>
+                <button onclick="goToStep(5)">Deutung &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 5: Deutung -->
+        <section class="section" data-step="5" data-title="Deutung: Warum steigt warme Luft auf?">
+            <div class="ew-label ew-deutung">Deutung</div>
+            <h2>5. Warum steigt warme Luft (oder warmes Wasser) auf?</h2>
+
+            <p>Jetzt sollst du selbst erklaeren, <strong>warum</strong> die warme Fluessigkeit aufsteigt. Nutze dein Wissen aus LP-01 (Teilchenmodell) und LP-02a (Waermeleitung).</p>
+
+            <div class="info-box">
+                <strong>Leitfragen:</strong>
+                <ol style="margin-top: 8px; padding-left: 20px;">
+                    <li>Was passiert mit den Teilchen, wenn sie <strong>waermer</strong> werden? (Denke an LP-01!)</li>
+                    <li>Was bedeutet das fuer den <strong>Abstand</strong> zwischen den Teilchen?</li>
+                    <li>Wenn die gleiche Masse mehr Platz braucht &mdash; was passiert mit der <strong>Dichte</strong>?</li>
+                    <li>Was passiert mit einem Stoff, der <strong>leichter</strong> ist als seine Umgebung?</li>
+                </ol>
+            </div>
+
+            <div class="protokoll-box">
+                Erklaere in eigenen Worten auf dem Arbeitsblatt (<strong>Aufgabe 3</strong>): Warum steigt warme Luft/Fluessigkeit auf? Nutze die Leitfragen oben und die Begriffe: Teilchen, Bewegung, Abstand, Dichte, aufsteigen, Kreislauf.
+            </div>
+
+            <p style="margin-top: 18px; font-size: 0.9em; color: #666;">Erst nach dem Schreiben: Klappe die Muster-Erklaerung auf und vergleiche mit deiner eigenen.</p>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>Muster-Erklaerung aufklappen</strong> (erst NACH dem AB!)</span>
+                <span>&#9660;</span>
+            </div>
+            <div class="collapsible-content">
+                <ol>
+                    <li>Die Waermequelle erwaermt die Fluessigkeit/Luft direkt darueber &rarr; Teilchen bewegen sich <strong>schneller</strong></li>
+                    <li>Schnellere Teilchen brauchen <strong>mehr Platz</strong> &rarr; die warme Fluessigkeit/Luft <strong>dehnt sich aus</strong></li>
+                    <li>Ausgedehnte Fluessigkeit/Luft hat eine <strong>geringere Dichte</strong> (weniger Masse pro Volumen)</li>
+                    <li>Leichtere, warme Fluessigkeit/Luft <strong>steigt auf</strong></li>
+                    <li>Schwerere, kalte Fluessigkeit/Luft <strong>sinkt ab</strong> und rueckt nach</li>
+                    <li>Es entsteht ein <strong>Kreislauf</strong> &mdash; die <em>Konvektionszelle</em></li>
+                </ol>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(4)">&larr; Zurueck</button>
+                <button onclick="goToStep(6)">Merksatz &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 6: Verallgemeinerung (Merksatz) -->
+        <section class="section" data-step="6" data-title="Verallgemeinerung: Merksatz Konvektion">
+            <div class="ew-label ew-verallgemeinerung">Verallgemeinerung</div>
+            <h2>6. Merksatz: Waermestroemung (Konvektion)</h2>
+
+            <div class="merke-box">
+                <strong>Waermestroemung (Konvektion)</strong> ist die Uebertragung von Waerme durch <strong>Bewegung</strong> (Stroemung) von Fluessigkeiten oder Gasen. Warme Bereiche steigen auf (geringere Dichte), kalte sinken ab. Es entsteht ein <strong>Kreislauf</strong> (Konvektionszelle).
+            </div>
+
+            <h3>Lueckentext: Merksatz uebertragen <span class="niveau-badge niveau-1">&#9733;</span></h3>
+
+            <p>Vervollstaendige den Merksatz:</p>
+            <p>
+                Waermestroemung ist die Uebertragung von Waerme durch <input type="text" class="fill-blank" data-answer="Bewegung" id="fb1" onchange="checkFillBlank(this)"> von Fluessigkeiten oder <input type="text" class="fill-blank" data-answer="Gasen" id="fb2" onchange="checkFillBlank(this)">.
+            </p>
+            <p>
+                Warme Bereiche steigen auf, weil ihre <input type="text" class="fill-blank" data-answer="Dichte" id="fb3" onchange="checkFillBlank(this)"> geringer ist.
+                Kalte Bereiche <input type="text" class="fill-blank" data-answer="sinken" id="fb4" onchange="checkFillBlank(this)"> ab.
+                Es entsteht ein <input type="text" class="fill-blank" data-answer="Kreislauf" id="fb5" onchange="checkFillBlank(this)">.
+            </p>
+
+            <div class="protokoll-box">
+                Uebernimm den vollstaendigen Merksatz aus der gruenen Merke-Box oben ins Arbeitsblatt (<strong>Aufgabe 4</strong>).
+            </div>
+
+            <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                <span><strong>&#9733;&#9733;&#9733; Erweiterung:</strong> Konvektion vs. Waermeleitung</span>
+                <span>&#9660;</span>
+            </div>
+            <div class="collapsible-content">
+                <table class="data-table">
+                    <tr>
+                        <th></th>
+                        <th>Waermeleitung</th>
+                        <th>Waermestroemung</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Wie?</strong></td>
+                        <td>Teilchen geben Energie an Nachbarn weiter</td>
+                        <td>Warmes Material stroemt (steigt auf)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Teilchen bewegen sich?</strong></td>
+                        <td>Nein (schwingen am Platz)</td>
+                        <td>Ja (stroemen mit)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Funktioniert in...</strong></td>
+                        <td>Feststoffen (am besten), Fluessigkeiten, Gasen</td>
+                        <td>Nur Fluessigkeiten und Gasen</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Beispiel</strong></td>
+                        <td>Heisser Loeffel im Topf</td>
+                        <td>Heizung erwaermt Zimmer</td>
+                    </tr>
+                </table>
+                <p><strong>Wichtig:</strong> Konvektion funktioniert <strong>nicht</strong> in Feststoffen &mdash; dort koennen sich die Teilchen nicht frei bewegen!</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(5)">&larr; Zurueck</button>
+                <button onclick="goToStep(7)">Alltagsbeispiele &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 7: Anwendung (Alltagsbeispiele + Quiz) -->
+        <section class="section" data-step="7" data-title="Anwendung: Alltagsbeispiele">
+            <div class="ew-label ew-anwendung">Anwendung</div>
+            <h2>7. Konvektion im Alltag</h2>
+
+            <p>Konvektion begegnet dir ueberall &mdash; ordne die Beispiele richtig zu!</p>
+
+            <h3>Zuordnungs-Quiz</h3>
+            <p>Waehle jeweils ein <strong>Beispiel</strong> (links) und die passende <strong>Erklaerung</strong> (rechts). Richtige Paare werden gruen.</p>
+
+            <div class="match-container" id="matchGame">
+                <div style="margin-bottom: 8px;"><strong>Beispiel:</strong></div>
+                <div id="matchLeft"></div>
+                <div style="margin: 12px 0 8px 0;"><strong>Erklaerung:</strong></div>
+                <div id="matchRight"></div>
+            </div>
+            <div id="matchFeedback" style="margin-top: 10px; font-size: 0.9em;"></div>
+
+            <div class="protokoll-box">
+                Bearbeite die Alltagsbeispiele auf dem Arbeitsblatt (<strong>Aufgabe 5</strong>).
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(6)">&larr; Zurueck</button>
+                <button onclick="goToStep(8)">Flashcards &rarr;</button>
+            </div>
+        </section>
+
+        <!-- SECTION 8: Flashcards -->
+        <section class="section" data-step="8" data-title="Ueben: Flashcards">
+            <h2>8. Flashcards: Begriffe wiederholen</h2>
+            <p>Teste dein Wissen! Tippe auf die Karte zum Umdrehen. Dann bewerte: <strong>Gewusst</strong> oder <strong>Nochmal</strong>.</p>
+            <p style="font-size:0.85em; color:#666;">Die Karten decken Konvektion und Wiederholung Waermeleitung ab.</p>
+
+            <div class="flashcard-container" id="flashcardApp">
+                <div class="flashcard-progress">
+                    <span class="fc-current">1</span>
+                    <div class="fc-progress-bar"><div class="fc-progress-fill" style="width:0%"></div></div>
+                    <span class="fc-total">10</span>
+                    <span class="fc-streak">0</span>
+                </div>
+                <div class="flashcard-wrapper">
+                    <div class="flashcard" id="flashcard">
+                        <div class="fc-face fc-front">
+                            <div class="fc-term">Begriff</div>
+                            <div class="fc-hint">Tippen zum Umdrehen</div>
+                        </div>
+                        <div class="fc-face fc-back">
+                            <div class="fc-definition">Definition</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flashcard-buttons">
+                    <button class="btn-wrong" onclick="fcMarkWrong()">Nochmal</button>
+                    <button class="btn-correct" onclick="fcMarkCorrect()">Gewusst!</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <div class="merke-box">
+                    <strong>LP-02b geschafft!</strong> Du kennst jetzt die <strong>Waermestroemung (Konvektion)</strong>: Warme Fluessigkeit oder warmes Gas steigt auf (geringere Dichte), kaltes sinkt ab &mdash; es entsteht ein Kreislauf. Naechstes Mal: Waermestrahlung und Vergleich aller drei Arten!
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="goToStep(7)">&larr; Zurueck</button>
+                <button class="success" onclick="finishLP()">Lernpfad abschliessen</button>
+            </div>
+        </section>
+
+    </div><!-- /container -->
+
+    <script>
+        // ========== NAVIGATION ==========
+        var currentStep = 1;
+        var sections = document.querySelectorAll('.section');
+        var totalSteps = sections.length;
+        var stepTitles = [];
+        sections.forEach(function(s, i) { stepTitles.push(s.dataset.title || 'Schritt ' + (i+1)); });
+
+        var stepNav = document.getElementById('stepNav');
+        for (var i = 1; i <= totalSteps; i++) {
+            var item = document.createElement('div');
+            item.className = 'step-nav-item' + (i === 1 ? ' active' : '');
+            item.textContent = i;
+            item.onclick = (function(n) { return function() { goToStep(n); }; })(i);
+            stepNav.appendChild(item);
+        }
+
+        function updateProgress() {
+            var progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            var navItems = document.querySelectorAll('.step-nav-item');
+            navItems.forEach(function(item, i) {
+                item.classList.remove('active', 'done');
+                if (i + 1 < currentStep) item.classList.add('done');
+                else if (i + 1 === currentStep) item.classList.add('active');
+            });
+        }
+
+        function goToStep(num) {
+            if (num < 1 || num > totalSteps) return;
+            sections.forEach(function(s) { s.classList.remove('active'); });
+            sections.forEach(function(s) {
+                if (parseInt(s.dataset.step) === num) s.classList.add('active');
+            });
+            currentStep = num;
+            updateProgress();
+            localStorage.setItem(LS + '-step', num);
+            if (num === 3 && !convInited) initConvection();
+            if (num === 4) displayHypothesisRecall();
+            if (num === 7 && !matchInited) initMatch();
+            if (num === 8 && !fcInited) initFlashcards();
+            if (num === 3 && convInited) { setTimeout(function(){ drawConvection(); }, 50); }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function finishLP() {
+            alert('Lernpfad abgeschlossen! Gib dein Arbeitsblatt zur Kontrolle ab.');
+            localStorage.setItem(LS + '-completed', 'true');
+        }
+
+        var LS = 'kl08-waerme-02b';
+
+        var saved = localStorage.getItem(LS + '-step');
+        if (saved) goToStep(parseInt(saved));
+        updateProgress();
+
+        // ========== HYPOTHESES ==========
+        function saveHypothesis(el, choice) {
+            document.querySelectorAll('#hypothesis1 .prediction-option').forEach(function(o) { o.classList.remove('selected'); });
+            el.classList.add('selected');
+            localStorage.setItem(LS + '-hyp1', choice);
+        }
+
+        function displayHypothesisRecall() {
+            var pred = localStorage.getItem(LS + '-hyp1');
+            var box = document.getElementById('hypothesisRecall');
+            var txt = document.getElementById('hypothesisRecallText');
+            if (pred) {
+                var labels = {
+                    A: 'Waerme wird durch die Wand geleitet',
+                    B: 'Warme Luft steigt auf und verteilt sich',
+                    C: 'Heizung strahlt in alle Richtungen',
+                    D: 'Waerme fliesst automatisch nach oben'
+                };
+                txt.innerHTML = '<strong>Deine Vermutung war:</strong> ' + pred + ') ' + (labels[pred] || pred);
+                box.style.display = 'block';
+            }
+        }
+
+        function loadHypotheses() {
+            var h1 = localStorage.getItem(LS + '-hyp1');
+            if (h1) {
+                document.querySelectorAll('#hypothesis1 .prediction-option').forEach(function(o) {
+                    if (o.textContent.trim().charAt(0) === h1) o.classList.add('selected');
+                });
+            }
+        }
+        loadHypotheses();
+
+        // ========== FILL BLANKS ==========
+        function checkFillBlank(el) {
+            var answer = el.dataset.answer.toLowerCase().trim();
+            var val = el.value.toLowerCase().trim();
+            var altVal = val.replace(/ae/g,'a').replace(/oe/g,'o').replace(/ue/g,'u');
+            var altAnswer = answer.replace(/ae/g,'a').replace(/oe/g,'o').replace(/ue/g,'u');
+            if (val === answer || altVal === altAnswer || val === answer.replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue')) {
+                el.classList.add('correct');
+            } else if (val.length > 0) {
+                el.classList.remove('correct');
+            }
+            localStorage.setItem(LS + '-fb-' + el.id, el.value);
+        }
+        function loadFillBlanks() {
+            document.querySelectorAll('.fill-blank').forEach(function(el) {
+                var s = localStorage.getItem(LS + '-fb-' + el.id);
+                if (s) { el.value = s; checkFillBlank(el); }
+            });
+        }
+        loadFillBlanks();
+
+        // ========== COLLAPSIBLE ==========
+        function toggleCollapsible(header) {
+            var content = header.nextElementSibling;
+            content.classList.toggle('open');
+            header.querySelector('span:last-child').textContent = content.classList.contains('open') ? '\u25B2' : '\u25BC';
+        }
+
+        // ========== CONVECTION SIMULATION ==========
+        var convInited = false;
+        var showArrows = false;
+        var heatPower = 0;
+        var convParticles = [];
+        var convAnimId = null;
+        var PARTICLE_COUNT = 100;
+        var CONTAINER_X = 80, CONTAINER_Y = 40, CONTAINER_W = 540, CONTAINER_H = 340;
+        var HEATER_X, HEATER_Y, HEATER_W, HEATER_H;
+
+        function initConvection() {
+            convInited = true;
+            HEATER_X = CONTAINER_X + CONTAINER_W * 0.3;
+            HEATER_Y = CONTAINER_Y + CONTAINER_H - 10;
+            HEATER_W = CONTAINER_W * 0.4;
+            HEATER_H = 10;
+
+            convParticles = [];
+            for (var i = 0; i < PARTICLE_COUNT; i++) {
+                convParticles.push({
+                    x: CONTAINER_X + 20 + Math.random() * (CONTAINER_W - 40),
+                    y: CONTAINER_Y + 20 + Math.random() * (CONTAINER_H - 40),
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    temp: 20,
+                    r: 4 + Math.random() * 2
+                });
+            }
+            heatPower = parseInt(document.getElementById('heatSlider').value);
+            if (convAnimId) cancelAnimationFrame(convAnimId);
+            animateConvection();
+        }
+
+        function resetConvection() {
+            heatPower = 0;
+            document.getElementById('heatSlider').value = 0;
+            document.getElementById('heatValue').textContent = '0 %';
+            showArrows = false;
+            document.getElementById('arrowToggle').textContent = 'Stroemungspfeile: AUS';
+            document.getElementById('arrowToggle').classList.remove('active-toggle');
+            if (convInited) {
+                for (var i = 0; i < convParticles.length; i++) {
+                    convParticles[i].x = CONTAINER_X + 20 + Math.random() * (CONTAINER_W - 40);
+                    convParticles[i].y = CONTAINER_Y + 20 + Math.random() * (CONTAINER_H - 40);
+                    convParticles[i].vx = (Math.random() - 0.5) * 0.5;
+                    convParticles[i].vy = (Math.random() - 0.5) * 0.5;
+                    convParticles[i].temp = 20;
+                }
+            }
+        }
+
+        function updateHeatDisplay(val) {
+            heatPower = parseInt(val);
+            document.getElementById('heatValue').textContent = val + ' %';
+        }
+
+        function toggleArrows() {
+            showArrows = !showArrows;
+            var btn = document.getElementById('arrowToggle');
+            btn.textContent = 'Stroemungspfeile: ' + (showArrows ? 'EIN' : 'AUS');
+            if (showArrows) {
+                btn.classList.add('active-toggle');
+            } else {
+                btn.classList.remove('active-toggle');
+            }
+        }
+
+        function tempToColor(t) {
+            // 20 = blue, 80 = red
+            var frac = Math.max(0, Math.min(1, (t - 20) / 60));
+            var r = Math.round(30 + frac * 225);
+            var g = Math.round(100 - frac * 70);
+            var b = Math.round(220 - frac * 200);
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        }
+
+        function animateConvection() {
+            if (!convInited) return;
+            var canvas = document.getElementById('convectionCanvas');
+            if (!canvas) return;
+            var ctx = canvas.getContext('2d');
+            var W = canvas.width, H = canvas.height;
+
+            // Physics update
+            var heatFactor = heatPower / 100;
+            var centerX = CONTAINER_X + CONTAINER_W / 2;
+            var bottomY = CONTAINER_Y + CONTAINER_H;
+
+            for (var i = 0; i < convParticles.length; i++) {
+                var p = convParticles[i];
+
+                // Heat source: particles near bottom center get heated
+                var dx = p.x - centerX;
+                var dy = p.y - bottomY;
+                var distToHeater = Math.sqrt(dx * dx + dy * dy);
+                var heaterRadius = CONTAINER_W * 0.25;
+
+                if (distToHeater < heaterRadius && p.y > bottomY - 80) {
+                    var heatAmount = heatFactor * 0.8 * (1 - distToHeater / heaterRadius);
+                    p.temp = Math.min(80, p.temp + heatAmount);
+                }
+
+                // Cooling: particles near top and sides cool slightly
+                if (p.y < CONTAINER_Y + 60) {
+                    p.temp = Math.max(20, p.temp - 0.15);
+                }
+                if (p.x < CONTAINER_X + 40 || p.x > CONTAINER_X + CONTAINER_W - 40) {
+                    p.temp = Math.max(20, p.temp - 0.08);
+                }
+
+                // General slow cooling (radiation/conduction to walls)
+                p.temp = Math.max(20, p.temp - 0.02);
+
+                // Buoyancy: warmer particles rise, cooler sink
+                var tempFrac = (p.temp - 20) / 60;
+                var buoyancy = -tempFrac * heatFactor * 0.35;
+                p.vy += buoyancy;
+
+                // Convection flow pattern: push particles outward at top, inward at bottom
+                var relY = (p.y - CONTAINER_Y) / CONTAINER_H; // 0 = top, 1 = bottom
+                var relX = (p.x - centerX) / (CONTAINER_W / 2); // -1 = left, +1 = right
+
+                if (relY < 0.3 && tempFrac > 0.1) {
+                    // Top: push outward
+                    p.vx += relX > 0 ? 0.04 * heatFactor : -0.04 * heatFactor;
+                    if (Math.abs(relX) < 0.1) {
+                        p.vx += (Math.random() - 0.5) * 0.1 * heatFactor;
+                    }
+                }
+                if (relY > 0.7 && Math.abs(relX) > 0.3) {
+                    // Bottom sides: push inward
+                    p.vx += relX > 0 ? -0.03 * heatFactor : 0.03 * heatFactor;
+                }
+                // Side walls: push downward if near top
+                if (Math.abs(relX) > 0.6 && relY < 0.5) {
+                    p.vy += 0.03 * heatFactor;
+                }
+
+                // Random motion
+                p.vx += (Math.random() - 0.5) * 0.15;
+                p.vy += (Math.random() - 0.5) * 0.15;
+
+                // Damping
+                p.vx *= 0.96;
+                p.vy *= 0.96;
+
+                // Velocity clamp
+                var maxV = 2.5 + heatFactor * 2;
+                var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+                if (speed > maxV) {
+                    p.vx = (p.vx / speed) * maxV;
+                    p.vy = (p.vy / speed) * maxV;
+                }
+
+                // Move
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // Boundary: keep inside container with soft bounce
+                var margin = p.r + 2;
+                if (p.x < CONTAINER_X + margin) { p.x = CONTAINER_X + margin; p.vx = Math.abs(p.vx) * 0.5; }
+                if (p.x > CONTAINER_X + CONTAINER_W - margin) { p.x = CONTAINER_X + CONTAINER_W - margin; p.vx = -Math.abs(p.vx) * 0.5; }
+                if (p.y < CONTAINER_Y + margin) { p.y = CONTAINER_Y + margin; p.vy = Math.abs(p.vy) * 0.5; }
+                if (p.y > CONTAINER_Y + CONTAINER_H - margin) { p.y = CONTAINER_Y + CONTAINER_H - margin; p.vy = -Math.abs(p.vy) * 0.5; }
+            }
+
+            // ---- DRAW ----
+            ctx.clearRect(0, 0, W, H);
+
+            // Background
+            ctx.fillStyle = '#f8f8f8';
+            ctx.fillRect(0, 0, W, H);
+
+            // Container (beaker)
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(CONTAINER_X, CONTAINER_Y, CONTAINER_W, CONTAINER_H);
+
+            // Water fill (light blue tint)
+            ctx.fillStyle = 'rgba(200, 220, 240, 0.3)';
+            ctx.fillRect(CONTAINER_X + 1, CONTAINER_Y + 1, CONTAINER_W - 2, CONTAINER_H - 2);
+
+            // Heater (bottom center, glowing if on)
+            var heaterLeft = CONTAINER_X + CONTAINER_W * 0.3;
+            var heaterRight = CONTAINER_X + CONTAINER_W * 0.7;
+            var heaterTop = CONTAINER_Y + CONTAINER_H;
+            if (heatPower > 0) {
+                // Glow
+                var glowGrad = ctx.createRadialGradient(centerX, heaterTop, 10, centerX, heaterTop, 60 + heatFactor * 40);
+                glowGrad.addColorStop(0, 'rgba(255, 80, 0, ' + (0.3 * heatFactor) + ')');
+                glowGrad.addColorStop(1, 'rgba(255, 80, 0, 0)');
+                ctx.fillStyle = glowGrad;
+                ctx.fillRect(heaterLeft - 40, heaterTop - 40, (heaterRight - heaterLeft) + 80, 60);
+            }
+            // Heater body
+            var heaterColor = heatPower > 0 ? 'rgb(' + Math.round(180 + heatFactor * 75) + ', ' + Math.round(60 - heatFactor * 30) + ', 30)' : '#888';
+            ctx.fillStyle = heaterColor;
+            ctx.fillRect(heaterLeft, heaterTop, heaterRight - heaterLeft, 18);
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(heaterLeft, heaterTop, heaterRight - heaterLeft, 18);
+            // Label
+            ctx.fillStyle = '#444';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Waermequelle (' + heatPower + ' %)', centerX, heaterTop + 35);
+
+            // Particles
+            for (var j = 0; j < convParticles.length; j++) {
+                var pp = convParticles[j];
+                ctx.beginPath();
+                ctx.arc(pp.x, pp.y, pp.r, 0, Math.PI * 2);
+                ctx.fillStyle = tempToColor(pp.temp);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+
+            // Flow arrows (if toggled on)
+            if (showArrows && heatPower > 10) {
+                ctx.strokeStyle = 'rgba(44, 90, 160, 0.6)';
+                ctx.fillStyle = 'rgba(44, 90, 160, 0.6)';
+                ctx.lineWidth = 2;
+
+                // Up center
+                drawArrow(ctx, centerX, CONTAINER_Y + CONTAINER_H * 0.7, centerX, CONTAINER_Y + CONTAINER_H * 0.2);
+                // Right at top
+                drawArrow(ctx, centerX + 30, CONTAINER_Y + CONTAINER_H * 0.15, CONTAINER_X + CONTAINER_W - 40, CONTAINER_Y + CONTAINER_H * 0.15);
+                // Left at top
+                drawArrow(ctx, centerX - 30, CONTAINER_Y + CONTAINER_H * 0.15, CONTAINER_X + 40, CONTAINER_Y + CONTAINER_H * 0.15);
+                // Down right
+                drawArrow(ctx, CONTAINER_X + CONTAINER_W - 35, CONTAINER_Y + CONTAINER_H * 0.2, CONTAINER_X + CONTAINER_W - 35, CONTAINER_Y + CONTAINER_H * 0.75);
+                // Down left
+                drawArrow(ctx, CONTAINER_X + 35, CONTAINER_Y + CONTAINER_H * 0.2, CONTAINER_X + 35, CONTAINER_Y + CONTAINER_H * 0.75);
+                // Inward bottom right
+                drawArrow(ctx, CONTAINER_X + CONTAINER_W - 50, CONTAINER_Y + CONTAINER_H * 0.85, centerX + 40, CONTAINER_Y + CONTAINER_H * 0.85);
+                // Inward bottom left
+                drawArrow(ctx, CONTAINER_X + 50, CONTAINER_Y + CONTAINER_H * 0.85, centerX - 40, CONTAINER_Y + CONTAINER_H * 0.85);
+            }
+
+            // Temperature legend
+            var legX = CONTAINER_X + CONTAINER_W + 30;
+            var legY = CONTAINER_Y + 20;
+            var legH = CONTAINER_H - 40;
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(legX, legY, 14, legH);
+            for (var y = 0; y < legH; y++) {
+                ctx.fillStyle = tempToColor(80 - (y / legH) * 60);
+                ctx.fillRect(legX, legY + y, 14, 1);
+            }
+            ctx.fillStyle = '#555';
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('heiss', legX + 18, legY + 8);
+            ctx.fillText('kalt', legX + 18, legY + legH);
+
+            // Container label
+            ctx.fillStyle = '#555';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Behaelter mit Fluessigkeit', centerX, CONTAINER_Y - 8);
+
+            convAnimId = requestAnimationFrame(animateConvection);
+        }
+
+        function drawArrow(ctx, fromX, fromY, toX, toY) {
+            var headLen = 12;
+            var angle = Math.atan2(toY - fromY, toX - fromX);
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headLen * Math.cos(angle - 0.4), toY - headLen * Math.sin(angle - 0.4));
+            ctx.lineTo(toX - headLen * Math.cos(angle + 0.4), toY - headLen * Math.sin(angle + 0.4));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawConvection() {
+            // Trigger a single frame redraw
+            if (convInited) {
+                var canvas = document.getElementById('convectionCanvas');
+                if (canvas) {
+                    var ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+        }
+
+        // ========== MATCH GAME (Zuordnung Alltagsbeispiele) ==========
+        var matchInited = false;
+        var matchPairs = [
+            { left: 'Heizung im Zimmer', right: 'Warme Luft steigt an Heizung auf, kalte sinkt am Fenster ab' },
+            { left: 'Kochendes Wasser', right: 'Heisses Wasser steigt am Boden auf, kuehles sinkt an den Seiten ab' },
+            { left: 'Seewind (Seebrise)', right: 'Land erwaermt sich schneller, warme Luft steigt auf, kuehle Meerluft stroemt nach' },
+            { left: 'Kamineffekt', right: 'Heisse Rauchgase steigen auf und ziehen kuehle Luft von unten nach' }
+        ];
+        var matchSelectedLeft = null;
+        var matchSelectedRight = null;
+        var matchedPairs = 0;
+
+        function initMatch() {
+            matchInited = true;
+            matchedPairs = 0;
+            var leftDiv = document.getElementById('matchLeft');
+            var rightDiv = document.getElementById('matchRight');
+            leftDiv.innerHTML = '';
+            rightDiv.innerHTML = '';
+
+            // Shuffle right side
+            var rightOrder = [];
+            for (var i = 0; i < matchPairs.length; i++) rightOrder.push(i);
+            for (var k = rightOrder.length - 1; k > 0; k--) {
+                var j = Math.floor(Math.random() * (k + 1));
+                var tmp = rightOrder[k]; rightOrder[k] = rightOrder[j]; rightOrder[j] = tmp;
+            }
+
+            for (var a = 0; a < matchPairs.length; a++) {
+                var lBtn = document.createElement('button');
+                lBtn.className = 'match-item';
+                lBtn.textContent = matchPairs[a].left;
+                lBtn.dataset.idx = a;
+                lBtn.dataset.side = 'left';
+                lBtn.onclick = function() { selectMatch(this); };
+                leftDiv.appendChild(lBtn);
+            }
+            for (var b = 0; b < rightOrder.length; b++) {
+                var rBtn = document.createElement('button');
+                rBtn.className = 'match-item';
+                rBtn.textContent = matchPairs[rightOrder[b]].right;
+                rBtn.dataset.idx = rightOrder[b];
+                rBtn.dataset.side = 'right';
+                rBtn.onclick = function() { selectMatch(this); };
+                rightDiv.appendChild(rBtn);
+            }
+        }
+
+        function selectMatch(btn) {
+            if (btn.classList.contains('matched')) return;
+            var side = btn.dataset.side;
+            if (side === 'left') {
+                if (matchSelectedLeft) matchSelectedLeft.classList.remove('selected');
+                matchSelectedLeft = btn;
+                btn.classList.add('selected');
+            } else {
+                if (matchSelectedRight) matchSelectedRight.classList.remove('selected');
+                matchSelectedRight = btn;
+                btn.classList.add('selected');
+            }
+            if (matchSelectedLeft && matchSelectedRight) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            var lIdx = matchSelectedLeft.dataset.idx;
+            var rIdx = matchSelectedRight.dataset.idx;
+            if (lIdx === rIdx) {
+                matchSelectedLeft.classList.remove('selected');
+                matchSelectedRight.classList.remove('selected');
+                matchSelectedLeft.classList.add('matched');
+                matchSelectedRight.classList.add('matched');
+                matchedPairs++;
+                matchSelectedLeft = null;
+                matchSelectedRight = null;
+                if (matchedPairs === matchPairs.length) {
+                    document.getElementById('matchFeedback').innerHTML = '<span style="color:#2a7a4b; font-weight:600;">Alle Paare richtig zugeordnet!</span>';
+                    localStorage.setItem(LS + '-match-done', 'true');
+                }
+            } else {
+                matchSelectedLeft.classList.add('wrong-flash');
+                matchSelectedRight.classList.add('wrong-flash');
+                var l = matchSelectedLeft;
+                var r = matchSelectedRight;
+                setTimeout(function() {
+                    l.classList.remove('wrong-flash', 'selected');
+                    r.classList.remove('wrong-flash', 'selected');
+                }, 600);
+                matchSelectedLeft = null;
+                matchSelectedRight = null;
+                document.getElementById('matchFeedback').innerHTML = '<span style="color:#c62828;">Das passt nicht zusammen. Versuche es nochmal!</span>';
+            }
+        }
+
+        // ========== FLASHCARDS ==========
+        var fcInited = false;
+        var fcCards = [
+            { term: 'Konvektion', definition: 'Waermeuebertragung durch Stroemung von Fluessigkeiten oder Gasen' },
+            { term: 'Konvektionszelle', definition: 'Kreisfoermige Stroemung: warm steigt auf, kalt sinkt ab' },
+            { term: 'Warum steigt warme Luft auf?', definition: 'Warme Teilchen bewegen sich schneller, brauchen mehr Platz, Dichte sinkt, leichtere Luft steigt auf' },
+            { term: 'Dichte', definition: 'Masse pro Volumen. Warme Stoffe dehnen sich aus, ihre Dichte wird geringer' },
+            { term: 'Seewind (Seebrise)', definition: 'Tags: Land erwaermt sich schneller, Luft steigt auf, kuehle Meerluft stroemt nach' },
+            { term: 'Waermeleitung', definition: 'Energieuebertragung von Teilchen zu Teilchen. Teilchen bleiben am Platz.' },
+            { term: 'Isolator', definition: 'Material, das Waerme schlecht leitet (z.B. Holz, Luft, Styropor)' },
+            { term: 'In welchen Stoffen funktioniert Konvektion?', definition: 'Nur in Fluessigkeiten und Gasen (Teilchen muessen sich frei bewegen koennen)' },
+            { term: 'Heizung unten im Raum', definition: 'Warme Luft steigt an Heizung auf, kuehle Luft sinkt am Fenster ab: Konvektion!' },
+            { term: 'Unterschied: Leitung vs. Stroemung', definition: 'Leitung: Energie wandert, Teilchen bleiben. Stroemung: Teilchen bewegen sich mit!' }
+        ];
+        var fcIndex = 0, fcCorrect = 0, fcWrong = 0, fcStreak = 0;
+
+        function initFlashcards() {
+            fcInited = true;
+            for (var i = fcCards.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = fcCards[i]; fcCards[i] = fcCards[j]; fcCards[j] = tmp;
+            }
+            fcUpdateCard();
+        }
+
+        function fcUpdateCard() {
+            var app = document.getElementById('flashcardApp');
+            if (fcIndex >= fcCards.length) {
+                var pct = Math.round((fcCorrect / fcCards.length) * 100);
+                app.innerHTML = '<div class="flashcard-complete"><div class="complete-score">' + pct + '%</div><p>' + fcCorrect + ' von ' + fcCards.length + ' gewusst</p><button class="btn-restart" onclick="fcRestart()">Nochmal</button></div>';
+                return;
+            }
+            var card = fcCards[fcIndex];
+            var fc = document.getElementById('flashcard');
+            fc.querySelector('.fc-term').textContent = card.term;
+            fc.querySelector('.fc-definition').textContent = card.definition;
+            fc.classList.remove('flipped');
+            fc.style.left = '0px';
+            fc.style.opacity = '1';
+            app.querySelector('.fc-current').textContent = fcIndex + 1;
+            app.querySelector('.fc-total').textContent = fcCards.length;
+            app.querySelector('.fc-progress-fill').style.width = (fcIndex / fcCards.length) * 100 + '%';
+            app.querySelector('.fc-streak').textContent = fcStreak;
+        }
+
+        function fcMarkCorrect() { if (!document.getElementById('flashcard').classList.contains('flipped')) return; fcCorrect++; fcStreak++; fcNext(1); }
+        function fcMarkWrong() { if (!document.getElementById('flashcard').classList.contains('flipped')) return; fcWrong++; fcStreak = 0; fcNext(-1); }
+        function fcNext(dir) {
+            var fc = document.getElementById('flashcard');
+            fc.style.transition = 'left 0.3s, opacity 0.3s';
+            fc.style.left = dir * 300 + 'px';
+            fc.style.opacity = '0';
+            setTimeout(function() { fc.style.transition = 'none'; fcIndex++; fcUpdateCard(); }, 300);
+        }
+        function fcRestart() { fcIndex = 0; fcCorrect = 0; fcWrong = 0; fcStreak = 0; location.reload(); }
+
+        document.getElementById('flashcard').addEventListener('click', function() { this.classList.toggle('flipped'); });
+        // Touch swipe
+        var fcStartX = 0, fcIsDrag = false;
+        var fcEl = document.getElementById('flashcard');
+        fcEl.addEventListener('touchstart', function(e) { fcStartX = e.touches[0].clientX; fcIsDrag = true; fcEl.style.transition = 'none'; }, { passive: true });
+        fcEl.addEventListener('touchmove', function(e) { if (!fcIsDrag) return; var d = e.touches[0].clientX - fcStartX; fcEl.style.left = d + 'px'; }, { passive: true });
+        fcEl.addEventListener('touchend', function(e) {
+            if (!e.changedTouches || !e.changedTouches[0]) { fcIsDrag = false; return; }
+            var d = e.changedTouches[0].clientX - fcStartX;
+            fcIsDrag = false;
+            if (d < -100) fcMarkWrong();
+            else if (d > 100) fcMarkCorrect();
+            else { fcEl.style.transition = 'left 0.2s'; fcEl.style.left = '0px'; }
+        });
+
+        // ========== INIT ==========
+        if (currentStep === 3) initConvection();
+        if (currentStep === 7) initMatch();
+        if (currentStep === 8) initFlashcards();
+    </script>
+</body>
+</html>
