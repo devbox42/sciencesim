@@ -821,8 +821,10 @@
         }
 
         // ========== CONVECTION SIMULATION ==========
-        // Physics-based convection: gravity + buoyancy + particle repulsion
-        // No artificial flow forces — convection cells emerge naturally
+        // Jos Stam Stable Fluids: grid-based Navier-Stokes solver.
+        // The pressure projection step guarantees incompressibility
+        // (divergence-free velocity field) — no voids, no clumping.
+        // Particles are purely visual tracers advected through the grid.
         var convInited = false;
         var showArrows = false;
         var heatPower = 0;
@@ -830,29 +832,134 @@
         var convAnimId = null;
         var PARTICLE_COUNT = 250;
         var CONTAINER_X = 80, CONTAINER_Y = 40, CONTAINER_W = 540, CONTAINER_H = 340;
-        var HEATER_X, HEATER_Y, HEATER_W, HEATER_H;
 
-        // Spatial grid for efficient particle repulsion (O(n) instead of O(n^2))
-        var GRID_COLS = 18, GRID_ROWS = 12;
-        var GRID_CELL_W, GRID_CELL_H;
-        var spatialGrid = [];
+        // Stam fluid grid (GN internal cells, (GN+2)^2 total with boundary)
+        var GN = 20;
+        var gU, gV, gU0, gV0, gT, gT0, gP, gDiv;
+        var G_DT = 0.15, G_VISC = 0.00005, G_DIFF = 0.0002, G_BUOY = 1.2;
+
+        function GIX(i, j) { return i + (GN + 2) * j; }
+        function gAlloc() {
+            var a = []; for (var k = 0; k < (GN+2)*(GN+2); k++) a.push(0); return a;
+        }
+        function gClear(a) { for (var k = 0; k < a.length; k++) a[k] = 0; }
+        function gCopy(d, s) { for (var k = 0; k < s.length; k++) d[k] = s[k]; }
+
+        // Boundary: b=1 reflects u at walls, b=2 reflects v at walls
+        function gBnd(b, x) {
+            for (var i = 1; i <= GN; i++) {
+                x[GIX(0,    i)] = b===1 ? -x[GIX(1, i)]  : x[GIX(1, i)];
+                x[GIX(GN+1, i)] = b===1 ? -x[GIX(GN,i)]  : x[GIX(GN,i)];
+                x[GIX(i,    0)] = b===2 ? -x[GIX(i, 1)]  : x[GIX(i, 1)];
+                x[GIX(i, GN+1)] = b===2 ? -x[GIX(i, GN)] : x[GIX(i, GN)];
+            }
+            x[GIX(0,0)]       = 0.5*(x[GIX(1,0)]   +x[GIX(0,1)]);
+            x[GIX(0,GN+1)]    = 0.5*(x[GIX(1,GN+1)]+x[GIX(0,GN)]);
+            x[GIX(GN+1,0)]    = 0.5*(x[GIX(GN,0)]  +x[GIX(GN+1,1)]);
+            x[GIX(GN+1,GN+1)] = 0.5*(x[GIX(GN,GN+1)]+x[GIX(GN+1,GN)]);
+        }
+
+        // Gauss-Seidel relaxation (10 iterations)
+        function gLin(b, x, x0, a, c) {
+            var inv = 1.0 / c;
+            for (var k = 0; k < 10; k++) {
+                for (var j = 1; j <= GN; j++) {
+                    for (var i = 1; i <= GN; i++) {
+                        x[GIX(i,j)] = (x0[GIX(i,j)] + a*(
+                            x[GIX(i-1,j)]+x[GIX(i+1,j)]+
+                            x[GIX(i,j-1)]+x[GIX(i,j+1)])) * inv;
+                    }
+                }
+                gBnd(b, x);
+            }
+        }
+
+        function gDiff(b, x, x0, diff, dt) {
+            var a = dt * diff * GN * GN;
+            gLin(b, x, x0, a, 1 + 4*a);
+        }
+
+        // Semi-Lagrangian advection (unconditionally stable)
+        function gAdv(b, d, d0, u, v, dt) {
+            var dt0 = dt * GN;
+            for (var j = 1; j <= GN; j++) {
+                for (var i = 1; i <= GN; i++) {
+                    var x = i - dt0*u[GIX(i,j)];
+                    var y = j - dt0*v[GIX(i,j)];
+                    if (x < 0.5) x = 0.5; if (x > GN+0.5) x = GN+0.5;
+                    var i0 = Math.floor(x), i1 = i0+1;
+                    if (y < 0.5) y = 0.5; if (y > GN+0.5) y = GN+0.5;
+                    var j0 = Math.floor(y), j1 = j0+1;
+                    var s1 = x-i0, s0 = 1-s1, t1 = y-j0, t0 = 1-t1;
+                    d[GIX(i,j)] = s0*(t0*d0[GIX(i0,j0)]+t1*d0[GIX(i0,j1)]) +
+                                  s1*(t0*d0[GIX(i1,j0)]+t1*d0[GIX(i1,j1)]);
+                }
+            }
+            gBnd(b, d);
+        }
+
+        // Pressure projection (enforces div(v)=0 → incompressibility)
+        function gProj(u, v, p, div) {
+            for (var j = 1; j <= GN; j++) {
+                for (var i = 1; i <= GN; i++) {
+                    div[GIX(i,j)] = -0.5*(u[GIX(i+1,j)]-u[GIX(i-1,j)]+
+                                          v[GIX(i,j+1)]-v[GIX(i,j-1)]) / GN;
+                    p[GIX(i,j)] = 0;
+                }
+            }
+            gBnd(0, div); gBnd(0, p);
+            gLin(0, p, div, 1, 4);
+            for (var j = 1; j <= GN; j++) {
+                for (var i = 1; i <= GN; i++) {
+                    u[GIX(i,j)] -= 0.5*GN*(p[GIX(i+1,j)]-p[GIX(i-1,j)]);
+                    v[GIX(i,j)] -= 0.5*GN*(p[GIX(i,j+1)]-p[GIX(i,j-1)]);
+                }
+            }
+            gBnd(1, u); gBnd(2, v);
+        }
+
+        // Full velocity step: sources → diffuse → project → advect → project
+        function gVStep() {
+            var k, sz = gU.length;
+            for (k = 0; k < sz; k++) { gU[k] += G_DT*gU0[k]; gV[k] += G_DT*gV0[k]; }
+            gCopy(gU0, gU); gCopy(gV0, gV);
+            gDiff(1, gU, gU0, G_VISC, G_DT);
+            gDiff(2, gV, gV0, G_VISC, G_DT);
+            gProj(gU, gV, gP, gDiv);
+            gCopy(gU0, gU); gCopy(gV0, gV);
+            gAdv(1, gU, gU0, gU0, gV0, G_DT);
+            gAdv(2, gV, gV0, gU0, gV0, G_DT);
+            gProj(gU, gV, gP, gDiv);
+        }
+
+        // Temperature step: diffuse + advect through velocity field
+        function gTStep() {
+            gCopy(gT0, gT);
+            gDiff(0, gT, gT0, G_DIFF, G_DT);
+            gCopy(gT0, gT);
+            gAdv(0, gT, gT0, gU, gV, G_DT);
+        }
+
+        // Bilinear interpolation of grid field
+        function gSamp(field, gi, gj) {
+            if (gi < 0.5) gi = 0.5; if (gi > GN+0.5) gi = GN+0.5;
+            if (gj < 0.5) gj = 0.5; if (gj > GN+0.5) gj = GN+0.5;
+            var i0 = Math.floor(gi), i1 = i0+1;
+            var j0 = Math.floor(gj), j1 = j0+1;
+            var s1 = gi-i0, s0 = 1-s1, t1 = gj-j0, t0 = 1-t1;
+            return s0*(t0*field[GIX(i0,j0)]+t1*field[GIX(i0,j1)]) +
+                   s1*(t0*field[GIX(i1,j0)]+t1*field[GIX(i1,j1)]);
+        }
 
         function initConvection() {
             convInited = true;
-            HEATER_X = CONTAINER_X + CONTAINER_W * 0.3;
-            HEATER_Y = CONTAINER_Y + CONTAINER_H - 10;
-            HEATER_W = CONTAINER_W * 0.4;
-            HEATER_H = 10;
-            GRID_CELL_W = CONTAINER_W / GRID_COLS;
-            GRID_CELL_H = CONTAINER_H / GRID_ROWS;
-
+            gU = gAlloc(); gV = gAlloc(); gU0 = gAlloc(); gV0 = gAlloc();
+            gT = gAlloc(); gT0 = gAlloc(); gP = gAlloc(); gDiv = gAlloc();
             convParticles = [];
             for (var i = 0; i < PARTICLE_COUNT; i++) {
                 convParticles.push({
                     x: CONTAINER_X + 15 + Math.random() * (CONTAINER_W - 30),
                     y: CONTAINER_Y + 15 + Math.random() * (CONTAINER_H - 30),
-                    vx: (Math.random() - 0.5) * 0.3,
-                    vy: (Math.random() - 0.5) * 0.3,
                     temp: 20,
                     r: 3 + Math.random() * 1.5
                 });
@@ -870,11 +977,11 @@
             document.getElementById('arrowToggle').textContent = 'Strömungspfeile: AUS';
             document.getElementById('arrowToggle').classList.remove('active-toggle');
             if (convInited) {
+                gClear(gU); gClear(gV); gClear(gU0); gClear(gV0);
+                gClear(gT); gClear(gT0);
                 for (var i = 0; i < convParticles.length; i++) {
                     convParticles[i].x = CONTAINER_X + 15 + Math.random() * (CONTAINER_W - 30);
                     convParticles[i].y = CONTAINER_Y + 15 + Math.random() * (CONTAINER_H - 30);
-                    convParticles[i].vx = (Math.random() - 0.5) * 0.3;
-                    convParticles[i].vy = (Math.random() - 0.5) * 0.3;
                     convParticles[i].temp = 20;
                 }
             }
@@ -920,21 +1027,6 @@
             return 'rgb(' + r + ',' + g + ',' + b + ')';
         }
 
-        function buildSpatialGrid() {
-            spatialGrid = [];
-            for (var c = 0; c < GRID_COLS * GRID_ROWS; c++) {
-                spatialGrid.push([]);
-            }
-            for (var i = 0; i < convParticles.length; i++) {
-                var p = convParticles[i];
-                var col = Math.floor((p.x - CONTAINER_X) / GRID_CELL_W);
-                var row = Math.floor((p.y - CONTAINER_Y) / GRID_CELL_H);
-                col = Math.max(0, Math.min(GRID_COLS - 1, col));
-                row = Math.max(0, Math.min(GRID_ROWS - 1, row));
-                spatialGrid[row * GRID_COLS + col].push(i);
-            }
-        }
-
         function animateConvection() {
             if (!convInited) return;
             var canvas = document.getElementById('convectionCanvas');
@@ -946,263 +1038,138 @@
             var centerX = CONTAINER_X + CONTAINER_W / 2;
             var bottomY = CONTAINER_Y + CONTAINER_H;
 
-            // Build spatial grid for neighbor queries
-            buildSpatialGrid();
-
-            // --- PHYSICS UPDATE ---
-            // v3: Two-phase model — (A) advect by velocity field, (B) enforce uniform density.
-            // Key insight: In an incompressible fluid, density is uniform everywhere.
-            // We enforce this with position-based density correction (PBF-inspired).
-            //
-            // Velocity field: Two counter-rotating Rayleigh-Benard cells.
-            //   psi = sin(2*pi*xn) * sin(pi*yn)  (xn,yn in [0,1])
-            //   vx = -dpsi/dy (negated for correct rotation)
-            //   vy = +dpsi/dx (negated for correct rotation)
-            // This gives: upflow at center (xn=0.5), downflow at walls (xn=0,1),
-            // horizontal flow at top/bottom — correct convection cells.
-
-            // === CONSTANTS ===
-            var FLOW_STRENGTH = 0.12;     // base flow field strength
-            var DAMPING = 0.90;           // velocity damping per frame
-            var REPEL_REST = 20;          // ideal particle spacing (~sqrt(W*H/N))
-            var REPEL_STRENGTH = 0.10;    // pairwise repulsion force
-            var NOISE_BASE = 0.12;        // brownian noise at 0% heat
-            var NOISE_TEMP = 0.08;        // additional noise from temperature
-
-            // ========================
-            // PHASE A: Heating, Cooling, Diffusion, Advection
-            // ========================
-            for (var i = 0; i < convParticles.length; i++) {
-                var p = convParticles[i];
-
-                // A1) HEATING: particles near bottom-center heater
-                var hdx = p.x - centerX;
-                var hdy = p.y - bottomY;
-                var distToHeater = Math.sqrt(hdx * hdx + hdy * hdy);
-                var heaterRadius = CONTAINER_W * 0.28;
-                if (distToHeater < heaterRadius && p.y > bottomY - 90) {
-                    var heatAmount = heatFactor * 0.5 * (1 - distToHeater / heaterRadius);
-                    p.temp = Math.min(80, p.temp + heatAmount);
-                }
-
-                // A2) COOLING: walls absorb heat
-                var fracTop = (p.y - CONTAINER_Y) / CONTAINER_H;
-                var fracLeft = (p.x - CONTAINER_X) / CONTAINER_W;
-                var fracRight = 1.0 - fracLeft;
-                if (fracTop < 0.15) {
-                    p.temp = Math.max(20, p.temp - 0.10 * (1 - fracTop / 0.15));
-                }
-                if (fracLeft < 0.08) {
-                    p.temp = Math.max(20, p.temp - 0.05 * (1 - fracLeft / 0.08));
-                }
-                if (fracRight < 0.08) {
-                    p.temp = Math.max(20, p.temp - 0.05 * (1 - fracRight / 0.08));
-                }
-                // Ambient cooling
-                p.temp = Math.max(20, p.temp - 0.012);
-
-                // A3) TEMPERATURE DIFFUSION with neighbors
-                var col = Math.floor((p.x - CONTAINER_X) / GRID_CELL_W);
-                var row = Math.floor((p.y - CONTAINER_Y) / GRID_CELL_H);
-                col = Math.max(0, Math.min(GRID_COLS - 1, col));
-                row = Math.max(0, Math.min(GRID_ROWS - 1, row));
-                var diffSum = 0, diffCnt = 0;
-                for (var dr = -1; dr <= 1; dr++) {
-                    for (var dc = -1; dc <= 1; dc++) {
-                        var nr = row + dr, nc = col + dc;
-                        if (nr < 0 || nr >= GRID_ROWS || nc < 0 || nc >= GRID_COLS) continue;
-                        var cell = spatialGrid[nr * GRID_COLS + nc];
-                        for (var ci = 0; ci < cell.length; ci++) {
-                            var j = cell[ci];
-                            if (j === i) continue;
-                            var q = convParticles[j];
-                            var ddx = q.x - p.x, ddy = q.y - p.y;
-                            if (ddx * ddx + ddy * ddy < 625) {
-                                diffSum += q.temp - p.temp;
-                                diffCnt++;
-                            }
-                        }
-                    }
-                }
-                if (diffCnt > 0) {
-                    p.temp += 0.004 * diffSum / diffCnt;
-                }
-
-                // A4) CONVECTION VELOCITY FIELD
-                // Normalized coordinates: xn in [0,1], yn in [0,1]
-                var tempFrac = Math.max(0, Math.min(1, (p.temp - 20) / 60));
-                var xn = (p.x - CONTAINER_X) / CONTAINER_W;  // 0 to 1
-                var yn = (p.y - CONTAINER_Y) / CONTAINER_H;  // 0 to 1
-
-                // Stream function psi = sin(2*pi*xn) * sin(pi*yn)
-                // gives two counter-rotating cells
-                var sin2px = Math.sin(2 * Math.PI * xn);
-                var cos2px = Math.cos(2 * Math.PI * xn);
-                var sinpy  = Math.sin(Math.PI * yn);
-                var cospy  = Math.cos(Math.PI * yn);
-
-                // Raw velocity (negated for correct rotation:
-                // warm rises at center xn=0.5, cold sinks at walls xn=0,1)
-                // vx = -dpsi/dy, vy = +dpsi/dx
-                var vxField = -sin2px * Math.PI * cospy;
-                var vyField = 2 * Math.PI * cos2px * sinpy;
-
-                // Normalize so max magnitude = 1 (raw max = 2*pi)
-                var fieldNorm = 1.0 / (2.0 * Math.PI);
-                vxField *= fieldNorm;
-                vyField *= fieldNorm;
-
-                // Temperature-driven modulation:
-                // Hot particles (tempFrac~1) get stronger upward push
-                // Cold particles (tempFrac~0) get stronger downward push
-                // This makes convection physically driven by buoyancy difference
-                var buoyancyMod;
-                if (vyField < 0) {
-                    // Upward flow region: hot particles move faster
-                    buoyancyMod = 0.3 + tempFrac * 1.4;
-                } else {
-                    // Downward flow region: cold particles move faster
-                    buoyancyMod = 0.3 + (1.0 - tempFrac) * 1.4;
-                }
-
-                // Horizontal flow: all particles follow equally (pressure-driven)
-                p.vx += FLOW_STRENGTH * heatFactor * vxField;
-                // Vertical flow: temperature-modulated (buoyancy-driven)
-                p.vy += FLOW_STRENGTH * heatFactor * vyField * buoyancyMod;
-
-                // A5) PAIRWISE REPULSION (short-range incompressibility)
-                for (var dr2 = -1; dr2 <= 1; dr2++) {
-                    for (var dc2 = -1; dc2 <= 1; dc2++) {
-                        var nr2 = row + dr2, nc2 = col + dc2;
-                        if (nr2 < 0 || nr2 >= GRID_ROWS || nc2 < 0 || nc2 >= GRID_COLS) continue;
-                        var cell2 = spatialGrid[nr2 * GRID_COLS + nc2];
-                        for (var ci2 = 0; ci2 < cell2.length; ci2++) {
-                            var j2 = cell2[ci2];
-                            if (j2 <= i) continue;
-                            var q2 = convParticles[j2];
-                            var rdx = q2.x - p.x, rdy = q2.y - p.y;
-                            var rDist2 = rdx * rdx + rdy * rdy;
-                            if (rDist2 < REPEL_REST * REPEL_REST && rDist2 > 1) {
-                                var rDist = Math.sqrt(rDist2);
-                                var overlap = (REPEL_REST - rDist) / REPEL_REST;
-                                var repel = REPEL_STRENGTH * overlap / rDist;
-                                p.vx -= rdx * repel;
-                                p.vy -= rdy * repel;
-                                q2.vx += rdx * repel;
-                                q2.vy += rdy * repel;
-                            }
-                        }
-                    }
-                }
-
-                // A6) THERMAL NOISE (brownian motion)
-                var noiseScale = NOISE_BASE + NOISE_TEMP * tempFrac;
-                // At 0% heat: gentle jiggle. At high heat: more turbulent.
-                var noiseHeat = 1.0 + heatFactor * 0.5;
-                p.vx += (Math.random() - 0.5) * noiseScale * noiseHeat;
-                p.vy += (Math.random() - 0.5) * noiseScale * noiseHeat;
-
-                // A7) VISCOUS DAMPING
-                p.vx *= DAMPING;
-                p.vy *= DAMPING;
-
-                // A8) VELOCITY CLAMP
-                var maxV = 2.0 + heatFactor * 1.5;
-                var speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-                if (speed > maxV) {
-                    p.vx = (p.vx / speed) * maxV;
-                    p.vy = (p.vy / speed) * maxV;
-                }
-
-                // A9) INTEGRATE POSITION
-                p.x += p.vx;
-                p.y += p.vy;
-
-                // A10) BOUNDARY CONDITIONS (soft bounce)
-                var margin = p.r + 2;
-                if (p.x < CONTAINER_X + margin) { p.x = CONTAINER_X + margin; p.vx = Math.abs(p.vx) * 0.3; }
-                if (p.x > CONTAINER_X + CONTAINER_W - margin) { p.x = CONTAINER_X + CONTAINER_W - margin; p.vx = -Math.abs(p.vx) * 0.3; }
-                if (p.y < CONTAINER_Y + margin) { p.y = CONTAINER_Y + margin; p.vy = Math.abs(p.vy) * 0.3; }
-                if (p.y > CONTAINER_Y + CONTAINER_H - margin) { p.y = CONTAINER_Y + CONTAINER_H - margin; p.vy = -Math.abs(p.vy) * 0.3; }
+            // --- STAM FLUID SOLVER ---
+            // 1) Heat source at bottom-center (heater cells)
+            var hL = Math.round(GN * 0.3), hR = Math.round(GN * 0.7);
+            for (var hi = hL; hi <= hR; hi++) {
+                gT[GIX(hi, GN)]   = Math.min(80, gT[GIX(hi, GN)]   + heatFactor * 3.0);
+                gT[GIX(hi, GN-1)] = Math.min(80, gT[GIX(hi, GN-1)] + heatFactor * 1.5);
             }
 
-            // ========================
-            // PHASE B: Density Correction (PBF-inspired, COARSE grid)
-            // ========================
-            // Use a SEPARATE coarse grid (6×4 = 24 cells, ~10 particles/cell)
-            // for statistically meaningful density correction.
-            // The fine 18×12 spatial grid is kept only for neighbor queries.
-            var DENSITY_COLS = 6;
-            var DENSITY_ROWS = 4;
-            var DENSITY_CELL_W = CONTAINER_W / DENSITY_COLS;
-            var DENSITY_CELL_H = CONTAINER_H / DENSITY_ROWS;
-            var DENSITY_TARGET = PARTICLE_COUNT / (DENSITY_COLS * DENSITY_ROWS);
-            var DENSITY_ITERS_N = 3;
-            var DENSITY_PUSH_N = 1.2;
-
-            for (var dIter = 0; dIter < DENSITY_ITERS_N; dIter++) {
-                // Count particles per coarse cell
-                var dCellCount = [];
-                var dCellParticles = [];
-                for (var gc = 0; gc < DENSITY_COLS * DENSITY_ROWS; gc++) {
-                    dCellCount.push(0);
-                    dCellParticles.push([]);
+            // 2) Buoyancy force: hot → upward (negative v in canvas coords)
+            gClear(gU0); gClear(gV0);
+            for (var bj = 1; bj <= GN; bj++) {
+                for (var bi = 1; bi <= GN; bi++) {
+                    var tf = (gT[GIX(bi,bj)] - 20) / 60;
+                    if (tf > 0) gV0[GIX(bi,bj)] -= G_BUOY * tf * heatFactor;
                 }
-                for (var i2 = 0; i2 < convParticles.length; i2++) {
-                    var pp = convParticles[i2];
-                    var dcol = Math.floor((pp.x - CONTAINER_X) / DENSITY_CELL_W);
-                    var drow = Math.floor((pp.y - CONTAINER_Y) / DENSITY_CELL_H);
-                    dcol = Math.max(0, Math.min(DENSITY_COLS - 1, dcol));
-                    drow = Math.max(0, Math.min(DENSITY_ROWS - 1, drow));
-                    var dIdx = drow * DENSITY_COLS + dcol;
-                    dCellCount[dIdx]++;
-                    dCellParticles[dIdx].push(i2);
+            }
+
+            // 3) Velocity step (diffuse + project + advect + project)
+            gVStep();
+
+            // 4) Temperature step (diffuse + advect through velocity field)
+            gTStep();
+
+            // 5) Cooling: walls + ambient
+            for (var cj = 1; cj <= GN; cj++) {
+                for (var ci = 1; ci <= GN; ci++) {
+                    if (cj <= 2) gT[GIX(ci,cj)] *= 0.97;
+                    if (ci <= 2 || ci >= GN-1) gT[GIX(ci,cj)] *= 0.985;
+                    gT[GIX(ci,cj)] = Math.max(20, gT[GIX(ci,cj)] - 0.04);
+                    gT[GIX(ci,cj)] = Math.min(80, gT[GIX(ci,cj)]);
                 }
+            }
 
-                // For each particle in overcrowded cells, push toward underpopulated neighbors
-                for (var i3 = 0; i3 < convParticles.length; i3++) {
-                    var pp2 = convParticles[i3];
-                    var dcol2 = Math.floor((pp2.x - CONTAINER_X) / DENSITY_CELL_W);
-                    var drow2 = Math.floor((pp2.y - CONTAINER_Y) / DENSITY_CELL_H);
-                    dcol2 = Math.max(0, Math.min(DENSITY_COLS - 1, dcol2));
-                    drow2 = Math.max(0, Math.min(DENSITY_ROWS - 1, drow2));
+            // 6) Advect particles through grid velocity
+            for (var pi = 0; pi < convParticles.length; pi++) {
+                var p = convParticles[pi];
+                var gi = (p.x - CONTAINER_X) / CONTAINER_W * GN + 0.5;
+                var gj = (p.y - CONTAINER_Y) / CONTAINER_H * GN + 0.5;
+                var pu = gSamp(gU, gi, gj);
+                var pv = gSamp(gV, gi, gj);
+                p.temp = gSamp(gT, gi, gj);
+                var tFrac = Math.max(0, Math.min(1, (p.temp - 20) / 60));
+                gi += 0.7 * pu;
+                gj += 0.7 * pv;
+                // Subtle Brownian jitter (thermal character, not wall-escape)
+                gi += (Math.random()-0.5) * (0.06 + tFrac*0.08);
+                gj += (Math.random()-0.5) * (0.06 + tFrac*0.08);
+                p.x = CONTAINER_X + (gi-0.5)/GN * CONTAINER_W;
+                p.y = CONTAINER_Y + (gj-0.5)/GN * CONTAINER_H;
+            }
 
-                    var myDCount = dCellCount[drow2 * DENSITY_COLS + dcol2];
-                    var excess2 = myDCount - DENSITY_TARGET;
-
-                    // Only push if cell has significantly more than target
-                    if (excess2 < 1.5) continue;
-
-                    // Weighted push toward underpopulated neighbors
-                    var pushX2 = 0, pushY2 = 0;
-                    for (var dr4 = -1; dr4 <= 1; dr4++) {
-                        for (var dc4 = -1; dc4 <= 1; dc4++) {
-                            if (dr4 === 0 && dc4 === 0) continue;
-                            var nr4 = drow2 + dr4, nc4 = dcol2 + dc4;
-                            if (nr4 < 0 || nr4 >= DENSITY_ROWS || nc4 < 0 || nc4 >= DENSITY_COLS) continue;
-                            var neighborDCount = dCellCount[nr4 * DENSITY_COLS + nc4];
-                            var deficit2 = DENSITY_TARGET - neighborDCount;
-                            if (deficit2 > 0) {
-                                pushX2 += dc4 * deficit2;
-                                pushY2 += dr4 * deficit2;
+            // 7) Pairwise repulsion (prevents local clumping)
+            var SP_COLS = 18, SP_ROWS = 11;
+            var SP_W = CONTAINER_W/SP_COLS, SP_H = CONTAINER_H/SP_ROWS;
+            var spGrid = [];
+            for (var si = 0; si < SP_COLS*SP_ROWS; si++) spGrid.push([]);
+            for (var si = 0; si < convParticles.length; si++) {
+                var sp = convParticles[si];
+                var sc2 = Math.max(0,Math.min(SP_COLS-1,Math.floor((sp.x-CONTAINER_X)/SP_W)));
+                var sr2 = Math.max(0,Math.min(SP_ROWS-1,Math.floor((sp.y-CONTAINER_Y)/SP_H)));
+                spGrid[sr2*SP_COLS+sc2].push(si);
+            }
+            var REPEL_D = 24, REPEL_S = 0.18;
+            for (var si = 0; si < convParticles.length; si++) {
+                var sp = convParticles[si];
+                var sc2 = Math.max(0,Math.min(SP_COLS-1,Math.floor((sp.x-CONTAINER_X)/SP_W)));
+                var sr2 = Math.max(0,Math.min(SP_ROWS-1,Math.floor((sp.y-CONTAINER_Y)/SP_H)));
+                for (var ddr=-1; ddr<=1; ddr++) {
+                    for (var ddc=-1; ddc<=1; ddc++) {
+                        var nr=sr2+ddr, nc=sc2+ddc;
+                        if (nr<0||nr>=SP_ROWS||nc<0||nc>=SP_COLS) continue;
+                        var cell=spGrid[nr*SP_COLS+nc];
+                        for (var ci=0; ci<cell.length; ci++) {
+                            var j=cell[ci]; if (j<=si) continue;
+                            var q=convParticles[j];
+                            var dx=q.x-sp.x, dy=q.y-sp.y;
+                            var d2=dx*dx+dy*dy;
+                            if (d2<REPEL_D*REPEL_D && d2>1) {
+                                var d=Math.sqrt(d2);
+                                var f=REPEL_S*(REPEL_D-d)/REPEL_D/d;
+                                sp.x-=dx*f; sp.y-=dy*f;
+                                q.x+=dx*f; q.y+=dy*f;
                             }
                         }
                     }
+                }
+            }
 
-                    var pushMag2 = Math.sqrt(pushX2 * pushX2 + pushY2 * pushY2);
-                    if (pushMag2 > 0.01) {
-                        var pushScale2 = DENSITY_PUSH_N * Math.min(excess2 / DENSITY_TARGET, 1.0);
-                        pp2.x += (pushX2 / pushMag2) * pushScale2;
-                        pp2.y += (pushY2 / pushMag2) * pushScale2;
-
-                        // Re-enforce boundaries
-                        var m2 = pp2.r + 2;
-                        if (pp2.x < CONTAINER_X + m2) pp2.x = CONTAINER_X + m2;
-                        if (pp2.x > CONTAINER_X + CONTAINER_W - m2) pp2.x = CONTAINER_X + CONTAINER_W - m2;
-                        if (pp2.y < CONTAINER_Y + m2) pp2.y = CONTAINER_Y + m2;
-                        if (pp2.y > CONTAINER_Y + CONTAINER_H - m2) pp2.y = CONTAINER_Y + CONTAINER_H - m2;
+            // 8) Coarse density equalization (large-scale balance)
+            var DC=6, DR=4, DCW=CONTAINER_W/DC, DCH=CONTAINER_H/DR;
+            var DTGT=PARTICLE_COUNT/(DC*DR);
+            for (var dIt=0; dIt<2; dIt++) {
+                var dCnt=[];
+                for (var dk=0; dk<DC*DR; dk++) dCnt.push(0);
+                for (var dk=0; dk<convParticles.length; dk++) {
+                    var dp=convParticles[dk];
+                    var dci=Math.max(0,Math.min(DC-1,Math.floor((dp.x-CONTAINER_X)/DCW)));
+                    var dri=Math.max(0,Math.min(DR-1,Math.floor((dp.y-CONTAINER_Y)/DCH)));
+                    dCnt[dri*DC+dci]++;
+                }
+                for (var dk=0; dk<convParticles.length; dk++) {
+                    var dp=convParticles[dk];
+                    var dci=Math.max(0,Math.min(DC-1,Math.floor((dp.x-CONTAINER_X)/DCW)));
+                    var dri=Math.max(0,Math.min(DR-1,Math.floor((dp.y-CONTAINER_Y)/DCH)));
+                    var exc=dCnt[dri*DC+dci]-DTGT;
+                    if (exc<2) continue;
+                    var pxd=0,pyd=0;
+                    for (var ddr=-1;ddr<=1;ddr++) {
+                        for (var ddc=-1;ddc<=1;ddc++) {
+                            if (ddr===0&&ddc===0) continue;
+                            var nr2=dri+ddr, nc2=dci+ddc;
+                            if (nr2<0||nr2>=DR||nc2<0||nc2>=DC) continue;
+                            var def=DTGT-dCnt[nr2*DC+nc2];
+                            if (def>0){pxd+=ddc*def;pyd+=ddr*def;}
+                        }
+                    }
+                    var pmag=Math.sqrt(pxd*pxd+pyd*pyd);
+                    if (pmag>0.01) {
+                        var pstr=1.5*Math.min(exc/DTGT,1.0);
+                        dp.x+=(pxd/pmag)*pstr*DCW*0.1;
+                        dp.y+=(pyd/pmag)*pstr*DCH*0.1;
                     }
                 }
+            }
+
+            // 9) Final boundary clamp
+            for (var fi=0; fi<convParticles.length; fi++) {
+                var fp=convParticles[fi]; var fm=fp.r+2;
+                if (fp.x<CONTAINER_X+fm) fp.x=CONTAINER_X+fm;
+                if (fp.x>CONTAINER_X+CONTAINER_W-fm) fp.x=CONTAINER_X+CONTAINER_W-fm;
+                if (fp.y<CONTAINER_Y+fm) fp.y=CONTAINER_Y+fm;
+                if (fp.y>CONTAINER_Y+CONTAINER_H-fm) fp.y=CONTAINER_Y+CONTAINER_H-fm;
             }
 
             // ---- DRAW ----
@@ -1257,44 +1224,26 @@
                 ctx.stroke();
             }
 
-            // Flow arrows (data-driven from actual particle velocities)
+            // Flow arrows (read directly from grid velocity field)
             if (showArrows && heatPower > 5) {
                 var ARROW_COLS = 6, ARROW_ROWS = 4;
-                var aCellW = CONTAINER_W / ARROW_COLS;
-                var aCellH = CONTAINER_H / ARROW_ROWS;
                 ctx.strokeStyle = 'rgba(44, 90, 160, 0.55)';
                 ctx.fillStyle = 'rgba(44, 90, 160, 0.55)';
                 ctx.lineWidth = 2;
-
                 for (var ar = 0; ar < ARROW_ROWS; ar++) {
                     for (var ac = 0; ac < ARROW_COLS; ac++) {
-                        var sumVx = 0, sumVy = 0, cnt = 0;
-                        var cellCX = CONTAINER_X + (ac + 0.5) * aCellW;
-                        var cellCY = CONTAINER_Y + (ar + 0.5) * aCellH;
-                        // Sample particles in this region
-                        for (var pi = 0; pi < convParticles.length; pi++) {
-                            var pp = convParticles[pi];
-                            if (pp.x >= CONTAINER_X + ac * aCellW && pp.x < CONTAINER_X + (ac + 1) * aCellW &&
-                                pp.y >= CONTAINER_Y + ar * aCellH && pp.y < CONTAINER_Y + (ar + 1) * aCellH) {
-                                sumVx += pp.vx;
-                                sumVy += pp.vy;
-                                cnt++;
-                            }
-                        }
-                        if (cnt > 2) {
-                            var avgVx = sumVx / cnt;
-                            var avgVy = sumVy / cnt;
-                            var mag = Math.sqrt(avgVx * avgVx + avgVy * avgVy);
-                            if (mag > 0.15) {
-                                // Scale arrow length (capped)
-                                var arrowLen = Math.min(mag * 20, aCellW * 0.4);
-                                var nx = avgVx / mag, ny = avgVy / mag;
-                                var fromX = cellCX - nx * arrowLen * 0.5;
-                                var fromY = cellCY - ny * arrowLen * 0.5;
-                                var toX = cellCX + nx * arrowLen * 0.5;
-                                var toY = cellCY + ny * arrowLen * 0.5;
-                                drawArrow(ctx, fromX, fromY, toX, toY);
-                            }
+                        var agi = (ac + 0.5) / ARROW_COLS * GN + 0.5;
+                        var agj = (ar + 0.5) / ARROW_ROWS * GN + 0.5;
+                        var au = gSamp(gU, agi, agj);
+                        var av = gSamp(gV, agi, agj);
+                        var amag = Math.sqrt(au*au + av*av);
+                        if (amag > 0.005) {
+                            var cellCX = CONTAINER_X + (ac + 0.5) / ARROW_COLS * CONTAINER_W;
+                            var cellCY = CONTAINER_Y + (ar + 0.5) / ARROW_ROWS * CONTAINER_H;
+                            var arrowLen = Math.min(amag * 150, CONTAINER_W / ARROW_COLS * 0.4);
+                            var anx = au / amag, any = av / amag;
+                            drawArrow(ctx, cellCX - anx*arrowLen*0.5, cellCY - any*arrowLen*0.5,
+                                          cellCX + anx*arrowLen*0.5, cellCY + any*arrowLen*0.5);
                         }
                     }
                 }
