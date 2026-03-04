@@ -548,19 +548,21 @@
             <div class="results-score" id="scoreDisplay"></div>
             <div id="npDisplay"></div>
 
-            <h3 style="margin-top: 20px; color: #2c5aa0;">Bewertung</h3>
+            <h3 style="margin-top: 20px; color: #2c5aa0;">Bewertung (14-NP)</h3>
             <table class="grade-table" id="gradeTable">
                 <tr>
-                    <th>Note</th>
-                    <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                    <th>NP</th>
+                    <th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th>
+                    <th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
                 </tr>
                 <tr id="gradeRow">
-                    <td>ab %</td>
-                    <td>96</td><td>80</td><td>60</td><td>40</td><td>20</td><td>&lt;20</td>
+                    <td>%</td>
+                    <td>100</td><td>96</td><td>91</td><td>86</td><td>80</td><td>73</td><td>67</td>
+                    <td>60</td><td>53</td><td>47</td><td>40</td><td>33</td><td>27</td><td>20</td><td>&lt;20</td>
                 </tr>
                 <tr id="gradeRowBE">
-                    <td>ab BE</td>
-                    <td colspan="6" id="gradeRowBECells"></td>
+                    <td>BE</td>
+                    <td colspan="15" id="gradeRowBECells"></td>
                 </tr>
             </table>
         </div>
@@ -1699,11 +1701,11 @@
         document.getElementById('scoreDisplay').textContent = score + ' / ' + maxPts + ' BE';
 
         var pct = (score / maxPts) * 100;
-        var note = calcNote(pct);
-        var noteClass = note <= 2 ? 'good' : (note <= 4 ? 'ok' : 'weak');
-        document.getElementById('npDisplay').innerHTML = '<div class="results-np ' + noteClass + '">Note ' + note + ' (' + Math.round(pct) + '%)</div>';
+        var np = calcNP(pct);
+        var npClass = np >= 10 ? 'good' : (np >= 5 ? 'ok' : 'weak');
+        document.getElementById('npDisplay').innerHTML = '<div class="results-np ' + npClass + '">' + np + ' Notenpunkte (' + Math.round(pct) + '%)</div>';
 
-        markGradeTable(note);
+        markGradeTable(np);
 
         document.getElementById('results').style.display = 'block';
         document.getElementById('submitSection').style.display = 'none';
@@ -1824,27 +1826,26 @@
         meta.appendChild(res);
     }
 
-    function calcNote(pct) {
-        if (pct >= 96) return 1;
-        if (pct >= 80) return 2;
-        if (pct >= 60) return 3;
-        if (pct >= 40) return 4;
-        if (pct >= 20) return 5;
-        return 6;
+    function calcNP(pct) {
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        for (var i = 0; i < thresholds.length; i++) {
+            if (pct >= thresholds[i]) return 14 - i;
+        }
+        return 0;
     }
 
-    function markGradeTable(note) {
+    function markGradeTable(np) {
         var cells = document.getElementById('gradeRow').cells;
         for (var c = 0; c < cells.length; c++) {
             cells[c].classList.remove('current-grade');
         }
-        // note 1-6 → column index 1-6
-        if (note >= 1 && note <= 6) {
-            cells[note].classList.add('current-grade');
+        var idx = 15 - np;
+        if (idx >= 1 && idx < cells.length) {
+            cells[idx].classList.add('current-grade');
         }
 
         var maxPts = niveauPoints[selectedNiveau];
-        var thresholdPcts = [96, 80, 60, 40, 20];
+        var thresholdPcts = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
         var beRow = document.getElementById('gradeRowBE');
         while (beRow.cells.length > 1) {
             beRow.removeChild(beRow.lastChild);
@@ -1855,13 +1856,13 @@
             var td = document.createElement('td');
             var minBE = Math.ceil(maxPts * thresholdPcts[i] / 100);
             td.textContent = minBE;
-            if (note === i + 1) td.classList.add('current-grade');
+            if (14 - i === np) td.classList.add('current-grade');
             beRow.appendChild(td);
         }
-        var td6 = document.createElement('td');
-        td6.innerHTML = '&lt;' + Math.ceil(maxPts * 20 / 100);
-        if (note === 6) td6.classList.add('current-grade');
-        beRow.appendChild(td6);
+        var td0 = document.createElement('td');
+        td0.innerHTML = '&lt;' + Math.ceil(maxPts * 20 / 100);
+        if (np === 0) td0.classList.add('current-grade');
+        beRow.appendChild(td0);
     }
 
     function disableAllInputs() {
