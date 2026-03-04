@@ -710,6 +710,7 @@ header .meta {
     </div>
     <p>Du setzt dich erst auf die Metallbank, dann auf die Holzbank.</p>
     <p><strong>Die Metallbank fühlt sich viel kälter an!</strong> Aber stimmt das wirklich? Ist Metall kälter als Holz?</p>
+    <p style="color:var(--text-sec);">Wir untersuchen das jetzt mit Gegenständen hier im Klassenzimmer.</p>
     <div class="nav-row">
         <span></span>
         <button class="btn btn-primary" onclick="nextSection()">Weiter &rarr;</button>
@@ -723,15 +724,15 @@ header .meta {
     <h2>Deine Vermutung</h2>
     <p>Was glaubst du: Haben die Metallbank und die Holzbank draußen im Winter <strong>unterschiedliche Temperaturen</strong>?</p>
     <div class="mc-grid" id="hypoGrid">
-        <div class="mc-option" onclick="selectHypo('a')">
+        <div class="mc-option" data-choice="a" onclick="selectHypo('a')">
             <span class="mc-letter">A</span>
             <span>Die Metallbank ist kälter als die Holzbank.</span>
         </div>
-        <div class="mc-option" onclick="selectHypo('b')">
+        <div class="mc-option" data-choice="b" onclick="selectHypo('b')">
             <span class="mc-letter">B</span>
             <span>Beide Bänke haben die gleiche Temperatur.</span>
         </div>
-        <div class="mc-option" onclick="selectHypo('c')">
+        <div class="mc-option" data-choice="c" onclick="selectHypo('c')">
             <span class="mc-letter">C</span>
             <span>Das kommt darauf an.</span>
         </div>
@@ -862,8 +863,8 @@ header .meta {
             <span class="hh-icon">&#128203;</span>
             <span><strong>Arbeitsblatt:</strong> Schreibe deine Erklärung auf das AB, bevor du die Lösung anschaust!</span>
         </div>
-        <button class="btn btn-sm btn-primary mt8" onclick="showInfographic()" id="showInfoBtn">Erklärung anzeigen</button>
     </div>
+    <button class="btn btn-sm btn-primary mt8" onclick="showInfographic()" id="showInfoBtn">Erklärung anzeigen</button>
 
     <div id="infographicWrap" class="hidden">
         <div class="infographic">
@@ -1070,7 +1071,7 @@ header .meta {
 <div class="section" id="section10">
     <h2>Abschluss-Quiz</h2>
 
-    <p><strong>Frage 1:</strong> Du fasst bei 5 &deg;C Außentemperatur eine Metallstange und ein Holzbrett an. Was stimmt?</p>
+    <p><strong>Frage 1:</strong> Du fasst im Klassenraum eine Metallstange und ein Holzbrett an. Was stimmt?</p>
     <div class="mc-grid" id="quiz1Grid">
         <div class="mc-option" data-choice="a" onclick="checkQuiz(1,'a')">
             <span class="mc-letter">A</span>
@@ -1396,7 +1397,7 @@ function selectHypo(choice) {
     state.hypo = choice;
     var opts = document.querySelectorAll('#hypoGrid .mc-option');
     for (var i = 0; i < opts.length; i++) {
-        var c = opts[i].getAttribute('onclick').match(/'(\w)'/)[1];
+        var c = opts[i].getAttribute('data-choice');
         if (c === choice) opts[i].classList.add('selected');
         opts[i].classList.add('disabled');
     }
@@ -1522,6 +1523,7 @@ function showInfographic() {
 /* ============================================ */
 function checkK1() {
     var a = gv('k1a'), b = gv('k1b'), c = gv('k1c');
+    state.k1.a = a; state.k1.b = b; state.k1.c = c;
     var correct = a === 'empfinden' && b === 'taeuschen' && c === 'thermometer';
     var fb = document.getElementById('k1Feedback');
     if (correct) {
@@ -1563,18 +1565,20 @@ function initCelsius() {
     celsiusThermo = createThermo('celsiusThermo', -20, 120, 10, -20, 20);
 }
 
+var celsiusAnimating = false;
 function celsiusNext(instant) {
+    if (celsiusAnimating && !instant) return;
     state.celStep++;
     var info = document.getElementById('celsiusInfo');
     var btn = document.getElementById('celsiusNextBtn');
 
     if (state.celStep === 1) {
         initCelsius();
-        if (instant) celsiusThermo.setVal(0); else celsiusThermo.animateTo(0, 1500);
+        if (instant) { celsiusThermo.setVal(0); } else { celsiusAnimating = true; celsiusThermo.animateTo(0, 1500, function() { celsiusAnimating = false; }); }
         if (info) info.innerHTML = '<p style="font-size:1.1em;"><strong>Schritt 1:</strong> Thermometer in <span style="color:#1565c0;">Eiswasser</span> &rarr; <strong>0 &deg;C</strong></p><p style="color:var(--text-sec);">Das ist der erste Fixpunkt: schmelzendes Eis.</p>';
         if (btn) btn.textContent = 'Schritt 2: Siedendes Wasser \u2192';
     } else if (state.celStep === 2) {
-        if (instant) celsiusThermo.setVal(100); else celsiusThermo.animateTo(100, 1500);
+        if (instant) { celsiusThermo.setVal(100); } else { celsiusAnimating = true; celsiusThermo.animateTo(100, 1500, function() { celsiusAnimating = false; }); }
         if (info) info.innerHTML = '<p style="font-size:1.1em;"><strong>Schritt 2:</strong> Thermometer in <span style="color:#c62828;">siedendes Wasser</span> &rarr; <strong>100 &deg;C</strong></p><p style="color:var(--text-sec);">Das ist der zweite Fixpunkt: siedendes Wasser.</p>';
         if (btn) btn.textContent = 'Schritt 3: Skala einteilen \u2192';
     } else if (state.celStep === 3) {
@@ -1584,7 +1588,7 @@ function celsiusNext(instant) {
         var sl = document.getElementById('celsiusSlider');
         if (sl) sl.classList.add('visible');
         if (btn) btn.classList.add('hidden');
-        if (instant) celsiusThermo.setVal(20); else celsiusThermo.animateTo(20, 800);
+        if (instant) { celsiusThermo.setVal(20); } else { celsiusAnimating = true; celsiusThermo.animateTo(20, 800, function() { celsiusAnimating = false; }); }
         if (info) info.innerHTML = '<p>Schiebe den Regler und erkunde verschiedene Temperaturen!</p>';
     }
     save();
@@ -1609,6 +1613,7 @@ function celsiusSlide(v) {
 /* ============================================ */
 function checkK2() {
     var a = gv('k2a'), b = gv('k2b'), c = gv('k2c'), d = gv('k2d'), e = gv('k2e');
+    state.k2.a = a; state.k2.b = b; state.k2.c = c; state.k2.d = d; state.k2.e = e;
     var correct = a === '0' && b === 'eis' && c === '100' && d === 'wasser' && e === 'fluessigkeit';
     var fb = document.getElementById('k2Feedback');
     if (correct) {
@@ -1722,7 +1727,7 @@ function sim4Check() {
         state.sim4Round++;
         document.getElementById('sim4CheckBtn').disabled = true;
         save();
-        setTimeout(function() { document.getElementById('sim4CheckBtn').disabled = false; sim4StartRound(); }, 1200);
+        setTimeout(function() { document.getElementById('sim4CheckBtn').disabled = false; if (state.sec === 9) sim4StartRound(); }, 1200);
     } else {
         fb.textContent = '\u2718 Nicht ganz. Schau genau auf die Skala!';
         fb.style.color = 'var(--danger)';
@@ -1800,7 +1805,7 @@ function restoreUI() {
     if (state.hypo) {
         var opts = document.querySelectorAll('#hypoGrid .mc-option');
         for (var i = 0; i < opts.length; i++) {
-            var c = opts[i].getAttribute('onclick').match(/'(\w)'/)[1];
+            var c = opts[i].getAttribute('data-choice');
             if (c === state.hypo) opts[i].classList.add('selected');
             opts[i].classList.add('disabled');
         }
