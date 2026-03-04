@@ -75,7 +75,7 @@ header .meta {
     display: flex;
     justify-content: center;
     gap: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 6px;
     flex-wrap: wrap;
 }
 .step-dot {
@@ -836,7 +836,7 @@ header .meta {
     </div>
     <div class="merke-box hidden" id="obsReveal">
         <div class="merke-label">Beobachtung</div>
-        <p>Alle vier Objekte haben fast die <strong>gleiche Temperatur</strong> (ca. 5 &deg;C). Trotzdem fühlt sich die Metallstange viel <strong>kälter</strong> an als das Holzbrett.</p>
+        <p>Alle vier Objekte haben fast die <strong>gleiche Temperatur</strong> (ca. 20 &deg;C). Trotzdem fühlt sich die Metallstange viel <strong>kälter</strong> an als das Holzbrett.</p>
         <p>Unser Gefühl hat uns <strong>getäuscht</strong>!</p>
     </div>
     <div class="hefter-hinweis hidden" id="obsHefter">
@@ -1147,10 +1147,10 @@ var STORAGE_KEY = 'lp-phy-06-temp1';
 var TOTAL = 10;
 
 var OBJECTS = {
-    metal: { name: 'Metallstange', temp: 4.8 },
-    holz:  { name: 'Holzbrett',    temp: 5.1 },
-    wasser:{ name: 'Glas Wasser',  temp: 5.3 },
-    luft:  { name: 'Luftballon',   temp: 5.0 }
+    metal: { name: 'Metallstange', temp: 19.8 },
+    holz:  { name: 'Holzbrett',    temp: 20.1 },
+    wasser:{ name: 'Glas Wasser',  temp: 20.3 },
+    luft:  { name: 'Luftballon',   temp: 20.0 }
 };
 var OBJ_ORDER = ['metal', 'holz', 'wasser', 'luft'];
 
@@ -1429,10 +1429,10 @@ function sim1Tap(obj) {
         show('sim1ThermoWrap');
         var temp = OBJECTS[obj].temp;
         if (!sim1Thermo) {
-            sim1Thermo = createThermo('sim1Thermo', -5, 20, 1, -2, 5);
+            sim1Thermo = createThermo('sim1Thermo', 5, 35, 1, 10, 5);
         }
         sim1Animating = true;
-        sim1Thermo.setVal(-2);
+        sim1Thermo.setVal(10);
         sim1Thermo.animateTo(temp, 1500, function() {
             sim1Animating = false;
             var lbl = document.getElementById('sim1ThermoLabel');
@@ -1642,30 +1642,29 @@ function initSim4() {
     sim4StartRound();
 }
 
-function sim4StartRound() {
+function sim4StartRound(restore) {
     var r = state.sim4Round;
     if (r >= 3) {
         show('sim4Done');
         document.getElementById('sim4CheckBtn').classList.add('hidden');
         document.querySelector('.stepper-wrap').classList.add('hidden');
-        var hb = document.getElementById('sim4HalfBtns');
-        if (hb) hb.classList.add('hidden');
+        hide('sim4HalfBtns');
+        sim4UpdateDots();
         return;
     }
     var cfg = SIM4_CONFIGS[r];
-    // Generate random target
-    var range = cfg.max - cfg.min;
-    var steps = range / cfg.markStep;
-    var randStep = Math.floor(Math.random() * (steps - 2)) + 1;
-    state.sim4Target = cfg.min + randStep * cfg.markStep;
-    state.sim4Val = Math.round((cfg.min + cfg.max) / 2);
+    if (!restore) {
+        var range = cfg.max - cfg.min;
+        var steps = range / cfg.markStep;
+        var randStep = Math.floor(Math.random() * (steps - 2)) + 1;
+        state.sim4Target = cfg.min + randStep * cfg.markStep;
+        state.sim4Val = Math.round((cfg.min + cfg.max) / 2);
+    }
 
     sim4Thermo = createThermo('sim4Thermo', cfg.min, cfg.max, cfg.markStep, state.sim4Target, cfg.labelStep);
 
-    // Show/hide half buttons
-    var hb = document.getElementById('sim4HalfBtns');
-    if (r === 2) { if (hb) hb.style.display = 'flex'; }
-    else { if (hb) hb.style.display = 'none'; }
+    if (r === 2) { show('sim4HalfBtns'); }
+    else { hide('sim4HalfBtns'); }
 
     sim4UpdateDisplay();
     sim4UpdateDots();
@@ -1721,8 +1720,9 @@ function sim4Check() {
         fb.style.color = 'var(--success)';
         state.sim4Results.push(true);
         state.sim4Round++;
+        document.getElementById('sim4CheckBtn').disabled = true;
         save();
-        setTimeout(function() { sim4StartRound(); }, 1200);
+        setTimeout(function() { document.getElementById('sim4CheckBtn').disabled = false; sim4StartRound(); }, 1200);
     } else {
         fb.textContent = '\u2718 Nicht ganz. Schau genau auf die Skala!';
         fb.style.color = 'var(--danger)';
@@ -1747,8 +1747,7 @@ function checkQuiz(q, choice) {
 
     var opts = document.querySelectorAll('#' + gridId + ' .mc-option');
     for (var i = 0; i < opts.length; i++) {
-        var c = opts[i].getAttribute('onclick').match(/'(\w)'/g);
-        var letter = c[1].replace(/'/g, '');
+        var letter = opts[i].getAttribute('data-choice');
         if (letter === choice) {
             opts[i].classList.add(isCorrect ? 'correct' : 'incorrect');
         }
@@ -1781,8 +1780,10 @@ function checkQuiz(q, choice) {
 }
 
 function finishLP() {
+    state.finished = true;
     var fb = document.getElementById('finishBox');
     if (fb) fb.innerHTML = '<div class="finish-icon">&#127881;</div><h3>Geschafft! Gut gemacht!</h3><p style="color:var(--text-sec);">Vergiss nicht, dein Arbeitsblatt und das Temperatur-Tagebuch auszuf\u00FCllen.</p>';
+    save();
 }
 
 /* ============================================ */
@@ -1829,7 +1830,6 @@ function restoreUI() {
         if (inst) inst.textContent = 'Jetzt messen! Tippe auf ein Objekt, um die Temperatur zu messen.';
     }
     if (state.sim1Phase === 'done') {
-        show('measurePrompt');
         sim1ShowComparison();
     }
 
@@ -1852,12 +1852,12 @@ function restoreUI() {
     if (state.k1.c) sv('k1c', state.k1.c);
     if (state.k1Done) checkK1();
 
-    // Section 7: Celsius
+    // Section 7: Celsius (instant restore, no animations)
     if (state.celStep > 0) {
         var savedCelStep = state.celStep;
         state.celStep = 0;
         for (var cs = 0; cs < savedCelStep; cs++) {
-            celsiusNext();
+            celsiusNext(true);
         }
     }
 
@@ -1869,9 +1869,15 @@ function restoreUI() {
     if (state.k2.e) sv('k2e', state.k2.e);
     if (state.k2Done) checkK2();
 
+    // Section 9: SIM-4
+    if (state.sim4Round > 0 || state.sim4Target) {
+        sim4StartRound(true);
+    }
+
     // Section 10: Quiz
     if (state.quiz1) checkQuiz(1, state.quiz1);
     if (state.quiz2) checkQuiz(2, state.quiz2);
+    if (state.finished) finishLP();
 }
 
 /* ============================================ */
