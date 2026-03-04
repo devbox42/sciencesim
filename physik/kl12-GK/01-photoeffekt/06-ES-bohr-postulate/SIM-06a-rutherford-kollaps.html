@@ -102,6 +102,23 @@ canvas {
     background: var(--text-secondary);
 }
 
+.btn-mode {
+    background: #333;
+    font-size: 0.85em;
+    padding: 8px 12px;
+}
+
+.btn-mode.day {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.canvas-container.day-mode {
+    background: #f8f8f8;
+    border-color: #ccc;
+}
+
 .info-box {
     background: #fff3e0;
     border: 1px solid var(--warning);
@@ -185,6 +202,7 @@ canvas {
             <div class="controls">
                 <button class="btn" id="btnStart">▶ Starten</button>
                 <button class="btn btn-reset" id="btnReset">↺ Zurücksetzen</button>
+                <button class="btn btn-mode day" id="btnMode">☀️ Tag</button>
             </div>
 
             <div class="timer-display">
@@ -217,14 +235,18 @@ canvas {
     var ctx = canvas.getContext('2d');
     var btnStart = document.getElementById('btnStart');
     var btnReset = document.getElementById('btnReset');
+    var btnMode = document.getElementById('btnMode');
     var timerValue = document.getElementById('timerValue');
+    var canvasContainer = document.querySelector('.canvas-container');
+
+    // Tag-/Nachtmodus (Standard: Tag für bessere Sichtbarkeit im Unterricht)
+    var isDayMode = true;
 
     // Geometrie
     var centerX = 300;
     var centerY = 200;
     var nucleusRadius = 15;
     var initialRadius = 150;
-    var minRadius = 20;
 
     // Zustand
     var electronRadius = initialRadius;
@@ -248,8 +270,13 @@ canvas {
     }
 
     function draw() {
-        // Hintergrund
-        ctx.fillStyle = '#0a0a15';
+        // Hintergrund (Tag/Nacht)
+        var bgColor = isDayMode ? '#f8f8f8' : '#0a0a15';
+        var textColor = isDayMode ? '#333' : '#888';
+        var trailColor = isDayMode ? 'rgba(21, 101, 192, 0.6)' : 'rgba(21, 101, 192, 0.4)';
+        var kollapsTextColor = isDayMode ? '#c00' : '#fff';
+
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Trail (Spiralbahn)
@@ -259,7 +286,7 @@ canvas {
             for (var i = 1; i < trail.length; i++) {
                 ctx.lineTo(trail[i].x, trail[i].y);
             }
-            ctx.strokeStyle = 'rgba(21, 101, 192, 0.4)';
+            ctx.strokeStyle = trailColor;
             ctx.lineWidth = 2;
             ctx.stroke();
         }
@@ -311,12 +338,15 @@ canvas {
                 var waveCount = 3;
                 for (var w = 0; w < waveCount; w++) {
                     var waveRadius = 20 + w * 15 + (animationTime * 50) % 45;
-                    var alpha = 0.3 - w * 0.1;
+                    var alpha = isDayMode ? (0.7 - w * 0.2) : (0.3 - w * 0.1);
                     if (alpha > 0) {
                         ctx.beginPath();
                         ctx.arc(ex, ey, waveRadius, 0, Math.PI * 2);
-                        ctx.strokeStyle = 'rgba(255, 200, 50, ' + alpha + ')';
-                        ctx.lineWidth = 1;
+                        // Im Tagmodus: Orange/Rot, besser sichtbar
+                        ctx.strokeStyle = isDayMode
+                            ? 'rgba(255, 120, 0, ' + alpha + ')'
+                            : 'rgba(255, 200, 50, ' + alpha + ')';
+                        ctx.lineWidth = isDayMode ? 2 : 1;
                         ctx.stroke();
                     }
                 }
@@ -328,14 +358,14 @@ canvas {
             ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = kollapsTextColor;
             ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('KOLLAPS!', centerX, centerY + 50);
         }
 
         // Beschriftung
-        ctx.fillStyle = '#888';
+        ctx.fillStyle = textColor;
         ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
         if (!isRunning && !isCollapsed) {
@@ -354,9 +384,10 @@ canvas {
         // Elektron dreht sich
         electronAngle += 0.15;
 
-        // Radius schrumpft (exponentiell für dramatischen Effekt)
+        // Radius schrumpft bis zum Kern (exponentiell für dramatischen Effekt)
         var progress = Math.min(animationTime / 3, 1); // 3 Sekunden Animation
-        electronRadius = initialRadius * (1 - progress * 0.85);
+        // Von initialRadius (150) bis nucleusRadius (15) schrumpfen
+        electronRadius = initialRadius - progress * (initialRadius - nucleusRadius);
 
         // Trail aktualisieren
         var ex = centerX + electronRadius * Math.cos(electronAngle);
@@ -374,10 +405,11 @@ canvas {
             timerValue.innerHTML = '<span class="collapsed">≈ 10<sup>−11</sup> s — KOLLAPS!</span>';
         }
 
-        // Kollaps prüfen
-        if (electronRadius <= minRadius) {
+        // Kollaps prüfen - Elektron kollidiert mit Kern
+        if (electronRadius <= nucleusRadius) {
             isCollapsed = true;
             isRunning = false;
+            electronRadius = nucleusRadius; // Genau am Kern stoppen
             timerValue.innerHTML = '<span class="collapsed">≈ 10<sup>−11</sup> s — KOLLAPS!</span>';
             btnStart.textContent = '▶ Starten';
         }
@@ -425,7 +457,22 @@ canvas {
 
     btnReset.onclick = reset;
 
-    // Initial
+    btnMode.onclick = function() {
+        isDayMode = !isDayMode;
+        if (isDayMode) {
+            btnMode.textContent = '☀️ Tag';
+            btnMode.classList.add('day');
+            canvasContainer.classList.add('day-mode');
+        } else {
+            btnMode.textContent = '🌙 Nacht';
+            btnMode.classList.remove('day');
+            canvasContainer.classList.remove('day-mode');
+        }
+        draw();
+    };
+
+    // Initial (Tagmodus als Standard)
+    canvasContainer.classList.add('day-mode');
     draw();
 
 })();

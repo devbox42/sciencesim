@@ -6,8 +6,8 @@
     <title>Lernpfad: Bohr-Atommodell</title>
     <style>
 /* ═══════════════════════════════════════════════════════════════
-   LERNPFAD: BOHR-ATOMMODELL (ES5)
-   sciencesim Design System
+   LERNPFAD: BOHR-ATOMMODELL v2 (ES5)
+   sciencesim Design System - Mit Motivation und Quiz
 ═══════════════════════════════════════════════════════════════ */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,6 +24,7 @@
     --success-light: #e8f5e9;
     --warning: #b35c00;
     --warning-bg: #fff3e0;
+    --error: #c62828;
 }
 
 body {
@@ -121,12 +122,57 @@ header .meta {
 .sim-embed {
     border: 1px solid var(--border);
     margin: 15px 0;
+    position: relative;
 }
 
 .sim-embed iframe {
     width: 100%;
     height: 500px;
     border: none;
+}
+
+/* Vollbild-Button */
+.fullscreen-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 100;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0.9;
+}
+
+.fullscreen-btn:hover {
+    opacity: 1;
+}
+
+/* Vollbild-Modus */
+.sim-embed.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    margin: 0;
+    border: none;
+    background: #000;
+}
+
+.sim-embed.fullscreen iframe {
+    height: 100vh;
+}
+
+.sim-embed.fullscreen .fullscreen-btn {
+    top: 15px;
+    right: 15px;
+    background: #c62828;
 }
 
 .info-box {
@@ -164,27 +210,71 @@ header .meta {
     color: var(--warning);
 }
 
-.question-box {
+/* Quiz-Elemente */
+.quiz-box {
     background: #f9f9f9;
-    border: 1px solid var(--border);
+    border: 2px solid var(--accent);
     padding: 15px;
     margin: 15px 0;
 }
 
-.question-box h4 {
+.quiz-box h4 {
     color: var(--accent);
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-size: 0.95em;
 }
 
-.question-box textarea {
-    width: 100%;
-    min-height: 80px;
-    padding: 10px;
+.quiz-option {
+    display: block;
+    padding: 10px 15px;
+    margin: 8px 0;
+    background: white;
     border: 1px solid var(--border);
-    font-family: inherit;
-    font-size: 0.95em;
-    resize: vertical;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quiz-option:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.quiz-option.selected {
+    border-color: var(--accent);
+    background: var(--accent-light);
+}
+
+.quiz-option.correct {
+    border-color: var(--success);
+    background: var(--success-light);
+}
+
+.quiz-option.wrong {
+    border-color: var(--error);
+    background: #ffebee;
+}
+
+.quiz-feedback {
+    margin-top: 12px;
+    padding: 10px;
+    display: none;
+    font-size: 0.9em;
+}
+
+.quiz-feedback.visible {
+    display: block;
+}
+
+.quiz-feedback.correct {
+    background: var(--success-light);
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+.quiz-feedback.wrong {
+    background: #ffebee;
+    border: 1px solid var(--error);
+    color: var(--error);
 }
 
 .postulate-box {
@@ -204,7 +294,7 @@ header .meta {
 }
 
 .postulate-box li {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .btn-nav {
@@ -257,15 +347,19 @@ header .meta {
     display: flex;
     justify-content: space-between;
     background: #f0f0f0;
-    padding: 10px;
+    padding: 8px;
     margin: 15px 0;
-    font-size: 0.85em;
+    font-size: 0.8em;
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
 .erkenntnisweg-item {
     text-align: center;
-    padding: 5px 10px;
+    padding: 5px 8px;
     opacity: 0.4;
+    flex: 1;
+    min-width: 60px;
 }
 
 .erkenntnisweg-item.active {
@@ -285,22 +379,49 @@ header .meta {
     <div class="container">
         <header>
             <h1>Bohr-Atommodell: Die Postulate</h1>
-            <div class="meta">Mi 28.01.2026 | Physik 12 GK | ES (45 min)</div>
+            <div class="meta">Mi 28.01. (45 min) + Fr 30.01. (90 min) | Physik 12 GK</div>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
         </header>
 
         <div class="erkenntnisweg" id="erkenntnisweg">
+            <div class="erkenntnisweg-item" data-phase="motivation">Motivation</div>
             <div class="erkenntnisweg-item" data-phase="problem">Problem</div>
             <div class="erkenntnisweg-item" data-phase="evidenz">Evidenz</div>
             <div class="erkenntnisweg-item" data-phase="hypothese">Hypothese</div>
             <div class="erkenntnisweg-item" data-phase="theorie">Theorie</div>
             <div class="erkenntnisweg-item" data-phase="verifikation">Verifikation</div>
+            <div class="erkenntnisweg-item" data-phase="transfer">Transfer</div>
+        </div>
+
+        <!-- SCHRITT 0: Motivation -->
+        <div class="step active" id="step0" data-phase="motivation">
+            <div class="step-header">
+                <div class="step-number">0</div>
+                <div class="step-title">Wozu ist das gut?</div>
+            </div>
+            <div class="step-content">
+                <p>Bevor wir starten: <strong>Warum lernen wir das?</strong></p>
+                <p>Erkunde einige Anwendungen, die auf quantisierten Energieniveaus basieren:</p>
+
+                <div class="sim-embed">
+                    <iframe src="SIM-06d-anwendungen.html"></iframe>
+                </div>
+
+                <div class="info-box">
+                    <strong>Gemeinsamer Nenner:</strong> All diese Technologien nutzen die Tatsache, dass Energie in Atomen nur bestimmte Werte annehmen kann. Wie kommen wir zu dieser Erkenntnis?
+                </div>
+            </div>
+
+            <div class="nav-container">
+                <button class="btn-nav btn-back" disabled>Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
+            </div>
         </div>
 
         <!-- SCHRITT 1: Problem -->
-        <div class="step active" id="step1" data-phase="problem">
+        <div class="step" id="step1" data-phase="problem">
             <div class="step-header">
                 <div class="step-number">1</div>
                 <div class="step-title">Das Problem: Warum existieren Atome?</div>
@@ -314,34 +435,26 @@ header .meta {
 
                 <p style="margin-top: 15px;"><strong>Aber:</strong> Ein Elektron auf einer Kreisbahn ist eine <em>beschleunigte Ladung</em>!</p>
 
-                <div class="info-box">
-                    <strong>Maxwell-Theorie:</strong> Beschleunigte Ladungen strahlen elektromagnetische Wellen ab und verlieren dabei Energie.
-                </div>
-
-                <p>Schau dir an, was die klassische Physik vorhersagt:</p>
-
                 <div class="sim-embed">
                     <iframe src="SIM-06a-rutherford-kollaps.html"></iframe>
                 </div>
 
-                <div class="question-box">
-                    <h4>Beobachtung</h4>
-                    <p>Was passiert mit dem Elektron laut klassischer Physik?</p>
-                    <textarea id="q1" placeholder="Das Elektron..."></textarea>
+                <div class="quiz-box" id="quiz1">
+                    <h4>Was hast du beobachtet?</h4>
+                    <div class="quiz-option" data-correct="false">Das Elektron bleibt stabil auf seiner Bahn</div>
+                    <div class="quiz-option" data-correct="true">Das Elektron sendet EM-Wellen aus und spiralt in den Kern</div>
+                    <div class="quiz-option" data-correct="false">Das Elektron springt sofort in den Kern</div>
+                    <div class="quiz-feedback"></div>
                 </div>
             </div>
 
             <div class="warning-box">
-                <strong>Kasten 1 (Das Problem):</strong>
-                <ul>
-                    <li>Ergänze die Lücken zum Rutherford-Modell</li>
-                    <li>Notiere die Zeit bis zum Kollaps: ≈ 10<sup>−11</sup> s</li>
-                </ul>
+                <strong>Aufgabe 1:</strong> Beschreibe das Problem des Rutherford-Modells auf dem Arbeitsblatt.
             </div>
 
             <div class="nav-container">
-                <button class="btn-nav btn-back" disabled>← Zurück</button>
-                <button class="btn-nav" onclick="nextStep()">Weiter →</button>
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
             </div>
         </div>
 
@@ -352,36 +465,30 @@ header .meta {
                 <div class="step-title">Die Evidenz: Wasserstoff-Spektrum</div>
             </div>
             <div class="step-content">
-                <p>Atome existieren stabil – also muss die klassische Physik hier falsch sein!</p>
-
+                <p>Atome existieren stabil - also muss die klassische Physik hier falsch sein!</p>
                 <p>Schauen wir uns an, <strong>welches Licht Wasserstoff aussendet</strong>:</p>
 
                 <div class="sim-embed">
                     <iframe src="SIM-06b-wasserstoff-spektrum.html"></iframe>
                 </div>
 
-                <div class="question-box">
-                    <h4>Beobachtung</h4>
-                    <p>Vergleiche das Spektrum von Wasserstoff mit dem einer Glühlampe. Was fällt auf?</p>
-                    <textarea id="q2" placeholder="Das Wasserstoff-Spektrum ist..."></textarea>
+                <div class="quiz-box" id="quiz2">
+                    <h4>Das Wasserstoff-Spektrum zeigt...</h4>
+                    <div class="quiz-option" data-correct="false">Alle Farben des Regenbogens (kontinuierlich)</div>
+                    <div class="quiz-option" data-correct="true">Nur bestimmte, einzelne Farben (diskret)</div>
+                    <div class="quiz-option" data-correct="false">Nur weißes Licht</div>
+                    <div class="quiz-feedback"></div>
                 </div>
 
-                <div class="info-box">
-                    <strong>Erkenntnis:</strong> Wasserstoff sendet nur ganz bestimmte Wellenlängen aus – nicht alle! Das Spektrum ist <span class="highlight">diskret</span>, nicht kontinuierlich.
-                </div>
             </div>
 
             <div class="warning-box">
-                <strong>Kasten 2 (Die Evidenz):</strong>
-                <ul>
-                    <li>Zeichne das Wasserstoff-Spektrum (4 Linien)</li>
-                    <li>Kreuze an: Das Spektrum ist <strong>diskret</strong></li>
-                </ul>
+                <strong>Aufgabe 2:</strong> Zeichne das Wasserstoff-Spektrum auf dem Arbeitsblatt. Kreuze an: kontinuierlich oder diskret?
             </div>
 
             <div class="nav-container">
-                <button class="btn-nav btn-back" onclick="prevStep()">← Zurück</button>
-                <button class="btn-nav" onclick="nextStep()">Weiter →</button>
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
             </div>
         </div>
 
@@ -398,27 +505,25 @@ header .meta {
                     <li>Atome senden nur <strong>bestimmte Wellenlängen</strong> aus</li>
                 </ol>
 
-                <div class="question-box">
-                    <h4>Denke nach!</h4>
-                    <p>Wenn nur bestimmte Wellenlängen ausgesendet werden, was bedeutet das für die Energie im Atom?</p>
-                    <textarea id="q3" placeholder="Die Energie im Atom kann nur..."></textarea>
+                <div class="quiz-box" id="quiz3">
+                    <h4>Wenn nur bestimmte Wellenlängen ausgesendet werden, dann...</h4>
+                    <div class="quiz-option" data-correct="false">...hat Licht immer die gleiche Energie</div>
+                    <div class="quiz-option" data-correct="true">...kann die Energie im Atom nur bestimmte Werte annehmen</div>
+                    <div class="quiz-option" data-correct="false">...sind alle Elektronenbahnen gleich</div>
+                    <div class="quiz-feedback"></div>
                 </div>
 
-                <div class="info-box">
-                    <strong>Schlussfolgerung:</strong>
-                    <ul>
-                        <li>Die Energie im Atom kann nur <strong>bestimmte Werte</strong> annehmen</li>
-                        <li>Es müssen <strong>stabile Bahnen</strong> existieren, auf denen Elektronen nicht strahlen</li>
-                        <li>Die Energie ist <span class="highlight">quantisiert</span></li>
-                    </ul>
+                <div class="quiz-box" id="quiz3b">
+                    <h4>Was muss für das Atom gelten, damit beides erklärt wird?</h4>
+                    <p style="font-size: 0.9em; color: #555; margin-bottom: 10px;">Formuliere eine Hypothese auf dem Arbeitsblatt.</p>
                 </div>
 
                 <p>Diese Ideen führen uns zu Niels Bohrs Lösung von 1913...</p>
             </div>
 
             <div class="nav-container">
-                <button class="btn-nav btn-back" onclick="prevStep()">← Zurück</button>
-                <button class="btn-nav" onclick="nextStep()">Weiter →</button>
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
             </div>
         </div>
 
@@ -442,7 +547,7 @@ header .meta {
 
                         <li><strong>Postulat 3 (Übergänge):</strong><br>
                         Bei einem Übergang zwischen zwei Bahnen wird ein Photon abgegeben oder aufgenommen mit:<br>
-                        <div class="formula">E<sub>Photon</sub> = |E<sub>n1</sub> − E<sub>n2</sub>| = h · f</div></li>
+                        <div class="formula">E<sub>Photon</sub> = |E<sub>n1</sub> - E<sub>n2</sub>| = h * f</div></li>
                     </ol>
                 </div>
 
@@ -453,164 +558,425 @@ header .meta {
                 </div>
 
                 <div class="info-box">
-                    <strong>Energieniveaus im Wasserstoffatom:</strong>
-                    <div class="formula">E<sub>n</sub> = −13,6 eV / n²</div>
-                    <p style="margin-top: 10px;">
-                        E<sub>1</sub> = −13,6 eV (Grundzustand)<br>
-                        E<sub>2</sub> = −3,4 eV<br>
-                        E<sub>3</sub> = −1,5 eV<br>
-                        E<sub>4</sub> = −0,85 eV
+                    <strong>Vorschau - Energieniveaus im Wasserstoffatom:</strong>
+                    <div class="formula">E<sub>n</sub> = -13,6 eV / n<sup>2</sup></div>
+                    <p style="margin-top: 10px; font-size: 0.9em;">
+                        Diese Formel werden wir am Freitag anwenden und damit die Spektrallinien berechnen!
                     </p>
                 </div>
             </div>
 
             <div class="warning-box">
-                <strong>Kasten 3 (Die Bohr-Postulate):</strong>
-                <ul>
-                    <li>Übertrage die drei Postulate in deinen Hefter</li>
-                    <li>Nutze die Wortbank auf dem Arbeitsblatt</li>
-                </ul>
+                <strong>Hausaufgabe bis Freitag:</strong> Aufgabe 1-2 auf dem Arbeitsblatt vervollständigen!
+            </div>
+
+            <div class="info-box" style="background: #fff3e0; border-color: #ff9800;">
+                <strong style="color: #e65100;">Pause bis Freitag</strong>
+                <p style="margin-top: 8px;">Am Freitag geht es weiter mit Berechnungen und Verifikation!</p>
             </div>
 
             <div class="nav-container">
-                <button class="btn-nav btn-back" onclick="prevStep()">← Zurück</button>
-                <button class="btn-nav" onclick="nextStep()">Weiter →</button>
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter (Freitag)</button>
             </div>
         </div>
 
-        <!-- SCHRITT 5: Verifikation -->
-        <div class="step" id="step5" data-phase="verifikation">
-            <div class="step-header">
-                <div class="step-number">5</div>
-                <div class="step-title">Verifikation: Spektrallinien erklärt</div>
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- FREITAG: ONBOARDING + RECAP + THEORIE + VERIFIKATION + TRANSFER -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <!-- FREITAG START MARKER -->
+        <div class="step" id="step5" data-phase="theorie">
+            <div style="background: linear-gradient(135deg, #2c5aa0, #1a3d6e); color: white; padding: 30px; text-align: center; margin: -20px -20px 20px -20px;">
+                <div style="font-size: 2em; margin-bottom: 10px;">📅</div>
+                <h2 style="margin: 0; font-size: 1.5em;">Freitag 30.01.2026</h2>
+                <p style="margin: 10px 0 0 0; opacity: 0.9;">Doppelstunde (90 min)</p>
             </div>
             <div class="step-content">
-                <p>Jetzt können wir die Spektrallinien erklären!</p>
-
-                <p><strong>Beispiel:</strong> Übergang von n = 3 nach n = 2</p>
+                <p>Heute arbeiten wir mit den <strong>Formeln</strong> und berechnen Spektrallinien!</p>
 
                 <div class="info-box">
-                    <strong>Rechnung:</strong>
-                    <ul>
-                        <li>E<sub>3</sub> = −1,51 eV</li>
-                        <li>E<sub>2</sub> = −3,40 eV</li>
-                        <li>ΔE = |E<sub>3</sub> − E<sub>2</sub>| = |−1,51 − (−3,40)| = <strong>1,89 eV</strong></li>
-                        <li>Das entspricht λ = 656 nm → <span style="color: #ff0000; font-weight: bold;">rotes Licht (H<sub>α</sub>)</span></li>
+                    <strong>Heutiger Plan:</strong>
+                    <ul style="margin: 10px 0 0 15px;">
+                        <li>Energieniveaus berechnen (E<sub>n</sub> = -13,6 eV/n²)</li>
+                        <li>Emission & Absorption verstehen</li>
+                        <li>Rydberg-Formel anwenden</li>
+                        <li>Spektralanalyse: Sterne analysieren!</li>
                     </ul>
                 </div>
 
-                <p>Die <strong>Balmer-Serie</strong> (alle Übergänge auf n = 2) erklärt genau die vier sichtbaren Linien!</p>
+                <div class="info-box" style="background: #fff3e0; border-color: #ff9800; margin-top: 15px;">
+                    <strong style="color: #e65100;">Warst du Mittwoch nicht dabei?</strong>
+                    <p style="margin-top: 8px;">Kein Problem - der nächste Schritt fasst alles zusammen.</p>
+                </div>
+            </div>
 
-                <table style="width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.9em;">
-                    <thead>
-                        <tr style="background: var(--accent-light);">
-                            <th style="border: 1px solid var(--border); padding: 8px;">Übergang</th>
-                            <th style="border: 1px solid var(--border); padding: 8px;">ΔE (eV)</th>
-                            <th style="border: 1px solid var(--border); padding: 8px;">λ (nm)</th>
-                            <th style="border: 1px solid var(--border); padding: 8px;">Farbe</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">3 → 2</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">1,89</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">656</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center; color: #ff0000;">rot</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">4 → 2</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">2,55</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">486</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center; color: #00cccc;">blaugrün</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">5 → 2</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">2,86</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">434</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center; color: #8800ff;">violett</td>
-                        </tr>
-                        <tr>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">6 → 2</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">3,02</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center;">410</td>
-                            <td style="border: 1px solid var(--border); padding: 8px; text-align: center; color: #6600cc;">violett</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="nav-container">
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
 
-                <div class="info-box" style="background: var(--success-light); border-color: var(--success);">
-                    <strong style="color: var(--success);">Erfolg!</strong> Das Bohr-Modell erklärt, warum Wasserstoff genau diese Spektrallinien zeigt. Die Theorie ist verifiziert!
+        <!-- SCHRITT 6: Crash-Onboarding für Nachzügler -->
+        <div class="step" id="step6" data-phase="theorie">
+            <div class="step-header">
+                <div class="step-number">6</div>
+                <div class="step-title">Crash-Onboarding: Mittwoch kompakt</div>
+            </div>
+            <div class="step-content">
+                <p><strong>Freitag 30.01.2026</strong> - Für alle, die Mittwoch nicht dabei waren:</p>
+
+                <div class="info-box" style="margin-bottom: 15px;">
+                    <strong>Warst du Mittwoch dabei?</strong>
+                    <p style="margin-top: 8px;">Dann kannst du diesen Schritt überspringen!</p>
+                    <button class="btn-nav" onclick="nextStep()" style="margin-top: 10px; padding: 8px 16px; font-size: 0.9em;">
+                        Überspringen → Recap-Quiz
+                    </button>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+
+                <p><strong>1. Das Problem:</strong> Das Rutherford-Modell (Elektronen umkreisen den Kern) hat ein fatales Problem:</p>
+
+                <div class="postulate-box" style="background: #fff3e0; border-color: #ff9800;">
+                    <p>Ein kreisendes Elektron ist eine <strong>beschleunigte Ladung</strong>.</p>
+                    <p style="margin-top: 8px;">→ Es müsste EM-Strahlung aussenden und Energie verlieren.</p>
+                    <p style="margin-top: 8px;">→ Das Atom sollte in <strong>~10⁻¹¹ Sekunden kollabieren!</strong></p>
+                    <p style="margin-top: 8px; color: #c62828;"><em>Aber: Atome sind stabil!</em></p>
+                </div>
+
+                <p style="margin-top: 15px;"><strong>2. Die Evidenz:</strong> Wasserstoff sendet nur <em>bestimmte</em> Wellenlängen aus:</p>
+
+                <div style="background: #000; padding: 15px; border-radius: 4px; margin: 10px 0;">
+                    <div style="height: 30px; background: linear-gradient(to right, #1a0a2e 0%, #4400aa 5%, #0000ff 15%, #00ffff 25%, #00ff00 40%, #ffff00 55%, #ff8800 70%, #ff0000 85%, #440000 100%); position: relative; border-radius: 4px;">
+                        <div style="position: absolute; left: 3.3%; top: 0; bottom: 0; width: 3px; background: #8844ff; box-shadow: 0 0 8px #8844ff;"></div>
+                        <div style="position: absolute; left: 11.3%; top: 0; bottom: 0; width: 3px; background: #6666ff; box-shadow: 0 0 8px #6666ff;"></div>
+                        <div style="position: absolute; left: 28.7%; top: 0; bottom: 0; width: 3px; background: #00cccc; box-shadow: 0 0 8px #00cccc;"></div>
+                        <div style="position: absolute; left: 85.3%; top: 0; bottom: 0; width: 3px; background: #ff2222; box-shadow: 0 0 8px #ff2222;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #888; font-size: 0.75em; margin-top: 5px;">
+                        <span>400 nm</span><span>500 nm</span><span>600 nm</span><span>700 nm</span>
+                    </div>
+                </div>
+
+                <p>Das Spektrum ist <span class="highlight">diskret</span> (nur bestimmte Linien), nicht kontinuierlich!</p>
+
+                <p style="margin-top: 15px;"><strong>3. Bohrs Lösung (1913) - Die drei Postulate:</strong></p>
+
+                <div class="postulate-box">
+                    <ol>
+                        <li><strong>Stabile Bahnen:</strong> Elektronen auf bestimmten Bahnen strahlen <em>nicht</em>.</li>
+                        <li><strong>Quantisierung:</strong> Nur Bahnen mit n = 1, 2, 3, ... sind erlaubt.</li>
+                        <li><strong>Übergänge:</strong> Photon wird abgegeben/aufgenommen mit E = |E₁ - E₂| = h·f</li>
+                    </ol>
+                </div>
+
+                <div class="info-box" style="background: var(--success-light); border-color: var(--success); margin-top: 15px;">
+                    <strong style="color: var(--success);">Jetzt bist du startklar!</strong>
+                    <p style="margin-top: 8px;">Weiter geht's mit dem Recap-Quiz für alle.</p>
+                </div>
+            </div>
+
+            <div class="nav-container">
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter zum Recap</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 7: Recap-Quiz -->
+        <div class="step" id="step7" data-phase="theorie">
+            <div class="step-header">
+                <div class="step-number">7</div>
+                <div class="step-title">Recap: Was weißt du noch?</div>
+            </div>
+            <div class="step-content">
+                <p>Kurzes Quiz zur Aktivierung:</p>
+
+                <div class="quiz-box" id="quiz4">
+                    <h4>1. Das Rutherford-Modell sagt voraus, dass Atome...</h4>
+                    <div class="quiz-option" data-correct="true">...in etwa 10⁻¹¹ s kollabieren sollten</div>
+                    <div class="quiz-option" data-correct="false">...ewig stabil bleiben</div>
+                    <div class="quiz-option" data-correct="false">...nur bei hohen Temperaturen existieren</div>
+                    <div class="quiz-feedback"></div>
+                </div>
+
+                <div class="quiz-box" id="quiz5">
+                    <h4>2. Das Wasserstoff-Spektrum zeigt...</h4>
+                    <div class="quiz-option" data-correct="false">...einen kontinuierlichen Regenbogen</div>
+                    <div class="quiz-option" data-correct="true">...nur bestimmte, diskrete Linien</div>
+                    <div class="quiz-option" data-correct="false">...nur infrarotes Licht</div>
+                    <div class="quiz-feedback"></div>
+                </div>
+
+                <div class="quiz-box" id="quiz6">
+                    <h4>3. Bohrs 1. Postulat besagt...</h4>
+                    <div class="quiz-option" data-correct="false">...Elektronen strahlen immer</div>
+                    <div class="quiz-option" data-correct="true">...es gibt stabile Bahnen ohne Strahlung</div>
+                    <div class="quiz-option" data-correct="false">...alle Bahnen sind erlaubt</div>
+                    <div class="quiz-feedback"></div>
+                </div>
+            </div>
+
+            <div class="nav-container">
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 8: Energieformel anwenden -->
+        <div class="step" id="step8" data-phase="theorie">
+            <div class="step-header">
+                <div class="step-number">8</div>
+                <div class="step-title">Die Energieformel anwenden</div>
+            </div>
+            <div class="step-content">
+                <p>Jetzt wenden wir die Formel an:</p>
+
+                <div class="formula" style="font-size: 1.4em;">
+                    E<sub>n</sub> = −13,6 eV / n²
+                </div>
+
+                <p>Erkunde das <strong>Termschema</strong> interaktiv:</p>
+
+                <div class="sim-embed">
+                    <iframe src="SIM-06e-termschema.html"></iframe>
+                </div>
+
+                <div class="info-box">
+                    <strong>Aufgabe:</strong> Berechne E₁, E₂ und E₃ selbst auf dem Arbeitsblatt.
                 </div>
             </div>
 
             <div class="warning-box">
-                <strong>Kasten 4 + Aufgaben:</strong>
-                <ul>
-                    <li>Ergänze die Zuordnung im Kasten 4</li>
-                    <li>Bearbeite die Aufgaben 1–3</li>
-                </ul>
+                <strong>Aufgabe 3:</strong> Berechne die Energieniveaus E₁, E₂, E₃ und die Photonenenergie beim Übergang n=3→n=2.
             </div>
 
             <div class="nav-container">
-                <button class="btn-nav btn-back" onclick="prevStep()">← Zurück</button>
-                <button class="btn-nav" onclick="finish()" style="background: var(--success);">✓ Fertig</button>
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 9: Verifikation -->
+        <div class="step" id="step9" data-phase="verifikation">
+            <div class="step-header">
+                <div class="step-number">9</div>
+                <div class="step-title">Theorie trifft Experiment</div>
+            </div>
+            <div class="step-content">
+                <p>Stimmt unsere Theorie mit der Realität überein?</p>
+                <p>Vergleiche die <strong>berechneten</strong> mit den <strong>gemessenen</strong> Wellenlängen:</p>
+
+                <div class="sim-embed">
+                    <iframe src="SIM-06f-spektrum-vergleich.html"></iframe>
+                </div>
+
+                <div class="quiz-box" id="quiz7">
+                    <h4>Was zeigt der Vergleich?</h4>
+                    <div class="quiz-option" data-correct="false">Die Theorie weicht stark vom Experiment ab</div>
+                    <div class="quiz-option" data-correct="true">Theorie und Experiment stimmen perfekt überein</div>
+                    <div class="quiz-option" data-correct="false">Nur manche Linien stimmen</div>
+                    <div class="quiz-feedback"></div>
+                </div>
+
+                <div class="quiz-box" id="quiz7b">
+                    <h4>Beurteile: Wie gut stimmen Theorie und Experiment überein?</h4>
+                    <p style="font-size: 0.9em; color: #555;">Notiere dein Urteil auf dem Arbeitsblatt.</p>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Aufgabe 4:</strong> Berechne die Wellenlänge des Photons aus Aufgabe 3b.
+            </div>
+
+            <div class="nav-container">
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 10: Transfer -->
+        <div class="step" id="step10" data-phase="transfer">
+            <div class="step-header">
+                <div class="step-number">10</div>
+                <div class="step-title">Absorption vs. Emission</div>
+            </div>
+            <div class="step-content">
+                <p>Bisher haben wir nur <strong>Emission</strong> betrachtet (Elektron fällt, Photon wird abgegeben).</p>
+                <p>Was passiert bei <strong>Absorption</strong>?</p>
+
+                <div class="sim-embed">
+                    <iframe src="SIM-06g-absorption.html"></iframe>
+                </div>
+
+                <div class="info-box">
+                    <strong>Vergleich:</strong>
+                    <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);"><strong>Emission</strong></td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Elektron fällt → Photon wird <strong>abgegeben</strong></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid var(--border);"><strong>Absorption</strong></td>
+                            <td style="padding: 8px; border: 1px solid var(--border);">Photon trifft Atom → Elektron springt <strong>nach oben</strong></td>
+                        </tr>
+                    </table>
+                    <p style="margin-top: 10px;"><strong>Wichtig:</strong> Das Photon muss <em>exakt</em> die richtige Energie haben!</p>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Aufgabe 5:</strong> Berechne die Ionisierungsenergie (Energie, um das Elektron aus n=1 zu entfernen).
+            </div>
+
+            <div class="nav-container">
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="nextStep()">Weiter zum Bonus</button>
+            </div>
+        </div>
+
+        <!-- SCHRITT 11: Spektralanalyse -->
+        <div class="step" id="step11" data-phase="transfer">
+            <div class="step-header">
+                <div class="step-number">11</div>
+                <div class="step-title">Spektralanalyse: Fingerabdrücke der Elemente</div>
+            </div>
+            <div class="step-content">
+                <p><strong>Die wichtigste Anwendung:</strong> Mit Spektralanalyse können wir herausfinden, welche Stoffe in einer unbekannten Probe enthalten sind - ob im Labor oder Milliarden Lichtjahre entfernt!</p>
+
+                <p style="margin-top: 10px;">Jedes Element hat ein einzigartiges Spektrum - wie ein "Fingerabdruck". Das liegt an den quantisierten Energieniveaus, die wir mit Bohr verstanden haben.</p>
+
+                <div class="sim-embed" id="spektralanalyseEmbed">
+                    <button class="fullscreen-btn" onclick="toggleFullscreen('spektralanalyseEmbed')">⛶ Vollbild</button>
+                    <iframe src="SIM-06h-spektralanalyse.html"></iframe>
+                </div>
+
+                <div class="info-box">
+                    <strong>Anwendungen in der Praxis:</strong>
+                    <ul style="margin-top: 8px; margin-left: 18px;">
+                        <li><strong>Astronomie:</strong> Zusammensetzung von Sternen und Galaxien bestimmen</li>
+                        <li><strong>Forensik:</strong> Unbekannte Substanzen identifizieren</li>
+                        <li><strong>Umweltanalytik:</strong> Schadstoffe in Luft und Wasser nachweisen</li>
+                        <li><strong>Medizin:</strong> Blutanalyse und Diagnostik</li>
+                    </ul>
+                </div>
+
+                <div class="quiz-box" id="quiz8">
+                    <h4>Warum funktioniert Spektralanalyse?</h4>
+                    <div class="quiz-option" data-correct="false">Alle Stoffe haben das gleiche Spektrum</div>
+                    <div class="quiz-option" data-correct="true">Jedes Element hat ein einzigartiges, diskretes Spektrum</div>
+                    <div class="quiz-option" data-correct="false">Spektren sind immer kontinuierlich</div>
+                    <div class="quiz-feedback"></div>
+                </div>
+
+                <div class="info-box" style="background: #e8f5e9; border-color: #2a7a4b; margin-top: 15px;">
+                    <strong style="color: #2a7a4b;">Praxis-Tipp:</strong>
+                    <p style="margin-top: 8px;">Probiere den <strong>Astronomie-Modus</strong> in der Simulation! Dort analysierst du echte Sternspektren - genau wie professionelle Astronomen.</p>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Aufgabe 7:</strong> Identifiziere die Elemente in einem unbekannten Spektrum (Simulation).
+            </div>
+
+            <div class="nav-container">
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
+                <button class="btn-nav" onclick="finish()" style="background: var(--success);">Fertig</button>
             </div>
         </div>
 
         <!-- ABSCHLUSS -->
         <div class="step" id="stepEnd">
             <div class="step-header">
-                <div class="step-number" style="background: var(--success);">✓</div>
+                <div class="step-number" style="background: var(--success);">&#10003;</div>
                 <div class="step-title" style="color: var(--success);">Lernpfad abgeschlossen!</div>
             </div>
             <div class="step-content">
                 <div class="info-box" style="background: var(--success-light); border-color: var(--success);">
                     <strong style="color: var(--success);">Zusammenfassung</strong>
-                    <p style="margin-top: 10px;">Du hast gelernt:</p>
-                    <ul>
-                        <li>Warum das Rutherford-Modell ein Problem hat</li>
-                        <li>Was diskrete Spektrallinien bedeuten</li>
-                        <li>Die drei Bohr-Postulate</li>
-                        <li>Wie Spektrallinien durch Übergänge entstehen</li>
+                    <p style="margin-top: 10px;">Du hast den kompletten Erkenntnisweg durchlaufen:</p>
+                    <ul style="margin-left: 18px; margin-top: 8px;">
+                        <li><strong>Problem:</strong> Rutherford-Modell → Kollaps in 10⁻¹¹ s</li>
+                        <li><strong>Evidenz:</strong> Diskretes Wasserstoff-Spektrum</li>
+                        <li><strong>Hypothese:</strong> Energie muss quantisiert sein</li>
+                        <li><strong>Theorie:</strong> Bohrs Postulate + Formel E<sub>n</sub> = −13,6 eV/n²</li>
+                        <li><strong>Verifikation:</strong> Theorie = Experiment!</li>
+                        <li><strong>Transfer:</strong> Absorption vs. Emission</li>
                     </ul>
                 </div>
 
-                <p style="margin-top: 20px;"><strong>Nächste Stunde:</strong> Wir rechnen mit E<sub>n</sub> = −13,6 eV / n² und berechnen Spektrallinien!</p>
+                <p style="margin-top: 20px;"><strong>Das kannst du jetzt:</strong></p>
+                <ul style="margin-left: 18px; margin-top: 8px;">
+                    <li>Energieniveaus mit E<sub>n</sub> = −13,6 eV/n² berechnen</li>
+                    <li>Photonenenergie bei Übergängen bestimmen</li>
+                    <li>Wellenlängen der Balmer-Serie berechnen</li>
+                    <li>Absorption und Emission unterscheiden</li>
+                </ul>
+
+                <div class="warning-box" style="margin-top: 20px;">
+                    <strong>Arbeitsblatt:</strong> Alle 5 Aufgaben bearbeiten (15 BE)!
+                </div>
             </div>
 
             <div class="nav-container">
-                <button class="btn-nav btn-back" onclick="prevStep()">← Zurück</button>
+                <button class="btn-nav btn-back" onclick="prevStep()">Zurück</button>
             </div>
         </div>
     </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// LERNPFAD: BOHR-ATOMMODELL (ES5)
-// Navigation und Fortschritt
+// LERNPFAD: BOHR-ATOMMODELL v2 (ES5)
+// Navigation, Fortschritt und Quiz-Logik
 // ═══════════════════════════════════════════════════════════════
 
 (function() {
     'use strict';
 
-    var LERNPFAD_ID = 'lp-06-bohr';
-    var currentStep = 1;
-    var totalSteps = 5;
+    var LERNPFAD_ID = 'lp-06-bohr-v4';
+    var currentStep = 0;
+    var totalSteps = 12; // 0-11 plus Ende (Step 5 = Freitag-Start)
 
     var steps = document.querySelectorAll('.step');
     var progressFill = document.getElementById('progressFill');
     var erkenntnisweg = document.getElementById('erkenntnisweg');
 
+    // Quiz-Logik
+    function initQuizzes() {
+        var quizBoxes = document.querySelectorAll('.quiz-box');
+        quizBoxes.forEach(function(box) {
+            var options = box.querySelectorAll('.quiz-option');
+            var feedback = box.querySelector('.quiz-feedback');
+
+            options.forEach(function(option) {
+                option.onclick = function() {
+                    // Deselect all
+                    options.forEach(function(o) {
+                        o.classList.remove('selected', 'correct', 'wrong');
+                    });
+
+                    // Check answer
+                    var isCorrect = option.dataset.correct === 'true';
+                    option.classList.add('selected');
+
+                    if (isCorrect) {
+                        option.classList.add('correct');
+                        feedback.textContent = 'Richtig!';
+                        feedback.className = 'quiz-feedback visible correct';
+                    } else {
+                        option.classList.add('wrong');
+                        feedback.textContent = 'Nicht ganz. Überprüfe deine Überlegung.';
+                        feedback.className = 'quiz-feedback visible wrong';
+                    }
+
+                    saveProgress();
+                };
+            });
+        });
+    }
+
     function saveProgress() {
         localStorage.setItem(LERNPFAD_ID + '-step', currentStep);
-
-        // Textareas speichern
-        var textareas = document.querySelectorAll('textarea');
-        textareas.forEach(function(ta) {
-            if (ta.id) {
-                localStorage.setItem(LERNPFAD_ID + '-' + ta.id, ta.value);
-            }
-        });
     }
 
     function loadProgress() {
@@ -618,27 +984,16 @@ header .meta {
         if (savedStep) {
             currentStep = parseInt(savedStep);
         }
-
-        // Textareas laden
-        var textareas = document.querySelectorAll('textarea');
-        textareas.forEach(function(ta) {
-            if (ta.id) {
-                var saved = localStorage.getItem(LERNPFAD_ID + '-' + ta.id);
-                if (saved) {
-                    ta.value = saved;
-                }
-            }
-        });
-
         showStep(currentStep);
     }
 
     function updateErkenntnisweg() {
         var items = erkenntnisweg.querySelectorAll('.erkenntnisweg-item');
         var currentPhase = document.getElementById('step' + currentStep);
+        if (!currentPhase) currentPhase = document.getElementById('stepEnd');
         var activePhase = currentPhase ? currentPhase.dataset.phase : null;
 
-        var phases = ['problem', 'evidenz', 'hypothese', 'theorie', 'verifikation'];
+        var phases = ['motivation', 'problem', 'evidenz', 'hypothese', 'theorie', 'verifikation', 'transfer'];
         var currentIndex = phases.indexOf(activePhase);
 
         items.forEach(function(item, index) {
@@ -656,13 +1011,13 @@ header .meta {
             step.classList.remove('active');
         });
 
-        var targetId = n > totalSteps ? 'stepEnd' : 'step' + n;
+        var targetId = n >= totalSteps ? 'stepEnd' : 'step' + n;
         var target = document.getElementById(targetId);
         if (target) {
             target.classList.add('active');
         }
 
-        var progress = Math.min((n / totalSteps) * 100, 100);
+        var progress = Math.min((n / (totalSteps - 1)) * 100, 100);
         progressFill.style.width = progress + '%';
 
         updateErkenntnisweg();
@@ -672,30 +1027,51 @@ header .meta {
     }
 
     window.nextStep = function() {
-        if (currentStep <= totalSteps) {
+        if (currentStep < totalSteps) {
             currentStep++;
             showStep(currentStep);
         }
     };
 
     window.prevStep = function() {
-        if (currentStep > 1) {
+        if (currentStep > 0) {
             currentStep--;
             showStep(currentStep);
         }
     };
 
     window.finish = function() {
-        currentStep = totalSteps + 1;
+        currentStep = totalSteps;
         showStep(currentStep);
     };
 
-    // Textareas live speichern
-    document.querySelectorAll('textarea').forEach(function(ta) {
-        ta.addEventListener('input', saveProgress);
+    // Vollbild-Toggle für Simulationen
+    window.toggleFullscreen = function(id) {
+        var embed = document.getElementById(id);
+        var btn = embed.querySelector('.fullscreen-btn');
+        if (embed.classList.contains('fullscreen')) {
+            embed.classList.remove('fullscreen');
+            btn.textContent = '⛶ Vollbild';
+            document.body.style.overflow = '';
+        } else {
+            embed.classList.add('fullscreen');
+            btn.textContent = '✕ Schließen';
+            document.body.style.overflow = 'hidden';
+        }
+    };
+
+    // ESC zum Schließen des Vollbilds
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            var fullscreenEmbed = document.querySelector('.sim-embed.fullscreen');
+            if (fullscreenEmbed) {
+                toggleFullscreen(fullscreenEmbed.id);
+            }
+        }
     });
 
     // Init
+    initQuizzes();
     loadProgress();
 
 })();

@@ -79,7 +79,7 @@ header .meta {
     flex-wrap: wrap;
 }
 .step-dot {
-    width: 28px; height: 28px;
+    width: 36px; height: 36px;
     border-radius: 50%;
     border: 2px solid var(--border);
     background: var(--white);
@@ -88,6 +88,7 @@ header .meta {
     cursor: pointer;
     transition: all 0.2s;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 .step-dot.active {
     border-color: var(--accent);
@@ -220,9 +221,7 @@ header .meta {
     background: var(--accent-light);
     color: var(--text);
     min-width: 120px;
-    min-height: 36px;
-    -webkit-appearance: none;
-    appearance: none;
+    min-height: 44px;
     cursor: pointer;
 }
 .fill-sentence select.correct-fill { border-color: var(--success); background: var(--success-bg); }
@@ -636,9 +635,10 @@ header .meta {
 }
 .ab-checklist label {
     display: block;
-    padding: 6px 0;
+    padding: 12px 0;
     font-size: 0.95em;
     cursor: pointer;
+    min-height: 44px;
 }
 .ab-checklist input[type="checkbox"] {
     width: 20px; height: 20px;
@@ -667,6 +667,7 @@ header .meta {
 
 /* === HIDDEN HELPER === */
 .hidden { display: none !important; }
+#sim4HalfBtns { display: flex; gap: 8px; margin-bottom: 8px; }
 .mt8 { margin-top: 8px; }
 .mt12 { margin-top: 12px; }
 .mb8 { margin-bottom: 8px; }
@@ -1039,7 +1040,7 @@ header .meta {
             <div class="stepper-value" id="sim4Value">0 &deg;C</div>
             <button class="stepper-btn" onclick="sim4Step(1)" id="sim4Plus">+</button>
         </div>
-        <div class="hidden" id="sim4HalfBtns" style="display:flex;gap:8px;margin-bottom:8px;">
+        <div class="hidden" id="sim4HalfBtns">
             <button class="btn btn-sm btn-ghost" onclick="sim4Step(-0.5)">&minus;0,5</button>
             <button class="btn btn-sm btn-ghost" onclick="sim4Step(0.5)">+0,5</button>
         </div>
@@ -1071,15 +1072,15 @@ header .meta {
 
     <p><strong>Frage 1:</strong> Du fasst bei 5 &deg;C Außentemperatur eine Metallstange und ein Holzbrett an. Was stimmt?</p>
     <div class="mc-grid" id="quiz1Grid">
-        <div class="mc-option" onclick="checkQuiz(1,'a')">
+        <div class="mc-option" data-choice="a" onclick="checkQuiz(1,'a')">
             <span class="mc-letter">A</span>
             <span>Die Metallstange ist kälter als das Holzbrett.</span>
         </div>
-        <div class="mc-option" onclick="checkQuiz(1,'b')">
+        <div class="mc-option" data-choice="b" onclick="checkQuiz(1,'b')">
             <span class="mc-letter">B</span>
             <span>Beide haben die gleiche Temperatur, aber Metall fühlt sich kälter an.</span>
         </div>
-        <div class="mc-option" onclick="checkQuiz(1,'c')">
+        <div class="mc-option" data-choice="c" onclick="checkQuiz(1,'c')">
             <span class="mc-letter">C</span>
             <span>Das Holzbrett ist kälter als die Metallstange.</span>
         </div>
@@ -1088,15 +1089,15 @@ header .meta {
 
     <p class="mt12"><strong>Frage 2:</strong> Die Celsius-Skala hat zwei Fixpunkte. Welche sind es?</p>
     <div class="mc-grid" id="quiz2Grid">
-        <div class="mc-option" onclick="checkQuiz(2,'a')">
+        <div class="mc-option" data-choice="a" onclick="checkQuiz(2,'a')">
             <span class="mc-letter">A</span>
             <span>0 &deg;C (Körpertemperatur) und 100 &deg;C (Sonnenhitze)</span>
         </div>
-        <div class="mc-option" onclick="checkQuiz(2,'b')">
+        <div class="mc-option" data-choice="b" onclick="checkQuiz(2,'b')">
             <span class="mc-letter">B</span>
             <span>0 &deg;C (schmelzendes Eis) und 100 &deg;C (siedendes Wasser)</span>
         </div>
-        <div class="mc-option" onclick="checkQuiz(2,'c')">
+        <div class="mc-option" data-choice="c" onclick="checkQuiz(2,'c')">
             <span class="mc-letter">C</span>
             <span>&minus;10 &deg;C (Winternacht) und 40 &deg;C (heißer Sommertag)</span>
         </div>
@@ -1176,7 +1177,8 @@ var state = {
     sim4Results: [],
     quiz1: '',
     quiz2: '',
-    quizBothDone: false
+    quizBothDone: false,
+    finished: false
 };
 
 /* ============================================ */
@@ -1205,6 +1207,10 @@ function sv(id, v) { var el = document.getElementById(id); if (el) el.value = v;
 /* ============================================ */
 function showSection(n) {
     if (n < 1 || n > TOTAL) return;
+    if (state.sec === 3 && n !== 3) {
+        hide('feelPrompt');
+        state.sim1Current = '';
+    }
     for (var i = 1; i <= TOTAL; i++) {
         var el = document.getElementById('section' + i);
         if (el) el.classList.remove('active');
@@ -1213,6 +1219,9 @@ function showSection(n) {
     if (target) target.classList.add('active');
     state.sec = n;
     if (n > state.high) state.high = n;
+    if (n === 9 && !sim4Thermo) {
+        sim4StartRound(state.sim4Target !== 0);
+    }
     updateProgress();
     updateDots();
     save();
@@ -1306,7 +1315,7 @@ function createThermo(containerId, min, max, markStep, val, labelStep) {
     var ls = labelStep || markStep;
     for (var t = min; t <= max; t += markStep) {
         var y = TB - ((t - min) / range) * TH;
-        var isLabel = (t % ls === 0);
+        var isLabel = (Math.round(t * 100) % Math.round(ls * 100) === 0);
         var tick = document.createElementNS(ns, 'line');
         tick.setAttribute('x1', TX + TW/2 + 2);
         tick.setAttribute('y1', y);
@@ -1440,8 +1449,10 @@ function sim1Tap(obj) {
 function sim1Feel(feeling) {
     var obj = state.sim1Current;
     if (!obj) return;
+    if (state.sim1Feels[obj]) return;
     state.sim1Feels[obj] = feeling;
     state.sim1FeelCount++;
+    state.sim1Current = '';
 
     var card = document.getElementById('card-' + obj);
     if (card) card.classList.add('done-feel');
@@ -1517,6 +1528,8 @@ function checkK1() {
         fb.className = 'quiz-feedback show correct-fb';
         fb.textContent = '\u2714 Richtig! Unser Temperaturempfinden kann uns täuschen.';
         markFill('k1a', true); markFill('k1b', true); markFill('k1c', true);
+        disableSelect('k1a'); disableSelect('k1b'); disableSelect('k1c');
+        document.getElementById('k1Check').classList.add('hidden');
         state.k1Done = true;
     } else {
         fb.className = 'quiz-feedback show incorrect-fb';
@@ -1535,6 +1548,11 @@ function markFill(id, ok) {
     el.classList.add(ok ? 'correct-fill' : 'incorrect-fill');
 }
 
+function disableSelect(id) {
+    var el = document.getElementById(id);
+    if (el) el.disabled = true;
+}
+
 /* ============================================ */
 /* SECTION 7: CELSIUS                           */
 /* ============================================ */
@@ -1545,18 +1563,18 @@ function initCelsius() {
     celsiusThermo = createThermo('celsiusThermo', -20, 120, 10, -20, 20);
 }
 
-function celsiusNext() {
+function celsiusNext(instant) {
     state.celStep++;
     var info = document.getElementById('celsiusInfo');
     var btn = document.getElementById('celsiusNextBtn');
 
     if (state.celStep === 1) {
         initCelsius();
-        celsiusThermo.animateTo(0, 1500);
+        if (instant) celsiusThermo.setVal(0); else celsiusThermo.animateTo(0, 1500);
         if (info) info.innerHTML = '<p style="font-size:1.1em;"><strong>Schritt 1:</strong> Thermometer in <span style="color:#1565c0;">Eiswasser</span> &rarr; <strong>0 &deg;C</strong></p><p style="color:var(--text-sec);">Das ist der erste Fixpunkt: schmelzendes Eis.</p>';
         if (btn) btn.textContent = 'Schritt 2: Siedendes Wasser \u2192';
     } else if (state.celStep === 2) {
-        celsiusThermo.animateTo(100, 1500);
+        if (instant) celsiusThermo.setVal(100); else celsiusThermo.animateTo(100, 1500);
         if (info) info.innerHTML = '<p style="font-size:1.1em;"><strong>Schritt 2:</strong> Thermometer in <span style="color:#c62828;">siedendes Wasser</span> &rarr; <strong>100 &deg;C</strong></p><p style="color:var(--text-sec);">Das ist der zweite Fixpunkt: siedendes Wasser.</p>';
         if (btn) btn.textContent = 'Schritt 3: Skala einteilen \u2192';
     } else if (state.celStep === 3) {
@@ -1566,7 +1584,7 @@ function celsiusNext() {
         var sl = document.getElementById('celsiusSlider');
         if (sl) sl.classList.add('visible');
         if (btn) btn.classList.add('hidden');
-        celsiusThermo.animateTo(20, 800);
+        if (instant) celsiusThermo.setVal(20); else celsiusThermo.animateTo(20, 800);
         if (info) info.innerHTML = '<p>Schiebe den Regler und erkunde verschiedene Temperaturen!</p>';
     }
     save();
@@ -1598,6 +1616,8 @@ function checkK2() {
         fb.textContent = '\u2714 Richtig! 0\u00B0C (Eis) und 100\u00B0C (siedendes Wasser) sind die Fixpunkte.';
         state.k2Done = true;
         markFill('k2a', true); markFill('k2b', true); markFill('k2c', true); markFill('k2d', true); markFill('k2e', true);
+        disableSelect('k2a'); disableSelect('k2b'); disableSelect('k2c'); disableSelect('k2d'); disableSelect('k2e');
+        document.getElementById('k2Check').classList.add('hidden');
     } else {
         fb.className = 'quiz-feedback show incorrect-fb';
         fb.textContent = '\u2718 Nicht ganz richtig. Versuche es noch einmal!';
