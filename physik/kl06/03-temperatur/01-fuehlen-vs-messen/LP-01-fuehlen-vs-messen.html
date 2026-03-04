@@ -1399,6 +1399,7 @@ function selectHypo(choice) {
 /* SECTION 3: SIM-1 FÜHL-EXPERIMENT             */
 /* ============================================ */
 var sim1Thermo = null;
+var sim1Animating = false;
 
 function sim1Tap(obj) {
     if (state.sim1Phase === 'feel') {
@@ -1409,25 +1410,30 @@ function sim1Tap(obj) {
         show('feelPrompt');
     } else if (state.sim1Phase === 'measure') {
         if (state.sim1Measured[obj]) return;
+        if (sim1Animating) return;
+        // Mark immediately to prevent double-tap race condition
+        state.sim1Measured[obj] = true;
+        state.sim1MeasCount++;
         state.sim1Current = obj;
+        var card = document.getElementById('card-' + obj);
+        if (card) card.classList.add('done-measure');
         show('sim1ThermoWrap');
         var temp = OBJECTS[obj].temp;
         if (!sim1Thermo) {
             sim1Thermo = createThermo('sim1Thermo', -5, 20, 1, -2, 5);
         }
+        sim1Animating = true;
         sim1Thermo.setVal(-2);
         sim1Thermo.animateTo(temp, 1500, function() {
+            sim1Animating = false;
             var lbl = document.getElementById('sim1ThermoLabel');
             if (lbl) lbl.textContent = temp.toFixed(1).replace('.', ',') + ' \u00B0C';
-            var card = document.getElementById('card-' + obj);
-            if (card) card.classList.add('done-measure');
             var te = document.getElementById('temp-' + obj);
             if (te) { te.textContent = temp.toFixed(1).replace('.', ',') + ' \u00B0C'; te.classList.remove('hidden'); }
-            state.sim1Measured[obj] = true;
-            state.sim1MeasCount++;
             if (state.sim1MeasCount >= 4) sim1ShowComparison();
             save();
         });
+        save();
     }
 }
 
