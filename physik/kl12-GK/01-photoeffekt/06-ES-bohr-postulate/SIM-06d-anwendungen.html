@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wozu Quantisierung? - Anwendungen</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   ANWENDUNGEN-GRID - Motivation (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --success: #2a7a4b;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.progress-info {
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+.progress-info span {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+@media (max-width: 500px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: var(--white);
+    border: 2px solid var(--border);
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.card.explored {
+    border-color: var(--success);
+    background: #f0fdf4;
+}
+
+.card.explored::after {
+    content: '\2713';
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    color: var(--success);
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.card-icon {
+    font-size: 2em;
+    margin-bottom: 8px;
+}
+
+.card-title {
+    font-weight: 600;
+    font-size: 1em;
+    margin-bottom: 5px;
+    color: var(--text-primary);
+}
+
+.card-teaser {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    display: none;
+}
+
+.card.expanded .card-teaser {
+    display: block;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.conclusion {
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    padding: 15px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.conclusion h3 {
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+.conclusion p {
+    font-size: 0.95em;
+}
+
+.hint {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 10px;
+    font-style: italic;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Wozu ist das gut?</h1>
+            <div class="meta">Anwendungen der Quantisierung | Physik 12 GK</div>
+        </header>
+
+        <div class="progress-info">
+            Erkundet: <span id="progressCount">0</span> von <span id="totalCount">10</span>
+        </div>
+
+        <div class="grid" id="grid">
+            <!-- Cards werden per JS eingefuegt -->
+        </div>
+
+        <div class="hint">Klicke auf die Karten, um mehr zu erfahren</div>
+
+        <div class="conclusion">
+            <h3>Was haben alle gemeinsam?</h3>
+            <p>All diese Technologien nutzen die Tatsache, dass <strong>Energie in Atomen nur bestimmte Werte</strong> annehmen kann. Wie kommen wir zu dieser Erkenntnis? Das ist unser Weg heute.</p>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ANWENDUNGEN-GRID - Motivation (ES5)
+// Interaktives Grid mit Anwendungen der Quantisierung
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var applications = [
+        {
+            icon: '\uD83D\uDD26',
+            title: 'Laser',
+            teaser: 'Laserlicht hat nur EINE Wellenlänge. Das geht nur, weil Elektronen zwischen genau definierten Energieniveaus wechseln.'
+        },
+        {
+            icon: '\uD83D\uDCA1',
+            title: 'LEDs',
+            teaser: 'Rote LED = rotes Licht, blaue LED = blaues Licht. Die Farbe hängt vom Energieabstand im Halbleiter ab - und der ist quantisiert.'
+        },
+        {
+            icon: '\uD83C\uDF06',
+            title: 'Neonröhren',
+            teaser: 'Jedes Gas leuchtet in seiner eigenen Farbe. Neon = rot-orange, Argon = blau. Die "Farb-Signatur" kommt von den Energieniveaus.'
+        },
+        {
+            icon: '\u2B50',
+            title: 'Sternspektren',
+            teaser: 'Astronomen wissen, woraus Sterne bestehen - ohne hinzufliegen! Die Spektrallinien verraten die chemische Zusammensetzung.'
+        },
+        {
+            icon: '\uD83C\uDF86',
+            title: 'Feuerwerk',
+            teaser: 'Natrium = gelb, Kupfer = grün, Strontium = rot. Die Farben entstehen durch Elektronenübergänge in den Metall-Atomen.'
+        },
+        {
+            icon: '\uD83D\uDCBB',
+            title: 'Quantencomputer',
+            teaser: 'Quantencomputer nutzen diskrete Energiezustände für ihre Berechnungen. Ohne Quantisierung gäbe es keine Qubits.'
+        },
+        {
+            icon: '\uD83C\uDFE5',
+            title: 'MRT-Scanner',
+            teaser: 'Die Magnetresonanztomographie nutzt Quantenübergänge in Wasserstoff-Atomkernen, um Bilder vom Körperinneren zu machen.'
+        },
+        {
+            icon: '\u2600\uFE0F',
+            title: 'Solarzellen',
+            teaser: 'Photonen "heben" Elektronen auf höhere Energieniveaus. Die freiwerdende Energie wird zu Strom - dank Quantisierung.'
+        },
+        {
+            icon: '\uD83D\uDD25',
+            title: 'Flammentest',
+            teaser: 'In der Chemie: Natrium färbt die Flamme gelb, Kalium violett. Jedes Element hat seine eigene Farbe - durch quantisierte Übergänge.'
+        },
+        {
+            icon: '\uD83D\uDEF0\uFE0F',
+            title: 'GPS & Atomuhren',
+            teaser: 'GPS-Satelliten nutzen extrem genaue Atomuhren. Diese basieren auf Quantenübergängen, die immer exakt gleich sind.'
+        }
+    ];
+
+    var grid = document.getElementById('grid');
+    var progressCount = document.getElementById('progressCount');
+    var totalCount = document.getElementById('totalCount');
+    var explored = [];
+
+    totalCount.textContent = applications.length;
+
+    function createCard(app, index) {
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.index = index;
+
+        var icon = document.createElement('div');
+        icon.className = 'card-icon';
+        icon.textContent = app.icon;
+
+        var title = document.createElement('div');
+        title.className = 'card-title';
+        title.textContent = app.title;
+
+        var teaser = document.createElement('div');
+        teaser.className = 'card-teaser';
+        teaser.textContent = app.teaser;
+
+        card.appendChild(icon);
+        card.appendChild(title);
+        card.appendChild(teaser);
+
+        card.onclick = function() {
+            toggleCard(card, index);
+        };
+
+        return card;
+    }
+
+    function toggleCard(card, index) {
+        // Toggle expanded
+        var wasExpanded = card.classList.contains('expanded');
+
+        // Collapse all
+        var allCards = grid.querySelectorAll('.card');
+        allCards.forEach(function(c) {
+            c.classList.remove('expanded');
+        });
+
+        if (!wasExpanded) {
+            card.classList.add('expanded');
+
+            // Mark as explored
+            if (explored.indexOf(index) === -1) {
+                explored.push(index);
+                card.classList.add('explored');
+                progressCount.textContent = explored.length;
+                saveProgress();
+            }
+        }
+    }
+
+    function saveProgress() {
+        localStorage.setItem('sim-06d-explored', JSON.stringify(explored));
+    }
+
+    function loadProgress() {
+        var saved = localStorage.getItem('sim-06d-explored');
+        if (saved) {
+            explored = JSON.parse(saved);
+            progressCount.textContent = explored.length;
+
+            // Mark explored cards
+            explored.forEach(function(index) {
+                var card = grid.querySelector('[data-index="' + index + '"]');
+                if (card) {
+                    card.classList.add('explored');
+                }
+            });
+        }
+    }
+
+    // Grid erstellen
+    applications.forEach(function(app, index) {
+        var card = createCard(app, index);
+        grid.appendChild(card);
+    });
+
+    // Progress laden
+    loadProgress();
+
+})();
+</script>
+</body>
+</html>

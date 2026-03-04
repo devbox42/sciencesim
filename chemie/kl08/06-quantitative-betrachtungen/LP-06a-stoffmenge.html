@@ -1118,10 +1118,6 @@ th {
                     <strong>AB Element B1:</strong> Schreibe deine Beobachtung auf: &bdquo;Ich habe beobachtet, dass ___&ldquo; <em>(Nutze die Wortvorgabe auf deinem AB.)</em>
                 </div>
 
-                <div class="info-box" style="background: #f0f4ff; border-color: #6b8cce; margin-top: 18px;">
-                    <strong>Pause nach Std. 6:</strong> iPads zur Seite legen. Nach der Pause &ouml;ffnest du den Lernpfad wieder &ndash; dein Fortschritt ist gespeichert. Weiter geht es mit <strong>Schritt 5</strong>.
-                </div>
-
                 <div class="nav-buttons">
                     <button class="btn btn-secondary" onclick="prevStep()">Zur&uuml;ck</button>
                     <button class="btn" onclick="nextStep()">Weiter</button>
@@ -1140,10 +1136,6 @@ th {
                 Schritt 5: Das Muster im Periodensystem
             </div>
             <div class="step-content">
-                <div class="resumee-box">
-                    <strong>Erinnerung (Std. 6):</strong> Du hast herausgefunden, dass verschiedene Elemente verschiedene Massen brauchen, um genau 6,022 &times; 10&sup2;&sup3; Teilchen zu haben. Zum Beispiel: Fe = 56 g, S = 32 g, C = 12 g.
-                </div>
-
                 <p><strong>Vergleiche jetzt diese Massen mit den Atommassen im Periodensystem.</strong> Tippe auf die Elemente!</p>
 
                 <!-- SIM-06c: PSE-Explorer -->
@@ -1215,12 +1207,8 @@ th {
                 Schritt 6: Stoffmenge, Molare Masse und die Formel
             </div>
             <div class="step-content">
-                <div class="info-box" style="background: var(--warning-bg); border-color: var(--warning);">
-                    <strong>Erinnerung (Start Std. 7):</strong> In Schritt 3&ndash;5 hast du herausgefunden: Fe braucht 56 g, S braucht 32 g und C braucht 12 g, damit du jeweils genau 6,022 &times; 10&sup2;&sup3; Teilchen hast. Die Masse entspricht der Atommasse im PSE &ndash; nur in Gramm statt in u.
-                </div>
-
                 <div class="info-box">
-                    Jetzt bekommt dieses Muster einen <strong>Namen</strong>.
+                    In Schritt 3&ndash;5 hast du herausgefunden: Die Masse f&uuml;r 6,022 &times; 10&sup2;&sup3; Teilchen entspricht der Atommasse im PSE &ndash; nur in Gramm statt in u. Jetzt bekommt dieses Muster einen <strong>Namen</strong>.
                 </div>
 
                 <!-- MERKE 1: Stoffmenge (mol) -->
@@ -1315,7 +1303,7 @@ th {
                 </table>
 
                 <div class="hefter-hinweis">
-                    <strong>AB Elemente D1 + K1:</strong> F&uuml;lle die Definitions-Tabelle (D1) mit allen drei Gr&ouml;&szlig;en aus (A<sub>r</sub>, n, M). Vervollst&auml;ndige den L&uuml;ckentext (K1) &ndash; jetzt auch mit molarer Masse und der Formel m = n &middot; M. <em>(Nutze die Wortvorgabe auf deinem AB.)</em>
+                    <strong>AB Elemente D1 + K1 (und T1 Spalte M):</strong> F&uuml;lle die Definitions-Tabelle (D1) mit allen drei Gr&ouml;&szlig;en aus (A<sub>r</sub>, n, M). Gehe auch zur&uuml;ck zu T1 und trage jetzt die Molare Masse M ein (= Atommasse in g/mol). Vervollst&auml;ndige dann den L&uuml;ckentext (K1). <em>(Nutze die Wortvorgabe auf deinem AB.)</em>
                 </div>
 
                 <div class="nav-buttons">
@@ -1422,7 +1410,7 @@ th {
                         <em style="color:var(--text-muted); font-size:0.9em;">Aufgaben 9&ndash;10: Mehrstufig &ndash; f&uuml;r Schnelle</em>
                     </div>
 
-                    <p style="margin-top:12px;"><strong>9.</strong> 140 g Eisen reagieren mit Schwefel (Verh&auml;ltnis 1:1).<br>
+                    <p style="margin-top:12px;"><strong>9.</strong> 140 g Eisen reagieren mit Schwefel (Verh&auml;ltnis 1:1). M(Fe) = 56 g/mol, M(S) = 32 g/mol.<br>
                     a) Wie viel mol Eisen sind das?</p>
                     <div class="calc-row">
                         <input type="number" class="calc-input" id="calc9a" placeholder="?" style="width:80px;" step="0.1" inputmode="decimal">
@@ -1556,6 +1544,7 @@ th {
     var totalSteps = 8;
     var currentStep = 1;
     var AVOGADRO = 6.022e23;
+    var teacherMode = false;
 
     // ═══════════════════════════════════════════════════════════════
     // ELEMENT DATA
@@ -1704,7 +1693,7 @@ th {
             dot.setAttribute('data-step', i);
             dot.addEventListener('click', function() {
                 var step = parseInt(this.getAttribute('data-step'), 10);
-                if (step <= getMaxStep() + 1) {
+                if (teacherMode || step <= getMaxStep() + 1) {
                     goToStep(step);
                 }
             });
@@ -1757,6 +1746,7 @@ th {
     }
 
     function isGatePassed(step) {
+        if (teacherMode) return true;
         switch (step) {
             case 2: return loadState('qhyp-answered', false);
             case 4: return loadState('qbeob-answered', false);
@@ -2440,6 +2430,28 @@ th {
     restoreCalcState();
     restoreQuizState();
     updateUI();
+
+    // Teacher mode: 5 rapid taps on title
+    (function() {
+        var tapCount = 0;
+        var tapTimer = null;
+        var h1 = document.querySelector('h1');
+        if (!h1) return;
+        h1.addEventListener('click', function() {
+            tapCount++;
+            if (tapTimer) clearTimeout(tapTimer);
+            tapTimer = setTimeout(function() { tapCount = 0; }, 1200);
+            if (tapCount >= 5) {
+                tapCount = 0;
+                var code = prompt('Code:');
+                if (code === '2024') {
+                    teacherMode = true;
+                    saveState('maxStep', totalSteps);
+                    updateUI();
+                }
+            }
+        });
+    })();
 
 })();
     </script>

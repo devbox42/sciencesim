@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theorie trifft Experiment</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SPEKTRUM-VERGLEICH (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --success: #2a7a4b;
+    --success-light: #e8f5e9;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.sim-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.spectrum-section {
+    margin-bottom: 20px;
+}
+
+.spectrum-label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spectrum-label .badge {
+    background: var(--accent);
+    color: white;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    border-radius: 3px;
+}
+
+.spectrum-bar {
+    height: 50px;
+    position: relative;
+    background: #0a0a0a;
+    border: 1px solid #333;
+}
+
+.spectral-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    transition: transform 0.8s ease-out, opacity 0.5s;
+}
+
+.wavelength-scale {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    margin-top: 5px;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+}
+
+.btn {
+    padding: 12px 24px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-success {
+    background: var(--success);
+}
+
+.comparison-result {
+    background: var(--success-light);
+    border: 2px solid var(--success);
+    padding: 15px;
+    margin-top: 15px;
+    text-align: center;
+    display: none;
+}
+
+.comparison-result.visible {
+    display: block;
+}
+
+.comparison-result h3 {
+    color: var(--success);
+    margin-bottom: 10px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: center;
+}
+
+.data-table th {
+    background: var(--accent-light);
+    color: var(--accent);
+}
+
+.match {
+    background: var(--success-light);
+    color: var(--success);
+    font-weight: 600;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Theorie trifft Experiment</h1>
+            <div class="meta">Verifikation des Bohr-Modells | Physik 12 GK</div>
+        </header>
+
+        <div class="sim-panel">
+            <div class="spectrum-section">
+                <div class="spectrum-label">
+                    <span class="badge">THEORIE</span>
+                    Berechnete Wellenlängen aus E<sub>n</sub> = -13,6 eV / n<sup>2</sup>
+                </div>
+                <div class="spectrum-bar" id="theorySpectrum"></div>
+                <div class="wavelength-scale">
+                    <span>400 nm</span>
+                    <span>500 nm</span>
+                    <span>600 nm</span>
+                    <span>700 nm</span>
+                </div>
+            </div>
+
+            <div class="spectrum-section">
+                <div class="spectrum-label">
+                    <span class="badge">EXPERIMENT</span>
+                    Gemessenes Wasserstoff-Spektrum (Balmer-Serie)
+                </div>
+                <div class="spectrum-bar" id="experimentSpectrum"></div>
+                <div class="wavelength-scale">
+                    <span>400 nm</span>
+                    <span>500 nm</span>
+                    <span>600 nm</span>
+                    <span>700 nm</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="btnCompare">Überlagern</button>
+                <button class="btn" id="btnReset" style="background: #666;">Zurücksetzen</button>
+            </div>
+
+            <div class="comparison-result" id="comparisonResult">
+                <h3>Perfekte Übereinstimmung!</h3>
+                <p>Die Bohr-Formel sagt die Spektrallinien <strong>exakt</strong> voraus.</p>
+                <p style="margin-top: 10px;">Das ist eine starke Bestätigung der Theorie: <strong>Energie ist quantisiert!</strong></p>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Linie</th>
+                        <th>Übergang</th>
+                        <th>Theorie (nm)</th>
+                        <th>Experiment (nm)</th>
+                        <th>Abweichung</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>H<sub>alpha</sub></td>
+                        <td>3 \u2192 2</td>
+                        <td>656,3</td>
+                        <td>656,3</td>
+                        <td class="match">0,0%</td>
+                    </tr>
+                    <tr>
+                        <td>H<sub>beta</sub></td>
+                        <td>4 \u2192 2</td>
+                        <td>486,1</td>
+                        <td>486,1</td>
+                        <td class="match">0,0%</td>
+                    </tr>
+                    <tr>
+                        <td>H<sub>gamma</sub></td>
+                        <td>5 \u2192 2</td>
+                        <td>434,0</td>
+                        <td>434,0</td>
+                        <td class="match">0,0%</td>
+                    </tr>
+                    <tr>
+                        <td>H<sub>delta</sub></td>
+                        <td>6 \u2192 2</td>
+                        <td>410,2</td>
+                        <td>410,2</td>
+                        <td class="match">0,0%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SPEKTRUM-VERGLEICH (ES5)
+// Theorie vs. Experiment - Verifikation
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var theorySpectrum = document.getElementById('theorySpectrum');
+    var experimentSpectrum = document.getElementById('experimentSpectrum');
+    var btnCompare = document.getElementById('btnCompare');
+    var btnReset = document.getElementById('btnReset');
+    var comparisonResult = document.getElementById('comparisonResult');
+
+    // Balmer-Serie Daten
+    var balmerLines = [
+        { name: 'alpha', wavelength: 656.3, color: '#ff0000' },
+        { name: 'beta', wavelength: 486.1, color: '#00cccc' },
+        { name: 'gamma', wavelength: 434.0, color: '#8800ff' },
+        { name: 'delta', wavelength: 410.2, color: '#6600cc' }
+    ];
+
+    // Offset fuer Animation
+    var theoryOffset = -20;
+    var experimentOffset = 20;
+    var isOverlaid = false;
+
+    function wavelengthToPosition(lambda) {
+        // 400-700 nm -> 0-100%
+        return ((lambda - 400) / (700 - 400)) * 100;
+    }
+
+    function createLines(container, offset) {
+        container.innerHTML = '';
+        balmerLines.forEach(function(line) {
+            var el = document.createElement('div');
+            el.className = 'spectral-line';
+            var pos = wavelengthToPosition(line.wavelength);
+            el.style.left = 'calc(' + pos + '% + ' + offset + 'px)';
+            el.style.backgroundColor = line.color;
+            el.style.boxShadow = '0 0 8px 2px ' + line.color;
+            el.dataset.basePos = pos;
+            container.appendChild(el);
+        });
+    }
+
+    function animateLines(container, targetOffset) {
+        var lines = container.querySelectorAll('.spectral-line');
+        lines.forEach(function(line) {
+            var basePos = parseFloat(line.dataset.basePos);
+            line.style.left = 'calc(' + basePos + '% + ' + targetOffset + 'px)';
+        });
+    }
+
+    function overlay() {
+        animateLines(theorySpectrum, 0);
+        animateLines(experimentSpectrum, 0);
+        isOverlaid = true;
+        comparisonResult.classList.add('visible');
+        btnCompare.disabled = true;
+    }
+
+    function reset() {
+        createLines(theorySpectrum, theoryOffset);
+        createLines(experimentSpectrum, experimentOffset);
+        isOverlaid = false;
+        comparisonResult.classList.remove('visible');
+        btnCompare.disabled = false;
+    }
+
+    btnCompare.onclick = overlay;
+    btnReset.onclick = reset;
+
+    // Initial
+    reset();
+
+})();
+</script>
+</body>
+</html>

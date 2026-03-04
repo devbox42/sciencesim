@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spektralanalyse - Emission, Absorption & Astronomie</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   SIM-06h: SPEKTRALANALYSE v4 (ES5)
+   Emissions-, Absorptionsspektren + Astronomie-Modus
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 10px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 780px;
+    margin: 0 auto;
+}
+
+h2 {
+    color: #7eb8da;
+    font-size: 1.1em;
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 0.8em;
+    margin-bottom: 10px;
+}
+
+/* Modus-Auswahl (Labor/Astronomie) */
+.mode-selector {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.mode-btn {
+    padding: 6px 16px;
+    background: #252540;
+    border: 2px solid #444;
+    border-radius: 20px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover { border-color: #666; }
+
+.mode-btn.active {
+    background: #2c5aa0;
+    border-color: #2c5aa0;
+    color: white;
+}
+
+.mode-btn.active.astro {
+    background: linear-gradient(135deg, #1a1a4e, #2a1a3e);
+    border-color: #8866cc;
+    color: #ccaaff;
+}
+
+/* Typ-Auswahl (Emission/Absorption) */
+.type-selector {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.type-btn {
+    padding: 6px 16px;
+    background: #252540;
+    border: 2px solid #444;
+    border-radius: 6px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.type-btn:hover { border-color: #666; }
+
+.type-btn.active.emission {
+    background: #1a1a2e;
+    border-color: #ffcc44;
+    color: #ffcc44;
+}
+
+.type-btn.active.absorption {
+    background: linear-gradient(to right, #442266, #224488, #228866, #888822, #884422);
+    border-color: #fff;
+    color: #fff;
+}
+
+/* Proben-Auswahl */
+.sample-selector {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.sample-btn {
+    padding: 4px 10px;
+    background: #252540;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.75em;
+    transition: all 0.2s;
+}
+
+.sample-btn:hover { border-color: #666; }
+.sample-btn.active { background: #2c5aa0; border-color: #2c5aa0; color: white; }
+
+.difficulty { font-size: 0.7em; color: #666; margin-left: 2px; }
+.difficulty.easy { color: #4a4; }
+.difficulty.medium { color: #aa4; }
+.difficulty.hard { color: #a44; }
+
+/* Kontext-Box (für Astronomie) */
+.context-box {
+    background: linear-gradient(135deg, #1a1a3e, #2a1a2e);
+    border: 1px solid #6644aa;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 0.8em;
+}
+
+.context-box h3 {
+    color: #ccaaff;
+    font-size: 1em;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.context-box h3 .icon {
+    font-size: 1.2em;
+}
+
+.context-box p {
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+.context-box .question {
+    color: #ffcc66;
+    font-weight: 600;
+    font-style: italic;
+}
+
+/* Spektrum-Container */
+.spectra-panel {
+    background: #0d0d1a;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.spectrum-row {
+    margin-bottom: 8px;
+}
+
+.spectrum-row:last-child { margin-bottom: 0; }
+
+.spectrum-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+    font-size: 0.75em;
+}
+
+.spectrum-label-text { font-weight: 600; }
+.spectrum-label-text.unknown { color: #ffcc44; }
+.spectrum-label-text.unknown.absorption { color: #aaddff; }
+.spectrum-label-text.unknown.astro { color: #ccaaff; }
+.spectrum-label-text.reference { color: #888; }
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.checkbox-wrapper input { cursor: pointer; width: 13px; height: 13px; }
+
+.match-indicator {
+    font-size: 0.65em;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-left: auto;
+}
+
+.match-indicator.matched { background: #0a2a1a; color: #00ff88; }
+.match-indicator.selected { background: #1a2a3e; color: #7eb8da; }
+
+/* Spektrum-Balken */
+.spectrum-bar {
+    position: relative;
+    height: 28px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.spectrum-bar.emission { background: #000; }
+
+.spectrum-bar.absorption {
+    background: linear-gradient(to right,
+        #8800ff 0%, #4400ff 8%, #0044ff 18%, #00ccff 28%,
+        #00ff88 38%, #44ff00 48%, #ccff00 58%, #ffcc00 68%,
+        #ff8800 78%, #ff4400 88%, #cc0000 100%
+    );
+}
+
+.spectrum-bar.unknown-bar { height: 40px; }
+.spectrum-bar.unknown-bar.emission { border: 2px solid #ffcc44; }
+.spectrum-bar.unknown-bar.absorption { border: 2px solid #aaddff; }
+.spectrum-bar.unknown-bar.astro { border: 2px solid #8866cc; }
+
+.spectrum-bar.reference-bar {
+    height: 24px;
+    opacity: 0.25;
+    border: 1px solid #333;
+}
+
+.spectrum-bar.reference-bar.visible { opacity: 1; border: 1px solid #555; }
+.spectrum-bar.reference-bar.matched { border: 2px solid #00ff88; }
+
+/* Spektrallinien */
+.spectrum-line {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 3px;
+}
+
+.spectrum-line.emission-line { box-shadow: 0 0 6px 2px currentColor; }
+
+.spectrum-line.absorption-line {
+    background: #000 !important;
+    box-shadow: 0 0 2px 1px rgba(0,0,0,0.8);
+}
+
+/* Wellenlängen-Achse */
+.wavelength-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6em;
+    color: #555;
+    margin-top: 2px;
+    padding: 0 2px;
+}
+
+/* Trennlinie */
+.separator {
+    border: none;
+    border-top: 1px dashed #444;
+    margin: 10px 0;
+}
+
+.separator-label {
+    text-align: center;
+    font-size: 0.7em;
+    color: #666;
+    margin: -7px 0 6px 0;
+}
+
+.separator-label span { background: #0d0d1a; padding: 0 8px; }
+
+/* Kontrollen */
+.controls {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.8em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-success { background: #2a7a4b; color: white; }
+.btn-success:hover { background: #3a8a5b; }
+.btn-secondary { background: #444; color: white; }
+.btn-secondary:hover { background: #555; }
+.btn-primary { background: #2c5aa0; color: white; }
+.btn-primary:hover { background: #3a6cb0; }
+
+/* Feedback */
+.feedback {
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: none;
+    font-size: 0.8em;
+}
+
+.feedback.visible { display: block; }
+.feedback.success { background: #0a2a1a; border: 2px solid #00ff88; color: #00ff88; }
+.feedback.partial { background: #2a2a0a; border: 2px solid #ffaa00; color: #ffaa00; }
+.feedback.wrong { background: #2a0a0a; border: 2px solid #ff4444; color: #ff4444; }
+
+/* Info-Box */
+.info-box {
+    background: #1a2a3e;
+    border: 1px solid #2c5aa0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.7em;
+    color: #aaccee;
+}
+
+.info-box strong { color: #7eb8da; }
+
+/* Legende */
+.legend {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 8px;
+    font-size: 0.7em;
+}
+
+.legend-item { display: flex; align-items: center; gap: 5px; }
+
+.legend-emission {
+    width: 18px; height: 10px;
+    background: #000;
+    border: 1px solid #ffcc44;
+    position: relative;
+}
+
+.legend-emission::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 2px;
+    background: #fff;
+    box-shadow: 0 0 4px #fff;
+}
+
+.legend-absorption {
+    width: 18px; height: 10px;
+    background: linear-gradient(to right, #4400ff, #00ff88, #ff4400);
+    border: 1px solid #aaddff;
+    position: relative;
+}
+
+.legend-absorption::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 0; bottom: 0;
+    width: 2px;
+    background: #000;
+}
+
+/* Hide elements */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h2>Spektralanalyse</h2>
+        <p class="subtitle">Identifiziere die Stoffe anhand ihrer Spektren</p>
+
+        <!-- Modus-Auswahl -->
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="labor">Labor</button>
+            <button class="mode-btn astro" data-mode="astro">Astronomie</button>
+        </div>
+
+        <!-- Legende (nur Labor) -->
+        <div class="legend" id="legend">
+            <div class="legend-item">
+                <div class="legend-emission"></div>
+                <span>Emission: hell auf schwarz</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-absorption"></div>
+                <span>Absorption: dunkel im Regenbogen</span>
+            </div>
+        </div>
+
+        <!-- Typ-Auswahl (nur Labor) -->
+        <div class="type-selector" id="typeSelector">
+            <button class="type-btn emission active" data-type="emission">Emission</button>
+            <button class="type-btn absorption" data-type="absorption">Absorption</button>
+        </div>
+
+        <!-- Kontext-Box (nur Astronomie) -->
+        <div class="context-box hidden" id="contextBox">
+            <h3><span class="icon">⭐</span> <span id="contextTitle">Stern</span></h3>
+            <p id="contextText">Beschreibung...</p>
+            <p class="question" id="contextQuestion">Welche Elemente kannst du nachweisen?</p>
+        </div>
+
+        <!-- Proben-Auswahl -->
+        <div class="sample-selector" id="sampleSelector"></div>
+
+        <!-- Spektren-Panel -->
+        <div class="spectra-panel">
+            <div class="spectrum-row">
+                <div class="spectrum-label">
+                    <span class="spectrum-label-text unknown" id="unknownLabel">Unbekannte Probe</span>
+                </div>
+                <div class="spectrum-bar emission unknown-bar" id="unknownSpectrum"></div>
+            </div>
+
+            <div class="wavelength-axis">
+                <span>400 nm</span>
+                <span>500 nm</span>
+                <span>600 nm</span>
+                <span>700 nm</span>
+            </div>
+
+            <hr class="separator">
+            <div class="separator-label"><span>Referenz-Spektren</span></div>
+
+            <div id="referenceSpectra"></div>
+        </div>
+
+        <!-- Kontrollen -->
+        <div class="controls">
+            <button class="btn btn-success" id="checkBtn">Lösung prüfen</button>
+            <button class="btn btn-secondary" id="resetBtn">Zurücksetzen</button>
+            <button class="btn btn-primary" id="hintBtn">Tipp</button>
+        </div>
+
+        <!-- Feedback -->
+        <div class="feedback" id="feedback"></div>
+
+        <!-- Info-Box -->
+        <div class="info-box" id="infoBox">
+            <strong>Emission:</strong> Helle Linien auf schwarzem Grund.
+            <strong>Absorption:</strong> Dunkle Linien im kontinuierlichen Spektrum.
+            <em>Die Linienpositionen sind identisch!</em>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SIM-06h: SPEKTRALANALYSE v4 (ES5)
+// Labor + Astronomie-Modus
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    // Spektrallinien der Elemente
+    var SPECTRA = {
+        H: {
+            name: 'Wasserstoff (H)',
+            lines: [
+                { nm: 410, color: '#8844ff' },
+                { nm: 434, color: '#6666ff' },
+                { nm: 486, color: '#00cccc' },
+                { nm: 656, color: '#ff2222' }
+            ]
+        },
+        He: {
+            name: 'Helium (He)',
+            lines: [
+                { nm: 447, color: '#5555ff' },
+                { nm: 471, color: '#00aaff' },
+                { nm: 492, color: '#00ddcc' },
+                { nm: 501, color: '#00eebb' },
+                { nm: 587, color: '#ffdd00' },
+                { nm: 667, color: '#dd0000' }
+            ]
+        },
+        Na: {
+            name: 'Natrium (Na)',
+            lines: [
+                { nm: 589, color: '#ffaa00' },
+                { nm: 590, color: '#ffaa00' }
+            ]
+        },
+        Hg: {
+            name: 'Quecksilber (Hg)',
+            lines: [
+                { nm: 405, color: '#9900ff' },
+                { nm: 436, color: '#4444ff' },
+                { nm: 546, color: '#00ff44' },
+                { nm: 577, color: '#ffee00' },
+                { nm: 579, color: '#ffdd00' }
+            ]
+        },
+        Ne: {
+            name: 'Neon (Ne)',
+            lines: [
+                { nm: 540, color: '#44ff00' },
+                { nm: 585, color: '#ffcc00' },
+                { nm: 603, color: '#ff8800' },
+                { nm: 616, color: '#ff5500' },
+                { nm: 640, color: '#ff2200' },
+                { nm: 650, color: '#ee0000' },
+                { nm: 660, color: '#dd0000' }
+            ]
+        },
+        Ca: {
+            name: 'Calcium (Ca)',
+            lines: [
+                { nm: 422, color: '#7744ff' },
+                { nm: 527, color: '#22dd44' },
+                { nm: 558, color: '#aadd00' }
+            ]
+        },
+        Fe: {
+            name: 'Eisen (Fe)',
+            lines: [
+                { nm: 438, color: '#4466ff' },
+                { nm: 466, color: '#00aadd' },
+                { nm: 495, color: '#00ddaa' },
+                { nm: 527, color: '#44dd22' },
+                { nm: 558, color: '#aadd00' }
+            ]
+        },
+        Mg: {
+            name: 'Magnesium (Mg)',
+            lines: [
+                { nm: 517, color: '#00ff66' },
+                { nm: 518, color: '#00ff66' }
+            ]
+        }
+    };
+
+    // Labor-Proben
+    var LABOR_SAMPLES = {
+        emission: [
+            { name: 'E1', elements: ['H', 'Na'], hint: '2 Stoffe. Einer hat die gelbe Doppellinie bei 589 nm.' },
+            { name: 'E2', elements: ['H', 'He', 'Na'], hint: '3 Stoffe - alle kommen in Sternen vor.' },
+            { name: 'E3', elements: ['He', 'Hg', 'Ne'], hint: '3 Stoffe. Wasserstoff ist NICHT dabei.' }
+        ],
+        absorption: [
+            { name: 'A1', elements: ['H', 'Na'], hint: '2 Stoffe. Suche die rote H-alpha Linie bei 656 nm.' },
+            { name: 'A2', elements: ['He', 'Hg'], hint: '2 Stoffe. Achte auf die grüne Hg-Linie bei 546 nm.' },
+            { name: 'A3', elements: ['H', 'He', 'Ne'], hint: '3 Stoffe. Natrium ist NICHT dabei.' }
+        ]
+    };
+
+    // Astronomie-Proben
+    var ASTRO_SAMPLES = [
+        {
+            name: 'Sonne',
+            icon: '☀️',
+            title: 'Unsere Sonne',
+            text: 'Das Sonnenlicht durchquert die kühlere Sonnenatmosphäre. Dabei werden bestimmte Wellenlängen absorbiert. Joseph von Fraunhofer entdeckte 1814 über 500 dunkle Linien im Sonnenspektrum - die berühmten "Fraunhofer-Linien".',
+            question: 'Welche Elemente befinden sich in der Sonnenatmosphäre?',
+            elements: ['H', 'He', 'Na', 'Ca'],
+            hint: '4 Elemente. Das häufigste Element im Universum ist dabei, plus ein Edelgas und zwei Metalle.',
+            type: 'absorption'
+        },
+        {
+            name: 'Beteigeuze',
+            icon: '🔴',
+            title: 'Beteigeuze (Roter Überriese)',
+            text: 'Beteigeuze im Sternbild Orion ist ein sterbender Riesenstern - 700× größer als unsere Sonne! Er wird bald als Supernova explodieren (in astronomischen Zeiträumen: irgendwann in den nächsten 100.000 Jahren).',
+            question: 'Welche Elemente zeigt das Spektrum dieses alten Sterns?',
+            elements: ['H', 'He', 'Ca', 'Fe'],
+            hint: '4 Elemente. Alte Sterne haben durch Kernfusion schwere Elemente wie Eisen erzeugt.',
+            type: 'absorption'
+        },
+        {
+            name: 'Sirius',
+            icon: '💫',
+            title: 'Sirius (Hellster Stern am Nachthimmel)',
+            text: 'Sirius ist nur 8,6 Lichtjahre entfernt - einer unserer nächsten Nachbarn! Er ist ein junger, heißer Stern vom Spektraltyp A. Sein Spektrum zeigt besonders starke Wasserstoff-Linien.',
+            question: 'Welche Elemente dominieren im Sirius-Spektrum?',
+            elements: ['H', 'He'],
+            hint: '2 Elemente. Junge, heiße Sterne bestehen hauptsächlich aus den leichtesten Elementen.',
+            type: 'absorption'
+        },
+        {
+            name: 'Exoplanet',
+            icon: '🪐',
+            title: 'Exoplanet WASP-39b (Atmosphäre)',
+            text: 'Wenn ein Exoplanet vor seinem Stern vorbeizieht, durchquert Sternlicht die Planetenatmosphäre. Das James-Webb-Teleskop analysiert dieses Licht und findet Signaturen von Gasen in der Atmosphäre!',
+            question: 'Welche Elemente wurden in der Atmosphäre nachgewiesen?',
+            elements: ['Na', 'H'],
+            hint: '2 Elemente. Natrium wurde als erstes Element in einer Exoplaneten-Atmosphäre entdeckt (2001)!',
+            type: 'absorption'
+        },
+        {
+            name: 'Nebel',
+            icon: '🌌',
+            title: 'Orionnebel (Emissionsnebel)',
+            text: 'Der Orionnebel ist eine Sternentstehungsregion 1.344 Lichtjahre entfernt. Junge, heiße Sterne regen das umgebende Gas zum Leuchten an - wir sehen ein Emissionsspektrum!',
+            question: 'Welche Elemente leuchten im Nebel?',
+            elements: ['H', 'He', 'Ne'],
+            hint: '3 Elemente. Wasserstoff erzeugt das charakteristische rote Leuchten (H-alpha bei 656 nm).',
+            type: 'emission'
+        },
+        {
+            name: 'Quasar',
+            icon: '💠',
+            title: 'Quasar 3C 273 (3 Milliarden Lichtjahre)',
+            text: 'Quasare sind extrem leuchtkräftige Galaxienkerne mit supermassiven Schwarzen Löchern. Das einfallende Gas wird so heiß, dass es hell leuchtet. Das Licht ist milliardenfach rotverschoben!',
+            question: 'Welche Elemente zeigt das Quasar-Spektrum?',
+            elements: ['H', 'He', 'Mg'],
+            hint: '3 Elemente. Die Wasserstoff-Linien sind die stärksten Merkmale in Quasar-Spektren.',
+            type: 'emission'
+        }
+    ];
+
+    var ELEMENT_ORDER_LABOR = ['H', 'He', 'Na', 'Hg', 'Ne'];
+    var ELEMENT_ORDER_ASTRO = ['H', 'He', 'Na', 'Ca', 'Fe', 'Mg', 'Ne'];
+
+    var currentMode = 'labor';
+    var currentType = 'emission';
+    var currentSampleIndex = 0;
+    var selectedElements = {};
+
+    var unknownSpectrum = document.getElementById('unknownSpectrum');
+    var unknownLabel = document.getElementById('unknownLabel');
+    var referenceSpectra = document.getElementById('referenceSpectra');
+    var feedback = document.getElementById('feedback');
+    var sampleSelector = document.getElementById('sampleSelector');
+    var contextBox = document.getElementById('contextBox');
+    var typeSelector = document.getElementById('typeSelector');
+    var legend = document.getElementById('legend');
+    var infoBox = document.getElementById('infoBox');
+
+    function wavelengthToPosition(nm) {
+        return ((nm - 400) / 300) * 100;
+    }
+
+    function drawLines(container, lines, isEmission) {
+        lines.forEach(function(line) {
+            var nm = line.nm || line;
+            var color = line.color || '#ffffff';
+            if (nm < 400 || nm > 700) return;
+
+            var el = document.createElement('div');
+            el.className = 'spectrum-line ' + (isEmission ? 'emission-line' : 'absorption-line');
+            el.style.left = wavelengthToPosition(nm) + '%';
+
+            if (isEmission) {
+                el.style.background = color;
+                el.style.color = color;
+            }
+
+            container.appendChild(el);
+        });
+    }
+
+    function getCurrentSamples() {
+        if (currentMode === 'astro') return ASTRO_SAMPLES;
+        return LABOR_SAMPLES[currentType];
+    }
+
+    function getCurrentSample() {
+        return getCurrentSamples()[currentSampleIndex];
+    }
+
+    function getElementOrder() {
+        return currentMode === 'astro' ? ELEMENT_ORDER_ASTRO : ELEMENT_ORDER_LABOR;
+    }
+
+    function isEmission() {
+        if (currentMode === 'astro') {
+            return getCurrentSample().type === 'emission';
+        }
+        return currentType === 'emission';
+    }
+
+    function createSampleButtons() {
+        sampleSelector.innerHTML = '';
+        var samples = getCurrentSamples();
+
+        samples.forEach(function(sample, index) {
+            var btn = document.createElement('button');
+            btn.className = 'sample-btn' + (index === currentSampleIndex ? ' active' : '');
+            btn.dataset.sample = index;
+
+            if (currentMode === 'astro') {
+                btn.innerHTML = (sample.icon || '⭐') + ' ' + sample.name;
+            } else {
+                var difficulty = index === 0 ? 'easy' : (index === 1 ? 'medium' : 'hard');
+                var diffLabel = index === 0 ? 'leicht' : (index === 1 ? 'mittel' : 'schwer');
+                btn.innerHTML = sample.name + ' <span class="difficulty ' + difficulty + '">(' + diffLabel + ')</span>';
+            }
+
+            sampleSelector.appendChild(btn);
+        });
+    }
+
+    function updateContextBox() {
+        if (currentMode === 'astro') {
+            var sample = getCurrentSample();
+            document.getElementById('contextTitle').textContent = sample.title;
+            document.getElementById('contextText').textContent = sample.text;
+            document.getElementById('contextQuestion').textContent = sample.question;
+            contextBox.classList.remove('hidden');
+            contextBox.querySelector('h3 .icon').textContent = sample.icon || '⭐';
+        } else {
+            contextBox.classList.add('hidden');
+        }
+    }
+
+    function showUnknownSample() {
+        unknownSpectrum.innerHTML = '';
+        var sample = getCurrentSample();
+        var emission = isEmission();
+
+        unknownSpectrum.className = 'spectrum-bar ' + (emission ? 'emission' : 'absorption') + ' unknown-bar';
+        if (currentMode === 'astro') unknownSpectrum.classList.add('astro');
+
+        var labelClass = 'spectrum-label-text unknown';
+        if (!emission) labelClass += ' absorption';
+        if (currentMode === 'astro') labelClass += ' astro';
+        unknownLabel.className = labelClass;
+
+        if (currentMode === 'astro') {
+            unknownLabel.textContent = sample.name + ' (' + (emission ? 'Emission' : 'Absorption') + ')';
+        } else {
+            unknownLabel.textContent = 'Unbekannte Probe (' + (emission ? 'Emission' : 'Absorption') + ')';
+        }
+
+        var allLines = [];
+        sample.elements.forEach(function(element) {
+            var spectrum = SPECTRA[element];
+            if (spectrum) allLines = allLines.concat(spectrum.lines);
+        });
+
+        drawLines(unknownSpectrum, allLines, emission);
+    }
+
+    function createReferenceSpectra() {
+        referenceSpectra.innerHTML = '';
+        var emission = isEmission();
+        var order = getElementOrder();
+
+        order.forEach(function(element) {
+            var spectrum = SPECTRA[element];
+            if (!spectrum) return;
+
+            var row = document.createElement('div');
+            row.className = 'spectrum-row';
+
+            var label = document.createElement('div');
+            label.className = 'spectrum-label';
+
+            var checkboxWrapper = document.createElement('label');
+            checkboxWrapper.className = 'checkbox-wrapper';
+
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.element = element;
+            if (selectedElements[element]) checkbox.checked = true;
+
+            var labelText = document.createElement('span');
+            labelText.className = 'spectrum-label-text reference';
+            labelText.textContent = spectrum.name;
+
+            checkboxWrapper.appendChild(checkbox);
+            checkboxWrapper.appendChild(labelText);
+            label.appendChild(checkboxWrapper);
+
+            var matchIndicator = document.createElement('span');
+            matchIndicator.className = 'match-indicator';
+            matchIndicator.id = 'match-' + element;
+            if (selectedElements[element]) {
+                matchIndicator.textContent = 'ausgewählt';
+                matchIndicator.className = 'match-indicator selected';
+            }
+            label.appendChild(matchIndicator);
+
+            row.appendChild(label);
+
+            var bar = document.createElement('div');
+            bar.className = 'spectrum-bar ' + (emission ? 'emission' : 'absorption') + ' reference-bar';
+            bar.id = 'bar-' + element;
+            if (selectedElements[element]) bar.classList.add('visible');
+
+            drawLines(bar, spectrum.lines, emission);
+
+            row.appendChild(bar);
+            referenceSpectra.appendChild(row);
+
+            checkbox.addEventListener('change', function() {
+                toggleReference(element, this.checked);
+            });
+        });
+    }
+
+    function toggleReference(element, isChecked) {
+        var bar = document.getElementById('bar-' + element);
+        var matchIndicator = document.getElementById('match-' + element);
+
+        if (isChecked) {
+            selectedElements[element] = true;
+            if (bar) bar.classList.add('visible');
+            if (matchIndicator) {
+                matchIndicator.textContent = 'ausgewählt';
+                matchIndicator.className = 'match-indicator selected';
+            }
+        } else {
+            delete selectedElements[element];
+            if (bar) bar.classList.remove('visible', 'matched');
+            if (matchIndicator) {
+                matchIndicator.textContent = '';
+                matchIndicator.className = 'match-indicator';
+            }
+        }
+    }
+
+    function checkSolution() {
+        var sample = getCurrentSample();
+        var correct = sample.elements;
+        var selected = Object.keys(selectedElements);
+
+        var allCorrect = correct.every(function(el) { return selectedElements[el]; });
+        var noWrong = selected.every(function(el) { return correct.indexOf(el) !== -1; });
+        var correctCount = selected.filter(function(el) { return correct.indexOf(el) !== -1; }).length;
+
+        feedback.classList.remove('success', 'partial', 'wrong');
+
+        if (allCorrect && noWrong) {
+            var msg = currentMode === 'astro'
+                ? '<strong>Perfekt!</strong> ' + sample.name + ' enthält: '
+                : '<strong>Perfekt!</strong> Die Probe enthält: ';
+            feedback.innerHTML = msg + correct.map(function(el) { return SPECTRA[el].name; }).join(', ');
+            feedback.classList.add('success');
+
+            correct.forEach(function(el) {
+                var bar = document.getElementById('bar-' + el);
+                var matchIndicator = document.getElementById('match-' + el);
+                if (bar) bar.classList.add('matched');
+                if (matchIndicator) {
+                    matchIndicator.textContent = 'nachgewiesen!';
+                    matchIndicator.className = 'match-indicator matched';
+                }
+            });
+        } else if (correctCount > 0) {
+            feedback.innerHTML = '<strong>Teilweise richtig!</strong> ' + correctCount + ' von ' + correct.length + ' Elementen.';
+            if (selected.length - correctCount > 0) feedback.innerHTML += ' Einige Auswahlen sind falsch.';
+            feedback.classList.add('partial');
+        } else if (selected.length === 0) {
+            feedback.innerHTML = '<strong>Hinweis:</strong> Aktiviere Referenz-Spektren und vergleiche die Linien!';
+            feedback.classList.add('partial');
+        } else {
+            feedback.innerHTML = '<strong>Nicht richtig.</strong> Vergleiche die Linienpositionen genauer!';
+            feedback.classList.add('wrong');
+        }
+
+        feedback.classList.add('visible');
+    }
+
+    function reset() {
+        selectedElements = {};
+        feedback.classList.remove('visible');
+        createReferenceSpectra();
+    }
+
+    function showHint() {
+        var sample = getCurrentSample();
+        feedback.innerHTML = '<strong>Tipp:</strong> ' + sample.hint;
+        feedback.classList.remove('success', 'partial', 'wrong');
+        feedback.classList.add('partial', 'visible');
+    }
+
+    function changeMode(mode) {
+        currentMode = mode;
+        currentSampleIndex = 0;
+        currentType = 'emission';
+        selectedElements = {};
+        feedback.classList.remove('visible');
+
+        document.querySelectorAll('.mode-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+            if (btn.dataset.mode === mode) btn.classList.add('active');
+        });
+
+        if (mode === 'astro') {
+            typeSelector.classList.add('hidden');
+            legend.classList.add('hidden');
+            infoBox.innerHTML = '<strong>Astronomie:</strong> Astronomen analysieren Sternlicht, um die chemische Zusammensetzung von Sternen, Nebeln und Exoplaneten-Atmosphären zu bestimmen. Jedes Element hinterlässt seinen einzigartigen "Fingerabdruck" im Spektrum!';
+        } else {
+            typeSelector.classList.remove('hidden');
+            legend.classList.remove('hidden');
+            infoBox.innerHTML = '<strong>Emission:</strong> Helle Linien auf schwarzem Grund. <strong>Absorption:</strong> Dunkle Linien im kontinuierlichen Spektrum. <em>Die Linienpositionen sind identisch!</em>';
+
+            document.querySelectorAll('.type-btn').forEach(function(btn) {
+                btn.classList.remove('active');
+                if (btn.dataset.type === 'emission') btn.classList.add('active');
+            });
+        }
+
+        updateContextBox();
+        createSampleButtons();
+        showUnknownSample();
+        createReferenceSpectra();
+    }
+
+    function changeType(type) {
+        currentType = type;
+        currentSampleIndex = 0;
+        selectedElements = {};
+        feedback.classList.remove('visible');
+
+        document.querySelectorAll('.type-btn').forEach(function(btn) {
+            btn.classList.remove('active');
+            if (btn.dataset.type === type) btn.classList.add('active');
+        });
+
+        createSampleButtons();
+        showUnknownSample();
+        createReferenceSpectra();
+    }
+
+    function changeSample(index) {
+        currentSampleIndex = index;
+        selectedElements = {};
+        feedback.classList.remove('visible');
+
+        document.querySelectorAll('.sample-btn').forEach(function(btn, i) {
+            btn.classList.toggle('active', i === index);
+        });
+
+        updateContextBox();
+        showUnknownSample();
+        createReferenceSpectra();
+    }
+
+    // Event-Listener
+    document.querySelector('.mode-selector').addEventListener('click', function(e) {
+        var btn = e.target.closest('.mode-btn');
+        if (btn && !btn.classList.contains('active')) {
+            changeMode(btn.dataset.mode);
+        }
+    });
+
+    typeSelector.addEventListener('click', function(e) {
+        var btn = e.target.closest('.type-btn');
+        if (btn && !btn.classList.contains('active')) {
+            changeType(btn.dataset.type);
+        }
+    });
+
+    sampleSelector.addEventListener('click', function(e) {
+        var btn = e.target.closest('.sample-btn');
+        if (btn) changeSample(parseInt(btn.dataset.sample));
+    });
+
+    document.getElementById('checkBtn').addEventListener('click', checkSolution);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+    document.getElementById('hintBtn').addEventListener('click', showHint);
+
+    // Init
+    createSampleButtons();
+    showUnknownSample();
+    createReferenceSpectra();
+
+})();
+</script>
+</body>
+</html>

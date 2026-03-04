@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutherford-Modell: Klassische Vorhersage</title>
+    <style>
+/* ═══════════════════════════════════════════════════════════════
+   RUTHERFORD-KOLLAPS v2 - Verbesserte EM-Wellen (ES5)
+   sciencesim Design System
+═══════════════════════════════════════════════════════════════ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --positive: #c62828;
+    --negative: #1565c0;
+    --warning: #b35c00;
+    --em-wave: #ffaa00;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 15px;
+}
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+header h1 {
+    color: var(--accent);
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+header .meta {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 3px;
+}
+
+.sim-panel {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.canvas-container {
+    position: relative;
+    background: #0a0a15;
+    border: 1px solid #333;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    background: var(--accent);
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-reset {
+    background: var(--text-secondary);
+}
+
+.info-box {
+    background: #fff3e0;
+    border: 1px solid var(--warning);
+    padding: 12px 15px;
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.info-box strong {
+    color: var(--warning);
+}
+
+.display-row {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.display-box {
+    flex: 1;
+    background: var(--accent-light);
+    border: 1px solid var(--accent);
+    padding: 12px;
+    text-align: center;
+}
+
+.display-box .label {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.display-box .value {
+    font-family: "SF Mono", Monaco, monospace;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.energy-bar-container {
+    margin-top: 15px;
+    background: #eee;
+    border: 1px solid var(--border);
+    padding: 10px;
+}
+
+.energy-bar-label {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.energy-bar {
+    height: 20px;
+    background: #ddd;
+    position: relative;
+}
+
+.energy-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--positive), var(--em-wave));
+    transition: width 0.1s;
+}
+
+.energy-bar-text {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.collapsed {
+    color: var(--positive);
+    font-weight: bold;
+}
+
+.legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    font-size: 0.85em;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-dot.nucleus { background: var(--positive); }
+.legend-dot.electron { background: var(--negative); }
+.legend-dot.em-wave { background: var(--em-wave); }
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Rutherford-Modell: Klassische Vorhersage</h1>
+            <div class="meta">Das Problem der klassischen Physik | Physik 12 GK</div>
+        </header>
+
+        <div class="sim-panel">
+            <div class="canvas-container">
+                <canvas id="simCanvas" width="600" height="400"></canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot nucleus"></div>
+                    <span>Atomkern (+)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot electron"></div>
+                    <span>Elektron (−)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot em-wave"></div>
+                    <span>EM-Strahlung</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="btnStart">Starten</button>
+                <button class="btn btn-reset" id="btnReset">Zurücksetzen</button>
+            </div>
+
+            <div class="display-row">
+                <div class="display-box">
+                    <div class="label">Zeit (simuliert)</div>
+                    <div class="value" id="timerValue">0 s</div>
+                </div>
+                <div class="display-box">
+                    <div class="label">Bahnradius</div>
+                    <div class="value" id="radiusValue">100%</div>
+                </div>
+            </div>
+
+            <div class="energy-bar-container">
+                <div class="energy-bar-label">Energie des Elektrons</div>
+                <div class="energy-bar">
+                    <div class="energy-bar-fill" id="energyFill" style="width: 100%;"></div>
+                    <div class="energy-bar-text" id="energyText">100%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Beobachtungsauftrag:</strong> Starte die Simulation und beobachte genau.
+            <ul style="margin-top: 8px; margin-left: 20px;">
+                <li>Was passiert mit dem Elektron?</li>
+                <li>Was siehst du, das vom Elektron ausgeht?</li>
+                <li>Wie lange dauert es bis zum Kollaps?</li>
+            </ul>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// RUTHERFORD-KOLLAPS v2 - Verbesserte EM-Wellen (ES5)
+// Zeigt das Problem: Klassische Physik sagt Atomkollaps vorher
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+    'use strict';
+
+    var canvas = document.getElementById('simCanvas');
+    var ctx = canvas.getContext('2d');
+    var btnStart = document.getElementById('btnStart');
+    var btnReset = document.getElementById('btnReset');
+    var timerValue = document.getElementById('timerValue');
+    var radiusValue = document.getElementById('radiusValue');
+    var energyFill = document.getElementById('energyFill');
+    var energyText = document.getElementById('energyText');
+
+    // Geometrie
+    var centerX = 300;
+    var centerY = 200;
+    var nucleusRadius = 15;
+    var initialRadius = 140;
+    var minRadius = 20;
+
+    // Zustand
+    var electronRadius = initialRadius;
+    var electronAngle = 0;
+    var isRunning = false;
+    var isCollapsed = false;
+    var animationTime = 0;
+    var collapseTime = 1e-11;
+
+    // Trail fuer Spirale
+    var trail = [];
+    var maxTrailLength = 300;
+
+    // EM-Wellen (verbessert)
+    var emWaves = [];
+    var maxWaves = 12;
+    var waveEmitInterval = 0.15;
+    var lastWaveEmit = 0;
+
+    function formatTime(t) {
+        if (t === 0) return '0 s';
+        var exp = Math.floor(Math.log10(t));
+        var mantissa = t / Math.pow(10, exp);
+        return mantissa.toFixed(1) + ' x 10^' + exp + ' s';
+    }
+
+    function emitWave(x, y) {
+        if (emWaves.length >= maxWaves) {
+            emWaves.shift();
+        }
+        emWaves.push({
+            x: x,
+            y: y,
+            radius: 5,
+            alpha: 1.0,
+            birth: animationTime
+        });
+    }
+
+    function updateWaves() {
+        for (var i = emWaves.length - 1; i >= 0; i--) {
+            var wave = emWaves[i];
+            wave.radius += 3;
+            wave.alpha -= 0.02;
+            if (wave.alpha <= 0) {
+                emWaves.splice(i, 1);
+            }
+        }
+    }
+
+    function drawWaves() {
+        for (var i = 0; i < emWaves.length; i++) {
+            var wave = emWaves[i];
+
+            // Sinuswelle auf Kreis
+            ctx.beginPath();
+            var segments = 60;
+            for (var j = 0; j <= segments; j++) {
+                var angle = (j / segments) * Math.PI * 2;
+                var waveOffset = Math.sin(angle * 8 + wave.radius * 0.1) * 3;
+                var r = wave.radius + waveOffset;
+                var px = wave.x + r * Math.cos(angle);
+                var py = wave.y + r * Math.sin(angle);
+                if (j === 0) {
+                    ctx.moveTo(px, py);
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(255, 170, 0, ' + wave.alpha + ')';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    function draw() {
+        // Hintergrund
+        ctx.fillStyle = '#0a0a15';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // EM-Wellen (hinter allem)
+        drawWaves();
+
+        // Trail (Spiralbahn)
+        if (trail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(trail[0].x, trail[0].y);
+            for (var i = 1; i < trail.length; i++) {
+                ctx.lineTo(trail[i].x, trail[i].y);
+            }
+            ctx.strokeStyle = 'rgba(21, 101, 192, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Atomkern
+        var gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, nucleusRadius);
+        gradient.addColorStop(0, '#ff6659');
+        gradient.addColorStop(1, '#c62828');
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, nucleusRadius, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // + Symbol im Kern
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+', centerX, centerY);
+
+        // Elektron
+        if (!isCollapsed) {
+            var ex = centerX + electronRadius * Math.cos(electronAngle);
+            var ey = centerY + electronRadius * Math.sin(electronAngle);
+
+            // Elektron-Glow
+            var eGradient = ctx.createRadialGradient(ex, ey, 0, ex, ey, 15);
+            eGradient.addColorStop(0, '#64b5f6');
+            eGradient.addColorStop(0.5, '#1565c0');
+            eGradient.addColorStop(1, 'rgba(21, 101, 192, 0)');
+            ctx.beginPath();
+            ctx.arc(ex, ey, 15, 0, Math.PI * 2);
+            ctx.fillStyle = eGradient;
+            ctx.fill();
+
+            // Elektron-Kern
+            ctx.beginPath();
+            ctx.arc(ex, ey, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#1565c0';
+            ctx.fill();
+
+            // - Symbol
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('-', ex, ey + 1);
+
+            // Beschriftung EM-Strahlung
+            if (isRunning && emWaves.length > 0) {
+                ctx.fillStyle = '#ffaa00';
+                ctx.font = '12px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('EM-Strahlung', ex + 25, ey - 20);
+
+                // Pfeil
+                ctx.beginPath();
+                ctx.moveTo(ex + 20, ey - 15);
+                ctx.lineTo(ex + 12, ey - 8);
+                ctx.strokeStyle = '#ffaa00';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        } else {
+            // Kollaps-Effekt
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.6)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 35, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ff4444';
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('KOLLAPS!', centerX, centerY + 60);
+
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('in ca. 10^-11 Sekunden', centerX, centerY + 80);
+        }
+
+        // Beschriftung oben
+        ctx.fillStyle = '#888';
+        ctx.font = '13px sans-serif';
+        ctx.textAlign = 'center';
+        if (!isRunning && !isCollapsed) {
+            ctx.fillText('Druecke "Starten" um die klassische Vorhersage zu sehen', centerX, 25);
+        } else if (isRunning) {
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillText('Elektron sendet EM-Strahlung aus und verliert Energie...', centerX, 25);
+        }
+    }
+
+    function update() {
+        if (!isRunning || isCollapsed) return;
+
+        // Zeit fortschreiten
+        animationTime += 0.016;
+
+        // Elektron dreht sich (schneller wenn naeher am Kern)
+        var speedFactor = 1 + (1 - electronRadius / initialRadius) * 2;
+        electronAngle += 0.12 * speedFactor;
+
+        // Radius schrumpft
+        var progress = Math.min(animationTime / 4, 1);
+        electronRadius = initialRadius * (1 - progress * 0.86);
+
+        // EM-Wellen emittieren
+        if (animationTime - lastWaveEmit > waveEmitInterval) {
+            var ex = centerX + electronRadius * Math.cos(electronAngle);
+            var ey = centerY + electronRadius * Math.sin(electronAngle);
+            emitWave(ex, ey);
+            lastWaveEmit = animationTime;
+        }
+
+        // Wellen aktualisieren
+        updateWaves();
+
+        // Trail aktualisieren
+        var ex = centerX + electronRadius * Math.cos(electronAngle);
+        var ey = centerY + electronRadius * Math.sin(electronAngle);
+        trail.push({x: ex, y: ey});
+        if (trail.length > maxTrailLength) {
+            trail.shift();
+        }
+
+        // Anzeigen aktualisieren
+        var simulatedTime = progress * collapseTime;
+        timerValue.textContent = formatTime(simulatedTime);
+
+        var radiusPercent = Math.round((electronRadius / initialRadius) * 100);
+        radiusValue.textContent = radiusPercent + '%';
+
+        var energyPercent = Math.round((electronRadius / initialRadius) * 100);
+        energyFill.style.width = energyPercent + '%';
+        energyText.textContent = energyPercent + '%';
+
+        // Kollaps pruefen
+        if (electronRadius <= minRadius) {
+            isCollapsed = true;
+            isRunning = false;
+            timerValue.innerHTML = '<span class="collapsed">~10^-11 s</span>';
+            radiusValue.innerHTML = '<span class="collapsed">0%</span>';
+            energyFill.style.width = '0%';
+            energyText.textContent = '0%';
+            btnStart.textContent = 'Starten';
+        }
+
+        draw();
+
+        if (isRunning) {
+            requestAnimationFrame(update);
+        }
+    }
+
+    function start() {
+        if (isCollapsed) {
+            reset();
+        }
+        isRunning = true;
+        btnStart.textContent = 'Pause';
+        update();
+    }
+
+    function pause() {
+        isRunning = false;
+        btnStart.textContent = 'Weiter';
+    }
+
+    function reset() {
+        isRunning = false;
+        isCollapsed = false;
+        electronRadius = initialRadius;
+        electronAngle = 0;
+        animationTime = 0;
+        trail = [];
+        emWaves = [];
+        lastWaveEmit = 0;
+        timerValue.textContent = '0 s';
+        radiusValue.textContent = '100%';
+        energyFill.style.width = '100%';
+        energyText.textContent = '100%';
+        btnStart.textContent = 'Starten';
+        draw();
+    }
+
+    btnStart.onclick = function() {
+        if (isRunning) {
+            pause();
+        } else {
+            start();
+        }
+    };
+
+    btnReset.onclick = reset;
+
+    // Initial
+    draw();
+
+})();
+</script>
+</body>
+</html>
