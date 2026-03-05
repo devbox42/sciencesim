@@ -599,7 +599,7 @@
             </div>
             <div id="teacherActions" style="display:none; margin:10px 0;">
                 <button class="btn btn-small" onclick="teacherReset()">Platz zur&uuml;cksetzen</button>
-                <button class="btn btn-small" style="background:#b35c00;" onclick="teacherExtendTime()">+5 Min (Nachteilsausgleich)</button>
+                <button class="btn btn-small" style="background:#b35c00;" onclick="teacherExtendTime()">+6 Min (Nachteilsausgleich)</button>
             </div>
         </details>
 
@@ -1642,6 +1642,11 @@
             testSubmitted = true;
             displayResults();
         }
+
+        // Lehrerbereich wiederherstellen
+        if (localStorage.getItem(STORAGE_KEY + '-teacher') === 'true') {
+            showTeacherActions();
+        }
     }
 
     document.addEventListener('change', function() {
@@ -1891,11 +1896,16 @@
     function teacherUnlock() {
         var code = prompt('Lehrer-Code eingeben:');
         if (code && code.split('').reduce(function(s,c){return s+c.charCodeAt(0);},0) === 200) {
-            document.getElementById('teacherLocked').style.display = 'none';
-            document.getElementById('teacherActions').style.display = 'block';
+            showTeacherActions();
+            localStorage.setItem(STORAGE_KEY + '-teacher', 'true');
         } else if (code !== null) {
             alert('Falscher Code!');
         }
+    }
+
+    function showTeacherActions() {
+        document.getElementById('teacherLocked').style.display = 'none';
+        document.getElementById('teacherActions').style.display = 'block';
     }
 
     function teacherReset() {
@@ -1915,14 +1925,25 @@
 
     function teacherExtendTime() {
         if (testSubmitted) {
-            alert('Test bereits abgegeben!');
-            return;
+            // Nach Abgabe: Abgabe aufheben, +6 Min, weiterarbeiten
+            testSubmitted = false;
+            localStorage.removeItem(STORAGE_KEY + '-submitted');
+            localStorage.removeItem(STORAGE_KEY + '-submit-time');
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('pdfUploadBox').classList.remove('visible');
+            document.getElementById('submitSection').style.display = 'block';
+            var submitBtn = document.querySelector('#submitSection .btn');
+            if (submitBtn) submitBtn.disabled = false;
+            // Inputs wieder aktivieren
+            var inputs = document.querySelectorAll('#questionsContainer input, #questionsContainer select');
+            for (var i = 0; i < inputs.length; i++) { inputs[i].disabled = false; }
         }
-        timeRemaining += 5 * 60;
+        timeRemaining += 6 * 60;
         autoSubmitDone = false;
         localStorage.setItem(STORAGE_KEY + '-time', timeRemaining);
         updateTimerDisplay();
-        alert('+5 Minuten hinzugef\u00fcgt. Neue Restzeit: ' + Math.floor(timeRemaining / 60) + ':' + (timeRemaining % 60 < 10 ? '0' : '') + (timeRemaining % 60));
+        if (!timerInterval) startTimer();
+        alert('+6 Minuten (Nachteilsausgleich). Restzeit: ' + Math.floor(timeRemaining / 60) + ':' + (timeRemaining % 60 < 10 ? '0' : '') + (timeRemaining % 60));
     }
 
     // ================================================================
