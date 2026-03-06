@@ -208,7 +208,7 @@
         }
         canvas {
             display: block;
-            background: #1a1a2e;
+            background: #fff;
             width: 100%;
             max-width: 800px;
             margin: 0 auto;
@@ -403,6 +403,9 @@
             width: 100%;
             height: auto;
         }
+        /* Nuklid A/Z gestapelt */
+        .nuk { display: inline-block; vertical-align: middle; text-align: right; line-height: 1; margin-right: 1px; }
+        .nuk sup, .nuk sub { display: block; font-size: 0.75em; line-height: 1.1; }
         /* Niveau badges */
         .niveau-badge {
             display: inline-block;
@@ -430,6 +433,25 @@
             padding: 12px 24px; font-size: 1em; cursor: pointer; min-height: 44px;
         }
         .tab-warning-box button:disabled { background: #888; cursor: not-allowed; }
+        /* Animated electrons (Step 5 SVG) */
+        @keyframes orbit1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes orbit2 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .electron-orbit-1 { animation: orbit1 3s linear infinite; transform-origin: 150px 150px; }
+        .electron-orbit-2 { animation: orbit2 5s linear infinite; transform-origin: 150px 150px; }
+        .electron-orbit-3 { animation: orbit1 7s linear infinite; transform-origin: 150px 150px; }
+        /* Histogram canvas */
+        .histo-canvas { display: block; width: 100%; max-width: 300px; height: 150px; margin: 10px auto; }
+        /* Flashcard active */
+        .flashcard:active { transform: scale(0.97); }
+        /* Versuchsaufbau SVG */
+        .versuchsaufbau { text-align: center; margin: 15px 0; }
+        .versuchsaufbau svg { max-width: 700px; width: 100%; height: auto; }
+        .va-label { cursor: pointer; }
+        .va-tooltip { display: none; font-size: 10px; fill: #fff; }
+        .va-label:hover .va-tooltip, .va-label:focus .va-tooltip { display: block; }
+        /* Zoom canvas */
+        .zoom-container { text-align: center; margin: 15px 0; }
+        .zoom-canvas { display: block; background: #f0f4ff; width: 100%; max-width: 400px; height: 300px; margin: 0 auto; border: 1px solid var(--border); }
         @media (max-width: 600px) {
             .nuklid-input-grid { grid-template-columns: 1fr; }
             .stats-bar { gap: 8px; }
@@ -441,7 +463,7 @@
     <div class="container">
         <header>
             <h1>LP-01: Atomaufbau &amp; Rutherford-Streuversuch</h1>
-            <p>10MR Physik | Radioaktivit&auml;t | ~55 Minuten</p>
+            <p>10MR Physik | DS 7 + DS 8 | Radioaktivit&auml;t</p>
         </header>
 
         <div class="step-nav" id="stepNav"></div>
@@ -454,6 +476,8 @@
                 <span class="step-title">Schritt 1: Vom Rosinenkuchen zum Atomkern</span>
                 <span class="step-badge">Einstieg</span>
             </div>
+
+            <p>Gold l&auml;sst sich zu hauchdünner Folie schlagen &ndash; so d&uuml;nn, dass Licht durchscheint. Was sagt das &uuml;ber den inneren Aufbau der Materie? Irgendetwas muss da <em>&bdquo;leer&ldquo;</em> sein&hellip;</p>
 
             <p>In Chemie habt ihr gelernt: Alle Stoffe bestehen aus <strong>Atomen</strong>. Aber wie sieht ein Atom <em>von innen</em> aus? Die Vorstellungen haben sich &uuml;ber die Zeit ver&auml;ndert:</p>
 
@@ -520,11 +544,25 @@
                 <span class="step-badge">Hypothese</span>
             </div>
 
-            <p>Rutherford beschoss eine d&uuml;nne <strong>Goldfolie</strong> mit schnellen <strong>&alpha;-Teilchen</strong> (positiv geladene Heliumkerne). <em>Wenn Thomsons Rosinenkuchen-Modell stimmt</em>, was sollte passieren?</p>
+            <p>Rutherford beschoss eine d&uuml;nne <strong>Goldfolie</strong> mit schnellen <strong>&alpha;-Teilchen</strong> (positiv geladene Heliumkerne). Gold l&auml;sst sich extrem d&uuml;nn h&auml;mmern (wenige Atomlagen dick) &ndash; ideal f&uuml;r den Versuch. <em>Wenn Thomsons Rosinenkuchen-Modell stimmt</em>, was sollte passieren?</p>
 
-            <div class="info-box">
-                <strong>Denke nach:</strong> Im Rosinenkuchen ist die positive Ladung <em>gleichm&auml;&szlig;ig verteilt</em> und die Masse <em>&uuml;berall gleich d&uuml;nn</em>. Was passiert, wenn schnelle Geschosse auf so etwas treffen?
+            <h3>Erst nachdenken!</h3>
+            <p>Stell dir vor, du schie&szlig;t kleine Kugeln auf einen weichen Kuchen. Was erwartest du?</p>
+            <div class="mc-options" id="mc-kuchen">
+                <label class="mc-option" onclick="selectMC('mc-kuchen', 0)">
+                    <input type="radio" name="mc-kuchen"> A) Die meisten bleiben stecken
+                </label>
+                <label class="mc-option" onclick="selectMC('mc-kuchen', 1)">
+                    <input type="radio" name="mc-kuchen"> B) Die meisten gehen glatt durch, manche werden leicht abgelenkt
+                </label>
+                <label class="mc-option" onclick="selectMC('mc-kuchen', 2)">
+                    <input type="radio" name="mc-kuchen"> C) Viele prallen zur&uuml;ck
+                </label>
             </div>
+            <button class="btn btn-small" onclick="checkMC('mc-kuchen', 1, 'fb-kuchen')">Pr&uuml;fen</button>
+            <div class="feedback" id="fb-kuchen"></div>
+
+            <p style="margin-top:15px;">Genau das dachte auch Thomson! Hier sind seine 3 Erwartungen systematisch:</p>
 
             <h3>Wenn Thomson recht hat, erwarten wir:</h3>
 
@@ -589,41 +627,93 @@
 
             <p>F&uuml;hre den Streuversuch durch! Dr&uuml;cke <strong>Starten</strong> und beobachte, was mit den &alpha;-Teilchen passiert.</p>
 
+            <div class="versuchsaufbau">
+                <h3>Versuchsaufbau</h3>
+                <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Bleiabschirmung mit Kanal -->
+                    <rect x="40" y="30" width="80" height="100" fill="#555" rx="3"/>
+                    <rect x="100" y="65" width="30" height="30" fill="#1a1a2e"/>
+                    <circle cx="70" cy="80" r="15" fill="#c62828" opacity="0.8"/>
+                    <text x="70" y="84" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">&alpha;</text>
+                    <g class="va-label" tabindex="0">
+                        <text x="80" y="150" text-anchor="middle" fill="#555" font-size="10">&alpha;-Quelle</text>
+                        <rect x="25" y="18" width="110" height="18" rx="3" fill="#333" opacity="0.9" class="va-tooltip"/>
+                        <text x="80" y="31" text-anchor="middle" font-size="9" class="va-tooltip">Radioaktives Pr&auml;parat im Bleiblock</text>
+                    </g>
+                    <!-- Alpha-Strahl -->
+                    <line x1="130" y1="80" x2="280" y2="80" stroke="#ffd700" stroke-width="3" stroke-dasharray="8,4"/>
+                    <polygon points="275,74 290,80 275,86" fill="#ffd700"/>
+                    <text x="205" y="70" text-anchor="middle" fill="#b8860b" font-size="10">&alpha;-Strahl</text>
+                    <!-- Goldfolie -->
+                    <rect x="295" y="20" width="6" height="120" fill="#ffd700" opacity="0.7"/>
+                    <g class="va-label" tabindex="0">
+                        <text x="298" y="155" text-anchor="middle" fill="#b8860b" font-size="10" font-weight="bold">Goldfolie</text>
+                        <rect x="250" y="5" width="100" height="18" rx="3" fill="#333" opacity="0.9" class="va-tooltip"/>
+                        <text x="298" y="18" text-anchor="middle" font-size="9" class="va-tooltip">Wenige Atomlagen dick!</text>
+                    </g>
+                    <!-- Gestreute Teilchen -->
+                    <line x1="301" y1="80" x2="500" y2="80" stroke="#ffd700" stroke-width="2" stroke-dasharray="6,3" opacity="0.6"/>
+                    <line x1="301" y1="80" x2="480" y2="45" stroke="#ffd700" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.4"/>
+                    <line x1="301" y1="80" x2="480" y2="115" stroke="#ffd700" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.4"/>
+                    <line x1="301" y1="80" x2="250" y2="40" stroke="#ffd700" stroke-width="1" stroke-dasharray="6,3" opacity="0.3"/>
+                    <!-- Detektor-Bogen -->
+                    <path d="M 500,20 A 210,210 0 0,1 500,140" fill="none" stroke="#2c5aa0" stroke-width="4"/>
+                    <g class="va-label" tabindex="0">
+                        <text x="530" y="85" text-anchor="start" fill="#2c5aa0" font-size="10">Zinksulfid-</text>
+                        <text x="530" y="97" text-anchor="start" fill="#2c5aa0" font-size="10">Schirm</text>
+                        <rect x="510" y="105" width="160" height="18" rx="3" fill="#333" opacity="0.9" class="va-tooltip"/>
+                        <text x="590" y="118" text-anchor="middle" font-size="9" class="va-tooltip">Blitzt bei jedem &alpha;-Treffer auf</text>
+                    </g>
+                </svg>
+                <p style="font-size:0.85em; color:var(--text-muted);">Tippe auf die Beschriftungen f&uuml;r mehr Infos.</p>
+            </div>
+
             <div class="sim-container">
                 <canvas id="simCanvas" width="800" height="400"></canvas>
                 <div class="legend">
                     <div class="legend-item">
-                        <span class="legend-dot" style="background:#ffd700;"></span> &alpha;-Teilchen (Geschosse)
+                        <span class="legend-dot" style="background:#D32F2F;"></span> &alpha;-Teilchen (He-Kerne)
                     </div>
                     <div class="legend-item">
-                        <span class="legend-dot" style="background:#c62828;"></span> Positive Ladung im Goldatom
+                        <span class="legend-dot" style="background:#8B6914;"></span> Gold-Atomkern (Z&thinsp;=&thinsp;79)
                     </div>
                     <div class="legend-item">
-                        <span class="legend-dot" style="background:rgba(100,140,200,0.4); border:1px dashed #668;"></span> Atom-Grenze (H&uuml;lle)
+                        <span class="legend-dot" style="background:rgba(255,248,225,0.5); border:1px solid #DAA520;"></span> Atom-H&uuml;lle
                     </div>
                 </div>
                 <div class="sim-controls">
                     <button class="btn btn-small" id="btnSimStart" onclick="toggleSim()">Starten</button>
                     <button class="btn btn-small btn-secondary" onclick="resetSim()">Reset</button>
                     <div class="slider-group" style="flex:1; min-width:150px;">
-                        <label>Kernladung: <span id="chargeVal">5</span></label>
-                        <input type="range" id="simCharge" min="1" max="10" value="5" oninput="document.getElementById('chargeVal').textContent=this.value">
+                        <label>Tempo: <span id="speedVal">&times;5</span></label>
+                        <input type="range" id="simSpeed" min="1" max="10" value="5" oninput="updateSpeed()">
                     </div>
+                </div>
+                <div class="sim-controls" style="margin-top:4px;">
+                    <span style="font-size:0.85em; color:var(--text-muted);">Schnelldurchlauf:</span>
+                    <button class="btn btn-small btn-secondary" onclick="simBatch(100)">&times;100</button>
+                    <button class="btn btn-small btn-secondary" onclick="simBatch(1000)">&times;1.000</button>
+                    <button class="btn btn-small btn-secondary" onclick="simBatch(1000000)" id="btnBatch1M">&times;1.000.000</button>
+                    <span id="batchProgress" style="font-size:0.8em; color:var(--warning); display:none;">Berechne...</span>
                 </div>
                 <div class="stats-bar" id="simStats">
                     <div class="stat"><span>Abgefeuert</span><span class="stat-value" id="sFired">0</span></div>
+                    <div class="stat"><span>Unterwegs</span><span class="stat-value" id="sInFlight" style="color:var(--warning);">0</span></div>
                     <div class="stat"><span>Geradeaus (&lt;10&deg;)</span><span class="stat-value" id="sStraight">0</span></div>
                     <div class="stat"><span>Leicht abgelenkt</span><span class="stat-value" id="sLight">0</span></div>
                     <div class="stat"><span>Stark (&gt;45&deg;)</span><span class="stat-value" id="sStrong">0</span></div>
                     <div class="stat"><span>Zur&uuml;ck (&gt;90&deg;)</span><span class="stat-value" id="sBack">0</span></div>
                 </div>
+                <h3 style="margin-top:10px;">Winkelhistogramm (live)</h3>
+                <canvas id="histoCanvas" class="histo-canvas" width="300" height="150"></canvas>
             </div>
 
             <h3>Auftrag:</h3>
             <ol style="margin-left:20px; margin-bottom:15px;">
-                <li>Starte die Simulation und warte, bis mindestens <strong>50 Teilchen</strong> abgefeuert wurden.</li>
+                <li>Starte die Simulation und beobachte mindestens <strong>50 Teilchen</strong>.</li>
                 <li>Notiere die Zahlen: Wie viele gehen geradeaus? Wie viele werden abgelenkt? Wie viele kommen zur&uuml;ck?</li>
-                <li>Variiere die <strong>Kernladung</strong> &ndash; was &auml;ndert sich?</li>
+                <li>Dr&uuml;cke <strong>Reset</strong> und wiederhole &ndash; sind die Anteile &auml;hnlich?</li>
+                <li>Nutze den <strong>Schnelldurchlauf</strong> (&times;100 / &times;1.000 / &times;1.000.000), um gro&szlig;e Teilchenzahlen zu simulieren. Was f&auml;llt bei den Anteilen auf?</li>
             </ol>
 
             <div class="hefter-hinweis">
@@ -655,7 +745,7 @@
                         <th style="width:5%;">#</th>
                         <th style="background:#fff3e0;">Erwartung (Thomson)</th>
                         <th style="background:#e3f0ff;">Beobachtung (Rutherford)</th>
-                        <th style="background:#e8f5e9;">Erkl&auml;rung</th>
+                        <th style="background:#e8f5e9;">Erkl&auml;rung &mdash; ordne zu!</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -663,22 +753,44 @@
                         <td><strong>1</strong></td>
                         <td style="background:#fff3e0;">Alle Teilchen gehen durch</td>
                         <td style="background:#e3f0ff;"><strong>&gt; 98 %</strong> gehen tats&auml;chlich geradeaus durch</td>
-                        <td style="background:#e8f5e9;">Das Atom ist <strong>gr&ouml;&szlig;tenteils leerer Raum</strong></td>
+                        <td style="background:#e8f5e9;" id="erkl-cell-1">
+                            <select id="erkl-select-1" style="width:100%; min-height:44px; font-size:0.9em;" onchange="checkErkl()">
+                                <option value="">??? W&auml;hle&hellip;</option>
+                                <option value="leer">Das Atom ist gr&ouml;&szlig;tenteils leerer Raum</option>
+                                <option value="kern">Positive Ladung ist in einem winzigen Kern konzentriert</option>
+                                <option value="masse">Der Kern ist extrem klein, aber enth&auml;lt fast die gesamte Masse</option>
+                            </select>
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>2</strong></td>
                         <td style="background:#fff3e0;">H&ouml;chstens leichte Ablenkung</td>
                         <td style="background:#e3f0ff;">Einige werden <strong>stark abgelenkt</strong> (&gt; 45&deg;)</td>
-                        <td style="background:#e8f5e9;">Positive Ladung ist in einem <strong>winzigen Kern</strong> konzentriert</td>
+                        <td style="background:#e8f5e9;" id="erkl-cell-2">
+                            <select id="erkl-select-2" style="width:100%; min-height:44px; font-size:0.9em;" onchange="checkErkl()">
+                                <option value="">??? W&auml;hle&hellip;</option>
+                                <option value="leer">Das Atom ist gr&ouml;&szlig;tenteils leerer Raum</option>
+                                <option value="kern">Positive Ladung ist in einem winzigen Kern konzentriert</option>
+                                <option value="masse">Der Kern ist extrem klein, aber enth&auml;lt fast die gesamte Masse</option>
+                            </select>
+                        </td>
                     </tr>
                     <tr>
                         <td><strong>3</strong></td>
                         <td style="background:#fff3e0;">Kein Teilchen wird zur&uuml;ckgeworfen</td>
                         <td style="background:#e3f0ff;">Sehr wenige (~1 von 8000) werden <strong>zur&uuml;ckgeworfen</strong> (&gt; 90&deg;)</td>
-                        <td style="background:#e8f5e9;">Der Kern ist extrem klein, aber enth&auml;lt <strong>fast die gesamte Masse</strong></td>
+                        <td style="background:#e8f5e9;" id="erkl-cell-3">
+                            <select id="erkl-select-3" style="width:100%; min-height:44px; font-size:0.9em;" onchange="checkErkl()">
+                                <option value="">??? W&auml;hle&hellip;</option>
+                                <option value="leer">Das Atom ist gr&ouml;&szlig;tenteils leerer Raum</option>
+                                <option value="kern">Positive Ladung ist in einem winzigen Kern konzentriert</option>
+                                <option value="masse">Der Kern ist extrem klein, aber enth&auml;lt fast die gesamte Masse</option>
+                            </select>
+                        </td>
                     </tr>
                 </tbody>
             </table>
+            <div class="feedback" id="fb-erkl"></div>
 
             <div class="info-box">
                 <strong>Rutherfords ber&uuml;hmtes Zitat:</strong> &bdquo;Es war, als h&auml;tte man eine Granate auf Seidenpapier geschossen und sie w&auml;re zur&uuml;ckgekommen.&ldquo; &ndash; So &uuml;berrascht war er &uuml;ber die zur&uuml;ckgeworfenen Teilchen!
@@ -731,7 +843,13 @@
 
             <div class="nav-buttons">
                 <button class="btn btn-secondary" onclick="prevStep()">&larr; Zur&uuml;ck</button>
-                <button class="btn" onclick="nextStep()">Weiter &rarr;</button>
+                <button class="btn" onclick="nextStep()">Weiter (DS 8) &rarr;</button>
+            </div>
+
+            <div class="diagnose-box" style="margin-top:20px;">
+                <div class="diagnose-title">Checkpoint &mdash; Ende DS 7</div>
+                <p>Du kannst hier pausieren. Dein Fortschritt wird gespeichert.
+                N&auml;chste Stunde geht es weiter mit dem Kern-H&uuml;lle-Modell.</p>
             </div>
         </div>
 
@@ -755,24 +873,48 @@
                     <!-- Kern -->
                     <circle cx="150" cy="150" r="12" fill="#c62828"/>
                     <text x="150" y="155" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Kern</text>
-                    <!-- Elektronen -->
-                    <circle cx="220" cy="150" r="6" fill="#2c5aa0"/>
-                    <text x="220" y="154" text-anchor="middle" fill="white" font-size="8">e</text>
-                    <circle cx="115" cy="95" r="6" fill="#2c5aa0"/>
-                    <circle cx="185" cy="205" r="6" fill="#2c5aa0"/>
-                    <circle cx="80" cy="180" r="6" fill="#2c5aa0"/>
-                    <circle cx="200" cy="60" r="6" fill="#2c5aa0"/>
+                    <!-- Animierte Elektronen -->
+                    <g class="electron-orbit-1">
+                        <circle cx="220" cy="150" r="6" fill="#2c5aa0"/>
+                        <text x="220" y="154" text-anchor="middle" fill="white" font-size="8">e</text>
+                    </g>
+                    <g class="electron-orbit-1" style="animation-delay:-1s;">
+                        <circle cx="80" cy="150" r="6" fill="#2c5aa0"/>
+                    </g>
+                    <g class="electron-orbit-2">
+                        <circle cx="150" cy="40" r="6" fill="#2c5aa0"/>
+                    </g>
+                    <g class="electron-orbit-2" style="animation-delay:-2.5s;">
+                        <circle cx="150" cy="260" r="6" fill="#2c5aa0"/>
+                    </g>
+                    <g class="electron-orbit-3">
+                        <circle cx="220" cy="80" r="6" fill="#2c5aa0"/>
+                    </g>
                     <!-- Beschriftungen -->
                     <text x="150" y="20" text-anchor="middle" fill="#555" font-size="12">Elektronenh&uuml;lle</text>
                     <line x1="150" y1="24" x2="150" y2="45" stroke="#555" stroke-width="0.5"/>
-                    <text x="150" y="280" text-anchor="middle" fill="#c62828" font-size="11">Kern: Protonen + Neutronen</text>
+                    <text x="150" y="280" text-anchor="middle" fill="#c62828" font-size="11">Kern: Protonen + Neutronen (Nukleonen)</text>
                     <text x="150" y="294" text-anchor="middle" fill="#c62828" font-size="10">(winzig, aber fast die gesamte Masse!)</text>
                 </svg>
             </div>
 
-            <div class="info-box">
-                <strong>Gr&ouml;&szlig;envergleich:</strong> Wenn der Atomkern so gro&szlig; w&auml;re wie ein <strong>Fu&szlig;ball</strong> (Durchmesser 22 cm), dann w&auml;re das gesamte Atom so gro&szlig; wie eine <strong>Kleinstadt</strong> (Durchmesser ca. 2 km)! Dazwischen ist &ndash; <em>nichts</em>.
+            <div class="zoom-container">
+                <h3>Interaktiver Gr&ouml;&szlig;envergleich</h3>
+                <canvas id="zoomCanvas" class="zoom-canvas" width="400" height="300"></canvas>
+                <div class="slider-group" style="max-width:400px; margin:10px auto;">
+                    <label>Zoom-Stufe: <span id="zoomVal">1</span></label>
+                    <input type="range" id="zoomSlider" min="1" max="4" value="1" oninput="drawZoom(parseInt(this.value))">
+                </div>
             </div>
+
+            <div class="info-box">
+                <strong>Gr&ouml;&szlig;envergleich:</strong> Wenn der Atomkern so gro&szlig; w&auml;re wie ein <strong>Stecknadelkopf</strong> (1 mm) auf dem 50-Meter-Punkt, dann w&auml;re das gesamte Atom so gro&szlig; wie ein <strong>Fu&szlig;ballstadion</strong> (100 m Durchmesser)! Dazwischen ist &ndash; <em>nichts</em>.
+            </div>
+            <div class="info-box" style="background:#f3e8ff; border-left-color:#7c3aed;">
+                <strong>Exakte Zahlen:</strong> Atomradius &asymp; 10<sup>&minus;10</sup> m, Kernradius &asymp; 10<sup>&minus;15</sup> m &rarr; Faktor <strong>100.000</strong>
+            </div>
+
+            <p>Sp&auml;ter entdeckte <strong>James Chadwick</strong> (1932) noch ein drittes Teilchen im Kern: das <strong>Neutron</strong> &ndash; gleiche Masse wie ein Proton, aber <em>keine Ladung</em>.</p>
 
             <h3>Das Atom besteht aus:</h3>
             <table>
@@ -785,7 +927,7 @@
                     <tr><td style="text-align:left; padding-left:12px;"><strong>Elektron</strong></td><td>e<sup>&minus;</sup></td><td>&minus;1</td><td>H&uuml;lle</td><td>&asymp; 0</td></tr>
                 </tbody>
             </table>
-            <p style="font-size:0.85em; color:var(--text-muted);">u = atomare Masseneinheit. Die Masse des Elektrons ist rund 2000-mal kleiner als die eines Protons.</p>
+            <p style="font-size:0.85em; color:var(--text-muted);">u = atomare Masseneinheit. Die Masse des Elektrons ist rund 2000-mal kleiner als die eines Protons.<br>Protonen und Neutronen hei&szlig;en zusammen <strong>Nukleonen</strong>.</p>
 
             <div class="hefter-hinweis">
                 <strong>Aufgabe 4 auf dem AB:</strong> &Uuml;bertrage die Tabelle (Kernbausteine) in dein Arbeitsblatt. Zeichne das Kern-H&uuml;lle-Modell mit Beschriftung.
@@ -811,7 +953,7 @@
             <p>Jeder Atomkern wird durch zwei Zahlen beschrieben:</p>
 
             <div class="formel-box">
-                <sup style="font-size:0.7em; vertical-align:super;">A</sup><sub style="font-size:0.7em; vertical-align:sub;">Z</sub> X
+                <span class="nuk"><sup>A</sup><sub>Z</sub></span> X
             </div>
 
             <table>
@@ -827,7 +969,7 @@
 
             <h3>Beispiel: Kohlenstoff-12</h3>
             <div class="nuklid-display">
-                <sup>12</sup><sub style="margin-right:2px;">6</sub>C &nbsp; &rarr; &nbsp; 6 Protonen, 6 Neutronen, 6 Elektronen
+                <span class="nuk"><sup>12</sup><sub>6</sub></span>C &nbsp; &rarr; &nbsp; 6 Protonen, 6 Neutronen, 6 Elektronen
             </div>
 
             <h3>Was sind Isotope?</h3>
@@ -835,21 +977,35 @@
 
             <div class="example-cards">
                 <div class="example-card">
-                    <strong><sup>12</sup><sub>6</sub>C</strong>
+                    <strong><span class="nuk"><sup>12</sup><sub>6</sub></span>C</strong>
                     <p style="font-size:0.85em; margin-top:6px;">6p + 6n<br>stabiles Kohlenstoff</p>
                 </div>
                 <div class="example-card">
-                    <strong><sup>13</sup><sub>6</sub>C</strong>
+                    <strong><span class="nuk"><sup>13</sup><sub>6</sub></span>C</strong>
                     <p style="font-size:0.85em; margin-top:6px;">6p + 7n<br>stabil, selten</p>
                 </div>
                 <div class="example-card">
-                    <strong><sup>14</sup><sub>6</sub>C</strong>
+                    <strong><span class="nuk"><sup>14</sup><sub>6</sub></span>C</strong>
                     <p style="font-size:0.85em; margin-top:6px;">6p + 8n<br><em>radioaktiv!</em></p>
                 </div>
             </div>
 
             <div class="info-box">
                 <strong>Merke:</strong> Isotope eines Elements haben immer die gleiche Anzahl <strong>Protonen</strong> (und damit auch Elektronen), aber eine verschiedene Anzahl <strong>Neutronen</strong>. Manche Isotope sind <strong>instabil</strong> &ndash; sie zerfallen von selbst. Das nennt man <strong>Radioaktivit&auml;t</strong>.
+            </div>
+
+            <h3>Kernaufbau zum Z&auml;hlen</h3>
+            <p>W&auml;hle ein Element &ndash; der Kern wird als &bdquo;Brombeere&ldquo; aus <span style="color:#E53935; font-weight:600;">Protonen (rot)</span> und <span style="font-weight:600;">Neutronen (wei&szlig;)</span> dargestellt:</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin:10px 0;">
+                <button class="btn btn-small" onclick="showNucleons('H',1,1)">H-1</button>
+                <button class="btn btn-small" onclick="showNucleons('He',2,4)">He-4</button>
+                <button class="btn btn-small" onclick="showNucleons('Li',3,7)">Li-7</button>
+                <button class="btn btn-small" onclick="showNucleons('C',6,12)">C-12</button>
+                <button class="btn btn-small" onclick="showNucleons('O',8,16)">O-16</button>
+            </div>
+            <div style="text-align:center;">
+                <canvas id="nucleonCanvas" width="200" height="200" style="background:#f9f9f9; border:1px solid #ddd; max-width:200px;"></canvas>
+                <p id="nucleonLabel" style="font-weight:600; margin-top:8px;"></p>
             </div>
 
             <div class="hefter-hinweis">
@@ -879,7 +1035,7 @@
 
             <div class="feedback" id="fb-nuklid"></div>
 
-            <h3 style="margin-top:25px;"><span class="niveau-badge">&#9733;&#9733;</span> Zusatzaufgabe: Nuklid-Builder</h3>
+            <h3 style="margin-top:25px;">Zusatzaufgabe: Nuklid-Builder</h3>
             <p>Baue das Nuklid, das angezeigt wird:</p>
 
             <div id="nuklid-builder-task" style="font-size:1.1em; font-weight:600; color:var(--fach); margin:10px 0;"></div>
@@ -931,7 +1087,7 @@
                 </div>
                 <div class="flashcard-nav">
                     <button class="btn btn-small btn-secondary" onclick="prevCard()">&larr;</button>
-                    <span class="flashcard-counter" id="fcCounter">1 / 6</span>
+                    <span class="flashcard-counter" id="fcCounter">1 / 8</span>
                     <button class="btn btn-small btn-secondary" onclick="nextCard()">&rarr;</button>
                 </div>
             </div>
@@ -1152,12 +1308,22 @@
         if (n < 1 || n > totalSteps + 1) return;
         if (n > currentStep + 1) return; // no skipping
 
+        var oldStep = currentStep;
         var oldEl = document.getElementById('step' + currentStep);
         if (oldEl) oldEl.classList.remove('active');
 
         currentStep = n;
         var newEl = document.getElementById('step' + currentStep);
         if (newEl) newEl.classList.add('active');
+
+        // 4.1: rAF only on step 3
+        if (oldStep === 3 && currentStep !== 3) {
+            if (simAnimFrame) { cancelAnimationFrame(simAnimFrame); simAnimFrame = null; }
+            if (simRunning) { toggleSim(); } // pause sim when leaving
+        }
+        if (currentStep === 3 && !simAnimFrame) {
+            simAnimLoop();
+        }
 
         updateUI();
         saveProgress();
@@ -1253,6 +1419,27 @@
         }
     }
 
+    // Spezifisches Feedback pro MC-Frage und Option
+    var mcFeedback = {
+        'mc-kuchen': {
+            0: 'Denke an schnelle, schwere Kugeln \u2014 ein weicher Kuchen kann sie nicht aufhalten!',
+            2: 'Woher sollte die Kraft kommen, die sie zur\u00fcckwirft? Der Kuchen ist weich und gleichm\u00e4\u00dfig.'
+        },
+        'mc-aus1': {
+            0: 'Dass die meisten durchgehen, passte genau zu Thomsons Vorhersage \u2014 das war nicht \u00fcberraschend.',
+            2: 'Ob die Folie kaputtgeht, sagt nichts \u00fcber den Atomaufbau aus.'
+        },
+        'mc-aus2': {
+            1: 'Thomson kannte Alpha-Teilchen durchaus. Denk an die Masseverteilung im Rosinenkuchen!',
+            2: 'Elektronen sind viel leichter als Alpha-Teilchen und k\u00f6nnen sie nicht aufhalten.'
+        },
+        'mc-final': {
+            0: 'A ist die Summe aus Protonen und <em>Neutronen</em>, nicht Elektronen!',
+            2: 'Genau umgekehrt! Der Kern ist winzig im Vergleich zur H\u00fclle (Faktor 100.000).',
+            3: 'Neutronen haben <em>keine</em> Ladung \u2014 daher der Name (neutral).'
+        }
+    };
+
     function checkMC(groupId, correctIdx, fbId) {
         var sel = mcSelections[groupId];
         var fb = document.getElementById(fbId);
@@ -1265,8 +1452,49 @@
             fb.className = 'feedback correct';
             fb.innerHTML = '<strong>Richtig!</strong>';
         } else {
+            var hint = '';
+            if (mcFeedback[groupId] && mcFeedback[groupId][sel]) {
+                hint = mcFeedback[groupId][sel];
+            } else {
+                hint = 'Versuche es noch einmal.';
+            }
             fb.className = 'feedback incorrect';
-            fb.innerHTML = '<strong>Nicht ganz.</strong> Versuche es noch einmal.';
+            fb.innerHTML = '<strong>Nicht ganz.</strong> ' + hint;
+        }
+    }
+
+    // Erkl\u00e4rungsspalte Zuordnung (Schritt 4)
+    var erklCorrect = { 1: 'leer', 2: 'kern', 3: 'masse' };
+    function checkErkl() {
+        var allDone = true;
+        var allCorrect = true;
+        for (var i = 1; i <= 3; i++) {
+            var sel = document.getElementById('erkl-select-' + i);
+            if (!sel) continue;
+            var val = sel.value;
+            if (val === '') { allDone = false; continue; }
+            if (val === erklCorrect[i]) {
+                sel.style.borderColor = '#2a7a4b';
+                sel.style.background = '#e8f5e9';
+            } else {
+                sel.style.borderColor = '#c62828';
+                sel.style.background = '#ffebee';
+                allCorrect = false;
+            }
+        }
+        var fb = document.getElementById('fb-erkl');
+        if (allDone && allCorrect) {
+            fb.className = 'feedback correct';
+            fb.innerHTML = '<strong>Alle richtig zugeordnet!</strong> Du hast verstanden, warum Rutherfords Beobachtungen Thomsons Modell widerlegen.';
+            // Replace selects with text
+            for (var j = 1; j <= 3; j++) {
+                var cell = document.getElementById('erkl-cell-' + j);
+                var texts = { leer: 'Das Atom ist <strong>gr\u00f6\u00dftenteils leerer Raum</strong>', kern: 'Positive Ladung ist in einem <strong>winzigen Kern</strong> konzentriert', masse: 'Der Kern ist extrem klein, aber enth\u00e4lt <strong>fast die gesamte Masse</strong>' };
+                cell.innerHTML = texts[erklCorrect[j]];
+            }
+        } else if (allDone) {
+            fb.className = 'feedback incorrect';
+            fb.innerHTML = '\u00dcberlege nochmal: Welche Erkl\u00e4rung passt zu welcher Beobachtung?';
         }
     }
 
@@ -1283,68 +1511,87 @@
     var simFoilX = 500;
     var simAnimFrame = null;
 
-    // Atom-Radius (Hülle) vs Kern-Radius: Faktor ~20000 in Realität.
-    // Hier: Atom ~60px Durchmesser, Kern 3px → Faktor 20 (visuell verdeutlicht)
-    var ATOM_RADIUS = 30;   // sichtbare Atom-Hülle (Geisterkreis)
-    var NUCLEUS_RADIUS = 3; // winziger Kern
-    var NUM_NUCLEI = 5;     // wenige Kerne = viel leerer Raum
+    // Gold (Z=79) + Alpha (Z=2): Coulomb-Abstoßung
+    var ATOM_RADIUS = 30;    // sichtbare Atom-Hülle
+    var NUCLEUS_RADIUS = 2;  // winziger Kern
+    var COULOMB_K = 4;       // empirisch: ~90 % geradeaus
+    var SUB_STEPS = 8;       // Genauigkeit der Bahnberechnung
+    var PARTICLE_V = 10;     // Alpha-Geschwindigkeit (px/Frame)
+    var MAX_AGE = 400;       // max. Lebensdauer (Frames)
 
+    // Hexagonales Gitter — Hüllen berühren sich exakt
     function initSimNuclei() {
         simNuclei = [];
-        var spacing = 320 / (NUM_NUCLEI + 1);
-        for (var i = 1; i <= NUM_NUCLEI; i++) {
-            simNuclei.push({
-                x: simFoilX + (Math.random() - 0.5) * 4,
-                y: 40 + i * spacing + (Math.random() - 0.5) * 10
-            });
+        var vSpacing = ATOM_RADIUS * Math.sqrt(3);
+        var totalRows = Math.floor((400 - 2 * ATOM_RADIUS) / vSpacing) + 1;
+        var totalH = (totalRows - 1) * vSpacing;
+        var startY = (400 - totalH) / 2;
+        for (var r = 0; r < totalRows; r++) {
+            var y = startY + r * vSpacing;
+            if (r % 2 === 0) {
+                // Gerade Reihe: 3 Atome
+                simNuclei.push({ x: simFoilX - 2 * ATOM_RADIUS, y: y });
+                simNuclei.push({ x: simFoilX, y: y });
+                simNuclei.push({ x: simFoilX + 2 * ATOM_RADIUS, y: y });
+            } else {
+                // Ungerade Reihe: 2 Atome (versetzt)
+                simNuclei.push({ x: simFoilX - ATOM_RADIUS, y: y });
+                simNuclei.push({ x: simFoilX + ATOM_RADIUS, y: y });
+            }
         }
     }
 
     function fireSimParticle() {
-        var y = 30 + Math.random() * 340;
+        var y = 10 + Math.random() * 380;
         simParticles.push({
             x: 50, y: y,
-            vx: 8 + parseInt(document.getElementById('simCharge').value || 5) * 0.1,
-            vy: 0,
+            vx: PARTICLE_V, vy: 0,
             trail: [],
-            done: false
+            done: false,
+            age: 0
         });
         simStats.fired++;
         updateSimStats();
     }
 
     function updateSim() {
-        var charge = parseInt(document.getElementById('simCharge').value || 5);
-        var k = charge * 2;  // schwache Coulomb-Kraft → realistische Streuung
-
         for (var pi = 0; pi < simParticles.length; pi++) {
             var p = simParticles[pi];
             if (p.done) continue;
 
-            if (p.trail.length === 0 ||
-                Math.sqrt(Math.pow(p.x - p.trail[p.trail.length-1].x, 2) + Math.pow(p.y - p.trail[p.trail.length-1].y, 2)) > 5) {
-                p.trail.push({ x: p.x, y: p.y });
-                if (p.trail.length > 80) p.trail.shift();
+            p.age++;
+            if (p.age > MAX_AGE) {
+                p.done = true;
+                classifySimParticle(p);
+                continue;
             }
 
-            var fx = 0, fy = 0;
-            for (var ni = 0; ni < simNuclei.length; ni++) {
-                var n = simNuclei[ni];
-                var dx = p.x - n.x;
-                var dy = p.y - n.y;
-                var r2 = dx * dx + dy * dy;
-                var r = Math.sqrt(r2);
-                if (r > 3) {  // Cutoff passend zum kleinen Kern
-                    var f = k / r2;
+            // Sub-Stepping für genaue Coulomb-Streuung
+            for (var sub = 0; sub < SUB_STEPS; sub++) {
+                var fx = 0, fy = 0;
+                for (var ni = 0; ni < simNuclei.length; ni++) {
+                    var n = simNuclei[ni];
+                    var dx = p.x - n.x;
+                    var dy = p.y - n.y;
+                    var r2 = dx * dx + dy * dy;
+                    if (r2 < 0.01) r2 = 0.01; // Clamp
+                    var r = Math.sqrt(r2);
+                    var f = COULOMB_K / r2;
                     fx += f * dx / r;
                     fy += f * dy / r;
                 }
+                p.vx += fx * (0.1 / SUB_STEPS);
+                p.vy += fy * (0.1 / SUB_STEPS);
+                p.x += p.vx / SUB_STEPS;
+                p.y += p.vy / SUB_STEPS;
             }
 
-            p.vx += fx * 0.1;
-            p.vy += fy * 0.1;
-            p.x += p.vx;
-            p.y += p.vy;
+            // Trail
+            var tl = p.trail.length;
+            if (tl === 0 || Math.abs(p.x - p.trail[tl - 1].x) + Math.abs(p.y - p.trail[tl - 1].y) > 4) {
+                p.trail.push({ x: p.x, y: p.y });
+                if (p.trail.length > 80) p.trail.shift();
+            }
 
             if (p.x > 800 || p.x < 0 || p.y < 0 || p.y > 400) {
                 p.done = true;
@@ -1352,69 +1599,69 @@
             }
         }
 
+        // Spuren abklingen lassen, fertige Teilchen entfernen
         var keep = [];
         for (var i = 0; i < simParticles.length; i++) {
-            if (!simParticles[i].done || simParticles[i].trail.length > 0) keep.push(simParticles[i]);
+            var pp = simParticles[i];
+            if (pp.done) {
+                if (pp.trail.length > 2) { pp.trail.splice(0, 2); keep.push(pp); }
+            } else {
+                keep.push(pp);
+            }
         }
         simParticles = keep;
     }
 
     function classifySimParticle(p) {
+        // Rein winkelbasiert: Richtung des Geschwindigkeitsvektors
         var angle = Math.abs(Math.atan2(p.vy, p.vx)) * 180 / Math.PI;
-        if (p.x < simFoilX) simStats.back++;
-        else if (angle < 10) simStats.straight++;  // 10° statt 5° → realistischer
-        else if (angle < 45) simStats.light++;
-        else simStats.strong++;
+        if (angle > 90) simStats.back++;
+        else if (angle > 45) simStats.strong++;
+        else if (angle > 10) simStats.light++;
+        else simStats.straight++;
         updateSimStats();
     }
 
     function updateSimStats() {
+        var classified = simStats.straight + simStats.light + simStats.strong + simStats.back;
         document.getElementById('sFired').textContent = simStats.fired;
+        document.getElementById('sInFlight').textContent = simStats.fired - classified;
         document.getElementById('sStraight').textContent = simStats.straight;
         document.getElementById('sLight').textContent = simStats.light;
         document.getElementById('sStrong').textContent = simStats.strong;
         document.getElementById('sBack').textContent = simStats.back;
+        drawHistogram();
     }
 
     function drawSim() {
         if (!simCtx) return;
-        simCtx.fillStyle = '#1a1a2e';
+        simCtx.fillStyle = '#fff';
         simCtx.fillRect(0, 0, 800, 400);
 
-        // Folie: dünne gestrichelte Linien statt massiver Block
-        simCtx.strokeStyle = 'rgba(100, 100, 140, 0.4)';
-        simCtx.lineWidth = 1;
-        simCtx.setLineDash([6, 4]);
-        simCtx.beginPath();
-        simCtx.moveTo(simFoilX - 2, 0); simCtx.lineTo(simFoilX - 2, 400);
-        simCtx.moveTo(simFoilX + 2, 0); simCtx.lineTo(simFoilX + 2, 400);
-        simCtx.stroke();
-        simCtx.setLineDash([]);
-
-        // Atom-Hüllen (Geisterkreise) — zeigt den leeren Raum
-        simCtx.strokeStyle = 'rgba(100, 140, 200, 0.2)';
-        simCtx.lineWidth = 1;
-        simCtx.setLineDash([3, 3]);
+        // Atom-Hüllen (goldene Kreise, sich berührend)
         for (var ai = 0; ai < simNuclei.length; ai++) {
+            simCtx.fillStyle = 'rgba(255, 248, 225, 0.35)';
             simCtx.beginPath();
             simCtx.arc(simNuclei[ai].x, simNuclei[ai].y, ATOM_RADIUS, 0, Math.PI * 2);
+            simCtx.fill();
+            simCtx.strokeStyle = '#DAA520';
+            simCtx.lineWidth = 1;
             simCtx.stroke();
         }
-        simCtx.setLineDash([]);
 
-        // Winzige Kerne
-        simCtx.fillStyle = '#c62828';
+        // Winzige Kerne (dunkelgold)
+        simCtx.fillStyle = '#8B6914';
         for (var ni = 0; ni < simNuclei.length; ni++) {
             simCtx.beginPath();
             simCtx.arc(simNuclei[ni].x, simNuclei[ni].y, NUCLEUS_RADIUS, 0, Math.PI * 2);
             simCtx.fill();
         }
 
-        // Particles + trails
+        // Teilchen + Spuren
         for (var pi = 0; pi < simParticles.length; pi++) {
             var p = simParticles[pi];
             if (p.trail.length > 1) {
-                simCtx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+                simCtx.strokeStyle = 'rgba(211, 47, 47, 0.25)';
                 simCtx.lineWidth = 2;
                 simCtx.beginPath();
                 simCtx.moveTo(p.trail[0].x, p.trail[0].y);
@@ -1424,22 +1671,22 @@
                 simCtx.stroke();
             }
             if (!p.done) {
-                simCtx.fillStyle = '#ffd700';
+                simCtx.fillStyle = '#D32F2F';
                 simCtx.beginPath();
                 simCtx.arc(p.x, p.y, 4, 0, Math.PI * 2);
                 simCtx.fill();
             }
         }
 
-        // Source
-        simCtx.fillStyle = '#666';
+        // Alpha-Quelle
+        simCtx.fillStyle = '#546E7A';
         simCtx.fillRect(10, 150, 30, 100);
-        simCtx.fillStyle = '#888';
+        simCtx.fillStyle = '#333';
         simCtx.font = '10px sans-serif';
         simCtx.fillText('\u03b1-Quelle', 8, 270);
 
-        // Labels
-        simCtx.fillStyle = 'rgba(136,136,136,0.6)';
+        // Label Goldfolie
+        simCtx.fillStyle = '#8B6914';
         simCtx.font = '10px sans-serif';
         simCtx.fillText('Goldfolie', simFoilX - 18, 395);
     }
@@ -1450,12 +1697,22 @@
         simAnimFrame = requestAnimationFrame(simAnimLoop);
     }
 
+    function updateSpeed() {
+        var speed = parseInt(document.getElementById('simSpeed').value || 5);
+        document.getElementById('speedVal').textContent = '\u00d7' + speed;
+        if (simRunning && simFireInterval) {
+            clearInterval(simFireInterval);
+            simFireInterval = setInterval(fireSimParticle, Math.round(1000 / speed));
+        }
+    }
+
     function toggleSim() {
         simRunning = !simRunning;
         var btn = document.getElementById('btnSimStart');
         btn.textContent = simRunning ? 'Pause' : 'Starten';
         if (simRunning && !simFireInterval) {
-            simFireInterval = setInterval(fireSimParticle, 500);
+            var speed = parseInt(document.getElementById('simSpeed').value || 5);
+            simFireInterval = setInterval(fireSimParticle, Math.round(1000 / speed));
             initBeepAudio(); // init audio on user gesture
         } else if (!simRunning && simFireInterval) {
             clearInterval(simFireInterval);
@@ -1471,6 +1728,66 @@
         simStats = { fired: 0, straight: 0, light: 0, strong: 0, back: 0 };
         updateSimStats();
         initSimNuclei();
+    }
+
+    // Schnelldurchlauf: N Teilchen ohne Animation berechnen
+    var batchRunning = false;
+    function simBatch(total) {
+        if (batchRunning) return;
+        batchRunning = true;
+        var prog = document.getElementById('batchProgress');
+        prog.style.display = 'inline';
+        prog.textContent = 'Berechne...';
+        var CHUNK = 2000;
+        var done = 0;
+
+        function runChunk() {
+            var end = Math.min(done + CHUNK, total);
+            for (var i = done; i < end; i++) {
+                var py = 10 + Math.random() * 380;
+                var px = 50, pvx = PARTICLE_V, pvy = 0;
+                var age = 0;
+                while (age < MAX_AGE) {
+                    age++;
+                    for (var sub = 0; sub < SUB_STEPS; sub++) {
+                        var fx = 0, fy = 0;
+                        for (var ni = 0; ni < simNuclei.length; ni++) {
+                            var n = simNuclei[ni];
+                            var dx = px - n.x; var dy = py - n.y;
+                            var r2 = dx * dx + dy * dy;
+                            if (r2 < 0.01) r2 = 0.01;
+                            var r = Math.sqrt(r2);
+                            var f = COULOMB_K / r2;
+                            fx += f * dx / r; fy += f * dy / r;
+                        }
+                        pvx += fx * (0.1 / SUB_STEPS);
+                        pvy += fy * (0.1 / SUB_STEPS);
+                        px += pvx / SUB_STEPS;
+                        py += pvy / SUB_STEPS;
+                    }
+                    if (px < -50 || px > 750 || py < -50 || py > 450) break;
+                }
+                // Klassifizieren
+                var angle = Math.abs(Math.atan2(pvy, pvx)) * 180 / Math.PI;
+                if (angle > 90) simStats.back++;
+                else if (angle > 45) simStats.strong++;
+                else if (angle > 10) simStats.light++;
+                else simStats.straight++;
+                simStats.fired++;
+            }
+            done = end;
+            updateSimStats();
+            drawHistogram();
+            if (done < total) {
+                var pct = Math.round(done / total * 100);
+                prog.textContent = pct + ' %';
+                setTimeout(runChunk, 0);
+            } else {
+                prog.style.display = 'none';
+                batchRunning = false;
+            }
+        }
+        setTimeout(runChunk, 10);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1499,10 +1816,10 @@
             var showN = (i % 3 !== 0); // hide N for some
             html += '<tr>';
             html += '<td style="text-align:left; padding-left:12px;">' + t.hint + '</td>';
-            html += '<td><sup>' + t.A + '</sup><sub>' + t.Z + '</sub>' + t.sym + '</td>';
-            html += '<td>' + (showZ ? t.Z : '<input type="number" id="ne-z-' + i + '" style="width:60px;" min="0" max="120">') + '</td>';
-            html += '<td>' + (showA ? t.A : '<input type="number" id="ne-a-' + i + '" style="width:60px;" min="0" max="300">') + '</td>';
-            html += '<td>' + (showN ? (t.A - t.Z) : '<input type="number" id="ne-n-' + i + '" style="width:60px;" min="0" max="200">') + '</td>';
+            html += '<td><span class="nuk"><sup>' + t.A + '</sup><sub>' + t.Z + '</sub></span>' + t.sym + '</td>';
+            html += '<td>' + (showZ ? t.Z : '<input type="number" id="ne-z-' + i + '" style="min-width:70px; width:auto;" min="0" max="120">') + '</td>';
+            html += '<td>' + (showA ? t.A : '<input type="number" id="ne-a-' + i + '" style="min-width:70px; width:auto;" min="0" max="300">') + '</td>';
+            html += '<td>' + (showN ? (t.A - t.Z) : '<input type="number" id="ne-n-' + i + '" style="min-width:70px; width:auto;" min="0" max="200">') + '</td>';
             html += '</tr>';
         }
         html += '</tbody></table>';
@@ -1572,7 +1889,7 @@
         builderIdx = Math.floor(Math.random() * builderNuklide.length);
         var t = builderNuklide[builderIdx];
         document.getElementById('nuklid-builder-task').innerHTML =
-            'Baue: <sup>' + t.A + '</sup><sub>' + t.Z + '</sub>' + t.sym + ' (' + t.name + ')';
+            'Baue: <span class="nuk"><sup>' + t.A + '</sup><sub>' + t.Z + '</sub></span>' + t.sym + ' (' + t.name + ')';
         document.getElementById('nbZ').value = '';
         document.getElementById('nbN').value = '';
         document.getElementById('nbE').value = '';
@@ -1651,6 +1968,260 @@
     function prevCard() { fcIdx = (fcIdx - 1 + flashcards.length) % flashcards.length; showCard(); }
 
     // ═══════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // NUKLEONEN-VIEWER — Kern als „Brombeere" (Protonen rot, Neutronen weiß)
+    // ═══════════════════════════════════════════════════════════════
+
+    function showNucleons(sym, z, a) {
+        var canvas = document.getElementById('nucleonCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 200, 200);
+
+        var neutrons = a - z;
+        var total = a;
+        var r = total <= 1 ? 30 : total <= 4 ? 18 : total <= 7 ? 14 : total <= 12 ? 11 : 9;
+        var d = r * 2;
+
+        // Hex-Cluster-Positionen (Mitte → Ring 1 → Ring 2)
+        var allPos = [[0, 0]];
+        // Ring 1: 6 Positionen
+        for (var i = 0; i < 6; i++) {
+            var ang = (i * 60 + 30) * Math.PI / 180;
+            allPos.push([Math.cos(ang) * d, Math.sin(ang) * d]);
+        }
+        // Ring 2: 6 Positionen (versetzt)
+        for (var i = 0; i < 6; i++) {
+            var ang = (i * 60) * Math.PI / 180;
+            allPos.push([Math.cos(ang) * d * 1.73, Math.sin(ang) * d * 1.73]);
+        }
+        // Ring 2b: 6 weitere (dazwischen)
+        for (var i = 0; i < 6; i++) {
+            var ang = (i * 60 + 30) * Math.PI / 180;
+            allPos.push([Math.cos(ang) * d * 2, Math.sin(ang) * d * 2]);
+        }
+
+        var positions = allPos.slice(0, total);
+
+        // Protonen/Neutronen mischen
+        var types = [];
+        for (var i = 0; i < z; i++) types.push('p');
+        for (var i = 0; i < neutrons; i++) types.push('n');
+        for (var i = types.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = types[i]; types[i] = types[j]; types[j] = tmp;
+        }
+
+        for (var i = 0; i < positions.length; i++) {
+            var px = 100 + positions[i][0];
+            var py = 100 + positions[i][1];
+            ctx.beginPath();
+            ctx.arc(px, py, r - 1, 0, Math.PI * 2);
+            ctx.fillStyle = types[i] === 'p' ? '#E53935' : '#fff';
+            ctx.fill();
+            ctx.strokeStyle = types[i] === 'p' ? '#B71C1C' : '#999';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            // Beschriftung
+            ctx.fillStyle = types[i] === 'p' ? '#fff' : '#333';
+            ctx.font = (r > 12 ? '11' : '8') + 'px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(types[i] === 'p' ? 'p\u207a' : 'n', px, py);
+        }
+
+        document.getElementById('nucleonLabel').innerHTML =
+            '<span class="nuk"><sup>' + a + '</sup><sub>' + z + '</sub></span>' + sym +
+            ' \u2014 <span style="color:#E53935;">' + z + ' Protonen</span>, ' +
+            neutrons + ' Neutronen';
+    }
+
+    // HISTOGRAM (3.2) — live angle histogram under stats bar
+    // ═══════════════════════════════════════════════════════════════
+
+    var histoCtx = null;
+    function drawHistogram() {
+        if (!histoCtx) return;
+        var w = 300, h = 150;
+        histoCtx.clearRect(0, 0, w, h);
+        var cats = [
+            { label: '0-10\u00b0', val: simStats.straight, color: '#4caf50' },
+            { label: '10-45\u00b0', val: simStats.light, color: '#ffc107' },
+            { label: '45-90\u00b0', val: simStats.strong, color: '#ff9800' },
+            { label: '>90\u00b0', val: simStats.back, color: '#f44336' }
+        ];
+        var maxVal = 1;
+        for (var i = 0; i < cats.length; i++) { if (cats[i].val > maxVal) maxVal = cats[i].val; }
+        var barW = 50, gap = 20, startX = 25;
+        for (var i = 0; i < cats.length; i++) {
+            var barH = (cats[i].val / maxVal) * 100;
+            var x = startX + i * (barW + gap);
+            var y = 120 - barH;
+            histoCtx.fillStyle = cats[i].color;
+            histoCtx.fillRect(x, y, barW, barH);
+            histoCtx.fillStyle = '#333';
+            histoCtx.font = '10px sans-serif';
+            histoCtx.textAlign = 'center';
+            histoCtx.fillText(cats[i].label, x + barW / 2, 135);
+            histoCtx.fillText(cats[i].val, x + barW / 2, y - 4);
+        }
+        // Y axis
+        histoCtx.strokeStyle = '#999';
+        histoCtx.lineWidth = 1;
+        histoCtx.beginPath();
+        histoCtx.moveTo(20, 10);
+        histoCtx.lineTo(20, 120);
+        histoCtx.stroke();
+        histoCtx.fillStyle = '#666';
+        histoCtx.font = '9px sans-serif';
+        histoCtx.textAlign = 'right';
+        histoCtx.fillText('Anzahl', 18, 14);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ZOOM CANVAS (3.1) — interactive size comparison
+    // ═══════════════════════════════════════════════════════════════
+
+    var zoomCtx = null;
+    function drawZoom(level) {
+        if (!zoomCtx) return;
+        document.getElementById('zoomVal').textContent = level;
+        var w = 400, h = 300;
+        zoomCtx.clearRect(0, 0, w, h);
+        zoomCtx.fillStyle = '#f0f4ff';
+        zoomCtx.fillRect(0, 0, w, h);
+        var cx = 200, cy = 150;
+
+        if (level === 1) {
+            // Kern fills canvas
+            zoomCtx.fillStyle = '#c62828';
+            zoomCtx.beginPath();
+            zoomCtx.arc(cx, cy, 80, 0, Math.PI * 2);
+            zoomCtx.fill();
+            zoomCtx.fillStyle = '#fff';
+            zoomCtx.font = 'bold 16px sans-serif';
+            zoomCtx.textAlign = 'center';
+            zoomCtx.fillText('Kern', cx, cy + 5);
+            // Scale bar
+            zoomCtx.fillStyle = '#333';
+            zoomCtx.font = '12px sans-serif';
+            zoomCtx.fillText('Kern: \u223c 1 fm = 10\u207b\u00b9\u2075 m', cx, 275);
+            drawScaleBar(zoomCtx, 120, 250, 160, '1 fm');
+        } else if (level === 2) {
+            // Kern smaller, first orbit
+            zoomCtx.fillStyle = '#c62828';
+            zoomCtx.beginPath();
+            zoomCtx.arc(cx, cy, 20, 0, Math.PI * 2);
+            zoomCtx.fill();
+            zoomCtx.strokeStyle = '#2c5aa0';
+            zoomCtx.lineWidth = 1;
+            zoomCtx.setLineDash([4, 4]);
+            zoomCtx.beginPath();
+            zoomCtx.arc(cx, cy, 100, 0, Math.PI * 2);
+            zoomCtx.stroke();
+            zoomCtx.setLineDash([]);
+            // Electron
+            zoomCtx.fillStyle = '#2c5aa0';
+            zoomCtx.beginPath();
+            zoomCtx.arc(cx + 100, cy, 6, 0, Math.PI * 2);
+            zoomCtx.fill();
+            zoomCtx.fillStyle = '#333';
+            zoomCtx.font = '12px sans-serif';
+            zoomCtx.textAlign = 'center';
+            zoomCtx.fillText('Verh\u00e4ltnis noch nicht ma\u00dfst\u00e4blich', cx, 275);
+        } else if (level === 3) {
+            // Kern is tiny dot, multiple orbits
+            zoomCtx.fillStyle = '#c62828';
+            zoomCtx.beginPath();
+            zoomCtx.arc(cx, cy, 3, 0, Math.PI * 2);
+            zoomCtx.fill();
+            zoomCtx.strokeStyle = 'rgba(44,90,160,0.3)';
+            zoomCtx.lineWidth = 1;
+            zoomCtx.setLineDash([3, 3]);
+            for (var r = 40; r <= 120; r += 40) {
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, r, 0, Math.PI * 2);
+                zoomCtx.stroke();
+            }
+            zoomCtx.setLineDash([]);
+            // Electrons
+            zoomCtx.fillStyle = '#2c5aa0';
+            var epos = [[cx+40,cy],[cx-30,cy-30],[cx,cy+80],[cx+100,cy-40],[cx-110,cy+20]];
+            for (var i = 0; i < epos.length; i++) {
+                zoomCtx.beginPath();
+                zoomCtx.arc(epos[i][0], epos[i][1], 4, 0, Math.PI * 2);
+                zoomCtx.fill();
+            }
+            zoomCtx.fillStyle = '#333';
+            zoomCtx.font = '12px sans-serif';
+            zoomCtx.textAlign = 'center';
+            zoomCtx.fillText('Atom: \u223c 100 pm = 10\u207b\u00b9\u2070 m', cx, 275);
+            drawScaleBar(zoomCtx, 80, 250, 240, '100 pm');
+        } else {
+            // Kern invisible
+            zoomCtx.fillStyle = '#c62828';
+            zoomCtx.beginPath();
+            zoomCtx.arc(cx, cy, 0.5, 0, Math.PI * 2);
+            zoomCtx.fill();
+            // Arrow pointing to center
+            zoomCtx.strokeStyle = '#c62828';
+            zoomCtx.lineWidth = 1;
+            zoomCtx.beginPath();
+            zoomCtx.moveTo(cx + 30, cy - 30);
+            zoomCtx.lineTo(cx + 5, cy - 5);
+            zoomCtx.stroke();
+            zoomCtx.beginPath();
+            zoomCtx.moveTo(cx + 5, cy - 5);
+            zoomCtx.lineTo(cx + 10, cy - 12);
+            zoomCtx.moveTo(cx + 5, cy - 5);
+            zoomCtx.lineTo(cx + 12, cy - 2);
+            zoomCtx.stroke();
+            zoomCtx.fillStyle = '#c62828';
+            zoomCtx.font = '11px sans-serif';
+            zoomCtx.textAlign = 'left';
+            zoomCtx.fillText('Kern w\u00e4re hier', cx + 32, cy - 28);
+            zoomCtx.fillText('0,001 Pixel gro\u00df!', cx + 32, cy - 14);
+            // Orbits fill canvas
+            zoomCtx.strokeStyle = 'rgba(44,90,160,0.15)';
+            zoomCtx.setLineDash([3, 3]);
+            for (var r = 30; r <= 140; r += 30) {
+                zoomCtx.beginPath();
+                zoomCtx.arc(cx, cy, r, 0, Math.PI * 2);
+                zoomCtx.stroke();
+            }
+            zoomCtx.setLineDash([]);
+            zoomCtx.fillStyle = '#2c5aa0';
+            var epos2 = [[cx+50,cy+10],[cx-60,cy-40],[cx+20,cy+90],[cx-90,cy+60],[cx+120,cy-30]];
+            for (var i = 0; i < epos2.length; i++) {
+                zoomCtx.beginPath();
+                zoomCtx.arc(epos2[i][0], epos2[i][1], 4, 0, Math.PI * 2);
+                zoomCtx.fill();
+            }
+            zoomCtx.fillStyle = '#333';
+            zoomCtx.font = 'bold 13px sans-serif';
+            zoomCtx.textAlign = 'center';
+            zoomCtx.fillText('Faktor 100.000 \u2014 fast nur leerer Raum!', cx, 285);
+        }
+    }
+
+    function drawScaleBar(ctx, x, y, width, label) {
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + width, y);
+        ctx.moveTo(x, y - 4);
+        ctx.lineTo(x, y + 4);
+        ctx.moveTo(x + width, y - 4);
+        ctx.lineTo(x + width, y + 4);
+        ctx.stroke();
+        ctx.fillStyle = '#333';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x + width / 2, y + 14);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     // INIT
     // ═══════════════════════════════════════════════════════════════
 
@@ -1663,7 +2234,24 @@
         simCanvas = document.getElementById('simCanvas');
         simCtx = simCanvas.getContext('2d');
         initSimNuclei();
-        simAnimLoop();
+
+        // Histogram canvas
+        var hc = document.getElementById('histoCanvas');
+        if (hc) histoCtx = hc.getContext('2d');
+        drawHistogram();
+
+        // Zoom canvas
+        var zc = document.getElementById('zoomCanvas');
+        if (zc) zoomCtx = zc.getContext('2d');
+        drawZoom(1);
+
+        // 4.1: Only start rAF loop if on step 3
+        if (currentStep === 3) {
+            simAnimLoop();
+        } else {
+            // Draw initial frame
+            drawSim();
+        }
 
         // Nuklid Exercise
         buildNuklidExercise();

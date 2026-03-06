@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Laser-Simulationsexperiment | Physik 12 GK</title>
+    <style>
+/* ===============================================================
+   LERNPFAD: LASER-SIMULATIONSEXPERIMENT (DS8, 80 min SEV)
+   sciencesim Design System (ES5)
+   Stand: 05.03.2026
+=============================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --success: #2a7a4b;
+    --success-bg: #e8f5e9;
+    --warning: #b35c00;
+    --warning-bg: #fff3e0;
+    --danger: #c62828;
+    --danger-bg: #ffebee;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container { max-width: 850px; margin: 0 auto; padding: 15px; }
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 15px;
+}
+header h1 { color: var(--accent); font-size: 1.35em; font-weight: 600; }
+header .meta { color: var(--text-muted); font-size: 0.85em; margin-top: 4px; }
+
+.phase-bar {
+    display: flex; gap: 4px; margin-bottom: 15px;
+    background: var(--white); border: 1px solid var(--border); padding: 8px 10px;
+    overflow-x: auto;
+}
+.phase-dot {
+    flex: 1; min-width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--border); border-radius: 50%;
+    font-size: 0.8em; font-weight: 600; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s;
+}
+.phase-dot.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.phase-dot.done { border-color: var(--success); color: var(--white); background: var(--success); }
+
+.section { display: none; background: var(--white); border: 1px solid var(--border); padding: 20px; margin-bottom: 15px; }
+.section.active { display: block; }
+.section h2 { color: var(--accent); font-size: 1.2em; margin-bottom: 12px; }
+.section h3 { font-size: 1em; margin: 14px 0 8px; }
+
+.info-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 12px 14px; margin: 12px 0; }
+.warn-box { background: var(--warning-bg); border-left: 4px solid var(--warning); padding: 12px 14px; margin: 12px 0; }
+.success-box { background: var(--success-bg); border-left: 4px solid var(--success); padding: 12px 14px; margin: 12px 0; }
+.merke-box { background: #e8f0fa; border: 2px solid var(--accent); padding: 14px; margin: 14px 0; border-radius: 4px; }
+.merke-box strong { color: var(--accent); }
+
+.btn { display: inline-block; padding: 10px 24px; border: none; font-size: 0.95em; font-weight: 600; cursor: pointer; min-height: 44px; }
+.btn-primary { background: var(--accent); color: var(--white); }
+.btn-primary:hover { background: #1e4080; }
+.btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+.btn-success { background: var(--success); color: var(--white); }
+.btn-danger { background: var(--danger); color: var(--white); }
+.btn-block { display: block; width: 100%; margin-top: 12px; }
+.btn-sm { padding: 8px 16px; font-size: 0.85em; }
+
+.mc-option { display: block; padding: 10px 14px; margin: 6px 0; border: 2px solid var(--border); cursor: pointer; min-height: 44px; font-size: 0.95em; transition: all 0.15s; }
+.mc-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.mc-option.selected { border-color: var(--accent); background: var(--accent-light); font-weight: 600; }
+.mc-option.correct { border-color: var(--success); background: var(--success-bg); }
+.mc-option.wrong { border-color: var(--danger); background: var(--danger-bg); }
+.mc-option.disabled { pointer-events: none; opacity: 0.85; }
+
+.quiz-feedback { padding: 10px 14px; margin-top: 8px; font-weight: 600; display: none; }
+.quiz-feedback.show { display: block; }
+.correct-fb { background: var(--success-bg); color: var(--success); }
+.incorrect-fb { background: var(--danger-bg); color: var(--danger); }
+
+.hidden { display: none !important; }
+
+/* Simulation Canvas */
+.sim-wrap { background: #0a0a1a; border: 1px solid var(--border); padding: 8px; margin: 12px 0; text-align: center; border-radius: 4px; }
+.sim-wrap canvas { width: 100%; max-width: 800px; touch-action: none; }
+.sim-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+.sim-controls label { font-size: 0.85em; color: var(--text-secondary); }
+.sim-controls input[type="range"] { width: 120px; min-height: 44px; }
+
+/* Data table */
+.data-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
+.data-table th, .data-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
+.data-table th { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+.data-table input { width: 60px; text-align: center; border: 1px solid var(--border); padding: 3px; font-size: 0.9em; min-height: 36px; }
+
+/* Bar chart for populations */
+.pop-chart { display: flex; gap: 12px; justify-content: center; align-items: flex-end; height: 120px; margin: 12px 0; padding: 8px; background: #fafafa; border: 1px solid var(--border); }
+.pop-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pop-bar { width: 50px; background: var(--accent); border-radius: 2px 2px 0 0; transition: height 0.3s; }
+.pop-label { font-size: 0.75em; font-weight: 600; color: var(--text-secondary); }
+.pop-value { font-size: 0.8em; font-weight: 600; color: var(--accent); }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>Laser: Simulationsexperiment</h1>
+    <p class="meta">Physik 12 GK &middot; DS8 &middot; 80 min (SEV)</p>
+</header>
+
+<div class="phase-bar" id="phaseBar">
+    <div class="phase-dot" data-p="1" onclick="goSec(1)">1</div>
+    <div class="phase-dot" data-p="2" onclick="goSec(2)">2</div>
+    <div class="phase-dot" data-p="3" onclick="goSec(3)">3</div>
+    <div class="phase-dot" data-p="4" onclick="goSec(4)">4</div>
+    <div class="phase-dot" data-p="5" onclick="goSec(5)">5</div>
+    <div class="phase-dot" data-p="6" onclick="goSec(6)">6</div>
+    <div class="phase-dot" data-p="7" onclick="goSec(7)">7</div>
+</div>
+
+<!-- SECTION 1: Wiederholung -->
+<div class="section" id="sec1">
+    <h2>1. Kurze Wiederholung</h2>
+    <p>Bevor wir den Laser simulieren, frischen wir die drei Zutaten auf:</p>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
+        <div style="flex:1; min-width:200px; background:var(--accent-light); padding:12px; border-radius:4px;">
+            <strong style="color:var(--accent);">1. Stimulierte Emission</strong><br>
+            1 Photon + 1 angeregtes Atom &rarr; 2 identische Photonen
+        </div>
+        <div style="flex:1; min-width:200px; background:var(--warning-bg); padding:12px; border-radius:4px;">
+            <strong style="color:var(--warning);">2. Besetzungsinversion</strong><br>
+            N(E<sub>2</sub>) > N(E<sub>1</sub>) durch Pumpen
+        </div>
+        <div style="flex:1; min-width:200px; background:var(--success-bg); padding:12px; border-radius:4px;">
+            <strong style="color:var(--success);">3. Resonator</strong><br>
+            Spiegel selektieren achsenparallele Photonen
+        </div>
+    </div>
+
+    <div class="info-box">
+        <strong>Heute:</strong> Du steuerst einen simulierten Laser. Du regelst die Pumprate und beobachtest, wie Besetzungsinversion entsteht und der Laserstrahl einsetzt.
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="goSec(2)">Weiter: Hypothese</button>
+</div>
+
+<!-- SECTION 2: Hypothese -->
+<div class="section" id="sec2">
+    <h2>2. Hypothese</h2>
+    <p>Bevor du den Laser startest, formuliere deine Vermutung:</p>
+
+    <div style="margin:12px 0;">
+        <p><strong>Was passiert, wenn man die Pumprate langsam erhöht?</strong></p>
+        <div class="mc-option" data-q="hypo" data-v="a" onclick="selectMC(this)">Der Laser leuchtet sofort, egal wie gering die Pumprate ist.</div>
+        <div class="mc-option" data-q="hypo" data-v="b" onclick="selectMC(this)">Es gibt einen Schwellenwert: Erst ab einer bestimmten Pumprate setzt der Laserstrahl ein.</div>
+        <div class="mc-option" data-q="hypo" data-v="c" onclick="selectMC(this)">Eine höhere Pumprate macht den Laser weniger intensiv.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="hypoBtn" onclick="confirmHypo()" disabled>Vermutung bestätigen</button>
+    <div class="quiz-feedback correct-fb" id="hypo-fb" style="margin-top:8px;"></div>
+    <button class="btn btn-success btn-block hidden" id="hypoNext" onclick="goSec(3)">Weiter: Simulation</button>
+</div>
+
+<!-- SECTION 3: Simulation -->
+<div class="section" id="sec3">
+    <h2>3. Laser-Simulation</h2>
+    <p>Beobachte das Drei-Niveau-System. Stelle die Pumprate ein und starte den Laser.</p>
+
+    <div class="sim-wrap">
+        <canvas id="laserCanvas" width="760" height="400"></canvas>
+    </div>
+
+    <div class="sim-controls">
+        <label>Pumprate:</label>
+        <input type="range" id="pumpSlider" min="0" max="100" value="0" oninput="updatePump()">
+        <span id="pumpVal" style="min-width:40px; font-weight:600;">0%</span>
+        <button class="btn btn-primary btn-sm" id="simStartBtn" onclick="simToggle()">Start</button>
+        <button class="btn btn-danger btn-sm" onclick="simReset()">Reset</button>
+    </div>
+
+    <h3>Besetzungszahlen</h3>
+    <div class="pop-chart" id="popChart">
+        <div class="pop-bar-wrap">
+            <div class="pop-value" id="popN1">100</div>
+            <div class="pop-bar" id="barN1" style="height:100px; background:var(--accent);"></div>
+            <div class="pop-label">N(E<sub>1</sub>)</div>
+        </div>
+        <div class="pop-bar-wrap">
+            <div class="pop-value" id="popN2">0</div>
+            <div class="pop-bar" id="barN2" style="height:0px; background:var(--success);"></div>
+            <div class="pop-label">N(E<sub>2</sub>)</div>
+        </div>
+        <div class="pop-bar-wrap">
+            <div class="pop-value" id="popN3">0</div>
+            <div class="pop-bar" id="barN3" style="height:0px; background:var(--danger);"></div>
+            <div class="pop-label">N(E<sub>3</sub>)</div>
+        </div>
+        <div class="pop-bar-wrap" style="border-left:2px solid var(--border); padding-left:12px;">
+            <div class="pop-value" id="popPhotons" style="color:var(--warning);">0</div>
+            <div class="pop-bar" id="barPhotons" style="height:0px; background:var(--warning);"></div>
+            <div class="pop-label">Photonen</div>
+        </div>
+    </div>
+
+    <div id="simStatus" style="text-align:center; margin:8px 0; font-weight:600; color:var(--text-muted);"></div>
+
+    <div class="warn-box hidden" id="laserOnNotice">
+        <strong>Laser-Schwelle erreicht!</strong> Besetzungsinversion N(E<sub>2</sub>) > N(E<sub>1</sub>) hergestellt. Stimulierte Emission überwiegt -- der Laserstrahl ist aktiv.
+    </div>
+
+    <div class="info-box">
+        <strong>Aufgabe:</strong>
+        <ol style="margin:6px 0 0 16px;">
+            <li>Starte mit Pumprate 0% und erhöhe langsam.</li>
+            <li>Beobachte: Ab welcher Pumprate leuchtet der Laser?</li>
+            <li>Notiere die Schwellen-Pumprate und die Besetzungszahlen.</li>
+        </ol>
+    </div>
+
+    <button class="btn btn-success btn-block hidden" id="simNext" onclick="goSec(4)">Weiter: Messwerte</button>
+</div>
+
+<!-- SECTION 4: Messwerte & Auswertung -->
+<div class="section" id="sec4">
+    <h2>4. Messwerte aufnehmen</h2>
+    <p>Variiere die Pumprate und trage die Messwerte ein:</p>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Pumprate (%)</th>
+                <th>N(E<sub>1</sub>)</th>
+                <th>N(E<sub>2</sub>)</th>
+                <th>N(E<sub>3</sub>)</th>
+                <th>Photonen</th>
+                <th>Laser an?</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>10</td><td><input type="number" id="d10-n1"></td><td><input type="number" id="d10-n2"></td><td><input type="number" id="d10-n3"></td><td><input type="number" id="d10-ph"></td><td><input type="text" id="d10-la" style="width:50px;" placeholder="j/n"></td></tr>
+            <tr><td>20</td><td><input type="number" id="d20-n1"></td><td><input type="number" id="d20-n2"></td><td><input type="number" id="d20-n3"></td><td><input type="number" id="d20-ph"></td><td><input type="text" id="d20-la" style="width:50px;" placeholder="j/n"></td></tr>
+            <tr><td>30</td><td><input type="number" id="d30-n1"></td><td><input type="number" id="d30-n2"></td><td><input type="number" id="d30-n3"></td><td><input type="number" id="d30-ph"></td><td><input type="text" id="d30-la" style="width:50px;" placeholder="j/n"></td></tr>
+            <tr><td>50</td><td><input type="number" id="d50-n1"></td><td><input type="number" id="d50-n2"></td><td><input type="number" id="d50-n3"></td><td><input type="number" id="d50-ph"></td><td><input type="text" id="d50-la" style="width:50px;" placeholder="j/n"></td></tr>
+            <tr><td>70</td><td><input type="number" id="d70-n1"></td><td><input type="number" id="d70-n2"></td><td><input type="number" id="d70-n3"></td><td><input type="number" id="d70-ph"></td><td><input type="text" id="d70-la" style="width:50px;" placeholder="j/n"></td></tr>
+            <tr><td>100</td><td><input type="number" id="d100-n1"></td><td><input type="number" id="d100-n2"></td><td><input type="number" id="d100-n3"></td><td><input type="number" id="d100-ph"></td><td><input type="text" id="d100-la" style="width:50px;" placeholder="j/n"></td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box">
+        <strong>Tipp:</strong> Gehe zurück zur Simulation (Phase 3), stelle die Pumprate ein, warte bis sich die Werte stabilisiert haben und trage sie hier ein.
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="goSec(5)">Weiter: Auswertung</button>
+</div>
+
+<!-- SECTION 5: Auswertung -->
+<div class="section" id="sec5">
+    <h2>5. Auswertung & Deutung</h2>
+
+    <div style="margin:16px 0;">
+        <p><strong>1. Bei welcher Pumprate setzt der Laser ungefähr ein?</strong></p>
+        <div class="mc-option" data-q="aus1" data-v="a" onclick="selectMC(this)">Bei ca. 10-15%</div>
+        <div class="mc-option" data-q="aus1" data-v="b" onclick="selectMC(this)">Bei ca. 25-35%</div>
+        <div class="mc-option" data-q="aus1" data-v="c" onclick="selectMC(this)">Bei ca. 60-70%</div>
+    </div>
+
+    <div style="margin:16px 0;">
+        <p><strong>2. Was kennzeichnet den Moment, in dem der Laser einsetzt?</strong></p>
+        <div class="mc-option" data-q="aus2" data-v="a" onclick="selectMC(this)">N(E<sub>3</sub>) wird maximal.</div>
+        <div class="mc-option" data-q="aus2" data-v="b" onclick="selectMC(this)">N(E<sub>2</sub>) übersteigt N(E<sub>1</sub>) -- Besetzungsinversion.</div>
+        <div class="mc-option" data-q="aus2" data-v="c" onclick="selectMC(this)">Alle Atome befinden sich im Grundzustand.</div>
+    </div>
+
+    <div style="margin:16px 0;">
+        <p><strong>3. Was passiert mit der Photonenzahl oberhalb der Schwelle?</strong></p>
+        <div class="mc-option" data-q="aus3" data-v="a" onclick="selectMC(this)">Sie bleibt konstant.</div>
+        <div class="mc-option" data-q="aus3" data-v="b" onclick="selectMC(this)">Sie steigt stark an (Lawineneeffekt durch stimulierte Emission).</div>
+        <div class="mc-option" data-q="aus3" data-v="c" onclick="selectMC(this)">Sie sinkt, weil die Photonen absorbiert werden.</div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="ausCheck" onclick="checkAuswertung()" disabled>Antworten prüfen</button>
+    <div class="quiz-feedback correct-fb" id="aus-correct">Alle richtig! Du hast die Laser-Schwelle und den Mechanismus verstanden.</div>
+    <div class="quiz-feedback incorrect-fb" id="aus-wrong">Nicht alle richtig. Überprüfe: Die Laser-Schwelle liegt dort, wo N(E2) > N(E1). Oberhalb steigt die Photonenzahl stark.</div>
+    <button class="btn btn-success btn-block hidden" id="ausNext" onclick="goSec(6)">Weiter: Vertiefung</button>
+</div>
+
+<!-- SECTION 6: Vertiefung -->
+<div class="section" id="sec6">
+    <h2>6. Vertiefung: Lasertypen</h2>
+
+    <table class="data-table" style="font-size:0.85em;">
+        <thead>
+            <tr><th>Lasertyp</th><th>Medium</th><th>Pumpmechanismus</th><th>Wellenlänge</th><th>Anwendung</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>He-Ne</td><td>Helium-Neon-Gas</td><td>Elektrisch</td><td>632,8 nm (rot)</td><td>Justierung, Interferometrie</td></tr>
+            <tr><td>Rubin</td><td>Cr<sup>3+</sup> in Al<sub>2</sub>O<sub>3</sub></td><td>Optisch (Blitzlampe)</td><td>694,3 nm (rot)</td><td>Erster Laser (1960), Holographie</td></tr>
+            <tr><td>CO<sub>2</sub></td><td>CO<sub>2</sub>-Gas</td><td>Elektrisch</td><td>10,6 µm (IR)</td><td>Schneiden, Schweißen</td></tr>
+            <tr><td>Diode</td><td>Halbleiter (GaAs)</td><td>Elektrisch (Strom)</td><td>Verschiedene</td><td>DVD, Glasfaser, Laserpointer</td></tr>
+            <tr><td>Nd:YAG</td><td>Neodym in YAG-Kristall</td><td>Optisch (Dioden)</td><td>1064 nm (IR)</td><td>Medizin, Materialbearbeitung</td></tr>
+        </tbody>
+    </table>
+
+    <div class="merke-box" style="margin-top:16px;">
+        <strong>Gemeinsam haben alle:</strong><br>
+        <ul style="margin:6px 0 0 16px;">
+            <li>Lasermedium (bestimmt Wellenlänge)</li>
+            <li>Pumpquelle (erzeugt Besetzungsinversion)</li>
+            <li>Resonator (Verstärkung + Richtungsselektion)</li>
+        </ul>
+    </div>
+
+    <h3>Sicherheitshinweis</h3>
+    <div class="warn-box">
+        <strong>Laserklassen:</strong> Laser werden nach Gefährdung in Klassen 1-4 eingeteilt. Ab Klasse 2 kann direkter Blick ins Auge gefährlich sein. Nie in einen Laserstrahl schauen! Laserpointer ≥ Klasse 3 sind in Deutschland verboten.
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="goSec(7)">Weiter: Abschluss</button>
+</div>
+
+<!-- SECTION 7: Abschluss -->
+<div class="section" id="sec7">
+    <h2>7. Zusammenfassung & Selbstcheck</h2>
+
+    <div class="merke-box">
+        <strong>Was du heute gelernt hast:</strong><br>
+        <ul style="margin:8px 0 0 16px;">
+            <li>Der Laser braucht eine Pumprate oberhalb der <strong>Schwelle</strong>, um zu funktionieren.</li>
+            <li>Die Schwelle liegt dort, wo <strong>Besetzungsinversion</strong> eintritt: N(E<sub>2</sub>) > N(E<sub>1</sub>).</li>
+            <li>Oberhalb der Schwelle steigt die Photonenzahl durch <strong>stimulierte Emission</strong> lawinenartig an.</li>
+            <li>Der <strong>Resonator</strong> sorgt dafür, dass nur achsenparallele Photonen verstärkt werden.</li>
+        </ul>
+    </div>
+
+    <div style="margin:16px 0;">
+        <p><strong>Abschlussfrage:</strong> Ein Laser wird mit einer Pumprate knapp unterhalb der Schwelle betrieben. Was beobachtet man?</p>
+        <div class="mc-option" data-q="final" data-v="a" onclick="selectMC(this)">Einen starken, kohärenten Laserstrahl.</div>
+        <div class="mc-option" data-q="final" data-v="b" onclick="selectMC(this)">Schwaches, inkohärentes Licht (spontane Emission, kein Lasereffekt).</div>
+        <div class="mc-option" data-q="final" data-v="c" onclick="selectMC(this)">Überhaupt kein Licht.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="finalCheck" onclick="checkFinal()" disabled>Prüfen</button>
+    <div class="quiz-feedback correct-fb" id="final-correct">Genau! Unterhalb der Schwelle gibt es spontane Emission (schwach, inkohärent), aber keinen Lasereffekt.</div>
+    <div class="quiz-feedback incorrect-fb" id="final-wrong">Unterhalb der Schwelle dominiert Absorption. Es gibt nur schwache spontane Emission -- keinen Laserstrahl.</div>
+
+    <div class="success-box hidden" id="finalDone" style="text-align:center; margin-top:16px;">
+        <strong>Lernpfad Laser-Simulationsexperiment abgeschlossen!</strong>
+    </div>
+</div>
+
+</div><!-- container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// LASER SIMULATION (ES5)
+// ═══════════════════════════════════════════════════════════════
+var STORAGE = 'lp-laser-10';
+var currentSec = 1;
+var totalSec = 7;
+var mcState = {};
+
+// Simulation state
+var simRunning = false;
+var simTimer = null;
+var pumpRate = 0;
+var N_TOTAL = 100;
+var n1 = 100, n2 = 0, n3 = 0;
+var photons = 0;
+var laserOn = false;
+var laserSeen = false;
+var simParticles = []; // for canvas animation
+var simPhotonParticles = [];
+var canvas, ctx;
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function goSec(n) {
+    if (n < 1 || n > totalSec) return;
+    var old = document.getElementById('sec' + currentSec);
+    if (old) old.classList.remove('active');
+    currentSec = n;
+    var sec = document.getElementById('sec' + n);
+    if (sec) sec.classList.add('active');
+    updatePhaseBar();
+    saveState();
+    window.scrollTo(0, 0);
+    if (n === 3) initCanvas();
+}
+
+function updatePhaseBar() {
+    var dots = document.querySelectorAll('.phase-dot');
+    for (var i = 0; i < dots.length; i++) {
+        var p = parseInt(dots[i].getAttribute('data-p'));
+        dots[i].classList.remove('active', 'done');
+        if (p === currentSec) dots[i].classList.add('active');
+        else if (p < currentSec) dots[i].classList.add('done');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MC HANDLING
+// ═══════════════════════════════════════════════════════════════
+function selectMC(el) {
+    var q = el.getAttribute('data-q');
+    var siblings = document.querySelectorAll('[data-q="' + q + '"]');
+    for (var i = 0; i < siblings.length; i++) siblings[i].classList.remove('selected');
+    el.classList.add('selected');
+    mcState[q] = el.getAttribute('data-v');
+
+    // Enable buttons
+    if (q === 'hypo') document.getElementById('hypoBtn').disabled = false;
+    if (q === 'final') document.getElementById('finalCheck').disabled = false;
+    if (mcState['aus1'] && mcState['aus2'] && mcState['aus3']) {
+        document.getElementById('ausCheck').disabled = false;
+    }
+    saveState();
+}
+
+function confirmHypo() {
+    var fb = document.getElementById('hypo-fb');
+    fb.textContent = 'Deine Vermutung wurde gespeichert. Lass uns nun experimentieren!';
+    fb.classList.add('show');
+    document.getElementById('hypoBtn').disabled = true;
+    document.getElementById('hypoNext').classList.remove('hidden');
+    mcState['hypo_done'] = true;
+    saveState();
+}
+
+function checkAuswertung() {
+    var correct = { aus1: 'b', aus2: 'b', aus3: 'b' };
+    var allRight = true;
+    for (var q in correct) {
+        var opts = document.querySelectorAll('[data-q="' + q + '"]');
+        for (var i = 0; i < opts.length; i++) {
+            opts[i].classList.add('disabled');
+            if (opts[i].getAttribute('data-v') === correct[q]) opts[i].classList.add('correct');
+            else if (opts[i].classList.contains('selected')) { opts[i].classList.add('wrong'); allRight = false; }
+        }
+        if (mcState[q] !== correct[q]) allRight = false;
+    }
+    document.getElementById(allRight ? 'aus-correct' : 'aus-wrong').classList.add('show');
+    document.getElementById('ausNext').classList.remove('hidden');
+    document.getElementById('ausCheck').disabled = true;
+    mcState['aus_done'] = true;
+    saveState();
+}
+
+function checkFinal() {
+    var opts = document.querySelectorAll('[data-q="final"]');
+    for (var i = 0; i < opts.length; i++) {
+        opts[i].classList.add('disabled');
+        if (opts[i].getAttribute('data-v') === 'b') opts[i].classList.add('correct');
+        else if (opts[i].classList.contains('selected')) opts[i].classList.add('wrong');
+    }
+    var isCorrect = mcState['final'] === 'b';
+    document.getElementById(isCorrect ? 'final-correct' : 'final-wrong').classList.add('show');
+    document.getElementById('finalDone').classList.remove('hidden');
+    document.getElementById('finalCheck').disabled = true;
+    mcState['final_done'] = true;
+    saveState();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LASER SIMULATION ENGINE
+// ═══════════════════════════════════════════════════════════════
+function initCanvas() {
+    canvas = document.getElementById('laserCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    drawLaser();
+}
+
+function updatePump() {
+    pumpRate = parseInt(document.getElementById('pumpSlider').value);
+    document.getElementById('pumpVal').textContent = pumpRate + '%';
+}
+
+function simToggle() {
+    if (simRunning) {
+        simRunning = false;
+        if (simTimer) clearInterval(simTimer);
+        document.getElementById('simStartBtn').textContent = 'Start';
+    } else {
+        simRunning = true;
+        document.getElementById('simStartBtn').textContent = 'Pause';
+        simTimer = setInterval(simStep, 50);
+    }
+}
+
+function simReset() {
+    simRunning = false;
+    if (simTimer) clearInterval(simTimer);
+    n1 = N_TOTAL; n2 = 0; n3 = 0; photons = 0;
+    laserOn = false;
+    simParticles = [];
+    simPhotonParticles = [];
+    document.getElementById('simStartBtn').textContent = 'Start';
+    document.getElementById('laserOnNotice').classList.add('hidden');
+    document.getElementById('simStatus').textContent = '';
+    updatePopChart();
+    drawLaser();
+}
+
+function simStep() {
+    var pump = pumpRate / 100;
+    var dt = 0.05;
+
+    // Pumping: E1 -> E3
+    var pumpCount = Math.min(n1, Math.round(n1 * pump * dt * 2));
+    n1 -= pumpCount;
+    n3 += pumpCount;
+
+    // Fast decay E3 -> E2 (non-radiative)
+    var decay32 = Math.min(n3, Math.round(n3 * 0.8));
+    n3 -= decay32;
+    n2 += decay32;
+
+    // Spontaneous emission E2 -> E1
+    var spontaneous = Math.min(n2, Math.round(n2 * 0.02));
+    n2 -= spontaneous;
+    n1 += spontaneous;
+
+    // Stimulated emission E2 -> E1 (proportional to photons * n2)
+    var stimulated = 0;
+    if (photons > 0) {
+        stimulated = Math.min(n2, Math.round(photons * n2 * 0.003));
+        n2 -= stimulated;
+        n1 += stimulated;
+        photons += stimulated; // each stimulated emission adds a photon
+    }
+
+    // Absorption E1 -> E2 (photon absorbed)
+    var absorbed = 0;
+    if (photons > 0) {
+        absorbed = Math.min(n1, Math.min(photons, Math.round(photons * n1 * 0.002)));
+        n1 -= absorbed;
+        n2 += absorbed;
+        photons -= absorbed;
+    }
+
+    // Add spontaneous photons
+    photons += spontaneous;
+
+    // Photon loss (cavity decay)
+    var loss = Math.round(photons * 0.05);
+    photons = Math.max(0, photons - loss);
+
+    // Cap
+    photons = Math.min(photons, 500);
+
+    // Check laser threshold
+    var wasOff = !laserOn;
+    laserOn = n2 > n1 && photons > 10;
+    if (laserOn && wasOff) {
+        document.getElementById('laserOnNotice').classList.remove('hidden');
+        if (!laserSeen) {
+            laserSeen = true;
+            document.getElementById('simNext').classList.remove('hidden');
+        }
+    }
+    if (!laserOn) {
+        document.getElementById('laserOnNotice').classList.add('hidden');
+    }
+
+    // Status
+    var status = 'Pump: ' + pumpRate + '% | ';
+    status += laserOn ? 'LASER AN' : 'Laser aus';
+    document.getElementById('simStatus').textContent = status;
+    document.getElementById('simStatus').style.color = laserOn ? 'var(--success)' : 'var(--text-muted)';
+
+    updatePopChart();
+    drawLaser();
+}
+
+function updatePopChart() {
+    var maxH = 100;
+    var maxN = N_TOTAL;
+    var maxPh = 200;
+
+    document.getElementById('popN1').textContent = n1;
+    document.getElementById('popN2').textContent = n2;
+    document.getElementById('popN3').textContent = n3;
+    document.getElementById('popPhotons').textContent = photons;
+
+    document.getElementById('barN1').style.height = Math.round(n1 / maxN * maxH) + 'px';
+    document.getElementById('barN2').style.height = Math.round(n2 / maxN * maxH) + 'px';
+    document.getElementById('barN3').style.height = Math.round(n3 / maxN * maxH) + 'px';
+    document.getElementById('barPhotons').style.height = Math.min(maxH, Math.round(photons / maxPh * maxH)) + 'px';
+}
+
+function drawLaser() {
+    if (!ctx) return;
+    var W = canvas.width;
+    var H = canvas.height;
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw resonator (mirrors)
+    ctx.fillStyle = '#667';
+    ctx.fillRect(30, 80, 12, 240); // left mirror (100%)
+    ctx.fillStyle = '#889';
+    ctx.fillRect(W - 42, 80, 12, 240); // right mirror (partial)
+
+    // Labels
+    ctx.fillStyle = '#aaa';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Spiegel', 36, 340);
+    ctx.fillText('100%', 36, 355);
+    ctx.fillText('Spiegel', W - 36, 340);
+    ctx.fillText('~99%', W - 36, 355);
+
+    // Laser medium
+    var medX = 50, medW = W - 100, medY = 100, medH = 200;
+    var grad = ctx.createLinearGradient(medX, 0, medX + medW, 0);
+    var intensity = Math.min(1, photons / 100);
+    if (laserOn) {
+        grad.addColorStop(0, 'rgba(255,80,0,' + (0.2 + intensity * 0.5) + ')');
+        grad.addColorStop(0.5, 'rgba(255,120,0,' + (0.3 + intensity * 0.5) + ')');
+        grad.addColorStop(1, 'rgba(255,80,0,' + (0.2 + intensity * 0.5) + ')');
+    } else {
+        grad.addColorStop(0, 'rgba(100,60,30,0.3)');
+        grad.addColorStop(1, 'rgba(100,60,30,0.3)');
+    }
+    ctx.fillStyle = grad;
+    ctx.fillRect(medX, medY, medW, medH);
+    ctx.strokeStyle = '#555';
+    ctx.strokeRect(medX, medY, medW, medH);
+
+    // Label
+    ctx.fillStyle = '#ccc';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('Lasermedium', W / 2, medY - 10);
+
+    // Energy levels (side diagram)
+    var lx = 60, ly = 30;
+    ctx.font = '10px sans-serif';
+    ctx.fillStyle = '#6cf';
+    ctx.fillText('E3 (Pump)', lx + 30, ly);
+    ctx.fillRect(lx, ly + 3, 50, 2);
+
+    ctx.fillStyle = '#6f6';
+    ctx.fillText('E2 (meta)', lx + 30, ly + 25);
+    ctx.fillRect(lx, ly + 28, 50, 3);
+
+    ctx.fillStyle = '#aaa';
+    ctx.fillText('E1 (Grund)', lx + 30, ly + 55);
+    ctx.fillRect(lx, ly + 58, 50, 2);
+
+    // Draw some photon particles in the cavity
+    if (laserOn) {
+        var beamY = medY + medH / 2;
+        var beamH = Math.min(20, 3 + photons / 20);
+        ctx.fillStyle = 'rgba(255,50,0,' + Math.min(0.9, 0.2 + photons / 200) + ')';
+        ctx.fillRect(42, beamY - beamH / 2, W - 84, beamH);
+
+        // Laser beam exiting right
+        var beamLen = Math.min(200, photons);
+        ctx.fillStyle = 'rgba(255,30,0,' + Math.min(0.95, 0.3 + photons / 150) + ')';
+        ctx.fillRect(W - 30, beamY - beamH / 4, beamLen / 2, beamH / 2);
+
+        // Glow
+        ctx.shadowColor = '#f30';
+        ctx.shadowBlur = 15;
+        ctx.fillRect(W - 30, beamY - 1, beamLen / 2, 2);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('LASER', W - 30 + beamLen / 4, beamY + beamH + 15);
+    }
+
+    // Pump arrows
+    if (pumpRate > 0) {
+        ctx.strokeStyle = '#ff0';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        // arrows from bottom into medium
+        for (var i = 0; i < Math.min(5, Math.ceil(pumpRate / 20)); i++) {
+            var ax = medX + 30 + i * (medW - 60) / 4;
+            ctx.beginPath();
+            ctx.moveTo(ax, H - 20);
+            ctx.lineTo(ax, medY + medH);
+            ctx.stroke();
+            // arrowhead
+            ctx.beginPath();
+            ctx.moveTo(ax - 4, medY + medH + 8);
+            ctx.lineTo(ax, medY + medH);
+            ctx.lineTo(ax + 4, medY + medH + 8);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.lineWidth = 1;
+
+        ctx.fillStyle = '#ff0';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('Pumpe (' + pumpRate + '%)', W / 2, H - 5);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════════════════════════════
+function saveState() {
+    var data = { sec: currentSec, mc: mcState, ts: Date.now() };
+    try { localStorage.setItem(STORAGE, JSON.stringify(data)); } catch(e) {}
+}
+
+function loadState() {
+    try {
+        var raw = localStorage.getItem(STORAGE);
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        if (data.mc) mcState = data.mc;
+        for (var q in mcState) {
+            if (q.indexOf('_done') > -1) continue;
+            var opts = document.querySelectorAll('[data-q="' + q + '"]');
+            for (var i = 0; i < opts.length; i++) {
+                if (opts[i].getAttribute('data-v') === mcState[q]) opts[i].classList.add('selected');
+            }
+        }
+        if (mcState['hypo_done']) confirmHypo();
+        if (mcState['aus_done']) checkAuswertung();
+        if (mcState['final_done']) checkFinal();
+        if (data.sec) goSec(data.sec);
+    } catch(e) {}
+}
+
+// Init
+goSec(1);
+loadState();
+</script>
+</body>
+</html>

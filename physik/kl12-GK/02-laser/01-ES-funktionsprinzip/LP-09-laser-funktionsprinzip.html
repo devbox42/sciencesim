@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Laser-Funktionsprinzip | Physik 12 GK</title>
+    <style>
+/* ===============================================================
+   LERNPFAD: LASER-FUNKTIONSPRINZIP (ES8, 40 min SEV)
+   sciencesim Design System (ES5)
+   Stand: 05.03.2026
+=============================================================== */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --bg: #f5f5f5;
+    --white: #ffffff;
+    --border: #dddddd;
+    --text-primary: #222222;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --success: #2a7a4b;
+    --success-bg: #e8f5e9;
+    --warning: #b35c00;
+    --warning-bg: #fff3e0;
+    --danger: #c62828;
+    --danger-bg: #ffebee;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    font-size: 16px;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.container { max-width: 850px; margin: 0 auto; padding: 15px; }
+
+header {
+    background: var(--white);
+    border: 1px solid var(--border);
+    padding: 15px 20px;
+    margin-bottom: 15px;
+}
+header h1 { color: var(--accent); font-size: 1.35em; font-weight: 600; }
+header .meta { color: var(--text-muted); font-size: 0.85em; margin-top: 4px; }
+
+/* Phase bar */
+.phase-bar {
+    display: flex; gap: 4px; margin-bottom: 15px;
+    background: var(--white); border: 1px solid var(--border); padding: 8px 10px;
+    overflow-x: auto;
+}
+.phase-dot {
+    flex: 1; min-width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--border); border-radius: 50%;
+    font-size: 0.8em; font-weight: 600; color: var(--text-muted);
+    cursor: pointer; transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+}
+.phase-dot.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.phase-dot.done { border-color: var(--success); color: var(--white); background: var(--success); }
+
+/* Sections */
+.section { display: none; background: var(--white); border: 1px solid var(--border); padding: 20px; margin-bottom: 15px; }
+.section.active { display: block; }
+.section h2 { color: var(--accent); font-size: 1.2em; margin-bottom: 12px; }
+.section h3 { font-size: 1em; margin: 14px 0 8px; }
+
+/* Boxes */
+.info-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 12px 14px; margin: 12px 0; }
+.warn-box { background: var(--warning-bg); border-left: 4px solid var(--warning); padding: 12px 14px; margin: 12px 0; }
+.success-box { background: var(--success-bg); border-left: 4px solid var(--success); padding: 12px 14px; margin: 12px 0; }
+.merke-box { background: #e8f0fa; border: 2px solid var(--accent); padding: 14px; margin: 14px 0; border-radius: 4px; }
+.merke-box strong { color: var(--accent); }
+
+/* Buttons */
+.btn { display: inline-block; padding: 10px 24px; border: none; font-size: 0.95em; font-weight: 600; cursor: pointer; min-height: 44px; min-width: 44px; text-align: center; }
+.btn-primary { background: var(--accent); color: var(--white); }
+.btn-primary:hover { background: #1e4080; }
+.btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+.btn-success { background: var(--success); color: var(--white); }
+.btn-block { display: block; width: 100%; margin-top: 12px; }
+
+/* MC */
+.mc-option { display: block; padding: 10px 14px; margin: 6px 0; border: 2px solid var(--border); cursor: pointer; min-height: 44px; font-size: 0.95em; transition: all 0.15s; }
+.mc-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.mc-option.selected { border-color: var(--accent); background: var(--accent-light); font-weight: 600; }
+.mc-option.correct { border-color: var(--success); background: var(--success-bg); }
+.mc-option.wrong { border-color: var(--danger); background: var(--danger-bg); }
+.mc-option.disabled { pointer-events: none; opacity: 0.85; }
+
+.quiz-feedback { padding: 10px 14px; margin-top: 8px; font-weight: 600; display: none; }
+.quiz-feedback.show { display: block; }
+.correct-fb { background: var(--success-bg); color: var(--success); }
+.incorrect-fb { background: var(--danger-bg); color: var(--danger); }
+
+.hidden { display: none !important; }
+
+/* Canvas */
+.sim-wrap { background: #1a1a2e; border: 1px solid var(--border); padding: 8px; margin: 12px 0; text-align: center; }
+.sim-wrap canvas { width: 100%; max-width: 800px; touch-action: none; }
+
+/* Diagram inline */
+.energy-diagram { display: flex; flex-direction: column; gap: 4px; margin: 12px 0; padding: 16px; background: #fafafa; border: 1px solid var(--border); }
+.energy-level { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.energy-level .line { flex: 1; height: 3px; background: var(--accent); }
+.energy-level .label { min-width: 80px; font-weight: 600; font-size: 0.9em; }
+.energy-level .desc { font-size: 0.85em; color: var(--text-secondary); }
+
+/* Arrow animations */
+.arrow-container { position: relative; height: 60px; margin: 8px 0; }
+.photon-arrow { position: absolute; width: 40px; height: 2px; background: #e65100; }
+.photon-arrow::after { content: ''; position: absolute; right: -6px; top: -4px; border: 5px solid transparent; border-left-color: #e65100; }
+
+/* Summary table */
+.summary-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
+.summary-table th, .summary-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+.summary-table th { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<header>
+    <h1>Laser: Funktionsprinzip</h1>
+    <p class="meta">Physik 12 GK &middot; ES8 &middot; 40 min (SEV)</p>
+</header>
+
+<div class="phase-bar" id="phaseBar">
+    <div class="phase-dot" data-p="1" onclick="goSec(1)">1</div>
+    <div class="phase-dot" data-p="2" onclick="goSec(2)">2</div>
+    <div class="phase-dot" data-p="3" onclick="goSec(3)">3</div>
+    <div class="phase-dot" data-p="4" onclick="goSec(4)">4</div>
+    <div class="phase-dot" data-p="5" onclick="goSec(5)">5</div>
+    <div class="phase-dot" data-p="6" onclick="goSec(6)">6</div>
+</div>
+
+<!-- SECTION 1: Einstieg -->
+<div class="section" id="sec1">
+    <h2>1. Was macht Laserlicht besonders?</h2>
+    <p>Im Alltag begegnest du Lasern in Barcode-Scannern, Laserdruckern, CD-/DVD-Playern, bei Augenoperationen und in der Materialbearbeitung. Aber was unterscheidet Laserlicht fundamental von normalem Licht?</p>
+
+    <div class="info-box">
+        <strong>Erinnerung:</strong> Beim Bohr-Modell haben wir gelernt, dass Atome Photonen aussenden, wenn Elektronen von einem höheren auf ein niedrigeres Energieniveau fallen: <em>E<sub>Photon</sub> = E<sub>n</sub> - E<sub>m</sub></em>.
+    </div>
+
+    <h3>Drei Eigenschaften von Laserlicht</h3>
+    <table class="summary-table">
+        <tr>
+            <th>Eigenschaft</th>
+            <th>Bedeutung</th>
+            <th>Vergleich Glühlampe</th>
+        </tr>
+        <tr>
+            <td><strong>Monochromatisch</strong></td>
+            <td>Nur eine Wellenlänge (eine Farbe)</td>
+            <td>Viele Wellenlängen (weißes Licht)</td>
+        </tr>
+        <tr>
+            <td><strong>Kohärent</strong></td>
+            <td>Alle Wellenzüge in Phase (gleichmäßig schwingend)</td>
+            <td>Zufällige Phasenbeziehungen</td>
+        </tr>
+        <tr>
+            <td><strong>Kollimiert</strong></td>
+            <td>Kaum Auseinanderlaufen des Strahls (parallele Photonen)</td>
+            <td>Licht breitet sich in alle Richtungen aus</td>
+        </tr>
+    </table>
+
+    <p style="margin-top:12px;">Die Frage ist: <strong>Wie schafft man es, dass viele Atome gleichzeitig Photonen mit derselben Wellenlänge, Phase und Richtung aussenden?</strong></p>
+
+    <button class="btn btn-primary btn-block" onclick="goSec(2)">Weiter: Spontane vs. stimulierte Emission</button>
+</div>
+
+<!-- SECTION 2: Stimulierte Emission -->
+<div class="section" id="sec2">
+    <h2>2. Spontane vs. stimulierte Emission</h2>
+
+    <h3>Spontane Emission (bekannt vom Bohr-Modell)</h3>
+    <p>Ein angeregtes Atom fällt <em>zufällig</em> auf ein niedrigeres Niveau zurück und sendet ein Photon aus. Richtung, Phase und Zeitpunkt sind zufällig.</p>
+
+    <div class="energy-diagram">
+        <div class="energy-level">
+            <span class="label">E<sub>2</sub></span>
+            <div class="line"></div>
+            <span class="desc">Angeregtes Niveau</span>
+        </div>
+        <div style="text-align:center; padding:8px; color:var(--warning); font-weight:600;">
+            Elektron fällt spontan herab &darr; &rarr; Photon (zufällige Richtung)
+        </div>
+        <div class="energy-level">
+            <span class="label">E<sub>1</sub></span>
+            <div class="line"></div>
+            <span class="desc">Grundzustand</span>
+        </div>
+    </div>
+
+    <h3>Stimulierte Emission (Einstein, 1917)</h3>
+    <p>Ein Photon mit <em>genau</em> der richtigen Energie <em>E = E<sub>2</sub> - E<sub>1</sub></em> trifft auf ein angeregtes Atom. Das Atom wird zum Übergang <strong>angeregt</strong> und sendet ein zweites, <strong>identisches</strong> Photon aus:</p>
+
+    <div class="merke-box">
+        <strong>Stimulierte Emission:</strong><br>
+        1 einlaufendes Photon + 1 angeregtes Atom &rarr; <strong>2 identische Photonen</strong><br>
+        (gleiche Wellenlänge, gleiche Phase, gleiche Richtung)
+    </div>
+
+    <p style="margin-top:12px;">Das ist der Kern des Laserprinzips: <strong>Lichtverstärkung durch stimulierte Emission</strong>.</p>
+
+    <div class="info-box">
+        <strong>LASER</strong> = <strong>L</strong>ight <strong>A</strong>mplification by <strong>S</strong>timulated <strong>E</strong>mission of <strong>R</strong>adiation
+    </div>
+
+    <div id="mc1" style="margin-top:16px;">
+        <p><strong>Frage:</strong> Was passiert bei der stimulierten Emission?</p>
+        <div class="mc-option" data-q="mc1" data-v="a" onclick="selectMC(this)">Ein Photon wird vom Atom absorbiert und das Atom geht auf ein höheres Niveau.</div>
+        <div class="mc-option" data-q="mc1" data-v="b" onclick="selectMC(this)">Ein Photon trifft auf ein angeregtes Atom, das daraufhin ein zweites identisches Photon aussendet.</div>
+        <div class="mc-option" data-q="mc1" data-v="c" onclick="selectMC(this)">Zwei Photonen kollidieren und erzeugen ein Elektron-Positron-Paar.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="mc1Check" onclick="checkMC('mc1','b')" disabled>Prüfen</button>
+    <div class="quiz-feedback correct-fb" id="mc1-correct">Richtig! Aus 1 Photon werden 2 identische Photonen -- Lichtverstärkung.</div>
+    <div class="quiz-feedback incorrect-fb" id="mc1-wrong">Nicht ganz. Stimulierte Emission: Ein einlaufendes Photon bewirkt, dass ein angeregtes Atom ein zweites identisches Photon aussendet.</div>
+    <button class="btn btn-success btn-block hidden" id="mc1Next" onclick="goSec(3)">Weiter: Besetzungsinversion</button>
+</div>
+
+<!-- SECTION 3: Besetzungsinversion -->
+<div class="section" id="sec3">
+    <h2>3. Besetzungsinversion</h2>
+
+    <h3>Das Problem</h3>
+    <p>Im <strong>thermischen Gleichgewicht</strong> befinden sich die meisten Atome im Grundzustand E<sub>1</sub>. Ein einlaufendes Photon wird daher eher <em>absorbiert</em> als dass es stimulierte Emission auslöst.</p>
+
+    <div class="warn-box">
+        <strong>Problem:</strong> Solange mehr Atome im Grundzustand (E<sub>1</sub>) sind als im angeregten Zustand (E<sub>2</sub>), wird das Licht insgesamt <em>schwächer</em> statt stärker. Die Absorption überwiegt.
+    </div>
+
+    <h3>Die Lösung: Besetzungsinversion</h3>
+    <p>Man muss einen <strong>nicht-natürlichen Zustand</strong> herstellen, in dem <em>mehr</em> Atome im angeregten Zustand sind als im Grundzustand. Das nennt man <strong>Besetzungsinversion</strong>.</p>
+
+    <div class="merke-box">
+        <strong>Besetzungsinversion:</strong> N(E<sub>2</sub>) > N(E<sub>1</sub>)<br>
+        Mehr Atome im oberen als im unteren Niveau.<br>
+        Voraussetzung: Das obere Niveau muss <strong>metastabil</strong> sein (lange Lebensdauer), damit Atome dort "warten" können.
+    </div>
+
+    <h3>Wie erreicht man Besetzungsinversion?</h3>
+    <p>Durch <strong>Pumpen</strong> -- Energiezufuhr von außen:</p>
+    <ul style="margin:8px 0 8px 20px;">
+        <li><strong>Optisches Pumpen:</strong> Blitzlampen bestrahlen das Lasermedium (z.B. Rubinlaser)</li>
+        <li><strong>Elektrisches Pumpen:</strong> Strom fließt durch ein Gas (z.B. He-Ne-Laser)</li>
+    </ul>
+
+    <h3>Drei-Niveau-System</h3>
+    <div class="energy-diagram">
+        <div class="energy-level">
+            <span class="label">E<sub>3</sub></span>
+            <div class="line" style="background:#c62828;"></div>
+            <span class="desc">Pump-Niveau (kurzlebig)</span>
+        </div>
+        <div style="text-align:center; padding:4px; font-size:0.85em; color:var(--text-secondary);">&darr; schneller strahlungsloser Übergang</div>
+        <div class="energy-level">
+            <span class="label" style="color:var(--success);">E<sub>2</sub></span>
+            <div class="line" style="background:var(--success); height:4px;"></div>
+            <span class="desc"><strong>Metastabiles Niveau</strong> (langlebig) &larr; hier sammeln sich Atome</span>
+        </div>
+        <div style="text-align:center; padding:4px; font-size:0.85em; color:var(--warning);">&darr; stimulierte Emission (Laserlicht!)</div>
+        <div class="energy-level">
+            <span class="label">E<sub>1</sub></span>
+            <div class="line"></div>
+            <span class="desc">Grundzustand</span>
+        </div>
+    </div>
+
+    <div id="mc2" style="margin-top:16px;">
+        <p><strong>Frage:</strong> Warum braucht man ein metastabiles Niveau?</p>
+        <div class="mc-option" data-q="mc2" data-v="a" onclick="selectMC(this)">Damit die Atome möglichst schnell in den Grundzustand zurückfallen.</div>
+        <div class="mc-option" data-q="mc2" data-v="b" onclick="selectMC(this)">Damit sich genügend Atome im angeregten Zustand ansammeln (Besetzungsinversion).</div>
+        <div class="mc-option" data-q="mc2" data-v="c" onclick="selectMC(this)">Damit die emittierten Photonen verschiedene Wellenlängen haben.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="mc2Check" onclick="checkMC('mc2','b')" disabled>Prüfen</button>
+    <div class="quiz-feedback correct-fb" id="mc2-correct">Genau! Metastabil = langlebig. Die Atome warten dort, bis sie durch ein Photon zur stimulierten Emission angeregt werden.</div>
+    <div class="quiz-feedback incorrect-fb" id="mc2-wrong">Nicht richtig. Das metastabile Niveau ist langlebig -- Atome sammeln sich dort an, bis N(E2) > N(E1). Dann überwiegt stimulierte Emission.</div>
+    <button class="btn btn-success btn-block hidden" id="mc2Next" onclick="goSec(4)">Weiter: Resonator</button>
+</div>
+
+<!-- SECTION 4: Resonator -->
+<div class="section" id="sec4">
+    <h2>4. Der optische Resonator</h2>
+
+    <p>Stimulierte Emission erzeugt identische Photonen -- aber sie fliegen in alle Richtungen. Wie bündelt man sie zu einem Strahl?</p>
+
+    <h3>Aufbau</h3>
+    <div style="background:#fafafa; border:1px solid var(--border); padding:16px; margin:12px 0;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:4px; font-size:0.95em; flex-wrap:wrap;">
+            <div style="background:#888; color:#fff; padding:8px 4px; text-align:center; min-width:30px; border-radius:2px;">Spiegel<br>(100%)</div>
+            <div style="background:linear-gradient(90deg, #ff6f00 0%, #ffcc80 50%, #ff6f00 100%); padding:12px 30px; text-align:center; flex:1; min-width:150px; max-width:400px; border-radius:2px;">
+                <strong>Lasermedium</strong><br>
+                <span style="font-size:0.85em;">(angeregtes Gas / Kristall)</span><br>
+                <span style="font-size:0.75em; color:#555;">Photonen werden hin- und herreflektiert<br>und lösen weitere stimulierte Emission aus</span>
+            </div>
+            <div style="background:#aaa; color:#fff; padding:8px 4px; text-align:center; min-width:30px; border-radius:2px;">Spiegel<br>(~99%)</div>
+        </div>
+        <div style="text-align:center; margin-top:8px; color:var(--danger); font-weight:600;">&rarr; Laserstrahl (durch den teildurchlässigen Spiegel)</div>
+    </div>
+
+    <div class="merke-box">
+        <strong>Resonator:</strong> Zwei Spiegel (einer 100% reflektierend, einer teildurchlässig ~99%) begrenzen das Lasermedium.<br>
+        <ul style="margin:8px 0 0 16px;">
+            <li>Photonen, die <strong>parallel zur Achse</strong> laufen, werden hin- und herreflektiert.</li>
+            <li>Bei jedem Durchgang lösen sie weitere stimulierte Emissionen aus &rarr; <strong>Lawineneeffekt</strong>.</li>
+            <li>~1% des Lichts tritt durch den teildurchlässigen Spiegel aus &rarr; <strong>Laserstrahl</strong>.</li>
+        </ul>
+    </div>
+
+    <p style="margin-top:12px;">Photonen, die <em>nicht</em> parallel zur Achse laufen, verlassen den Resonator seitlich und tragen nicht zum Laserstrahl bei. Deshalb ist Laserlicht so stark kollimiert (gebündelt).</p>
+
+    <div id="mc3" style="margin-top:16px;">
+        <p><strong>Frage:</strong> Welche Funktion hat der teildurchlässige Spiegel?</p>
+        <div class="mc-option" data-q="mc3" data-v="a" onclick="selectMC(this)">Er absorbiert die Photonen und wandelt sie in Wärme um.</div>
+        <div class="mc-option" data-q="mc3" data-v="b" onclick="selectMC(this)">Er lässt einen kleinen Teil des Lichts als Laserstrahl durch und reflektiert den Rest zurück ins Medium.</div>
+        <div class="mc-option" data-q="mc3" data-v="c" onclick="selectMC(this)">Er fokussiert das Licht wie eine Linse.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="mc3Check" onclick="checkMC('mc3','b')" disabled>Prüfen</button>
+    <div class="quiz-feedback correct-fb" id="mc3-correct">Richtig! ~99% zurück = Verstärkung im Medium. ~1% raus = nutzbarer Laserstrahl.</div>
+    <div class="quiz-feedback incorrect-fb" id="mc3-wrong">Der teildurchlässige Spiegel reflektiert den Großteil (Verstärkung) und lässt einen kleinen Teil als Laserstrahl durch.</div>
+    <button class="btn btn-success btn-block hidden" id="mc3Next" onclick="goSec(5)">Weiter: Zusammenfassung</button>
+</div>
+
+<!-- SECTION 5: Zusammenfassung -->
+<div class="section" id="sec5">
+    <h2>5. Zusammenfassung: Die drei Zutaten</h2>
+
+    <table class="summary-table">
+        <tr>
+            <th>Zutat</th>
+            <th>Was passiert?</th>
+            <th>Warum nötig?</th>
+        </tr>
+        <tr>
+            <td><strong>1. Stimulierte Emission</strong></td>
+            <td>Ein Photon erzeugt ein zweites identisches Photon</td>
+            <td>Lichtverstärkung (Monochromatisch + Kohärent)</td>
+        </tr>
+        <tr>
+            <td><strong>2. Besetzungsinversion</strong></td>
+            <td>Mehr Atome im angeregten als im Grundzustand</td>
+            <td>Stimulierte Emission muss Absorption überwiegen</td>
+        </tr>
+        <tr>
+            <td><strong>3. Optischer Resonator</strong></td>
+            <td>Spiegel reflektieren Photonen hin und her</td>
+            <td>Richtungsselektion (Kollimation) + Verstärkung</td>
+        </tr>
+    </table>
+
+    <div class="merke-box" style="margin-top:16px;">
+        <strong>Merksatz:</strong><br>
+        Ein Laser erzeugt monochromatisches, kohärentes und kollimiertes Licht durch <strong>stimulierte Emission</strong> in einem <strong>Resonator</strong>. Voraussetzung ist eine <strong>Besetzungsinversion</strong>, die durch externes Pumpen (optisch oder elektrisch) hergestellt wird.
+    </div>
+
+    <div class="info-box" style="margin-top:12px;">
+        <strong>Ausblick (Freitag):</strong> In der Doppelstunde simulierst du einen Laser am Computer -- du steuerst das Pumpen, beobachtest die Besetzungsinversion und siehst, wie der Laserstrahl entsteht.
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="goSec(6)">Weiter: Selbsttest</button>
+</div>
+
+<!-- SECTION 6: Selbsttest -->
+<div class="section" id="sec6">
+    <h2>6. Selbsttest</h2>
+    <p>Beantworte die drei Fragen, um dein Verständnis zu prüfen.</p>
+
+    <div style="margin:16px 0;">
+        <p><strong>1. Was bedeutet LASER?</strong></p>
+        <div class="mc-option" data-q="st1" data-v="a" onclick="selectMC(this)">Light Amplification by Spontaneous Emission of Radiation</div>
+        <div class="mc-option" data-q="st1" data-v="b" onclick="selectMC(this)">Light Amplification by Stimulated Emission of Radiation</div>
+        <div class="mc-option" data-q="st1" data-v="c" onclick="selectMC(this)">Light Absorption by Sequential Excitation of Resonators</div>
+    </div>
+
+    <div style="margin:16px 0;">
+        <p><strong>2. Warum ist Besetzungsinversion nötig?</strong></p>
+        <div class="mc-option" data-q="st2" data-v="a" onclick="selectMC(this)">Damit die Absorption die stimulierte Emission überwiegt.</div>
+        <div class="mc-option" data-q="st2" data-v="b" onclick="selectMC(this)">Damit die stimulierte Emission die Absorption überwiegt.</div>
+        <div class="mc-option" data-q="st2" data-v="c" onclick="selectMC(this)">Damit die Photonen verschiedene Wellenlängen haben.</div>
+    </div>
+
+    <div style="margin:16px 0;">
+        <p><strong>3. Was bewirkt der Resonator?</strong></p>
+        <div class="mc-option" data-q="st3" data-v="a" onclick="selectMC(this)">Er erzeugt die Besetzungsinversion durch Pumpen.</div>
+        <div class="mc-option" data-q="st3" data-v="b" onclick="selectMC(this)">Er selektiert Photonen in Achsenrichtung und verstärkt sie durch Hin-und-Her-Reflexion.</div>
+        <div class="mc-option" data-q="st3" data-v="c" onclick="selectMC(this)">Er kühlt das Lasermedium, damit die Atome im Grundzustand bleiben.</div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="stCheck" onclick="checkSelfTest()" disabled>Alle prüfen</button>
+    <div class="quiz-feedback correct-fb" id="st-correct">Alle richtig! Du bist bereit für das Laser-Simulationsexperiment am Freitag.</div>
+    <div class="quiz-feedback incorrect-fb" id="st-wrong">Nicht alle richtig. Schau dir die markierten Antworten noch einmal an.</div>
+    <div class="success-box hidden" id="stDone" style="text-align:center; margin-top:16px;">
+        <strong>Geschafft!</strong> Lernpfad Laser-Funktionsprinzip abgeschlossen.
+    </div>
+</div>
+
+</div><!-- container -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ES5-kompatibel, localStorage
+// ═══════════════════════════════════════════════════════════════
+var STORAGE = 'lp-laser-09';
+var currentSec = 1;
+var totalSec = 6;
+var mcState = {};
+
+function goSec(n) {
+    if (n < 1 || n > totalSec) return;
+    var old = document.getElementById('sec' + currentSec);
+    if (old) old.classList.remove('active');
+    currentSec = n;
+    var sec = document.getElementById('sec' + n);
+    if (sec) sec.classList.add('active');
+    updatePhaseBar();
+    saveState();
+    window.scrollTo(0, 0);
+}
+
+function updatePhaseBar() {
+    var dots = document.querySelectorAll('.phase-dot');
+    for (var i = 0; i < dots.length; i++) {
+        var p = parseInt(dots[i].getAttribute('data-p'));
+        dots[i].classList.remove('active', 'done');
+        if (p === currentSec) dots[i].classList.add('active');
+        else if (p < currentSec) dots[i].classList.add('done');
+    }
+}
+
+function selectMC(el) {
+    var q = el.getAttribute('data-q');
+    var siblings = document.querySelectorAll('[data-q="' + q + '"]');
+    for (var i = 0; i < siblings.length; i++) {
+        siblings[i].classList.remove('selected');
+    }
+    el.classList.add('selected');
+    mcState[q] = el.getAttribute('data-v');
+    // Enable check button
+    var btn = document.getElementById(q + 'Check');
+    if (btn) btn.disabled = false;
+    // Self-test: enable if all 3 answered
+    if (q.indexOf('st') === 0) {
+        if (mcState['st1'] && mcState['st2'] && mcState['st3']) {
+            document.getElementById('stCheck').disabled = false;
+        }
+    }
+    saveState();
+}
+
+function checkMC(qId, correct) {
+    var opts = document.querySelectorAll('[data-q="' + qId + '"]');
+    for (var i = 0; i < opts.length; i++) {
+        opts[i].classList.add('disabled');
+        if (opts[i].getAttribute('data-v') === correct) {
+            opts[i].classList.add('correct');
+        } else if (opts[i].classList.contains('selected')) {
+            opts[i].classList.add('wrong');
+        }
+    }
+    var isCorrect = mcState[qId] === correct;
+    var fbC = document.getElementById(qId + '-correct');
+    var fbW = document.getElementById(qId + '-wrong');
+    if (isCorrect && fbC) { fbC.classList.add('show'); }
+    else if (fbW) { fbW.classList.add('show'); }
+    var nextBtn = document.getElementById(qId + 'Next');
+    if (nextBtn) nextBtn.classList.remove('hidden');
+    var checkBtn = document.getElementById(qId + 'Check');
+    if (checkBtn) checkBtn.disabled = true;
+    mcState[qId + '_done'] = true;
+    saveState();
+}
+
+function checkSelfTest() {
+    var correct = { st1: 'b', st2: 'b', st3: 'b' };
+    var allRight = true;
+    for (var q in correct) {
+        var opts = document.querySelectorAll('[data-q="' + q + '"]');
+        for (var i = 0; i < opts.length; i++) {
+            opts[i].classList.add('disabled');
+            if (opts[i].getAttribute('data-v') === correct[q]) {
+                opts[i].classList.add('correct');
+            } else if (opts[i].classList.contains('selected')) {
+                opts[i].classList.add('wrong');
+                allRight = false;
+            }
+        }
+        if (mcState[q] !== correct[q]) allRight = false;
+    }
+    if (allRight) {
+        document.getElementById('st-correct').classList.add('show');
+    } else {
+        document.getElementById('st-wrong').classList.add('show');
+    }
+    document.getElementById('stDone').classList.remove('hidden');
+    document.getElementById('stCheck').disabled = true;
+    mcState['st_done'] = true;
+    saveState();
+}
+
+function saveState() {
+    var data = { sec: currentSec, mc: mcState, ts: Date.now() };
+    try { localStorage.setItem(STORAGE, JSON.stringify(data)); } catch(e) {}
+}
+
+function loadState() {
+    try {
+        var raw = localStorage.getItem(STORAGE);
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        if (data.mc) mcState = data.mc;
+        // Restore MC selections
+        for (var q in mcState) {
+            if (q.indexOf('_done') > -1) continue;
+            var opts = document.querySelectorAll('[data-q="' + q + '"]');
+            for (var i = 0; i < opts.length; i++) {
+                if (opts[i].getAttribute('data-v') === mcState[q]) {
+                    opts[i].classList.add('selected');
+                }
+            }
+        }
+        // Restore checked MCs
+        if (mcState['mc1_done']) checkMC('mc1', 'b');
+        if (mcState['mc2_done']) checkMC('mc2', 'b');
+        if (mcState['mc3_done']) checkMC('mc3', 'b');
+        if (mcState['st_done']) {
+            document.getElementById('stCheck').disabled = false;
+            checkSelfTest();
+        }
+        if (data.sec) goSec(data.sec);
+    } catch(e) {}
+}
+
+// Init
+goSec(1);
+loadState();
+</script>
+</body>
+</html>

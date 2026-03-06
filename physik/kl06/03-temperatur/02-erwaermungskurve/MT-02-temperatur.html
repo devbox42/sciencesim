@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stundenleistung: Bewegung + Temperatur</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════
+           MINT-MINITEST: Bewegung + Temperatur | Physik Klasse 6
+           BE-Struktur: * = 15 BE | ** = 19 BE | *** = 23 BE
+           ═══════════════════════════════════════════════════════════════ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        .header-info { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+        .header-info .meta { font-size: 0.85em; opacity: 0.9; }
+
+        .selection-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 15px 20px; }
+        .selection-field { flex: 1; min-width: 280px; padding: 15px; background: #fff; border: 1px solid #ddd; }
+        .selection-field label { font-weight: 600; font-size: 0.9em; color: #2c5aa0; display: block; margin-bottom: 8px; }
+        .warning-box { background: #fff3e0; border: 1px solid #b35c00; padding: 8px 10px; margin-bottom: 10px; font-size: 0.8em; color: #b35c00; }
+        .confirm-row { display: flex; align-items: center; gap: 8px; }
+        .confirm-row select { padding: 8px 12px; font-size: 1em; border: 1px solid #2c5aa0; min-width: 100px; }
+        .confirmed-text { font-size: 1em; color: #2a7a4b; font-weight: 600; }
+
+        .progress-container { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 15px; }
+        .progress-bar { flex: 1; background: #e0e0e0; height: 8px; }
+        .progress-fill { background: #2c5aa0; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { font-size: 0.85em; color: #666; min-width: 120px; }
+
+        .question { background: white; border: 1px solid #ddd; margin: 15px 0; padding: 20px; }
+        .question-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .question-title { color: #2c5aa0; font-weight: 600; font-size: 1em; }
+        .question-meta { display: flex; gap: 8px; align-items: center; }
+        .question-niveau { padding: 2px 8px; font-size: 0.8em; font-weight: 600; border-radius: 3px; }
+        .niveau-1 { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 { background: #e3f2fd; color: #2c5aa0; }
+        .niveau-3 { background: #f3e5f5; color: #7b1fa2; }
+        .question-points { background: #f0f0f0; padding: 3px 10px; font-size: 0.8em; color: #666; }
+        .question-text { margin-bottom: 15px; }
+        .question-result { display: inline-block; padding: 3px 10px; font-size: 0.8em; font-weight: 600; margin-left: 8px; }
+        .question-result.full { background: #e8f5e9; color: #2a7a4b; }
+        .question-result.partial { background: #fff3e0; color: #b35c00; }
+        .question-result.zero { background: #ffebee; color: #c62828; }
+
+        .feedback-box { padding: 12px 15px; margin: 10px 0; font-size: 0.9em; display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.correct { background: #e8f5e9; border-left: 3px solid #2a7a4b; }
+        .feedback-box.incorrect { background: #ffebee; border-left: 3px solid #c62828; }
+
+        .lueckentext { line-height: 2.2; font-size: 1em; }
+        .lueckentext select {
+            padding: 4px 8px;
+            font-size: 0.95em;
+            border: 1px solid #2c5aa0;
+            border-radius: 2px;
+            background: #fafafa;
+            min-width: 130px;
+        }
+        .lueckentext select.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .lueckentext select.incorrect { border-color: #c62828; background: #ffebee; }
+
+        .calc-box { background: #fafafa; border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+        .calc-box h4 { color: #2c5aa0; margin-bottom: 10px; font-size: 0.95em; }
+        .calc-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+        .calc-row label { min-width: 80px; font-weight: 500; }
+        .calc-row input[type="text"], .calc-row input[type="number"] {
+            padding: 6px 10px;
+            font-size: 1em;
+            border: 1px solid #2c5aa0;
+            width: 100px;
+        }
+        .calc-row input.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .calc-row input.incorrect { border-color: #c62828; background: #ffebee; }
+        .calc-row .unit { color: #666; font-size: 0.9em; }
+
+        .mc-group { margin: 10px 0; }
+        .mc-option { display: block; padding: 10px 14px; margin: 6px 0; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; min-height: 44px; font-size: 0.95em; }
+        .mc-option:hover { border-color: #2c5aa0; background: #e3f2fd; }
+        .mc-option.selected { border-color: #2c5aa0; background: #e3f2fd; font-weight: 600; }
+        .mc-option.correct-mc { border-color: #2a7a4b; background: #e8f5e9; }
+        .mc-option.wrong-mc { border-color: #c62828; background: #ffebee; }
+        .mc-option.disabled { pointer-events: none; opacity: 0.85; }
+
+        .hinweis { background: #fff3e0; border: 1px solid #b35c00; padding: 8px 12px; margin-bottom: 15px; font-size: 0.85em; color: #b35c00; }
+        .tipp { background: #e3f2fd; border: 1px solid #2c5aa0; padding: 8px 12px; margin: 10px 0; font-size: 0.85em; color: #2c5aa0; }
+
+        .submit-section { background: white; padding: 20px; border: 1px solid #ddd; margin: 20px 0; text-align: center; }
+        button { background: #2c5aa0; color: white; border: none; padding: 12px 30px; font-size: 1em; cursor: pointer; margin: 5px; min-height: 44px; }
+        button:hover { background: #1e4080; }
+        button:disabled { background: #aaa; cursor: not-allowed; }
+        button.btn-secondary { background: #666; }
+        button.btn-small { padding: 8px 15px; font-size: 0.9em; }
+
+        .results { background: white; border: 2px solid #2c5aa0; padding: 25px; margin: 20px 0; text-align: center; }
+        .results h2 { color: #2c5aa0; margin-bottom: 15px; }
+        .results .score { font-size: 3em; font-weight: bold; color: #2c5aa0; }
+        .results .grade { font-size: 1.5em; margin: 10px 0; }
+        .grade-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 0.8em; }
+        .grade-table th, .grade-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; }
+        .grade-table th { background: #2c5aa0; color: white; }
+        .grade-table .current { background: #e8f5e9; font-weight: bold; }
+
+        .hidden { display: none; }
+
+        .teacher-section { background: #fff3e0; border: 2px dashed #b35c00; padding: 15px; margin: 20px; }
+        .teacher-section h3 { color: #b35c00; margin-bottom: 10px; }
+
+        @media print {
+            button, .progress-container, .selection-row, .teacher-section { display: none; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stundenleistung: Bewegung + Temperatur</h1>
+        <div class="header-info">
+            <div class="meta">Physik Klasse 6 | 15 Minuten | Offene Unterlagen erlaubt</div>
+        </div>
+    </header>
+
+    <div class="selection-row">
+        <div class="selection-field">
+            <label>Platznummer:</label>
+            <div id="seatWarning" class="warning-box">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="seatRow" class="confirm-row">
+                <select id="seatSelect">
+                    <option value="">-- wählen --</option>
+                </select>
+                <button class="btn-small" onclick="confirmSeat()">OK</button>
+            </div>
+            <div id="seatConfirmed" class="confirmed-text" style="display:none;"></div>
+        </div>
+
+        <div class="selection-field">
+            <label>Dein Niveau:</label>
+            <div id="niveauWarning" class="warning-box">
+                Kann nach OK <strong>nicht mehr geändert</strong> werden!
+            </div>
+            <div id="niveauRow" class="confirm-row">
+                <select id="niveauSelect">
+                    <option value="">-- wählen --</option>
+                    <option value="1">* Basis (15 BE)</option>
+                    <option value="2">** Standard (19 BE)</option>
+                    <option value="3">*** Erweitert (23 BE)</option>
+                </select>
+                <button class="btn-small" onclick="confirmNiveau()">OK</button>
+            </div>
+            <div id="niveauConfirmed" class="confirmed-text" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">Niveau wählen...</div>
+    </div>
+
+    <div class="container">
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             AUFGABE 1: Lückentext - Temperatur-Grundlagen (5 BE) - ALLE NIVEAUS
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q1" data-niveau="1" data-points="5">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 1: Temperatur-Grundlagen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">*</span>
+                    <span class="question-points">5 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Ergänze den Lückentext.</div>
+            <div class="lueckentext">
+                Unser Temperatur<select id="q1-a"><option value="">---</option><option value="empfinden">empfinden</option><option value="messung">messung</option><option value="verhalten">verhalten</option></select>
+                kann uns
+                <select id="q1-b"><option value="">---</option><option value="taeuschen">täuschen</option><option value="helfen">helfen</option><option value="warnen">warnen</option></select>.
+                Um die Temperatur genau zu bestimmen, brauchen wir ein
+                <select id="q1-c"><option value="">---</option><option value="thermometer">Thermometer</option><option value="barometer">Barometer</option><option value="lineal">Lineal</option></select>.
+                Die Celsius-Skala hat zwei Fixpunkte:
+                <select id="q1-d"><option value="">---</option><option value="0">0 °C</option><option value="10">10 °C</option><option value="minus10">-10 °C</option></select>
+                (schmelzendes Eis) und
+                <select id="q1-e"><option value="">---</option><option value="100">100 °C</option><option value="200">200 °C</option><option value="50">50 °C</option></select>
+                (siedendes Wasser).
+            </div>
+            <div class="feedback-box correct" id="q1-fb-correct">Richtig! Du kennst die Grundlagen der Temperaturmessung.</div>
+            <div class="feedback-box incorrect" id="q1-fb-incorrect">Schau auf dein Arbeitsblatt AB-01: Merksatz K1 und K2 helfen dir!</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             AUFGABE 2: Erwärmungskurve MC (4 BE) - ALLE NIVEAUS
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q2" data-niveau="1" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 2: Erwärmungskurve</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">*</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Wähle die richtige Antwort.</div>
+
+            <div class="calc-box">
+                <h4>a) Was passiert mit der Temperatur beim Erhitzen von Wasser? (2 BE)</h4>
+                <div class="mc-group" id="q2a-group">
+                    <div class="mc-option" data-q="q2a" data-v="gleich" onclick="selectMCopt(this)">Die Temperatur steigt die ganze Zeit gleichmäßig an.</div>
+                    <div class="mc-option" data-q="q2a" data-v="plateau" onclick="selectMCopt(this)">Die Temperatur steigt erst an und bleibt dann bei 100 °C stehen.</div>
+                    <div class="mc-option" data-q="q2a" data-v="sinkt" onclick="selectMCopt(this)">Die Temperatur steigt und sinkt dann wieder.</div>
+                </div>
+            </div>
+
+            <div class="calc-box">
+                <h4>b) Warum bleibt die Temperatur bei 100 °C stehen? (2 BE)</h4>
+                <div class="mc-group" id="q2b-group">
+                    <div class="mc-option" data-q="q2b" data-v="kaputt" onclick="selectMCopt(this)">Das Thermometer ist kaputt.</div>
+                    <div class="mc-option" data-q="q2b" data-v="dampf" onclick="selectMCopt(this)">Die Energie wird gebraucht, um Wasser in Dampf umzuwandeln.</div>
+                    <div class="mc-option" data-q="q2b" data-v="keinenergie" onclick="selectMCopt(this)">Der Herd gibt keine Energie mehr ab.</div>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q2-fb-correct">Super! Du verstehst die Erwärmungskurve.</div>
+            <div class="feedback-box incorrect" id="q2-fb-incorrect">Schau auf dein AB-02: Merksatz K1 erklärt die Erwärmungskurve.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             AUFGABE 3: Geschwindigkeit berechnen (6 BE) - ALLE NIVEAUS
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q3" data-niveau="1" data-points="6">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 3: Geschwindigkeit berechnen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-1">*</span>
+                    <span class="question-points">6 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Berechne die Geschwindigkeit. <strong>Schreibe nur die Zahl!</strong></div>
+            <div class="tipp">Formel: v = s / t</div>
+
+            <div class="calc-box">
+                <h4>a) Radfahrer (3 BE)</h4>
+                <p>Ein Radfahrer fährt <strong>300 m</strong> in <strong>60 Sekunden</strong>.</p>
+                <div class="calc-row">
+                    <label>v =</label>
+                    <input type="number" id="q3a-v" step="0.1" placeholder="?"> <span class="unit">m/s</span>
+                </div>
+            </div>
+
+            <div class="calc-box">
+                <h4>b) Schnecke (3 BE)</h4>
+                <p>Eine Schnecke kriecht <strong>6 m</strong> in <strong>10 Minuten</strong>.</p>
+                <p style="font-size:0.85em; color:#666; margin:5px 0;">Hinweis: Rechne erst Minuten in Sekunden um!</p>
+                <div class="calc-row">
+                    <label>Zeit t =</label>
+                    <input type="number" id="q3b-t" placeholder="?"> <span class="unit">s</span>
+                    <span style="font-size:0.8em; color:#888;">(1 BE)</span>
+                </div>
+                <div class="calc-row">
+                    <label>v =</label>
+                    <input type="number" id="q3b-v" step="0.01" placeholder="?"> <span class="unit">m/s</span>
+                    <span style="font-size:0.8em; color:#888;">(2 BE)</span>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q3-fb-correct">Richtig! Du kannst Geschwindigkeiten berechnen.</div>
+            <div class="feedback-box incorrect" id="q3-fb-incorrect">Denke an v = s / t. Bei b) erst Minuten in Sekunden umrechnen!</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             AUFGABE 4: Diagramm lesen (4 BE) - NUR ** und ***
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q4" data-niveau="2" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 4: Diagramm lesen</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-2">**</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Eine Erwärmungskurve zeigt: Bei t = 0 s hat das Wasser 20 °C. Nach 180 s hat es 100 °C. Danach bleibt die Temperatur bei 100 °C.</div>
+
+            <div class="calc-box">
+                <h4>a) Wie viel Grad hat sich das Wasser in den ersten 180 s erwärmt? (2 BE)</h4>
+                <div class="calc-row">
+                    <label>Erwärmung =</label>
+                    <input type="number" id="q4a" placeholder="?"> <span class="unit">°C</span>
+                </div>
+            </div>
+
+            <div class="calc-box">
+                <h4>b) Bei welcher Temperatur beginnt das Sieden? (2 BE)</h4>
+                <div class="calc-row">
+                    <label>Siedetemp. =</label>
+                    <input type="number" id="q4b" placeholder="?"> <span class="unit">°C</span>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q4-fb-correct">Richtig! Du kannst Erwärmungskurven auswerten.</div>
+            <div class="feedback-box incorrect" id="q4-fb-incorrect">a) Temperaturänderung = Endtemperatur minus Anfangstemperatur. b) Wasser siedet bei 100 °C.</div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════
+             AUFGABE 5: Transfer (4 BE) - NUR ***
+             ═══════════════════════════════════════════════════════════════════════ -->
+        <div class="question" id="q5" data-niveau="3" data-points="4">
+            <div class="question-header">
+                <div class="question-title">Aufgabe 5: Nachdenken</div>
+                <div class="question-meta">
+                    <span class="question-niveau niveau-3">***</span>
+                    <span class="question-points">4 BE</span>
+                </div>
+            </div>
+            <div class="question-text">Beantworte die Fragen.</div>
+
+            <div class="calc-box">
+                <h4>a) Wer ist schneller? (2 BE)</h4>
+                <p>Tom läuft 200 m in 50 s. Mia läuft 120 m in 24 s.</p>
+                <div class="calc-row">
+                    <select id="q5a" style="padding:8px 12px; font-size:1em; border:1px solid #2c5aa0; min-width:150px;">
+                        <option value="">-- wählen --</option>
+                        <option value="tom">Tom</option>
+                        <option value="mia">Mia</option>
+                        <option value="gleich">Beide gleich schnell</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="calc-box">
+                <h4>b) Was bedeutet das Plateau in der Erwärmungskurve für den Kochtopf? (2 BE)</h4>
+                <p>Wenn das Wasser kocht: Bringt es etwas, die Herdplatte noch höher zu stellen?</p>
+                <div class="mc-group" id="q5b-group">
+                    <div class="mc-option" data-q="q5b" data-v="nein" onclick="selectMCopt(this)">Nein, das Wasser wird nicht heißer als 100 °C -- die Nudeln kochen nicht schneller.</div>
+                    <div class="mc-option" data-q="q5b" data-v="ja" onclick="selectMCopt(this)">Ja, mehr Energie macht das Wasser heißer und die Nudeln kochen schneller.</div>
+                </div>
+            </div>
+            <div class="feedback-box correct" id="q5-fb-correct">Sehr gut! Beim Sieden bleibt die Temperatur bei 100 °C -- egal wie stark man heizt.</div>
+            <div class="feedback-box incorrect" id="q5-fb-incorrect">Tom: 200/50 = 4 m/s. Mia: 120/24 = 5 m/s. Mia ist schneller! Beim Sieden bleibt die Temperatur bei 100 °C.</div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="submit-section" id="submitSection">
+            <p style="margin-bottom:15px;">Überprüfe deine Antworten, bevor du abgibst.</p>
+            <button onclick="submitTest()" id="submitBtn">Test abgeben</button>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results hidden" id="resultsSection">
+            <h2>Ergebnis</h2>
+            <div id="studentNameDisplay"></div>
+            <div style="margin:10px 0;font-size:0.9em;" id="niveauDisplay"></div>
+            <div style="margin-top:20px;">
+                <div style="font-size:1.1em; font-weight:600; color:#555; margin-bottom:5px;">Erreichte Punkte:</div>
+                <div class="score" id="scoreDisplay">0 / 0</div>
+            </div>
+            <div class="grade" id="gradeDisplay"></div>
+            <table class="grade-table">
+                <tr>
+                    <th>NP</th><th>14</th><th>13</th><th>12</th><th>11</th><th>10</th><th>9</th><th>8</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                </tr>
+                <tr>
+                    <td>%</td><td>100</td><td>96</td><td>90,7</td><td>86</td><td>80</td><td>73,3</td><td>66,7</td><td>60</td><td>53,3</td><td>46,7</td><td>40</td><td>33,3</td><td>26,7</td><td>20</td>
+                </tr>
+                <tr id="gradeRow">
+                    <td>BE</td><td id="be14">-</td><td id="be13">-</td><td id="be12">-</td><td id="be11">-</td><td id="be10">-</td><td id="be9">-</td><td id="be8">-</td><td id="be7">-</td><td id="be6">-</td><td id="be5">-</td><td id="be4">-</td><td id="be3">-</td><td id="be2">-</td><td id="be1">-</td>
+                </tr>
+            </table>
+            <div style="background: #fff3e0; border: 2px solid #b35c00; padding: 15px; margin: 20px 0; text-align: left;">
+                <strong style="color: #b35c00;">Ergebnis sichern:</strong>
+                <ol style="margin: 10px 0 0 20px; line-height: 1.8;">
+                    <li>Klicke auf <strong>"Drucken / PDF"</strong></li>
+                    <li>Wähle <strong>"Als PDF speichern"</strong></li>
+                    <li>Lade das PDF in der <strong>Bildungscloud</strong> hoch</li>
+                </ol>
+            </div>
+            <button class="btn-secondary" onclick="window.print()">Drucken / PDF</button>
+        </div>
+
+        <!-- Teacher Reset Section -->
+        <div class="teacher-section" id="teacherSection">
+            <h3>Lehrer-Bereich</h3>
+            <p style="font-size:0.85em; margin-bottom:10px;">Reset für diesen Platz (löscht alle Eingaben):</p>
+            <button class="btn-secondary btn-small" onclick="teacherReset()">Platz zurücksetzen</button>
+        </div>
+    </div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    // KONFIGURATION
+    // ═══════════════════════════════════════════════════════════════
+    var STORAGE_KEY = 'mt-physik-6-temperatur-002';
+    var STORAGE_HOURS = 22;
+    var selectedNiveau = 0;
+    var testSubmitted = false;
+    var seatConfirmed = false;
+
+    // Richtige Antworten
+    var answers = {
+        'q1-a': 'empfinden',
+        'q1-b': 'taeuschen',
+        'q1-c': 'thermometer',
+        'q1-d': '0',
+        'q1-e': '100',
+        'q2a': 'plateau',
+        'q2b': 'dampf',
+        'q3a-v': 5,
+        'q3b-t': 600,
+        'q3b-v': 0.01,
+        'q4a': 80,
+        'q4b': 100,
+        'q5a': 'mia',
+        'q5b': 'nein'
+    };
+
+    var tolerances = {
+        'q3a-v': 0.1,
+        'q3b-t': 0,
+        'q3b-v': 0.005,
+        'q4a': 0,
+        'q4b': 0
+    };
+
+    // MC-Antworten speichern
+    var mcAnswers = {};
+
+    // ═══════════════════════════════════════════════════════════════
+    // INITIALISIERUNG
+    // ═══════════════════════════════════════════════════════════════
+    (function() {
+        var seatSel = document.getElementById('seatSelect');
+        for (var i = 1; i <= 30; i++) {
+            var opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = 'Platz ' + i;
+            seatSel.appendChild(opt);
+        }
+
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            questions[i].style.display = 'none';
+        }
+        document.getElementById('submitSection').style.display = 'none';
+
+        var allInputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].addEventListener('change', function() {
+                saveAnswers();
+                updateProgress();
+            });
+        }
+
+        restoreAnswers();
+    })();
+
+    // ═══════════════════════════════════════════════════════════════
+    // MC-OPTION HANDLING
+    // ═══════════════════════════════════════════════════════════════
+    function selectMCopt(el) {
+        if (testSubmitted) return;
+        var q = el.getAttribute('data-q');
+        var v = el.getAttribute('data-v');
+        var siblings = document.querySelectorAll('[data-q="' + q + '"]');
+        for (var i = 0; i < siblings.length; i++) {
+            siblings[i].classList.remove('selected');
+        }
+        el.classList.add('selected');
+        mcAnswers[q] = v;
+        saveAnswers();
+        updateProgress();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PLATZ & NIVEAU
+    // ═══════════════════════════════════════════════════════════════
+    function confirmSeat() {
+        var sel = document.getElementById('seatSelect');
+        var val = sel.value;
+        if (!val) { alert('Bitte Platznummer wählen!'); return; }
+        seatConfirmed = true;
+        document.getElementById('seatRow').style.display = 'none';
+        document.getElementById('seatWarning').style.display = 'none';
+        document.getElementById('seatConfirmed').textContent = 'Platz ' + val;
+        document.getElementById('seatConfirmed').style.display = 'block';
+        saveAnswers();
+    }
+
+    function confirmNiveau() {
+        if (!seatConfirmed) { alert('Bitte zuerst Platznummer wählen und bestätigen!'); return; }
+        var sel = document.getElementById('niveauSelect');
+        var val = parseInt(sel.value);
+        if (!val) { alert('Bitte Niveau wählen!'); return; }
+        selectedNiveau = val;
+        document.getElementById('niveauRow').style.display = 'none';
+        document.getElementById('niveauWarning').style.display = 'none';
+        var labels = { 1: '* Basis (15 BE)', 2: '** Standard (19 BE)', 3: '*** Erweitert (23 BE)' };
+        document.getElementById('niveauConfirmed').textContent = labels[val];
+        document.getElementById('niveauConfirmed').style.display = 'block';
+        showQuestionsForNiveau(val);
+        saveAnswers();
+        updateProgress();
+    }
+
+    function showQuestionsForNiveau(niveau) {
+        var questions = document.querySelectorAll('.question');
+        for (var i = 0; i < questions.length; i++) {
+            var qNiveau = parseInt(questions[i].getAttribute('data-niveau'));
+            questions[i].style.display = (qNiveau <= niveau) ? 'block' : 'none';
+        }
+        document.getElementById('submitSection').style.display = 'block';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // FORTSCHRITT
+    // ═══════════════════════════════════════════════════════════════
+    function updateProgress() {
+        if (selectedNiveau === 0) return;
+        var answered = countAnsweredFields();
+        var total = countTotalFields();
+        var pct = total > 0 ? Math.round((answered / total) * 100) : 0;
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressText').textContent = answered + ' / ' + total + ' beantwortet';
+    }
+
+    function countTotalFields() {
+        var count = 0;
+        // Q1: 5 selects, Q2: 2 MC, Q3: 3 inputs
+        count = 5 + 2 + 3;
+        if (selectedNiveau >= 2) count += 2; // Q4: 2 inputs
+        if (selectedNiveau >= 3) count += 2; // Q5: 1 select + 1 MC
+        return count;
+    }
+
+    function countAnsweredFields() {
+        var count = 0;
+        // Q1 selects
+        var q1Fields = ['q1-a','q1-b','q1-c','q1-d','q1-e'];
+        for (var i = 0; i < q1Fields.length; i++) {
+            var el = document.getElementById(q1Fields[i]);
+            if (el && el.value !== '') count++;
+        }
+        // Q2 MC
+        if (mcAnswers['q2a']) count++;
+        if (mcAnswers['q2b']) count++;
+        // Q3 inputs
+        var q3Fields = ['q3a-v','q3b-t','q3b-v'];
+        for (var i = 0; i < q3Fields.length; i++) {
+            var el = document.getElementById(q3Fields[i]);
+            if (el && el.value !== '') count++;
+        }
+        if (selectedNiveau >= 2) {
+            var el4a = document.getElementById('q4a');
+            if (el4a && el4a.value !== '') count++;
+            var el4b = document.getElementById('q4b');
+            if (el4b && el4b.value !== '') count++;
+        }
+        if (selectedNiveau >= 3) {
+            var el5a = document.getElementById('q5a');
+            if (el5a && el5a.value !== '') count++;
+            if (mcAnswers['q5b']) count++;
+        }
+        return count;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SPEICHERN & WIEDERHERSTELLEN
+    // ═══════════════════════════════════════════════════════════════
+    function saveAnswers() {
+        var data = {
+            timestamp: Date.now(),
+            seat: document.getElementById('seatSelect').value,
+            seatConfirmed: seatConfirmed,
+            niveau: selectedNiveau,
+            submitted: testSubmitted,
+            answers: {},
+            mcAnswers: mcAnswers
+        };
+        var allSelects = document.querySelectorAll('select[id^="q"]');
+        for (var i = 0; i < allSelects.length; i++) {
+            data.answers[allSelects[i].id] = allSelects[i].value;
+        }
+        var allInputs = document.querySelectorAll('input[type="number"]');
+        for (var i = 0; i < allInputs.length; i++) {
+            data.answers[allInputs[i].id] = allInputs[i].value;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function restoreAnswers() {
+        var stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return;
+        var data = JSON.parse(stored);
+
+        var now = Date.now();
+        var maxAge = STORAGE_HOURS * 60 * 60 * 1000;
+        if (data.timestamp && (now - data.timestamp) > maxAge) {
+            localStorage.removeItem(STORAGE_KEY);
+            return;
+        }
+
+        if (data.seat) {
+            document.getElementById('seatSelect').value = data.seat;
+            if (data.seatConfirmed) {
+                seatConfirmed = true;
+                document.getElementById('seatRow').style.display = 'none';
+                document.getElementById('seatWarning').style.display = 'none';
+                document.getElementById('seatConfirmed').textContent = 'Platz ' + data.seat;
+                document.getElementById('seatConfirmed').style.display = 'block';
+            }
+        }
+        if (data.niveau) {
+            selectedNiveau = data.niveau;
+            document.getElementById('niveauSelect').value = data.niveau;
+            document.getElementById('niveauRow').style.display = 'none';
+            document.getElementById('niveauWarning').style.display = 'none';
+            var labels = { 1: '* Basis (15 BE)', 2: '** Standard (19 BE)', 3: '*** Erweitert (23 BE)' };
+            document.getElementById('niveauConfirmed').textContent = labels[data.niveau];
+            document.getElementById('niveauConfirmed').style.display = 'block';
+            showQuestionsForNiveau(data.niveau);
+        }
+        if (data.mcAnswers) {
+            mcAnswers = data.mcAnswers;
+            for (var q in mcAnswers) {
+                var opts = document.querySelectorAll('[data-q="' + q + '"]');
+                for (var i = 0; i < opts.length; i++) {
+                    if (opts[i].getAttribute('data-v') === mcAnswers[q]) {
+                        opts[i].classList.add('selected');
+                    }
+                }
+            }
+        }
+        if (data.answers) {
+            for (var key in data.answers) {
+                var el = document.getElementById(key);
+                if (el) el.value = data.answers[key];
+            }
+        }
+        if (data.submitted) {
+            testSubmitted = true;
+            submitTest(true);
+        }
+        updateProgress();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // TEST ABGEBEN
+    // ═══════════════════════════════════════════════════════════════
+    function submitTest(isRestore) {
+        if (!isRestore && !confirm('Test wirklich abgeben? Du kannst danach nichts mehr ändern.')) return;
+        testSubmitted = true;
+        saveAnswers();
+
+        var totalPoints = 0;
+        var earnedPoints = 0;
+
+        // Q1: Lückentext (5 BE)
+        var q1Fields = ['q1-a','q1-b','q1-c','q1-d','q1-e'];
+        var q1Earned = 0;
+        for (var i = 0; i < q1Fields.length; i++) {
+            var el = document.getElementById(q1Fields[i]);
+            if (el.value === answers[q1Fields[i]]) {
+                q1Earned++;
+                el.classList.add('correct');
+            } else {
+                el.classList.add('incorrect');
+            }
+            el.disabled = true;
+        }
+        totalPoints += 5;
+        earnedPoints += q1Earned;
+        showQuestionResult('q1', q1Earned, 5);
+
+        // Q2: MC (4 BE)
+        var q2Earned = 0;
+        q2Earned += evaluateMC('q2a', 2);
+        q2Earned += evaluateMC('q2b', 2);
+        totalPoints += 4;
+        earnedPoints += q2Earned;
+        showQuestionResult('q2', q2Earned, 4);
+
+        // Q3: Geschwindigkeit (6 BE)
+        var q3Earned = 0;
+        q3Earned += evaluateNumeric('q3a-v', 2);
+        q3Earned += evaluateNumeric('q3b-t', 1);
+        q3Earned += evaluateNumeric('q3b-v', 3);
+        totalPoints += 6;
+        earnedPoints += q3Earned;
+        showQuestionResult('q3', q3Earned, 6);
+
+        // Q4: Nur ** und *** (4 BE)
+        if (selectedNiveau >= 2) {
+            var q4Earned = 0;
+            q4Earned += evaluateNumeric('q4a', 2);
+            q4Earned += evaluateNumeric('q4b', 2);
+            totalPoints += 4;
+            earnedPoints += q4Earned;
+            showQuestionResult('q4', q4Earned, 4);
+        }
+
+        // Q5: Nur *** (4 BE)
+        if (selectedNiveau >= 3) {
+            var q5Earned = 0;
+            var el5a = document.getElementById('q5a');
+            if (el5a.value === answers['q5a']) {
+                q5Earned += 2;
+                el5a.style.borderColor = '#2a7a4b';
+                el5a.style.background = '#e8f5e9';
+            } else {
+                el5a.style.borderColor = '#c62828';
+                el5a.style.background = '#ffebee';
+            }
+            el5a.disabled = true;
+            q5Earned += evaluateMC('q5b', 2);
+            totalPoints += 4;
+            earnedPoints += q5Earned;
+            showQuestionResult('q5', q5Earned, 4);
+        }
+
+        // Alle Inputs deaktivieren
+        var allInputs = document.querySelectorAll('input, select');
+        for (var i = 0; i < allInputs.length; i++) {
+            allInputs[i].disabled = true;
+        }
+        // MC deaktivieren
+        var allMC = document.querySelectorAll('.mc-option');
+        for (var i = 0; i < allMC.length; i++) {
+            allMC[i].classList.add('disabled');
+        }
+
+        document.getElementById('submitSection').style.display = 'none';
+        document.getElementById('resultsSection').classList.remove('hidden');
+        document.getElementById('scoreDisplay').textContent = earnedPoints + ' / ' + totalPoints;
+        document.getElementById('studentNameDisplay').textContent = 'Platz: ' + document.getElementById('seatSelect').value;
+        var niveauLabels = { 1: '* Basis', 2: '** Standard', 3: '*** Erweitert' };
+        document.getElementById('niveauDisplay').textContent = 'Niveau: ' + niveauLabels[selectedNiveau];
+
+        var pct = (earnedPoints / totalPoints) * 100;
+        var np = calculateNP(pct);
+        document.getElementById('gradeDisplay').textContent = np + ' Notenpunkte';
+
+        var thresholds = [100, 96, 90.67, 86, 80, 73.33, 66.67, 60, 53.33, 46.67, 40, 33.33, 26.67, 20];
+        var marked = false;
+        for (var i = 14; i >= 1; i--) {
+            var beNeeded = Math.ceil(totalPoints * thresholds[14-i] / 100);
+            document.getElementById('be' + i).textContent = beNeeded;
+            if (!marked && earnedPoints >= beNeeded) {
+                document.getElementById('be' + i).classList.add('current');
+                marked = true;
+            }
+        }
+    }
+
+    function evaluateNumeric(fieldId, points) {
+        var el = document.getElementById(fieldId);
+        if (!el) return 0;
+        var userVal = parseFloat(el.value);
+        var correctVal = answers[fieldId];
+        var tol = tolerances[fieldId] || 0;
+        var isCorrect = !isNaN(userVal) && Math.abs(userVal - correctVal) <= tol;
+        if (isCorrect) {
+            el.classList.add('correct');
+        } else {
+            el.classList.add('incorrect');
+        }
+        el.disabled = true;
+        return isCorrect ? points : 0;
+    }
+
+    function evaluateMC(qName, points) {
+        var opts = document.querySelectorAll('[data-q="' + qName + '"]');
+        var userVal = mcAnswers[qName] || '';
+        var correctVal = answers[qName];
+        var earned = 0;
+        for (var i = 0; i < opts.length; i++) {
+            var v = opts[i].getAttribute('data-v');
+            if (v === correctVal) {
+                opts[i].classList.add('correct-mc');
+                if (userVal === v) earned = points;
+            } else if (v === userVal) {
+                opts[i].classList.add('wrong-mc');
+            }
+        }
+        return earned;
+    }
+
+    function showQuestionResult(qId, earned, total) {
+        var header = document.querySelector('#' + qId + ' .question-header');
+        if (!header) return;
+        var span = document.createElement('span');
+        span.className = 'question-result';
+        if (earned === total) {
+            span.className += ' full';
+            span.textContent = earned + '/' + total;
+        } else if (earned > 0) {
+            span.className += ' partial';
+            span.textContent = earned + '/' + total;
+        } else {
+            span.className += ' zero';
+            span.textContent = '0/' + total;
+        }
+        header.appendChild(span);
+
+        var fbCorrect = document.getElementById(qId + '-fb-correct');
+        var fbIncorrect = document.getElementById(qId + '-fb-incorrect');
+        if (earned === total && fbCorrect) {
+            fbCorrect.classList.add('show');
+        } else if (fbIncorrect) {
+            fbIncorrect.classList.add('show');
+        }
+    }
+
+    function calculateNP(pct) {
+        var thresholds = [
+            [100, 14], [96, 13], [90.67, 12], [86, 11], [80, 10],
+            [73.33, 9], [66.67, 8], [60, 7], [53.33, 6], [46.67, 5],
+            [40, 4], [33.33, 3], [26.67, 2], [20, 1]
+        ];
+        for (var i = 0; i < thresholds.length; i++) {
+            if (pct >= thresholds[i][0]) return thresholds[i][1];
+        }
+        return 0;
+    }
+
+    function teacherReset() {
+        var code = prompt('Lehrer-Code eingeben:');
+        if (code === 'reset6') {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        } else {
+            alert('Falscher Code.');
+        }
+    }
+    </script>
+</body>
+</html>

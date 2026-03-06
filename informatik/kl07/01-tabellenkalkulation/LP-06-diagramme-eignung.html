@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagramme: Welches passt? | Informatik 7</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+
+        header {
+            background: linear-gradient(135deg, #b35c00 0%, #d97a1f 100%);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; margin-bottom: 5px; }
+        header .subtitle { font-size: 0.85em; opacity: 0.9; }
+
+        .progress-bar { background: #ddd; height: 6px; margin-bottom: 8px; }
+        .progress-fill { background: #b35c00; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 15px; }
+
+        .step-nav { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .step-dot {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85em; font-weight: 600;
+            border: 2px solid #ddd; background: #fff; color: #999;
+            border-radius: 50%;
+            cursor: not-allowed; transition: all 0.15s;
+        }
+        .step-dot.active { border-color: #b35c00; background: #fff3e0; color: #b35c00; }
+        .step-dot.done { background: #2a7a4b; border-color: #2a7a4b; color: #fff; cursor: pointer; }
+
+        .section { background: #fff; border: 1px solid #ddd; padding: 20px; margin-bottom: 15px; display: none; }
+        .section.active { display: block; }
+        .section h2 { font-size: 1.1em; font-weight: 600; color: #b35c00; margin-bottom: 15px; border-bottom: 2px solid #b35c00; padding-bottom: 8px; }
+
+        .info-box {
+            background: #fff3e0;
+            border-left: 4px solid #b35c00;
+            padding: 12px 15px;
+            margin: 12px 0;
+        }
+        .check-box {
+            background: #e8f5e9;
+            border-left: 4px solid #2a7a4b;
+            padding: 12px 15px;
+            margin: 12px 0;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        button {
+            background: #b35c00;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.95em;
+            cursor: pointer;
+            border-radius: 4px;
+            min-height: 44px;
+        }
+        button:hover { background: #8a4700; }
+        button.secondary { background: #666; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .mc-quiz { margin: 15px 0; }
+        .mc-option {
+            display: block;
+            padding: 10px 15px;
+            margin: 6px 0;
+            background: #fafafa;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 44px;
+        }
+        .mc-option:hover { border-color: #b35c00; background: #fff3e0; }
+        .mc-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .mc-option.wrong { border-color: #c62828; background: #ffebee; }
+        .mc-option.disabled { pointer-events: none; opacity: 0.7; }
+        .mc-feedback {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+            font-size: 0.95em;
+        }
+        .mc-feedback.show { display: block; }
+        .mc-feedback.correct { background: #e8f5e9; border-left: 4px solid #2a7a4b; color: #1b5e20; }
+        .mc-feedback.wrong { background: #ffebee; border-left: 4px solid #c62828; color: #b71c1c; }
+
+        /* Diagram type cards */
+        .diagram-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .diagram-card {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .diagram-card h4 {
+            font-size: 0.9em;
+            color: #b35c00;
+            margin-bottom: 8px;
+        }
+        .diagram-card .icon {
+            font-size: 2.5em;
+            margin-bottom: 8px;
+        }
+        .diagram-card p {
+            font-size: 0.8em;
+            color: #555;
+        }
+        .diagram-card.highlight {
+            border-color: #b35c00;
+            background: #fff3e0;
+        }
+
+        /* Mini chart previews */
+        .mini-chart {
+            width: 100%;
+            height: 100px;
+            margin: 8px 0;
+            position: relative;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* Compare table */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.85em;
+        }
+        .compare-table th {
+            background: #b35c00;
+            color: #fff;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .compare-table td {
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+        }
+        .compare-table tr:nth-child(even) { background: #fafafa; }
+
+        /* Drag & Drop matching */
+        .match-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .match-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .match-scenario {
+            flex: 1;
+            min-width: 200px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .match-answer {
+            min-width: 140px;
+        }
+        .match-answer select {
+            width: 100%;
+            padding: 8px;
+            font-size: 0.9em;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            min-height: 44px;
+            background: #fff;
+        }
+        .match-answer select.correct-sel { border-color: #2a7a4b; background: #e8f5e9; }
+        .match-answer select.wrong-sel { border-color: #c62828; background: #ffebee; }
+
+        .success-box {
+            background: #e8f5e9;
+            border: 2px solid #2a7a4b;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            display: none;
+        }
+        .success-box strong {
+            color: #2a7a4b;
+            font-size: 1.1em;
+        }
+
+        .checklist { margin: 15px 0; }
+        .checklist label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #fafafa;
+            border: 1px solid #eee;
+            margin: 4px 0;
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .checklist input[type="checkbox"] {
+            margin-top: 3px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .text-muted { color: #666; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 id="lpTitle">Welches Diagramm passt?</h1>
+        <div class="subtitle">Informatik 7 &middot; ES &middot; Diagrammtypen bewerten</div>
+    </header>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText"></div>
+    <div class="step-nav" id="stepNav"></div>
+
+    <div class="container">
+
+        <!-- STEP 1: Wiederholung -->
+        <div class="section" id="step1">
+            <h2>1. Vier Diagrammtypen</h2>
+
+            <p>Letzte Stunde hast du ein XY-Diagramm in Numbers erstellt. Aber es gibt noch mehr Diagrammtypen. Hier sind die vier wichtigsten:</p>
+
+            <div class="diagram-cards">
+                <div class="diagram-card">
+                    <div class="icon"><canvas id="miniBar" width="120" height="70"></canvas></div>
+                    <h4>Saulendiagramm</h4>
+                    <p>Einzelne Werte vergleichen (z.B. Noten der Klasse)</p>
+                </div>
+                <div class="diagram-card">
+                    <div class="icon"><canvas id="miniLine" width="120" height="70"></canvas></div>
+                    <h4>Liniendiagramm</h4>
+                    <p>Verlauf uber die Zeit (z.B. Temperatur pro Tag)</p>
+                </div>
+                <div class="diagram-card">
+                    <div class="icon"><canvas id="miniPie" width="120" height="70"></canvas></div>
+                    <h4>Kreisdiagramm</h4>
+                    <p>Anteile am Ganzen (z.B. Lieblingsfarben)</p>
+                </div>
+                <div class="diagram-card">
+                    <div class="icon"><canvas id="miniXY" width="120" height="70"></canvas></div>
+                    <h4>XY-Diagramm</h4>
+                    <p>Zusammenhang zweier Grossen (z.B. Koerpergroesse &amp; Schuhgroesse)</p>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>Merke:</strong> Jeder Diagrammtyp hat eine Starke. Das falsche Diagramm kann Daten verwirrend oder sogar irrefuhrend darstellen!
+            </div>
+
+            <div class="mc-quiz" id="quiz1">
+                <p><strong>Schnellcheck:</strong> Welches Diagramm zeigt Anteile am Ganzen?</p>
+                <div class="mc-option" onclick="checkQuiz('quiz1',this,false)">Saulendiagramm</div>
+                <div class="mc-option" onclick="checkQuiz('quiz1',this,false)">Liniendiagramm</div>
+                <div class="mc-option" data-correct="true" onclick="checkQuiz('quiz1',this,true)">Kreisdiagramm</div>
+                <div class="mc-option" onclick="checkQuiz('quiz1',this,false)">XY-Diagramm</div>
+                <div class="mc-feedback correct" id="quiz1-correct">Richtig! Das Kreisdiagramm zeigt, wie sich ein Ganzes (100%) in Teile aufteilt.</div>
+                <div class="mc-feedback wrong" id="quiz1-wrong">Nicht ganz. Das Kreisdiagramm zeigt Anteile am Ganzen.</div>
+            </div>
+
+            <div class="nav-buttons">
+                <span></span>
+                <button id="btn1" onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- STEP 2: Regeln -->
+        <div class="section" id="step2">
+            <h2>2. Wann welches Diagramm?</h2>
+
+            <p>Hier ist eine Ubersicht, wann du welchen Typ wahlst:</p>
+
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>Situation</th>
+                        <th>Diagrammtyp</th>
+                        <th>Beispiel</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Werte vergleichen</strong><br>(Kategorien nebeneinander)</td>
+                        <td>Saulendiagramm</td>
+                        <td>Einwohner von 5 Stadten</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Veranderung uber die Zeit</strong><br>(Verlauf/Trend)</td>
+                        <td>Liniendiagramm</td>
+                        <td>Temperatur uber eine Woche</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Anteile am Ganzen</strong><br>(100% aufteilen)</td>
+                        <td>Kreisdiagramm</td>
+                        <td>Lieblingsfacher der Klasse</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Zusammenhang zweier Messwerte</strong><br>(x beeinflusst y?)</td>
+                        <td>XY-Diagramm</td>
+                        <td>Lernzeit und Note</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="info-box">
+                <strong>Tipp:</strong> Frage dich immer: <em>Was will ich zeigen?</em> Einen Vergleich? Einen Verlauf? Anteile? Einen Zusammenhang?
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zuruck</button>
+                <button onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Interaktives Zuordnen -->
+        <div class="section" id="step3">
+            <h2>3. Zuordnen: Daten &rarr; Diagramm</h2>
+
+            <p>Ordne jedem Datensatz den passenden Diagrammtyp zu:</p>
+
+            <div class="match-container" id="matchGame">
+                <div class="match-row">
+                    <div class="match-scenario"><strong>A)</strong> Wie viele Schueler fahren mit Bus, Fahrrad, Auto oder zu Fuss zur Schule?</div>
+                    <div class="match-answer"><select id="match1" onchange="checkMatch()">
+                        <option value="">-- wahlen --</option>
+                        <option value="saeulen">Saulendiagramm</option>
+                        <option value="linie">Liniendiagramm</option>
+                        <option value="kreis">Kreisdiagramm</option>
+                        <option value="xy">XY-Diagramm</option>
+                    </select></div>
+                </div>
+                <div class="match-row">
+                    <div class="match-scenario"><strong>B)</strong> Wie hat sich die Durchschnittstemperatur in Rostock von Januar bis Dezember verandert?</div>
+                    <div class="match-answer"><select id="match2" onchange="checkMatch()">
+                        <option value="">-- wahlen --</option>
+                        <option value="saeulen">Saulendiagramm</option>
+                        <option value="linie">Liniendiagramm</option>
+                        <option value="kreis">Kreisdiagramm</option>
+                        <option value="xy">XY-Diagramm</option>
+                    </select></div>
+                </div>
+                <div class="match-row">
+                    <div class="match-scenario"><strong>C)</strong> Welchen Anteil hat jede Energiequelle (Kohle, Wind, Solar, Gas) an der Stromerzeugung?</div>
+                    <div class="match-answer"><select id="match3" onchange="checkMatch()">
+                        <option value="">-- wahlen --</option>
+                        <option value="saeulen">Saulendiagramm</option>
+                        <option value="linie">Liniendiagramm</option>
+                        <option value="kreis">Kreisdiagramm</option>
+                        <option value="xy">XY-Diagramm</option>
+                    </select></div>
+                </div>
+                <div class="match-row">
+                    <div class="match-scenario"><strong>D)</strong> Gibt es einen Zusammenhang zwischen Koerpergroesse und Sprungweite?</div>
+                    <div class="match-answer"><select id="match4" onchange="checkMatch()">
+                        <option value="">-- wahlen --</option>
+                        <option value="saeulen">Saulendiagramm</option>
+                        <option value="linie">Liniendiagramm</option>
+                        <option value="kreis">Kreisdiagramm</option>
+                        <option value="xy">XY-Diagramm</option>
+                    </select></div>
+                </div>
+                <div class="match-row">
+                    <div class="match-scenario"><strong>E)</strong> Wie viele Tore hat jeder Spieler in der Saison geschossen?</div>
+                    <div class="match-answer"><select id="match5" onchange="checkMatch()">
+                        <option value="">-- wahlen --</option>
+                        <option value="saeulen">Saulendiagramm</option>
+                        <option value="linie">Liniendiagramm</option>
+                        <option value="kreis">Kreisdiagramm</option>
+                        <option value="xy">XY-Diagramm</option>
+                    </select></div>
+                </div>
+            </div>
+
+            <div id="matchResult" style="display:none;"></div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zuruck</button>
+                <button id="btn3" disabled onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Typische Fehler -->
+        <div class="section" id="step4">
+            <h2>4. Typische Fehler erkennen</h2>
+
+            <p>Manchmal wird ein falsches Diagramm gewahlt. Schaue dir die Beispiele an und finde den Fehler:</p>
+
+            <div style="margin: 15px 0;">
+                <p><strong>Beispiel 1:</strong> Die Schuler einer Klasse wurden nach ihrem Lieblingstier befragt. Das Ergebnis wurde so dargestellt:</p>
+                <div style="background:#fafafa; border:1px solid #ddd; padding:15px; margin:10px 0; text-align:center;">
+                    <canvas id="wrongChart1" width="300" height="160"></canvas>
+                    <p class="text-muted">Lieblingstier der 7A (als Liniendiagramm)</p>
+                </div>
+            </div>
+
+            <div class="mc-quiz" id="quiz4a">
+                <p><strong>Was ist das Problem?</strong></p>
+                <div class="mc-option" onclick="checkQuiz('quiz4a',this,false)">Die Farben sind falsch</div>
+                <div class="mc-option" data-correct="true" onclick="checkQuiz('quiz4a',this,true)">Ein Liniendiagramm ergibt hier keinen Sinn, weil es keine zeitliche Reihenfolge gibt</div>
+                <div class="mc-option" onclick="checkQuiz('quiz4a',this,false)">Es fehlt eine Legende</div>
+                <div class="mc-feedback correct" id="quiz4a-correct">Genau! Die Tiere haben keine Reihenfolge. Eine Linie suggeriert einen Verlauf, den es nicht gibt. Besser: Saulendiagramm oder Kreisdiagramm.</div>
+                <div class="mc-feedback wrong" id="quiz4a-wrong">Nicht ganz. Das Hauptproblem: Eine Linie verbindet Punkte in einer Reihenfolge &ndash; aber Tiere haben keine Reihenfolge!</div>
+            </div>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+            <div style="margin: 15px 0;">
+                <p><strong>Beispiel 2:</strong> Die CO2-Emissionen Deutschlands von 1990 bis 2020 wurden als Kreisdiagramm dargestellt.</p>
+                <div style="background:#fafafa; border:1px solid #ddd; padding:15px; margin:10px 0; text-align:center;">
+                    <canvas id="wrongChart2" width="200" height="160"></canvas>
+                    <p class="text-muted">CO2-Emissionen 1990&ndash;2020 (als Kreisdiagramm)</p>
+                </div>
+            </div>
+
+            <div class="mc-quiz" id="quiz4b">
+                <p><strong>Was ist das Problem?</strong></p>
+                <div class="mc-option" data-correct="true" onclick="checkQuiz('quiz4b',this,true)">Man will den Verlauf uber die Zeit sehen &ndash; dafur braucht man ein Liniendiagramm</div>
+                <div class="mc-option" onclick="checkQuiz('quiz4b',this,false)">Ein Kreisdiagramm ist immer falsch</div>
+                <div class="mc-option" onclick="checkQuiz('quiz4b',this,false)">Die Daten sind zu wenige fur ein Kreisdiagramm</div>
+                <div class="mc-feedback correct" id="quiz4b-correct">Richtig! Man will sehen, wie sich die Emissionen uber die Jahre verandert haben. Das geht am besten mit einem Liniendiagramm.</div>
+                <div class="mc-feedback wrong" id="quiz4b-wrong">Das Kreisdiagramm zeigt keine zeitliche Veranderung. Fur einen Trend uber Jahre braucht man ein Liniendiagramm.</div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zuruck</button>
+                <button id="btn4" disabled onclick="goNext()">Weiter &rarr;</button>
+            </div>
+        </div>
+
+        <!-- STEP 5: Zusammenfassung & Selbstcheck -->
+        <div class="section" id="step5">
+            <h2>5. Zusammenfassung &amp; Selbstcheck</h2>
+
+            <div class="check-box">
+                <strong>Merke dir diese Faustregel:</strong>
+                <ol style="margin: 8px 0 0 20px;">
+                    <li><strong>Vergleich</strong> einzelner Werte &rarr; Saulendiagramm</li>
+                    <li><strong>Verlauf</strong> uber die Zeit &rarr; Liniendiagramm</li>
+                    <li><strong>Anteile</strong> am Ganzen &rarr; Kreisdiagramm</li>
+                    <li><strong>Zusammenhang</strong> zweier Messgrossen &rarr; XY-Diagramm</li>
+                </ol>
+            </div>
+
+            <p style="margin-top: 15px;"><strong>Selbstcheck:</strong> Hake ab, was du jetzt kannst:</p>
+
+            <div class="checklist" id="finalChecklist">
+                <label><input type="checkbox" onchange="checkFinal()"> Ich kann die vier Diagrammtypen benennen.</label>
+                <label><input type="checkbox" onchange="checkFinal()"> Ich weiss, wann ein Saulen- und wann ein Liniendiagramm passt.</label>
+                <label><input type="checkbox" onchange="checkFinal()"> Ich kann erklaren, wann ein Kreisdiagramm sinnvoll ist.</label>
+                <label><input type="checkbox" onchange="checkFinal()"> Ich kann erkennen, wenn ein falsches Diagramm gewahlt wurde.</label>
+            </div>
+
+            <div class="success-box" id="successBox">
+                <strong>Super! Du hast alle Lernziele erreicht.</strong>
+                <p class="text-muted" style="margin-top: 5px;">Nachste Stunde: Test Tabellenkalkulation</p>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="secondary" onclick="goPrev()">&larr; Zuruck</button>
+                <span></span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    var TOTAL_STEPS = 5;
+    var STORAGE_KEY = 'kl07-tabellenkalkulation-06';
+    var currentStep = 1;
+    var completedSteps = [];
+    var quizSolved = {};
+    var checklistState = [];
+    var matchState = {};
+
+    // Correct answers for matching
+    var MATCH_ANSWERS = {
+        match1: 'saeulen',
+        match2: 'linie',
+        match3: 'kreis',
+        match4: 'xy',
+        match5: 'saeulen'
+    };
+
+    function init() {
+        loadProgress();
+        restoreQuizzes();
+        restoreChecklist();
+        restoreMatchGame();
+        drawMiniCharts();
+        drawWrongCharts();
+        renderNav();
+        showStep(currentStep);
+    }
+
+    function restoreQuizzes() {
+        for (var qid in quizSolved) {
+            if (!quizSolved.hasOwnProperty(qid)) continue;
+            var quiz = document.getElementById(qid);
+            if (!quiz) continue;
+            var options = quiz.querySelectorAll('.mc-option');
+            for (var i = 0; i < options.length; i++) {
+                options[i].classList.add('disabled');
+                if (options[i].getAttribute('data-correct') === 'true') {
+                    options[i].classList.add('correct');
+                }
+            }
+            var fbOk = document.getElementById(qid + '-correct');
+            if (fbOk) fbOk.classList.add('show');
+        }
+    }
+
+    function restoreChecklist() {
+        if (!checklistState.length) return;
+        var boxes = document.querySelectorAll('#finalChecklist input');
+        for (var i = 0; i < boxes.length && i < checklistState.length; i++) {
+            boxes[i].checked = checklistState[i];
+        }
+        checkFinal();
+    }
+
+    function restoreMatchGame() {
+        for (var key in matchState) {
+            if (!matchState.hasOwnProperty(key)) continue;
+            var sel = document.getElementById(key);
+            if (sel) {
+                sel.value = matchState[key];
+                if (MATCH_ANSWERS[key] === matchState[key]) {
+                    sel.classList.add('correct-sel');
+                    sel.disabled = true;
+                }
+            }
+        }
+        checkMatchComplete();
+    }
+
+    function loadProgress() {
+        try {
+            var saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                var data = JSON.parse(saved);
+                currentStep = data.currentStep || 1;
+                completedSteps = data.completedSteps || [];
+                quizSolved = data.quizSolved || {};
+                checklistState = data.checklistState || [];
+                matchState = data.matchState || {};
+            }
+        } catch (e) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }
+
+    function saveProgress() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            currentStep: currentStep,
+            completedSteps: completedSteps,
+            quizSolved: quizSolved,
+            checklistState: checklistState,
+            matchState: matchState
+        }));
+    }
+
+    function renderNav() {
+        var nav = document.getElementById('stepNav');
+        nav.innerHTML = '';
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var dot = document.createElement('div');
+            dot.className = 'step-dot';
+            dot.textContent = i;
+            if (completedSteps.indexOf(i) !== -1) {
+                dot.classList.add('done');
+                (function(step) {
+                    dot.onclick = function() { goToStep(step); };
+                })(i);
+            }
+            if (i === currentStep) dot.classList.add('active');
+            nav.appendChild(dot);
+        }
+        var progress = Math.max(((currentStep - 1) / (TOTAL_STEPS - 1)) * 100, currentStep === 1 ? 5 : 0);
+        document.getElementById('progressFill').style.width = progress + '%';
+        document.getElementById('progressText').textContent = 'Schritt ' + currentStep + ' von ' + TOTAL_STEPS;
+    }
+
+    function showStep(n) {
+        var sections = document.querySelectorAll('.section');
+        for (var i = 0; i < sections.length; i++) {
+            sections[i].classList.remove('active');
+        }
+        var target = document.getElementById('step' + n);
+        if (target) target.classList.add('active');
+        currentStep = n;
+        renderNav();
+        saveProgress();
+        window.scrollTo(0, 0);
+        updateButtons();
+    }
+
+    function goToStep(n) {
+        if (completedSteps.indexOf(n) !== -1 || n === currentStep) showStep(n);
+    }
+
+    function goNext() {
+        if (completedSteps.indexOf(currentStep) === -1) completedSteps.push(currentStep);
+        if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
+        saveProgress();
+    }
+
+    function goPrev() {
+        if (currentStep > 1) showStep(currentStep - 1);
+    }
+
+    function updateButtons() {
+        var btn1 = document.getElementById('btn1');
+        if (btn1) btn1.disabled = !quizSolved['quiz1'];
+
+        var btn3 = document.getElementById('btn3');
+        if (btn3) btn3.disabled = !checkMatchComplete();
+
+        var btn4 = document.getElementById('btn4');
+        if (btn4) btn4.disabled = !(quizSolved['quiz4a'] && quizSolved['quiz4b']);
+    }
+
+    function checkQuiz(quizId, el, isCorrect) {
+        if (quizSolved[quizId]) return;
+        var quiz = document.getElementById(quizId);
+        var options = quiz.querySelectorAll('.mc-option');
+        for (var i = 0; i < options.length; i++) {
+            options[i].classList.add('disabled');
+        }
+        if (isCorrect) {
+            el.classList.add('correct');
+            var fb = document.getElementById(quizId + '-correct');
+            if (fb) fb.classList.add('show');
+        } else {
+            el.classList.add('wrong');
+            var fb2 = document.getElementById(quizId + '-wrong');
+            if (fb2) fb2.classList.add('show');
+            for (var j = 0; j < options.length; j++) {
+                if (options[j].getAttribute('data-correct') === 'true') {
+                    options[j].classList.add('correct');
+                }
+            }
+        }
+        quizSolved[quizId] = true;
+        saveProgress();
+        updateButtons();
+    }
+
+    function checkMatch() {
+        var allCorrect = true;
+        var allFilled = true;
+        for (var key in MATCH_ANSWERS) {
+            if (!MATCH_ANSWERS.hasOwnProperty(key)) continue;
+            var sel = document.getElementById(key);
+            if (!sel) continue;
+            var val = sel.value;
+            matchState[key] = val;
+
+            if (!val) {
+                allFilled = false;
+                sel.className = '';
+                continue;
+            }
+            if (val === MATCH_ANSWERS[key]) {
+                sel.classList.remove('wrong-sel');
+                sel.classList.add('correct-sel');
+                sel.disabled = true;
+            } else {
+                sel.classList.remove('correct-sel');
+                sel.classList.add('wrong-sel');
+                allCorrect = false;
+            }
+        }
+
+        var result = document.getElementById('matchResult');
+        if (allFilled && allCorrect) {
+            result.style.display = 'block';
+            result.innerHTML = '<div class="check-box"><strong>Alles richtig!</strong> Du hast alle Datensatze dem passenden Diagramm zugeordnet.</div>';
+        } else if (allFilled && !allCorrect) {
+            result.style.display = 'block';
+            result.innerHTML = '<div class="info-box">Noch nicht alle richtig. Die rot markierten Felder stimmen noch nicht. Uberlege: Was will der Datensatz zeigen?</div>';
+        } else {
+            result.style.display = 'none';
+        }
+
+        saveProgress();
+        updateButtons();
+    }
+
+    function checkMatchComplete() {
+        for (var key in MATCH_ANSWERS) {
+            if (!MATCH_ANSWERS.hasOwnProperty(key)) continue;
+            var sel = document.getElementById(key);
+            if (!sel || sel.value !== MATCH_ANSWERS[key]) return false;
+        }
+        return true;
+    }
+
+    function checkFinal() {
+        var boxes = document.querySelectorAll('#finalChecklist input');
+        var total = boxes.length;
+        var checked = 0;
+        checklistState = [];
+        for (var i = 0; i < boxes.length; i++) {
+            checklistState.push(boxes[i].checked);
+            if (boxes[i].checked) checked++;
+        }
+        var box = document.getElementById('successBox');
+        if (checked >= total) {
+            box.style.display = 'block';
+            if (completedSteps.indexOf(currentStep) === -1) completedSteps.push(currentStep);
+        } else {
+            box.style.display = 'none';
+        }
+        saveProgress();
+        renderNav();
+    }
+
+    // ---- Mini chart drawing ----
+
+    function drawMiniCharts() {
+        drawBarChart('miniBar');
+        drawLineChart('miniLine');
+        drawPieChart('miniPie');
+        drawXYChart('miniXY');
+    }
+
+    function drawBarChart(id) {
+        var c = document.getElementById(id);
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var vals = [40, 25, 55, 35, 45];
+        var colors = ['#2c5aa0', '#b35c00', '#2a7a4b', '#c62828', '#6a1b9a'];
+        var w = c.width; var h = c.height;
+        var barW = w / (vals.length * 2);
+        ctx.clearRect(0, 0, w, h);
+        for (var i = 0; i < vals.length; i++) {
+            var barH = (vals[i] / 60) * (h - 10);
+            ctx.fillStyle = colors[i];
+            ctx.fillRect(i * barW * 2 + barW * 0.5, h - barH - 5, barW, barH);
+        }
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(5, 5);
+        ctx.lineTo(5, h - 5);
+        ctx.lineTo(w - 5, h - 5);
+        ctx.stroke();
+    }
+
+    function drawLineChart(id) {
+        var c = document.getElementById(id);
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var vals = [20, 25, 35, 50, 45, 40, 30];
+        var w = c.width; var h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(10, 5);
+        ctx.lineTo(10, h - 10);
+        ctx.lineTo(w - 5, h - 10);
+        ctx.stroke();
+
+        ctx.strokeStyle = '#b35c00';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var i = 0; i < vals.length; i++) {
+            var x = 15 + i * ((w - 25) / (vals.length - 1));
+            var y = h - 15 - (vals[i] / 55) * (h - 25);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = '#b35c00';
+        for (var j = 0; j < vals.length; j++) {
+            var px = 15 + j * ((w - 25) / (vals.length - 1));
+            var py = h - 15 - (vals[j] / 55) * (h - 25);
+            ctx.beginPath();
+            ctx.arc(px, py, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function drawPieChart(id) {
+        var c = document.getElementById(id);
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var vals = [35, 25, 20, 15, 5];
+        var colors = ['#2c5aa0', '#b35c00', '#2a7a4b', '#c62828', '#6a1b9a'];
+        var total = 0;
+        for (var k = 0; k < vals.length; k++) total += vals[k];
+        var cx = c.width / 2;
+        var cy = c.height / 2;
+        var r = Math.min(cx, cy) - 5;
+        var angle = -Math.PI / 2;
+        ctx.clearRect(0, 0, c.width, c.height);
+        for (var i = 0; i < vals.length; i++) {
+            var sliceAngle = (vals[i] / total) * Math.PI * 2;
+            ctx.fillStyle = colors[i];
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, angle, angle + sliceAngle);
+            ctx.closePath();
+            ctx.fill();
+            angle += sliceAngle;
+        }
+    }
+
+    function drawXYChart(id) {
+        var c = document.getElementById(id);
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var points = [[15, 20], [25, 30], [35, 28], [45, 40], [55, 48], [65, 42], [80, 55], [90, 60]];
+        var w = c.width; var h = c.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(10, 5);
+        ctx.lineTo(10, h - 10);
+        ctx.lineTo(w - 5, h - 10);
+        ctx.stroke();
+
+        ctx.fillStyle = '#2c5aa0';
+        for (var i = 0; i < points.length; i++) {
+            var x = 10 + (points[i][0] / 100) * (w - 20);
+            var y = h - 10 - (points[i][1] / 65) * (h - 20);
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // ---- Wrong chart examples ----
+
+    function drawWrongCharts() {
+        drawWrongLine('wrongChart1');
+        drawWrongPie('wrongChart2');
+    }
+
+    function drawWrongLine(id) {
+        var c = document.getElementById(id);
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var w = c.width; var h = c.height;
+        var labels = ['Hund', 'Katze', 'Hamster', 'Fisch', 'Vogel'];
+        var vals = [8, 12, 4, 6, 3];
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(40, 10);
+        ctx.lineTo(40, h - 30);
+        ctx.lineTo(w - 10, h - 30);
+        ctx.stroke();
+
+        // Line (wrong!)
+        ctx.strokeStyle = '#c62828';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var i = 0; i < vals.length; i++) {
+            var x = 50 + i * ((w - 70) / (vals.length - 1));
+            var y = h - 35 - (vals[i] / 14) * (h - 55);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = '#c62828';
+        for (var j = 0; j < vals.length; j++) {
+            var px = 50 + j * ((w - 70) / (vals.length - 1));
+            var py = h - 35 - (vals[j] / 14) * (h - 55);
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.fillStyle = '#333';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        for (var k = 0; k < labels.length; k++) {
+            var lx = 50 + k * ((w - 70) / (labels.length - 1));
+            ctx.fillText(labels[k], lx, h - 12);
+        }
+    }
+
+    function drawWrongPie(id) {
+        var c = document.getElementById(id);
+        if (!c) return;
+        var ctx = c.getContext('2d');
+        var vals = [990, 900, 810, 740];
+        var labels = ['1990', '2000', '2010', '2020'];
+        var colors = ['#c62828', '#e65100', '#f9a825', '#2a7a4b'];
+        var total = 0;
+        for (var k = 0; k < vals.length; k++) total += vals[k];
+        var cx = c.width / 2;
+        var cy = c.height / 2 - 5;
+        var r = 55;
+        var angle = -Math.PI / 2;
+        ctx.clearRect(0, 0, c.width, c.height);
+        for (var i = 0; i < vals.length; i++) {
+            var sliceAngle = (vals[i] / total) * Math.PI * 2;
+            ctx.fillStyle = colors[i];
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, angle, angle + sliceAngle);
+            ctx.closePath();
+            ctx.fill();
+
+            var midAngle = angle + sliceAngle / 2;
+            var lx = cx + Math.cos(midAngle) * (r * 0.6);
+            var ly = cy + Math.sin(midAngle) * (r * 0.6);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(labels[i], lx, ly);
+
+            angle += sliceAngle;
+        }
+    }
+
+    // Reset: Triple-Tap auf Titel
+    var resetTaps = 0;
+    var resetTimer = null;
+    var title = document.getElementById('lpTitle');
+    if (title) {
+        title.addEventListener('click', function() {
+            resetTaps++;
+            if (resetTimer) clearTimeout(resetTimer);
+            if (resetTaps >= 3) {
+                if (confirm('Lernpfad wirklich zurucksetzen?')) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    location.reload();
+                }
+                resetTaps = 0;
+            } else {
+                resetTimer = setTimeout(function() { resetTaps = 0; }, 800);
+            }
+        });
+    }
+
+    init();
+    </script>
+</body>
+</html>

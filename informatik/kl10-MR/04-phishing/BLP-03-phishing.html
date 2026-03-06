@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="de">
+<!--
+BLP-03 Phishing erkennen | Informatik 10MR | 25 BE
+Bewerteter Lernpfad (6 Phasen) | ES5-kompatibel | iPad-ready
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewerteter Lernpfad: Phishing erkennen | Informatik 10MR</title>
+    <style>
+        :root {
+            --fach: #b35c00;
+            --fach-light: #fff3e0;
+            --bg: #f5f5f5;
+            --white: #ffffff;
+            --border: #dddddd;
+            --text: #222222;
+            --text-muted: #555555;
+            --success: #2a7a4b;
+            --success-bg: #e8f5e9;
+            --warning: #b35c00;
+            --warning-bg: #fff3e0;
+            --error: #c62828;
+            --error-bg: #ffebee;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; }
+        .container { max-width: 950px; margin: 0 auto; padding: 20px; }
+        header { background: var(--fach); color: var(--white); padding: 15px 20px; margin: -20px -20px 0; text-align: center; }
+        header h1 { font-size: 1.3em; font-weight: 600; margin-bottom: 4px; }
+        header p { font-size: 0.85em; opacity: 0.9; }
+        .bewertung-badge { display: inline-block; background: var(--error); color: white; padding: 3px 12px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+        .ew-nav { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 12px 10px; background: var(--white); border-bottom: 1px solid var(--border); margin: 0 -20px 15px; flex-wrap: wrap; }
+        .ew-step { padding: 6px 10px; font-size: 0.7em; font-weight: 600; background: var(--border); color: var(--text-muted); text-align: center; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+        .ew-step.active { background: var(--fach); color: white; }
+        .ew-step.done { background: var(--success); color: white; }
+        .ew-step.graded { border-bottom: 3px solid var(--error); }
+        .ew-arrow { font-size: 0.8em; color: var(--text-muted); padding: 0 2px; }
+        .progress-bar { background: var(--border); height: 6px; margin: 0 0 15px; }
+        .progress-fill { background: var(--fach); height: 100%; width: 0%; transition: width 0.3s; }
+        .step { background: var(--white); border: 1px solid var(--border); padding: 20px; margin-bottom: 15px; display: none; }
+        .step.active { display: block; }
+        .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--fach); }
+        .step-title { font-size: 1.1em; font-weight: 600; color: var(--fach); }
+        .be-badge { font-size: 0.75em; background: var(--error-bg); color: var(--error); padding: 3px 8px; font-weight: 700; }
+        .practice-zone { border: 2px solid var(--fach); border-style: dashed; padding: 15px; margin: 15px 0; position: relative; }
+        .practice-zone::before { content: "\00dcBUNG (unbewertet)"; display: inline-block; background: var(--fach); color: white; font-size: 0.7em; font-weight: 700; padding: 2px 10px; position: absolute; top: -12px; left: 10px; letter-spacing: 0.5px; }
+        .assess-zone { border: 2px solid var(--error); padding: 15px; margin: 15px 0; position: relative; }
+        .assess-zone::before { content: attr(data-label); display: inline-block; background: var(--error); color: white; font-size: 0.7em; font-weight: 700; padding: 2px 10px; position: absolute; top: -12px; left: 10px; letter-spacing: 0.5px; }
+        h3 { font-size: 1em; font-weight: 600; margin: 15px 0 10px; color: var(--text); }
+        p { margin-bottom: 12px; }
+        .info-box { background: var(--fach-light); border-left: 3px solid var(--fach); padding: 12px 15px; margin: 15px 0; font-size: 0.95em; }
+        .btn { background: var(--fach); color: var(--white); border: none; padding: 10px 20px; font-size: 1em; cursor: pointer; margin-top: 10px; min-height: 44px; min-width: 44px; }
+        .btn:hover { opacity: 0.9; }
+        .btn:disabled { background: var(--border); cursor: not-allowed; }
+        .btn-assess { background: var(--error); }
+        .mc-options { margin: 10px 0; }
+        .mc-option { display: block; padding: 10px 15px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; min-height: 44px; }
+        .mc-option:hover { background: var(--fach-light); }
+        .mc-option.selected { background: var(--fach-light); border-color: var(--fach); font-weight: 600; }
+        .mc-option.correct-reveal { background: var(--success-bg); border-color: var(--success); }
+        .mc-option.wrong-reveal { background: var(--error-bg); border-color: var(--error); }
+        .mc-option.disabled { pointer-events: none; cursor: default; opacity: 0.85; }
+        .feedback { padding: 10px; margin-top: 10px; display: none; font-size: 0.9em; }
+        .feedback.correct { background: var(--success-bg); border: 1px solid var(--success); color: var(--success); display: block; }
+        .feedback.incorrect { background: var(--error-bg); border: 1px solid var(--error); color: var(--error); display: block; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+        th { background: var(--fach-light); }
+        .nav-buttons { display: flex; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+        .results-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin: 20px 0; }
+        .result-box { flex: 1 1 120px; text-align: center; padding: 15px; border: 1px solid var(--border); background: var(--white); }
+        .result-box .value { font-size: 2em; font-weight: 700; color: var(--fach); }
+        .result-box .label { font-size: 0.8em; color: var(--text-muted); margin-top: 5px; }
+        .grade-display { text-align: center; margin: 20px 0; }
+        .grade-display .grade { font-size: 3em; font-weight: 700; }
+        .grade-display .grade.g1 { color: var(--success); }
+        .grade-display .grade.g2 { color: #4caf50; }
+        .grade-display .grade.g3 { color: var(--warning); }
+        .grade-display .grade.g4 { color: #e65100; }
+        .grade-display .grade.g5 { color: var(--error); }
+        .grade-display .grade.g6 { color: #b71c1c; }
+        .phase-breakdown td:first-child { text-align: left; }
+        .login-box { max-width: 400px; margin: 40px auto; padding: 30px; background: var(--white); border: 1px solid var(--border); text-align: center; }
+        .login-box .hint { font-size: 0.85em; color: var(--text-muted); margin-top: 10px; }
+        .teacher-reset { position: fixed; bottom: 10px; right: 10px; font-size: 0.7em; color: var(--text-muted); cursor: pointer; opacity: 0.5; }
+        .teacher-reset:hover { opacity: 1; }
+        .tab-warning-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; }
+        .tab-warning-overlay.visible { display: flex; }
+        .tab-warning-content { background: var(--white); padding: 40px; text-align: center; max-width: 400px; }
+        .tab-warning-icon { font-size: 3em; margin-bottom: 15px; }
+        .tab-warning-content h2 { color: var(--error); margin-bottom: 10px; }
+        .tab-count { color: var(--error); font-size: 0.9em; margin-top: 10px; }
+        .locked-notice { background: var(--warning-bg); border: 2px solid var(--warning); padding: 15px; text-align: center; margin-bottom: 15px; display: none; }
+        .locked-notice.visible { display: block; }
+        /* Email mock */
+        .email-mock { background: #fafafa; border: 1px solid #ccc; padding: 12px; margin: 10px 0; font-size: 0.9em; }
+        .email-mock .em-from { color: var(--error); font-weight: 600; }
+        .email-mock .em-subj { font-weight: 600; margin: 4px 0; }
+        .email-mock .em-body { margin-top: 8px; line-height: 1.6; }
+        .email-mock .em-link { color: #1565c0; text-decoration: underline; cursor: default; }
+        .url-box { background: #1a1a2e; color: #0f0; font-family: monospace; padding: 10px 14px; margin: 8px 0; font-size: 0.95em; word-break: break-all; }
+        .beleg { max-width: 700px; margin: 20px auto; }
+        .beleg-header { text-align: center; border-bottom: 2px solid var(--fach); padding-bottom: 10px; margin-bottom: 15px; }
+        .beleg-phase { margin-bottom: 20px; }
+        .beleg-phase h3 { background: var(--fach-light); padding: 8px 12px; margin: 0 0 10px; font-size: 0.95em; }
+        .beleg-item { padding: 10px; border-left: 3px solid #ccc; margin-bottom: 10px; background: #fafafa; }
+        .beleg-item.beleg-correct { border-left-color: var(--success); }
+        .beleg-item.beleg-wrong { border-left-color: #c0392b; }
+        .beleg-q { font-weight: 600; margin-bottom: 5px; font-size: 0.95em; }
+        .beleg-options { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
+        .beleg-opt { padding: 3px 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em; }
+        .beleg-opt-correct { border-color: var(--success); background: #e8f5e9; font-weight: 600; }
+        .beleg-opt-given { outline: 2px solid var(--fach); }
+        .beleg-opt-correct.beleg-opt-given { outline-color: var(--success); }
+        .beleg-points { font-size: 0.85em; font-weight: 600; color: var(--text-muted); }
+        .beleg-explain { font-size: 0.85em; color: #555; font-style: italic; margin-top: 3px; }
+        .timer-display { position: fixed; top: 0; right: 0; z-index: 900; background: #555; color: #ccc; padding: 8px 16px; font-family: monospace; font-size: 1.2em; font-weight: 700; min-width: 90px; text-align: center; }
+        .timer-display.timer-active { background: #222; color: #fff; }
+        .timer-display.timer-warn { background: #e65100; color: #fff; }
+        .timer-display.timer-critical { background: #c62828; color: #fff; animation: timer-blink 0.5s infinite; }
+        .timer-display.timer-hidden { display: none; }
+        @keyframes timer-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .extend-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
+        .extend-overlay.visible { display: flex; }
+        .extend-content { background: #fff; padding: 40px; text-align: center; max-width: 420px; width: 90%; }
+        .extend-content h2 { color: #c62828; margin-bottom: 15px; }
+        .extend-btn { background: #2c5aa0; color: #fff; border: none; padding: 12px 24px; font-size: 1em; cursor: pointer; margin: 5px; min-height: 48px; }
+        .extend-btn.extend-cancel { background: #c62828; }
+        @media print {
+            .ew-nav, .btn, .tab-warning-overlay, #btnBeleg, .nav-buttons, .teacher-reset, .bewertung-badge, .progress-bar, .timer-display, .extend-overlay { display: none !important; }
+            .step { display: none !important; }
+            #step7 { display: block !important; }
+            #belegContainer { display: block !important; }
+            body { font-size: 11pt; }
+            header { background: none !important; color: var(--text) !important; border-bottom: 2px solid var(--fach); }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>Phishing erkennen</h1>
+        <p>Informatik 10MR | Bewerteter Lernpfad | 25 BE</p>
+        <div class="bewertung-badge">Bewertet &ndash; Jede markierte Antwort z&auml;hlt!</div>
+    </header>
+
+    <div class="locked-notice" id="lockedNotice">
+        <strong>Lernpfad bereits abgeschlossen!</strong> Dein Ergebnis wird angezeigt.
+    </div>
+
+    <div class="ew-nav" id="ewNav">
+        <div class="ew-step graded" id="ew1">Was ist Phishing?</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" id="ew2">E-Mails</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" id="ew3">URLs</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" id="ew4">Szenarien</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" id="ew5">Social Eng.</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step graded" id="ew6">Transfer</div>
+        <div class="ew-arrow">&rarr;</div>
+        <div class="ew-step" id="ew7">Ergebnis</div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <!-- Phase 0: Login -->
+    <div class="step active" id="step0">
+        <div class="login-box">
+            <h2 style="color: var(--fach); margin-bottom: 10px;">Bewerteter Lernpfad</h2>
+            <label for="platzSelect" style="font-size: 1.1em; font-weight: 600; display: block; margin: 15px 0 8px;">Platzkarten-Nummer:</label>
+            <select id="platzSelect" style="font-size: 1.3em; padding: 10px 16px; border: 2px solid var(--fach); min-width: 140px; min-height: 44px;">
+                <option value="0">-- w&auml;hlen --</option>
+            </select>
+            <button class="btn" id="btnStart" onclick="startLP()">Lernpfad starten</button>
+            <p class="hint">W&auml;hle die Nummer deiner Platzkarte. (25 BE)</p>
+        </div>
+    </div>
+
+    <!-- Phase 1: Was ist Phishing? -->
+    <div class="step" id="step1">
+        <div class="step-header">
+            <span class="step-title">Phase 1: Was ist Phishing?</span>
+            <span class="be-badge">3 BE</span>
+        </div>
+
+        <div class="info-box" style="background: #1a1a2e; border-left-color: #ff6b6b; color: #eee;">
+            <strong style="color: #ff6b6b;">Stell dir vor:</strong>
+            <p style="margin-top: 8px;">Du bekommst eine E-Mail von deiner "Bank": <em>"Ihr Konto wurde gesperrt! Klicken Sie sofort hier, um es zu entsperren."</em> Sieht echt aus -- Logo, Farben, alles passt. Aber die E-Mail ist gef&auml;lscht. <strong>Du bist Opfer eines Phishing-Angriffs.</strong></p>
+        </div>
+
+        <div class="info-box">
+            <strong>Was ist Phishing?</strong>
+            <p style="margin-top: 8px;">Phishing = Angriff, bei dem T&auml;ter sich als vertrauensw&uuml;rdige Person oder Organisation ausgeben, um an pers&ouml;nliche Daten zu gelangen (Passw&ouml;rter, Bankdaten, etc.).</p>
+            <table style="margin-top: 10px;">
+                <tr><th>Phishing-Art</th><th>Beschreibung</th><th>Beispiel</th></tr>
+                <tr><td>E-Mail-Phishing</td><td>Gef&auml;lschte E-Mails von "bekannten" Absendern</td><td>"Ihr Amazon-Konto wurde gesperrt"</td></tr>
+                <tr><td>Smishing</td><td>Phishing per SMS</td><td>"Ihr Paket wartet! Klicken Sie hier"</td></tr>
+                <tr><td>Spear-Phishing</td><td>Gezielter Angriff auf bestimmte Personen</td><td>E-Mail an den Chef mit richtigem Namen</td></tr>
+                <tr><td>Pharming</td><td>Umleitung auf gef&auml;lschte Webseiten</td><td>Du tippst paypal.com ein, landest aber auf einer Kopie</td></tr>
+            </table>
+        </div>
+
+        <h3>5 Warnsignale einer Phishing-Nachricht:</h3>
+        <ol style="margin: 8px 0 12px 20px;">
+            <li><strong>Dringlichkeit:</strong> "Sofort handeln!", "Ihr Konto wird gel&ouml;scht!"</li>
+            <li><strong>Unbekannter Absender:</strong> Komische E-Mail-Adresse (z.B. support@amaz0n-sicherheit.xyz)</li>
+            <li><strong>Rechtschreibfehler:</strong> "Sher geerhter Kunde"</li>
+            <li><strong>Verd&auml;chtiger Link:</strong> URL passt nicht zum Absender</li>
+            <li><strong>Pers&ouml;nliche Daten gefordert:</strong> Seri&ouml;se Firmen fragen nie per E-Mail nach Passw&ouml;rtern</li>
+        </ol>
+
+        <div class="assess-zone" data-label="BEWERTUNG (3 BE)">
+            <div id="assess1-container"></div>
+            <button class="btn btn-assess" id="btn-submit1" onclick="submitMCPhase(1)">Phase 1 abgeben</button>
+            <div class="feedback" id="fb-assess1"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next1" onclick="goToPhase(2)" disabled>Weiter: E-Mails analysieren &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Phase 2: E-Mails analysieren -->
+    <div class="step" id="step2">
+        <div class="step-header">
+            <span class="step-title">Phase 2: E-Mails analysieren</span>
+            <span class="be-badge">4 BE</span>
+        </div>
+
+        <div class="info-box">
+            <strong>So pr&uuml;fst du eine E-Mail:</strong>
+            <ol style="margin: 8px 0 0 16px;">
+                <li><strong>Absender-Adresse pr&uuml;fen:</strong> Stimmt die Domain? (paypal.com vs. paypal-sicherheit.xyz)</li>
+                <li><strong>Link-Ziel pr&uuml;fen:</strong> Wohin f&uuml;hrt der Link wirklich? (Finger lange auf Link halten = URL sehen)</li>
+                <li><strong>Anrede pr&uuml;fen:</strong> "Sehr geehrter Kunde" statt deines Namens = verd&auml;chtig</li>
+                <li><strong>Logik pr&uuml;fen:</strong> Hast du &uuml;berhaupt ein Konto bei dieser Firma?</li>
+            </ol>
+        </div>
+
+        <div class="practice-zone">
+            <p style="margin-top: 8px;"><strong>Beispiel-E-Mail:</strong></p>
+            <div class="email-mock">
+                <div class="em-from">Von: sicherheit@sparkasse-online-pruefung.com</div>
+                <div class="em-subj">Betreff: Dringende Sicherheits&uuml;berpr&uuml;fung Ihres Kontos</div>
+                <div class="em-body">
+                    Sher geehrter Kunde,<br><br>
+                    wir haben ungew&ouml;hnliche Aktivit&auml;ten auf Ihrem Konto festgestellt. Bitte best&auml;tigen Sie Ihre Identit&auml;t innerhalb von 24 Stunden, sonst wird Ihr Konto gesperrt.<br><br>
+                    <span class="em-link">https://sparkasse-sicherheit-check.xyz/verifizierung</span><br><br>
+                    Mit freundlichen Gr&uuml;&szlig;en<br>Ihr Sparkassen-Team
+                </div>
+            </div>
+            <p><strong>Warnsignale hier:</strong> Falsche Domain (sparkasse-online-pruefung.com statt sparkasse.de), Dringlichkeit (24 Stunden), Rechtschreibfehler ("Sher geehrter"), unpers&ouml;nliche Anrede, verd&auml;chtiger Link (.xyz).</p>
+        </div>
+
+        <div class="assess-zone" data-label="BEWERTUNG (4 BE)">
+            <div id="assess2-container"></div>
+            <button class="btn btn-assess" id="btn-submit2" onclick="submitMCPhase(2)">Phase 2 abgeben</button>
+            <div class="feedback" id="fb-assess2"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next2" onclick="goToPhase(3)" disabled>Weiter: URLs erkennen &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Phase 3: URLs erkennen -->
+    <div class="step" id="step3">
+        <div class="step-header">
+            <span class="step-title">Phase 3: URLs erkennen</span>
+            <span class="be-badge">4 BE</span>
+        </div>
+
+        <div class="info-box">
+            <strong>URLs lesen -- wo steckt die echte Domain?</strong>
+            <p style="margin-top: 8px;">Die <strong>Domain</strong> steht direkt vor dem ersten <code>/</code> nach <code>https://</code>. Alles davor (Subdomains) kann gef&auml;lscht werden!</p>
+            <div class="url-box">https://<span style="color:#f44;">www.paypal.com</span>.evil-site.xyz/login</div>
+            <p>Hier ist <code>evil-site.xyz</code> die echte Domain -- NICHT paypal.com! <code>www.paypal.com</code> ist nur eine Subdomain von evil-site.xyz.</p>
+            <div class="url-box">https://<span style="color:#4f4;">www.paypal.com</span>/login</div>
+            <p>Hier ist <code>paypal.com</code> die echte Domain -- das ist echt!</p>
+        </div>
+
+        <div class="info-box">
+            <strong>Regel:</strong> Die echte Domain sind die <strong>letzten zwei W&ouml;rter</strong> vor dem ersten <code>/</code> (getrennt durch Punkte). Beispiel: <code>login.sparkasse.<strong>de</strong></code> &rarr; Domain = sparkasse.de (echt). <code>sparkasse.login.<strong>fake-bank.com</strong></code> &rarr; Domain = fake-bank.com (Phishing!).
+        </div>
+
+        <div class="assess-zone" data-label="BEWERTUNG (4 BE)">
+            <div id="assess3-container"></div>
+            <button class="btn btn-assess" id="btn-submit3" onclick="submitMCPhase(3)">Phase 3 abgeben</button>
+            <div class="feedback" id="fb-assess3"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next3" onclick="goToPhase(4)" disabled>Weiter: Szenarien &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Phase 4: Phishing-Szenarien -->
+    <div class="step" id="step4">
+        <div class="step-header">
+            <span class="step-title">Phase 4: Phishing-Szenarien bewerten</span>
+            <span class="be-badge">5 BE</span>
+        </div>
+
+        <div class="info-box">
+            <strong>Phishing oder echt?</strong> Lies jedes Szenario genau und entscheide, ob es sich um einen Phishing-Versuch handelt. Begr&uuml;nde deine Entscheidung!
+        </div>
+
+        <div class="assess-zone" data-label="BEWERTUNG (5 BE)">
+            <div id="assess4-container"></div>
+            <button class="btn btn-assess" id="btn-submit4" onclick="submitMCPhase(4)">Phase 4 abgeben</button>
+            <div class="feedback" id="fb-assess4"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next4" onclick="goToPhase(5)" disabled>Weiter: Social Engineering &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Phase 5: Social Engineering -->
+    <div class="step" id="step5">
+        <div class="step-header">
+            <span class="step-title">Phase 5: Social Engineering</span>
+            <span class="be-badge">5 BE</span>
+        </div>
+
+        <div class="info-box">
+            <strong>Social Engineering = Manipulation von Menschen</strong>
+            <p style="margin-top: 8px;">Phishing nutzt psychologische Tricks:</p>
+            <table style="margin-top: 8px;">
+                <tr><th>Trick</th><th>Wie es funktioniert</th><th>Beispiel</th></tr>
+                <tr><td><strong>Autorit&auml;t</strong></td><td>T&auml;ter gibt sich als Chef, Polizei etc. aus</td><td>"Hier spricht die IT-Abteilung..."</td></tr>
+                <tr><td><strong>Dringlichkeit</strong></td><td>Zeitdruck erzeugen</td><td>"Innerhalb von 2 Stunden!"</td></tr>
+                <tr><td><strong>Angst</strong></td><td>Drohung mit Konsequenzen</td><td>"Ihr Konto wird gesperrt!"</td></tr>
+                <tr><td><strong>Gier</strong></td><td>Versprechen von Gewinn</td><td>"Sie haben 1000&euro; gewonnen!"</td></tr>
+                <tr><td><strong>Neugier</strong></td><td>Geheimnisvolle Inhalte</td><td>"Schau mal, wer dein Foto gepostet hat!"</td></tr>
+            </table>
+        </div>
+
+        <div class="assess-zone" data-label="BEWERTUNG (5 BE)">
+            <div id="assess5-container"></div>
+            <button class="btn btn-assess" id="btn-submit5" onclick="submitMCPhase(5)">Phase 5 abgeben</button>
+            <div class="feedback" id="fb-assess5"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" id="btn-next5" onclick="goToPhase(6)" disabled>Weiter: Transfer &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Phase 6: Transfer -->
+    <div class="step" id="step6">
+        <div class="step-header">
+            <span class="step-title">Phase 6: Transfer &amp; Schutzma&szlig;nahmen</span>
+            <span class="be-badge">4 BE</span>
+        </div>
+
+        <div class="info-box">
+            <strong>Was tun, wenn du Phishing erkennst?</strong>
+            <ol style="margin: 8px 0 0 16px;">
+                <li><strong>Nicht klicken!</strong> Links und Anh&auml;nge ignorieren</li>
+                <li><strong>Absender pr&uuml;fen</strong> (E-Mail-Adresse, nicht nur den angezeigten Namen)</li>
+                <li><strong>Im Zweifel: Firma direkt kontaktieren</strong> (&uuml;ber die offizielle Webseite, NICHT &uuml;ber den Link in der E-Mail)</li>
+                <li><strong>E-Mail als Spam/Phishing melden</strong> und l&ouml;schen</li>
+                <li><strong>Falls du geklickt hast:</strong> Sofort Passw&ouml;rter &auml;ndern + 2FA aktivieren</li>
+            </ol>
+        </div>
+
+        <div class="assess-zone" data-label="BEWERTUNG (4 BE)">
+            <div id="assess6-container"></div>
+            <button class="btn btn-assess" id="btn-submit6" onclick="submitMCPhase(6)">Phase 6 abgeben</button>
+            <div class="feedback" id="fb-assess6"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" onclick="showResults()">Ergebnis anzeigen &rarr;</button>
+        </div>
+    </div>
+
+    <!-- Phase 7: Ergebnis -->
+    <div class="step" id="step7">
+        <div class="step-header">
+            <span class="step-title">Ergebnis</span>
+        </div>
+        <div class="results-grid">
+            <div class="result-box"><div class="value" id="resBE">0</div><div class="label" id="resTotalLabel">von 25 BE</div></div>
+            <div class="result-box"><div class="value" id="resProzent">0%</div><div class="label">Prozent</div></div>
+        </div>
+        <div class="grade-display">
+            <div id="resNote" class="grade">-</div>
+        </div>
+        <p style="text-align:center;" id="resultName"></p>
+        <p style="text-align:center; font-size: 0.85em; color: var(--text-muted);" id="resTimestamp"></p>
+        <p style="text-align:center; font-size: 0.85em; color: var(--text-muted);" id="resTabInfo"></p>
+        <p style="text-align:center; margin-top: 10px;"><strong>Pr&uuml;fcode:</strong> <span id="resCode" style="font-family:monospace; font-size:1.2em; color:var(--fach);"></span></p>
+
+        <table class="phase-breakdown" id="resBreakdownTable" style="margin-top:20px;"></table>
+        <table id="resGradeTable" style="margin-top:10px; font-size:0.85em;"></table>
+
+        <div style="text-align:center; margin-top: 20px;">
+            <button class="btn" id="btnBeleg" onclick="showBeleg()">Detailbeleg anzeigen</button>
+            <button class="btn" style="background:#666;" onclick="window.print()">Drucken / PDF</button>
+        </div>
+        <div id="belegContainer" style="display:none;"></div>
+    </div>
+
+</div>
+
+<div class="tab-warning-overlay" id="tabWarning">
+    <div class="tab-warning-content">
+        <div class="tab-warning-icon">&#9888;</div>
+        <h2>Tab-Wechsel erkannt!</h2>
+        <p>Du hast den Test verlassen. Das wird protokolliert.</p>
+        <div class="tab-count">Wechsel: <span id="tabWarnCount">0</span> | Zeit: <span id="tabWarnTime">0s</span></div>
+        <button class="btn" id="tabWarnDismiss" onclick="dismissTabWarning()" style="margin-top:15px;">Zur&uuml;ck zum Test</button>
+    </div>
+</div>
+
+<div class="timer-display timer-hidden" id="timerDisplay">--:--</div>
+
+<div class="extend-overlay" id="extendOverlay">
+    <div class="extend-content">
+        <h2>Zeit abgelaufen!</h2>
+        <p>Deine Zeit ist um. Gib den Lehrer-Code ein f&uuml;r Verl&auml;ngerung:</p>
+        <input type="text" id="extendCodeInput" placeholder="Code">
+        <div style="margin-top:10px;">
+            <button class="extend-btn" onclick="tryExtend()">Verl&auml;ngern</button>
+            <button class="extend-btn extend-cancel" onclick="forceSubmitNow()">Abgeben</button>
+        </div>
+        <p id="extendError" style="color:#c62828; margin-top:8px; display:none;">Falscher Code!</p>
+    </div>
+</div>
+
+<div class="teacher-reset" onclick="teacherReset()">&#9881; Reset</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   BLP-03 PHISHING | ES5-kompatibel
+   ═══════════════════════════════════════════════════════════════ */
+var BLP_ID = 'blp-03-phishing';
+var LP_VERSION = 1;
+var TOTAL_BE = 25;
+var MAX_TIME = 2100; // 35 min
+var EXTEND_TIME = 900; // 15 min NTA
+var CODE_HASH = -1293249381; // "phish03"
+
+var PHASE_CONFIG = [
+    { name: 'Was ist Phishing?', maxBE: 3 },
+    { name: 'E-Mails analysieren', maxBE: 4 },
+    { name: 'URLs erkennen', maxBE: 4 },
+    { name: 'Phishing-Szenarien', maxBE: 5 },
+    { name: 'Social Engineering', maxBE: 5 },
+    { name: 'Transfer', maxBE: 4 }
+];
+var GRADE_SCALE = [
+    { grade: 1, min: 24 },
+    { grade: 2, min: 20 },
+    { grade: 3, min: 15 },
+    { grade: 4, min: 10 },
+    { grade: 5, min: 5 },
+    { grade: 6, min: 0 }
+];
+
+/* ── MC Pools ── */
+var MC_POOL_1 = [
+    { text: 'Was ist das Hauptziel von Phishing?', answer: 'Persoenliche Daten stehlen (Passwoerter, Bankdaten)', distractors: ['Den Computer mit einem Virus infizieren', 'Die Internetverbindung verlangsamen', 'Werbung fuer Produkte machen', 'Den Bildschirm einfrieren'], fb: 'Phishing zielt auf persoenliche Daten ab.' },
+    { text: 'Welches ist ein typisches Warnsignal fuer Phishing?', answer: 'Dringende Aufforderung, sofort zu handeln', distractors: ['Eine personalisierte Anrede mit deinem Namen', 'Ein Link zur offiziellen Webseite des Unternehmens', 'Eine E-Mail von einer bekannten Person', 'Eine Rechnung fuer eine Bestellung, die du kennst'], fb: 'Zeitdruck ist ein klassisches Warnsignal.' },
+    { text: 'Was bedeutet "Smishing"?', answer: 'Phishing per SMS-Nachricht', distractors: ['Phishing per Telefonanruf', 'Phishing ueber Social Media', 'Ein Virus, der sich per Bluetooth verbreitet', 'Ein Angriff auf WLAN-Netzwerke'], fb: 'Smishing = SMS + Phishing.' },
+    { text: 'Warum funktioniert Phishing so gut?', answer: 'Weil es menschliche Emotionen wie Angst und Gier ausnutzt', distractors: ['Weil Computer schlecht geschuetzt sind', 'Weil E-Mails nicht verschluesselt sind', 'Weil Antivirenprogramme nicht funktionieren', 'Weil das Internet unsicher ist'], fb: 'Phishing ist Social Engineering -- es zielt auf Menschen, nicht Technik.' },
+    { text: 'Welche Phishing-Art richtet sich gezielt gegen eine bestimmte Person?', answer: 'Spear-Phishing', distractors: ['Smishing', 'Pharming', 'Spam-Phishing', 'Brute-Force-Phishing'], fb: 'Spear-Phishing = gezielter Angriff mit persoenlichen Informationen.' }
+];
+
+var MC_POOL_2 = [
+    { text: 'Du bekommst eine E-Mail von "noreply@amaz0n-sicherheit.xyz". Was faellt auf?', answer: 'Die Domain ist gefaelscht (amaz0n mit Null statt O, .xyz statt .com)', distractors: ['Die Adresse ist echt, Amazon nutzt verschiedene Domains', 'Nur der Name "noreply" ist verdaechtig', 'Die E-Mail ist sicher, weil sie von einem noreply-Konto kommt', 'Nichts -- das ist eine normale Amazon-E-Mail'], fb: 'Achte auf die Domain NACH dem @-Zeichen!' },
+    { text: 'Eine E-Mail beginnt mit "Sehr geehrter Kunde". Warum ist das verdaechtig?', answer: 'Echte Unternehmen nutzen meist deinen Namen, wenn sie dich kennen', distractors: ['Das ist eine hoefliche Anrede, die alle Unternehmen nutzen', 'Nur Banken verwenden den echten Namen', 'Gar nicht verdaechtig, das ist Standard', 'Nur wenn die E-Mail auch Rechtschreibfehler hat'], fb: 'Seriöse Unternehmen, bei denen du ein Konto hast, kennen deinen Namen.' },
+    { text: 'In einer E-Mail steht: "Wenn Sie nicht innerhalb von 2 Stunden reagieren, wird Ihr Konto geloescht." Was ist das?', answer: 'Ein typischer Phishing-Trick: Dringlichkeit erzeugen', distractors: ['Eine normale Warnung deiner Bank', 'Ein Zeichen dafuer, dass die E-Mail echt ist', 'Ein gesetzlich vorgeschriebener Hinweis', 'Eine Werbung fuer einen neuen Service'], fb: 'Zeitdruck = klassisches Phishing-Warnsignal.' },
+    { text: 'Woran erkennst du, wohin ein Link wirklich fuehrt?', answer: 'Finger lange auf den Link halten (Mobilgeraet) oder mit der Maus darueber fahren (PC)', distractors: ['Am angezeigten Text des Links', 'An der Farbe des Links', 'Gar nicht -- Links sind immer vertrauenswuerdig', 'Am Absender der E-Mail'], fb: 'Der angezeigte Linktext kann beliebig sein -- immer die echte URL pruefen!' },
+    { text: 'Du erhaeltst eine E-Mail mit einem Anhang "Rechnung_Amazon.pdf.exe". Was ist daran gefaehrlich?', answer: 'Die echte Dateiendung ist .exe (ausfuehrbare Datei/Virus), nicht .pdf', distractors: ['PDF-Dateien von Amazon sind immer sicher', 'Nur .zip-Dateien koennen gefaehrlich sein', 'Der Dateiname ist zu lang', 'Amazon verschickt keine Rechnungen'], fb: '.exe = ausfuehrbares Programm. Angreifer verstecken die echte Endung.' },
+    { text: 'Eine E-Mail von "PayPal" hat Rechtschreibfehler und bittet um dein Passwort. Was tust du?', answer: 'Nicht antworten, E-Mail als Phishing melden und loeschen', distractors: ['Passwort eingeben, PayPal braucht es fuer Sicherheitschecks', 'Auf die E-Mail antworten und fragen ob sie echt ist', 'Den Link klicken um zu pruefen ob er echt ist', 'Die E-Mail an Freunde weiterleiten als Warnung'], fb: 'Nie auf Phishing-Mails reagieren! Melden und loeschen.' }
+];
+
+var MC_POOL_3 = [
+    { text: 'Welche URL ist echt?', options: ['https://www.paypal.com/login', 'https://www.paypal.com.login-sicher.xyz/konto', 'https://paypal-login.sicherheit.com/verify', 'https://www.paypaI.com/login (mit grossem I statt l)'], correct: 0, fb: 'Nur paypal.com/login hat die echte PayPal-Domain.' },
+    { text: 'Welche URL ist Phishing?', options: ['https://mein.sparkasse.de/banking', 'https://sparkasse.de.phish-bank.com/login', 'https://www.sparkasse.de/finanzen', 'https://online.sparkasse.de/konto'], correct: 1, fb: 'Bei sparkasse.de.phish-bank.com ist phish-bank.com die echte Domain!' },
+    { text: 'Was ist an "https://www.g00gle.com" verdaechtig?', answer: 'Die Nullen statt der Buchstaben O -- das ist eine andere Domain', distractors: ['Nichts, das ist die normale Google-Seite', 'Das https macht es automatisch sicher', 'Google beginnt nie mit www', 'Die Domain ist zu kurz'], fb: 'Taeuschend aehnliche Zeichen (0 statt O, I statt l) sind ein klassischer Trick.' },
+    { text: 'Du siehst den Link "https://login.instagram.com/security". Ist das Phishing?', answer: 'Nein, login ist eine Subdomain von instagram.com -- die echte Domain ist korrekt', distractors: ['Ja, weil "login" im Link steht', 'Ja, weil "/security" verdaechtig ist', 'Ja, weil Instagram kein https nutzt', 'Kann man nicht beurteilen'], fb: 'login.instagram.com gehoert zu instagram.com. Subdomains sind normal.' },
+    { text: 'Was ist die echte Domain bei "https://secure.bank.evil-server.net/login"?', answer: 'evil-server.net', distractors: ['secure.bank', 'bank.evil-server.net', 'secure.bank.evil-server.net', 'login'], fb: 'Die letzten beiden Teile vor dem / sind die Domain: evil-server.net.' }
+];
+
+var MC_POOL_4 = [
+    { text: 'SMS: "DHL: Ihr Paket konnte nicht zugestellt werden. Zahlen Sie 1,99 EUR Nachgebuehr: https://dhl-paket.tracking-service.xyz"', answer: 'Phishing (Smishing) -- DHL nutzt nicht .xyz-Domains und verlangt keine Zahlung per SMS-Link', distractors: ['Echt -- DHL versendet solche Benachrichtigungen', 'Echt -- 1,99 EUR ist ein realistischer Betrag', 'Unklar -- koennte echt sein', 'Echt -- die URL enthaelt "dhl"'], fb: 'DHL sendet keine Zahlungslinks per SMS!' },
+    { text: 'E-Mail von "bewerbung@firma-mueller.de" an einen Personalchef mit einem Word-Dokument als Bewerbung', answer: 'Moeglicherweise Phishing -- Word-Makros koennen Schadsoftware enthalten', distractors: ['Sicher echt -- Bewerbungen kommen immer per E-Mail', 'Sicher Phishing -- Word-Dateien sind immer gefaehrlich', 'Echt -- der Absender hat eine .de-Adresse', 'Echt -- Personalchefs bekommen immer Bewerbungen'], fb: 'Word-Makros in Bewerbungen sind ein haeufiger Angriffsvektor!' },
+    { text: 'Instagram-DM: "Hey! Schau dir dieses Foto von dir an! https://insta-fotos.cc/view?id=23847"', answer: 'Phishing -- die URL gehoert nicht zu Instagram und nutzt Neugier als Trick', distractors: ['Echt -- ein Freund hat ein Foto markiert', 'Echt -- Instagram nutzt verschiedene Domains fuer Fotos', 'Unklar -- koennte ein neuer Instagram-Service sein', 'Echt -- die URL hat HTTPS'], fb: 'Instagram-Links gehen immer zu instagram.com!' },
+    { text: 'WhatsApp: "Dein Papa hier, hab neue Nummer. Bitte ueberweise 200 EUR auf dieses Konto, erklaere spaeter!"', answer: 'Phishing/Betrug -- immer ueber die alte Nummer oder persoenlich verifizieren', distractors: ['Echt -- Papa hat neue Nummer und braucht Hilfe', 'Echt -- nur nahe Verwandte kennen deinen Namen', 'Unklar -- koennte echt sein', 'Echt -- WhatsApp ist verschluesselt, also sicher'], fb: 'Trickbetrug per WhatsApp ("Enkeltrick") ist sehr verbreitet!' },
+    { text: 'Pop-up im Browser: "IHR COMPUTER IST INFIZIERT! Rufen Sie sofort Microsoft-Support an: 0800-XXXXXXX"', answer: 'Betrug -- Microsoft zeigt keine Pop-ups mit Telefonnummern. Fenster einfach schliessen.', distractors: ['Echt -- Windows erkennt Viren automatisch', 'Echt -- die 0800-Nummer ist kostenlos, also serioes', 'Unklar -- besser anrufen und nachfragen', 'Echt -- Microsoft bietet telefonischen Support an'], fb: 'Tech-Support-Scam! Echte Virenwarnungen zeigen nie eine Telefonnummer.' },
+    { text: 'E-Mail von deiner echten Schule (von der richtigen @schule.de-Adresse) mit einem Link zum neuen Stundenplan', answer: 'Wahrscheinlich echt -- richtige Domain, passender Kontext, keine Warnsignale', distractors: ['Phishing -- E-Mails mit Links sind immer gefaehrlich', 'Phishing -- Schulen verschicken keine E-Mails', 'Phishing -- der Stundenplan wird nur auf Papier verteilt', 'Phishing -- die Absenderadresse kann gefaelscht sein'], fb: 'Richtige Domain + passender Kontext + keine Warnsignale = wahrscheinlich echt.' }
+];
+
+var MC_POOL_5 = [
+    { text: 'Welchen psychologischen Trick nutzt die Nachricht "Ihr Konto wird in 24 Stunden gesperrt!"?', answer: 'Dringlichkeit und Angst -- der Empfaenger soll ohne Nachdenken handeln', distractors: ['Autoritaet -- der Absender gibt sich als Chef aus', 'Gier -- es wird ein Gewinn versprochen', 'Neugier -- es geht um ein Geheimnis', 'Sympathie -- der Absender ist freundlich'], fb: 'Zeitdruck + Drohung = Dringlichkeit + Angst.' },
+    { text: '"Herzlichen Glueckwunsch! Sie haben ein iPhone 15 gewonnen!" -- Welcher Trick?', answer: 'Gier -- das Versprechen eines wertvollen Gewinns', distractors: ['Angst -- Drohung mit Verlust', 'Autoritaet -- Absender gibt sich als Firma aus', 'Dringlichkeit -- sofortiges Handeln gefordert', 'Neugier -- Geheimnis wird angedeutet'], fb: 'Gewinnversprechen = Gier-Trick.' },
+    { text: '"Hier spricht die IT-Abteilung. Wir brauchen sofort Ihr Passwort fuer eine Sicherheitspruefung." -- Welcher Trick?', answer: 'Autoritaet -- der Anrufer gibt sich als jemand Wichtiges aus', distractors: ['Gier -- ein Gewinn wird versprochen', 'Neugier -- ein Geheimnis wird angedeutet', 'Sympathie -- der Anrufer ist freundlich', 'Angst -- eine Drohung wird ausgesprochen'], fb: 'Autoritaet: IT-Abteilung, Chef, Polizei -- nie Passwoerter herausgeben!' },
+    { text: 'Warum ist Spear-Phishing gefaehrlicher als normales Phishing?', answer: 'Weil die Nachricht persoenliche Infos enthaelt und dadurch glaubwuerdiger wirkt', distractors: ['Weil es nur per Telefon funktioniert', 'Weil es von Regierungen durchgefuehrt wird', 'Weil der Virus staerker ist', 'Weil es nur grosse Unternehmen betrifft'], fb: 'Spear-Phishing nutzt Infos ueber das Opfer (Name, Firma, Position).' },
+    { text: 'Dein "Chef" schickt dir eine E-Mail: "Bitte ueberweise sofort 5000 EUR auf dieses Konto. Vertraulich!" Was tust du?', answer: 'Chef persoenlich oder telefonisch kontaktieren (nicht per E-Mail antworten)', distractors: ['Sofort ueberweisen -- der Chef hat es gesagt', 'Die E-Mail ignorieren', 'An die Polizei weiterleiten', 'Das Geld ueberweisen und spaeter nachfragen'], fb: 'CEO-Fraud! Immer ueber einen anderen Kanal verifizieren.' },
+    { text: 'Welche Information solltest du NIEMALS per E-Mail oder Telefon an Unbekannte weitergeben?', answer: 'Passwoerter, PINs und TANs', distractors: ['Deinen Vornamen', 'Die Stadt in der du wohnst', 'Deine Lieblingsserie', 'Den Namen deiner Schule'], fb: 'Passwoerter und PINs gehoeren nur dir. Seriöse Stellen fragen nie danach.' }
+];
+
+var MC_POOL_6 = [
+    { text: 'Du hast auf einen Phishing-Link geklickt und dein Passwort eingegeben. Was tust du ZUERST?', answer: 'Sofort das Passwort aendern und 2FA aktivieren', distractors: ['Abwarten ob etwas Schlimmes passiert', 'Den Computer neu starten', 'Die Phishing-E-Mail loeschen', 'Einen neuen E-Mail-Account anlegen'], fb: 'Passwort sofort aendern! Dann 2FA, dann melden.' },
+    { text: 'Welche Massnahme schuetzt am besten vor Phishing?', answer: 'Gesundes Misstrauen und Links/Absender immer pruefen', distractors: ['Ein teures Antivirenprogramm installieren', 'Nur noch das Smartphone nutzen statt Computer', 'Nie wieder E-Mails oeffnen', 'Jede Woche das Passwort aendern'], fb: 'Technik hilft, aber das Wichtigste ist: Nachdenken bevor du klickst!' },
+    { text: 'Dein Freund postet einen verdaechtigen Link auf Instagram. Was koennte passiert sein?', answer: 'Sein Account wurde gehackt und verbreitet automatisch Phishing-Links', distractors: ['Er hat einen coolen Link gefunden', 'Instagram macht Werbung', 'Das ist ein neues Instagram-Feature', 'Er testet neue Software'], fb: 'Gehackte Accounts verbreiten Phishing an alle Kontakte.' },
+    { text: 'Warum schuetzt 2FA (Zwei-Faktor-Authentifizierung) vor Phishing?', answer: 'Selbst wenn das Passwort gestohlen wird, braucht der Angreifer noch den zweiten Faktor', distractors: ['2FA verschluesselt alle E-Mails automatisch', '2FA blockiert alle Phishing-E-Mails', '2FA macht das Passwort unknackbar', '2FA ist ein spezielles Antivirenprogramm'], fb: '2FA = zwei Nachweise noetig. Passwort allein reicht dem Angreifer nicht.' },
+    { text: 'Was ist die sicherste Methode, um zu pruefen ob eine E-Mail deiner Bank echt ist?', answer: 'Direkt auf der offiziellen Webseite einloggen (URL selbst eintippen) oder die Bank anrufen', distractors: ['Auf den Link in der E-Mail klicken', 'Auf die E-Mail antworten und fragen', 'Den Absender googeln', 'Die E-Mail an einen Freund weiterleiten'], fb: 'Nie den Link aus der E-Mail nutzen! Immer die URL selbst eintippen.' }
+];
+
+/* ── STATE & SEED ── */
+var state = { name: '', seed: 0, version: LP_VERSION, currentPhase: 0, scores: {}, submitted: {}, completed: false, completedAt: null, startTime: null, phaseTimestamps: {}, beleg: [], timerStart: null, timerExtended: false, forcedSubmit: false };
+(function() { for (var i = 0; i < PHASE_CONFIG.length; i++) { state.scores['p' + (i+1)] = 0; state.submitted['p' + (i+1)] = false; } })();
+
+var tabSwitchCount = 0, tabSwitchStart = 0, tabSwitchSeconds = 0;
+var audioCtx = null, alarmOsc = null, alarmGain = null, alarmActive = false;
+var timerInterval = null, timerRemainingSeconds = 0;
+var sessionReady = false;
+
+function sKey(suffix) { var p = window.location.search.match(/[?&]p=(\d+)/); var platz = p ? '-p' + p[1] : ''; return BLP_ID + platz + '-' + suffix; }
+function seedFromPlatz(platz) { return platz * 7919; }
+function createRNG(seed) { var s = seed; return { next: function() { s = (s * 9301 + 49297) % 233280; return s / 233280; }, nextInt: function(max) { return Math.floor(this.next() * max); } }; }
+function shuffleWithRNG(arr, rng) { var result = arr.slice(); for (var i = result.length - 1; i > 0; i--) { var j = rng.nextInt(i + 1); var temp = result[i]; result[i] = result[j]; result[j] = temp; } return result; }
+
+/* ── MC Builder ── */
+function resolveMCOptions(item, rng) {
+    if (item.options && !item.distractors) {
+        var indices = []; for (var i = 0; i < item.options.length; i++) indices.push(i);
+        var shuffled = shuffleWithRNG(indices, rng);
+        var correctIdx = -1;
+        for (var i = 0; i < shuffled.length; i++) { if (shuffled[i] === item.correct) { correctIdx = i; break; } }
+        var texts = []; for (var i = 0; i < shuffled.length; i++) texts.push(item.options[shuffled[i]]);
+        return { options: texts, correctIdx: correctIdx };
+    }
+    var pool = shuffleWithRNG(item.distractors.slice(), rng);
+    var chosen = pool.slice(0, 3);
+    chosen.push(item.answer);
+    var indexed = []; for (var i = 0; i < chosen.length; i++) indexed.push({ text: chosen[i], isCorrect: (i === 3) });
+    indexed = shuffleWithRNG(indexed, rng);
+    var texts = []; var correctIdx = -1;
+    for (var i = 0; i < indexed.length; i++) { texts.push(indexed[i].text); if (indexed[i].isCorrect) correctIdx = i; }
+    return { options: texts, correctIdx: correctIdx };
+}
+
+function buildMCPhase(phaseNum, containerId, items) {
+    var container = document.getElementById(containerId);
+    container.innerHTML = '';
+    var optRNG = createRNG(state.seed + phaseNum * 100 + 50);
+    for (var q = 0; q < items.length; q++) {
+        var item = items[q];
+        var resolved = resolveMCOptions(item, optRNG);
+        var qDiv = document.createElement('div');
+        qDiv.className = 'mc-question'; qDiv.id = 'mc-p' + phaseNum + '-q' + q;
+        qDiv.setAttribute('data-correct-idx', resolved.correctIdx);
+        qDiv.setAttribute('data-displayed-opts', JSON.stringify(resolved.options));
+        var html = '<p style="font-weight:600; margin-bottom: 8px;">Frage ' + (q+1) + ':</p>';
+        html += '<p>' + escapeHTML(item.text) + '</p>';
+        html += '<div class="mc-options" id="mc-opts-p' + phaseNum + '-q' + q + '">';
+        var letters = ['A', 'B', 'C', 'D'];
+        for (var o = 0; o < resolved.options.length; o++) {
+            html += '<div class="mc-option" data-opt="' + o + '" onclick="selectMCOption(' + phaseNum + ',' + q + ',' + o + ')">';
+            html += '<strong>' + letters[o] + ')</strong>&nbsp; ' + escapeHTML(resolved.options[o]);
+            html += '</div>';
+        }
+        html += '</div>';
+        qDiv.innerHTML = html;
+        container.appendChild(qDiv);
+    }
+}
+
+function escapeHTML(str) { var div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+
+function selectMCOption(phaseNum, qIdx, optIdx) {
+    var optsContainer = document.getElementById('mc-opts-p' + phaseNum + '-q' + qIdx);
+    if (!optsContainer) return;
+    var opts = optsContainer.querySelectorAll('.mc-option');
+    for (var i = 0; i < opts.length; i++) opts[i].classList.remove('selected');
+    opts[optIdx].classList.add('selected');
+}
+
+function submitMCPhase(phaseNum) {
+    var key = 'p' + phaseNum;
+    if (state.submitted[key]) return;
+    var items = myPhaseItems[phaseNum - 1];
+    var unanswered = 0;
+    for (var c = 0; c < items.length; c++) {
+        var cOpts = document.getElementById('mc-opts-p' + phaseNum + '-q' + c);
+        if (!cOpts) continue;
+        var found = false;
+        var opts = cOpts.querySelectorAll('.mc-option');
+        for (var ci = 0; ci < opts.length; ci++) { if (opts[ci].classList.contains('selected')) { found = true; break; } }
+        if (!found) unanswered++;
+    }
+    if (unanswered > 0) { if (!confirm('Du hast ' + unanswered + ' Frage(n) nicht beantwortet. Trotzdem abgeben?')) return; }
+    var score = 0; var belegItems = [];
+    for (var q = 0; q < items.length; q++) {
+        var qDiv = document.getElementById('mc-p' + phaseNum + '-q' + q);
+        var correctIdx = parseInt(qDiv.getAttribute('data-correct-idx'));
+        var displayedOpts = JSON.parse(qDiv.getAttribute('data-displayed-opts'));
+        var opts = document.getElementById('mc-opts-p' + phaseNum + '-q' + q).querySelectorAll('.mc-option');
+        var selectedIdx = -1;
+        for (var i = 0; i < opts.length; i++) { if (opts[i].classList.contains('selected')) { selectedIdx = i; break; } }
+        var isCorrect = (selectedIdx === correctIdx);
+        if (isCorrect) score++;
+        for (var i = 0; i < opts.length; i++) opts[i].classList.add('disabled');
+        if (selectedIdx >= 0) opts[selectedIdx].classList.add(isCorrect ? 'correct-reveal' : 'wrong-reveal');
+        opts[correctIdx].classList.add('correct-reveal');
+        var givenText = selectedIdx >= 0 ? displayedOpts[selectedIdx] : '(keine Antwort)';
+        belegItems.push({ q: items[q].text, options: displayedOpts, correct: displayedOpts[correctIdx], given: givenText, be: isCorrect ? 1 : 0, maxBE: 1, explain: items[q].fb });
+    }
+    state.scores[key] = score;
+    state.submitted[key] = true;
+    state.beleg.push({ phase: phaseNum, phaseName: PHASE_CONFIG[phaseNum-1].name, items: belegItems, phBE: score, phMaxBE: PHASE_CONFIG[phaseNum-1].maxBE });
+    var fb = document.getElementById('fb-assess' + phaseNum);
+    fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect');
+    fb.textContent = score + '/' + PHASE_CONFIG[phaseNum-1].maxBE + ' BE';
+    lockZone('assess' + phaseNum + '-container');
+    document.getElementById('btn-next' + phaseNum).disabled = false;
+    document.getElementById('btn-submit' + phaseNum).disabled = true;
+    saveState();
+}
+
+function lockZone(id) {
+    var zone = document.getElementById(id);
+    if (!zone) zone = document.querySelector('#' + id);
+    if (zone) { var inputs = zone.querySelectorAll('input, select, button'); for (var i = 0; i < inputs.length; i++) inputs[i].disabled = true; var mcOpts = zone.querySelectorAll('.mc-option'); for (var i = 0; i < mcOpts.length; i++) mcOpts[i].classList.add('disabled'); }
+}
+
+/* ── Personalized Tasks ── */
+var myPhaseItems = [];
+function buildPersonalTasks() {
+    var pools = [MC_POOL_1, MC_POOL_2, MC_POOL_3, MC_POOL_4, MC_POOL_5, MC_POOL_6];
+    var counts = [3, 4, 4, 5, 5, 4];
+    myPhaseItems = [];
+    for (var i = 0; i < pools.length; i++) {
+        var rng = createRNG(state.seed + (i + 1) * 100);
+        myPhaseItems.push(shuffleWithRNG(pools[i].slice(), rng).slice(0, counts[i]));
+    }
+}
+
+/* ── Navigation ── */
+function goToPhase(n) {
+    var totalPhases = PHASE_CONFIG.length + 1;
+    if (n < 0 || n > totalPhases) return;
+    if (n < state.currentPhase && n !== 0) return;
+    var steps = document.querySelectorAll('.step');
+    for (var i = 0; i < steps.length; i++) steps[i].classList.remove('active');
+    document.getElementById('step' + n).classList.add('active');
+    for (var i = 1; i <= totalPhases; i++) { var el = document.getElementById('ew' + i); if (!el) continue; el.classList.remove('active', 'done'); if (i < n) el.classList.add('done'); if (i === n) el.classList.add('active'); }
+    var pct = n === 0 ? 0 : ((n - 1) / PHASE_CONFIG.length) * 100;
+    document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
+    state.currentPhase = n; state.phaseTimestamps['phase' + n] = new Date().toISOString(); saveState(); window.scrollTo(0, 0);
+}
+
+/* ── Timer ── */
+function startTimer() {
+    if (!state.timerStart) { state.timerStart = new Date().toISOString(); saveState(); }
+    timerInterval = setInterval(function() { updateTimerRemaining(); renderTimer(); if (timerRemainingSeconds <= 0) { clearInterval(timerInterval); timerInterval = null; onTimerExpired(); } }, 1000);
+    updateTimerRemaining(); renderTimer();
+}
+function updateTimerRemaining() { var now = new Date().getTime(); var start = new Date(state.timerStart).getTime(); var elapsed = Math.floor((now - start) / 1000); var maxSec = MAX_TIME + (state.timerExtended ? EXTEND_TIME : 0); timerRemainingSeconds = Math.max(0, maxSec - elapsed); }
+function renderTimer() { var disp = document.getElementById('timerDisplay'); if (!disp) return; var mins = Math.floor(timerRemainingSeconds / 60); var secs = timerRemainingSeconds % 60; disp.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs; disp.classList.remove('timer-active', 'timer-warn', 'timer-critical', 'timer-hidden'); if (timerRemainingSeconds <= 60) disp.classList.add('timer-critical'); else if (timerRemainingSeconds <= 300) disp.classList.add('timer-warn'); else disp.classList.add('timer-active'); }
+function onTimerExpired() { if (state.completed) return; dismissTabWarning(); if (state.timerExtended) { forceSubmitNow(); return; } var overlay = document.getElementById('extendOverlay'); if (overlay) overlay.classList.add('visible'); }
+function tryExtend() { var inp = document.getElementById('extendCodeInput'); var code = inp ? inp.value.trim() : ''; if (checkCode(code)) { state.timerExtended = true; saveState(); document.getElementById('extendOverlay').classList.remove('visible'); updateTimerRemaining(); renderTimer(); if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(function() { updateTimerRemaining(); renderTimer(); if (timerRemainingSeconds <= 0) { clearInterval(timerInterval); forceSubmitNow(); } }, 1000); } else { document.getElementById('extendError').style.display = 'block'; if (inp) inp.value = ''; } }
+function forceSubmitNow() { document.getElementById('extendOverlay').classList.remove('visible'); for (var i = 0; i < PHASE_CONFIG.length; i++) { var pKey = 'p' + (i + 1); if (!state.submitted[pKey]) { state.submitted[pKey] = true; state.scores[pKey] = 0; state.beleg.push({ phase: i + 1, phaseName: PHASE_CONFIG[i].name, items: [{ q: 'Nicht abgegeben (Zeitablauf)', options: [], correct: '-', given: '-', be: 0, maxBE: PHASE_CONFIG[i].maxBE, explain: 'Phase wurde nicht bearbeitet.' }], phBE: 0, phMaxBE: PHASE_CONFIG[i].maxBE }); } } state.forcedSubmit = true; saveState(); showResults(); }
+function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval = null; } var disp = document.getElementById('timerDisplay'); if (disp) disp.classList.add('timer-hidden'); }
+function checkCode(input) { var h = 0; var s = (input || '').trim(); for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h = h & h; } return h === CODE_HASH; }
+
+/* ── Tab Tracking ── */
+var TAB_WARN_BEEPS = 5; var pulseAlarmTimeout = null;
+function initTabTracking() { var sc = localStorage.getItem(sKey('tabswitches')); var ss = localStorage.getItem(sKey('tabseconds')); if (sc) tabSwitchCount = parseInt(sc); if (ss) tabSwitchSeconds = parseInt(ss); document.addEventListener('visibilitychange', function() { if (!sessionReady || state.completed) return; if (document.hidden) { tabSwitchStart = Date.now(); tabSwitchCount++; try { localStorage.setItem(sKey('tabswitches'), tabSwitchCount); } catch(e) {} } else { if (tabSwitchStart > 0) { var dur = Math.round((Date.now() - tabSwitchStart) / 1000); tabSwitchSeconds += dur; try { localStorage.setItem(sKey('tabseconds'), tabSwitchSeconds); } catch(e) {} tabSwitchStart = 0; } showTabWarningOverlay(); startPulseAlarm(); } }); }
+function startPulseAlarm() { var btn = document.getElementById('tabWarnDismiss'); if (btn) { btn.disabled = true; btn.textContent = 'Bitte warten...'; } var beepsDone = 0; var alarmStarted = false; function doPulse() { alarmStarted = true; if (beepsDone >= TAB_WARN_BEEPS) { stopAlarm(); if (btn) { btn.disabled = false; btn.textContent = 'Zurueck zum Test'; } return; } startAlarm(); pulseAlarmTimeout = setTimeout(function() { stopAlarm(); beepsDone++; pulseAlarmTimeout = setTimeout(doPulse, 500); }, 500); } var ready = ensureAudio(function() { doPulse(); }); if (ready) doPulse(); setTimeout(function() { if (!alarmStarted && btn) { btn.disabled = false; btn.textContent = 'Zurueck zum Test'; } }, 2000); }
+function ensureAudio(cb) { if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} } if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume().then(function() { if (cb) cb(); }); return false; } return true; }
+function startAlarm() { if (!audioCtx || alarmActive) return; alarmOsc = audioCtx.createOscillator(); alarmGain = audioCtx.createGain(); alarmOsc.connect(alarmGain); alarmGain.connect(audioCtx.destination); alarmOsc.frequency.value = 800; alarmOsc.type = 'square'; alarmGain.gain.value = 0.15; alarmOsc.start(); alarmActive = true; }
+function stopAlarm() { if (alarmOsc) { try { alarmOsc.stop(); } catch(e) {} alarmOsc = null; } alarmActive = false; }
+function showTabWarningOverlay() { document.getElementById('tabWarnCount').textContent = tabSwitchCount; document.getElementById('tabWarnTime').textContent = formatTabTime(tabSwitchSeconds); document.getElementById('tabWarning').classList.add('visible'); }
+function dismissTabWarning() { if (document.getElementById('tabWarnDismiss').disabled) return; document.getElementById('tabWarning').classList.remove('visible'); if (pulseAlarmTimeout) { clearTimeout(pulseAlarmTimeout); pulseAlarmTimeout = null; } stopAlarm(); }
+function formatTabTime(sec) { if (sec < 60) return sec + 's'; return Math.floor(sec / 60) + ':' + (sec % 60 < 10 ? '0' : '') + sec % 60 + ' min'; }
+
+/* ── Persistence ── */
+function saveState() { try { localStorage.setItem(sKey('state'), JSON.stringify(state)); } catch(e) {} }
+function loadState() { var saved = localStorage.getItem(sKey('state')); if (!saved) return false; try { var data = JSON.parse(saved); if (!data.seed) return false; if (data.version !== LP_VERSION) { localStorage.removeItem(sKey('state')); return false; } for (var k in data) state[k] = data[k]; return true; } catch(e) { return false; } }
+
+/* ── Results ── */
+function showResults() {
+    stopTimer();
+    var total = 0; for (var i = 0; i < PHASE_CONFIG.length; i++) total += state.scores['p' + (i+1)];
+    var pct = Math.round((total / TOTAL_BE) * 100); var grade = getGrade(total);
+    if (!state.completedAt) state.completedAt = new Date().toISOString();
+    var now = new Date(state.completedAt);
+    var code = generateVerification(state.name, total, now.toISOString().split('T')[0]);
+    state.completed = true; saveState();
+    document.getElementById('resultName').textContent = 'Platz: ' + state.name;
+    document.getElementById('resBE').textContent = total;
+    document.getElementById('resTotalLabel').textContent = 'von ' + TOTAL_BE + ' BE';
+    document.getElementById('resProzent').textContent = pct + '%';
+    var gradeEl = document.getElementById('resNote'); gradeEl.textContent = 'Note: ' + grade; gradeEl.className = 'grade g' + grade;
+    var breakdownHTML = '<tr><th>Phase</th><th>Thema</th><th>erreicht</th><th>max</th></tr>';
+    for (var i = 0; i < PHASE_CONFIG.length; i++) breakdownHTML += '<tr><td>' + (i+1) + '</td><td>' + PHASE_CONFIG[i].name + '</td><td>' + state.scores['p'+(i+1)] + '</td><td>' + PHASE_CONFIG[i].maxBE + '</td></tr>';
+    breakdownHTML += '<tr style="font-weight:700;"><td></td><td>Gesamt</td><td>' + total + '</td><td>' + TOTAL_BE + '</td></tr>';
+    document.getElementById('resBreakdownTable').innerHTML = breakdownHTML;
+    var gradeHTML = '<tr><th>Note</th>'; for (var i = 0; i < GRADE_SCALE.length; i++) gradeHTML += '<th>' + GRADE_SCALE[i].grade + '</th>'; gradeHTML += '</tr><tr><td>ab BE</td>'; for (var i = 0; i < GRADE_SCALE.length; i++) gradeHTML += '<td>' + GRADE_SCALE[i].min + '</td>'; gradeHTML += '</tr>';
+    document.getElementById('resGradeTable').innerHTML = gradeHTML;
+    document.getElementById('resCode').textContent = code;
+    document.getElementById('resTimestamp').textContent = 'Abgabe: ' + now.toLocaleDateString('de-DE') + ' ' + now.toLocaleTimeString('de-DE');
+    if (tabSwitchCount > 0) document.getElementById('resTabInfo').textContent = 'Tab-Wechsel: ' + tabSwitchCount + ' (' + formatTabTime(tabSwitchSeconds) + ')';
+    goToPhase(PHASE_CONFIG.length + 1);
+}
+function getGrade(be) { for (var i = 0; i < GRADE_SCALE.length; i++) { if (be >= GRADE_SCALE[i].min) return GRADE_SCALE[i].grade; } return 6; }
+function generateVerification(name, score, date) { var str = String(name).toLowerCase().trim() + '-' + score + '-' + date; var hash = 0; for (var i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash = hash & hash; } return Math.abs(hash).toString(36).toUpperCase().substr(0, 6); }
+
+/* ── Beleg ── */
+function showBeleg() { var container = document.getElementById('belegContainer'); if (container.style.display === 'block') { container.style.display = 'none'; document.getElementById('btnBeleg').textContent = 'Detailbeleg anzeigen'; return; } var belegData = state.beleg || []; var total = 0; for (var t = 0; t < PHASE_CONFIG.length; t++) total += state.scores['p'+(t+1)]; var html = '<div class="beleg"><div class="beleg-header"><h2>Detailbeleg: Platz ' + state.name + '</h2><p>' + BLP_ID + ' | ' + total + '/' + TOTAL_BE + ' BE</p></div>'; for (var p = 0; p < belegData.length; p++) { var phase = belegData[p]; html += '<div class="beleg-phase"><h3>Phase ' + phase.phase + ': ' + phase.phaseName + ' (' + phase.phBE + '/' + phase.phMaxBE + ' BE)</h3>'; for (var i = 0; i < phase.items.length; i++) { var item = phase.items[i]; html += '<div class="beleg-item ' + (item.be >= item.maxBE ? 'beleg-correct' : 'beleg-wrong') + '"><div class="beleg-q">' + item.q + '</div>'; if (item.options && item.options.length > 0) { html += '<div class="beleg-options">'; for (var j = 0; j < item.options.length; j++) { var optClass = ''; if (item.options[j] === item.correct) optClass += ' beleg-opt-correct'; if (item.options[j] === item.given) optClass += ' beleg-opt-given'; html += '<span class="beleg-opt' + optClass + '">' + item.options[j] + '</span>'; } html += '</div>'; } html += '<div class="beleg-points">' + item.be + '/' + item.maxBE + ' BE</div><div class="beleg-explain">' + item.explain + '</div></div>'; } html += '</div>'; } html += '</div>'; container.innerHTML = html; container.style.display = 'block'; document.getElementById('btnBeleg').textContent = 'Beleg ausblenden'; }
+
+/* ── Teacher Reset ── */
+function teacherReset() { var code = prompt('Lehrer-Code:'); if (code !== null && checkCode(code)) { if (confirm('Alle Daten loeschen?')) { localStorage.removeItem(sKey('state')); localStorage.removeItem(sKey('tabswitches')); localStorage.removeItem(sKey('tabseconds')); location.reload(); } } else if (code !== null) { alert('Falscher Code!'); } }
+
+/* ── Start & Restore ── */
+function startLP() {
+    var sel = document.getElementById('platzSelect');
+    var platz = parseInt(sel.value);
+    if (!platz) { alert('Bitte Platznummer waehlen!'); return; }
+    state.name = String(platz);
+    state.seed = seedFromPlatz(platz);
+    state.startTime = new Date().toISOString();
+    state.version = LP_VERSION;
+    buildPersonalTasks();
+    for (var i = 0; i < PHASE_CONFIG.length; i++) {
+        buildMCPhase(i + 1, 'assess' + (i + 1) + '-container', myPhaseItems[i]);
+    }
+    saveState();
+    sessionReady = true;
+    startTimer();
+    goToPhase(1);
+}
+
+function restoreSession() {
+    if (!loadState()) return false;
+    buildPersonalTasks();
+    for (var i = 0; i < PHASE_CONFIG.length; i++) {
+        buildMCPhase(i + 1, 'assess' + (i + 1) + '-container', myPhaseItems[i]);
+    }
+    // Restore submitted phases
+    for (var i = 1; i <= PHASE_CONFIG.length; i++) {
+        if (state.submitted['p' + i]) {
+            // Re-submit to show results
+            var items = myPhaseItems[i - 1];
+            var score = state.scores['p' + i];
+            var fb = document.getElementById('fb-assess' + i);
+            if (fb) { fb.className = 'feedback ' + (score > 0 ? 'correct' : 'incorrect'); fb.textContent = score + '/' + PHASE_CONFIG[i-1].maxBE + ' BE'; }
+            lockZone('assess' + i + '-container');
+            var btn = document.getElementById('btn-next' + i);
+            if (btn) btn.disabled = false;
+            var submitBtn = document.getElementById('btn-submit' + i);
+            if (submitBtn) submitBtn.disabled = true;
+        }
+    }
+    sessionReady = true;
+    if (state.completed) {
+        document.getElementById('lockedNotice').classList.add('visible');
+        showResults();
+    } else {
+        startTimer();
+        goToPhase(state.currentPhase || 1);
+    }
+    return true;
+}
+
+/* ── Init ── */
+(function() {
+    var sel = document.getElementById('platzSelect');
+    for (var i = 1; i <= 30; i++) { var opt = document.createElement('option'); opt.value = i; opt.textContent = 'Platz ' + i; sel.appendChild(opt); }
+    // Check QR param
+    var match = window.location.search.match(/[?&]p=(\d+)/);
+    if (match) { sel.value = match[1]; }
+    initTabTracking();
+    restoreSession();
+})();
+</script>
+</body>
+</html>

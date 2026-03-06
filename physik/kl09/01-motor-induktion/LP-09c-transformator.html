@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>LP-09c: Transformator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #222;
+            line-height: 1.5;
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 15px; }
+        header {
+            background: #2c5aa0;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        header h1 { font-size: 1.3em; font-weight: 600; }
+        header p { font-size: 0.85em; opacity: 0.9; margin-top: 5px; }
+
+        .progress-bar { background: #ddd; height: 8px; margin: 15px 0; border-radius: 4px; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, #2c5aa0, #4a7bc4); height: 100%; width: 0%; transition: width 0.3s; }
+
+        .step-nav { display: flex; justify-content: center; gap: 6px; padding: 12px 10px; background: white; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+        .step-nav-item {
+            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+            border: 2px solid #ddd; background: white; font-size: 0.95em; font-weight: 600;
+            font-family: inherit; color: inherit; padding: 0; cursor: pointer; border-radius: 8px;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1); transition: opacity 0.2s;
+        }
+        button, .quiz-option { -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
+        .step-nav-item:active { background: #e3f2fd; }
+        .step-nav-item.active { background: #2c5aa0; color: white; border-color: #2c5aa0; }
+        .step-nav-item.done { background: #2a7a4b; color: white; border-color: #2a7a4b; }
+        .step-nav-item.locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+        .section { background: white; border: 1px solid #ddd; padding: 18px; margin-bottom: 15px; display: none; border-radius: 8px; }
+        .section.active { display: block; }
+        .section h2 { color: #2c5aa0; font-size: 1.1em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #2c5aa0; }
+        .section h3 { font-size: 0.95em; margin: 15px 0 8px 0; color: #333; }
+
+        .ew-label { display: inline-block; font-size: 0.7em; font-weight: 700; padding: 2px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .ew-phaenomen { background: #e3f2fd; color: #1565c0; }
+        .ew-hypothese { background: #fff8e1; color: #f57f17; }
+        .ew-experiment { background: #e8f5e9; color: #2a7a4b; }
+        .ew-deutung { background: #fff3e0; color: #b35c00; }
+        .ew-verallgemeinerung { background: #f3e5f5; color: #7b1fa2; }
+        .ew-sicherung { background: #fce4ec; color: #c62828; }
+
+        .leitfrage { background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #2c5aa0; padding: 14px 16px; margin: 12px 0; font-size: 1em; border-radius: 8px; }
+        .leitfrage strong { color: #1565c0; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #2c5aa0; padding: 10px 14px; margin: 12px 0; font-size: 0.9em; border-radius: 0 8px 8px 0; }
+
+        .protokoll-box { background: #fff3e0; border: 2px solid #b35c00; padding: 12px 14px; margin: 14px 0; border-radius: 8px; }
+        .protokoll-box::before { content: "\1F4CB Arbeitsblatt"; display: inline-block; background: #b35c00; color: white; font-size: 0.75em; font-weight: 600; padding: 3px 10px; margin-bottom: 8px; border-radius: 4px; }
+        .protokoll-box ul { margin: 8px 0 0 18px; font-size: 0.9em; }
+        .protokoll-box li { margin-bottom: 4px; }
+
+        .erkenntnis-box { background: #e8f5e9; border: 2px solid #2a7a4b; padding: 14px 16px; margin: 14px 0; border-radius: 8px; }
+        .erkenntnis-box::before { content: "\1F4A1 Erkenntnis"; display: inline-block; background: #2a7a4b; color: white; font-size: 0.75em; font-weight: 600; padding: 3px 10px; margin-bottom: 8px; border-radius: 4px; }
+
+        .alltagsbezug { background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-left: 4px solid #7b1fa2; padding: 14px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; }
+        .alltagsbezug-header { color: #7b1fa2; font-weight: 600; font-size: 0.95em; margin-bottom: 10px; }
+
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 18px; padding-top: 12px; border-top: 1px solid #ddd; gap: 10px; }
+        .nav-buttons button { background: #2c5aa0; color: white; border: none; padding: 12px 24px; cursor: pointer; font-size: 0.95em; border-radius: 8px; min-height: 46px; touch-action: manipulation; }
+        .nav-buttons button:active { background: #1e3d6f; }
+        .nav-buttons button.btn-secondary { background: white; color: #2c5aa0; border: 2px solid #2c5aa0; }
+        .nav-next:disabled { background: #bbb; color: #eee; cursor: not-allowed; }
+        .nav-next:disabled:active { background: #bbb; }
+        .nav-next.unlocked { background: #2a7a4b; animation: gate-pulse 1.2s ease-in-out 1; }
+        @keyframes gate-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(42,122,75,0.5);} 50%{box-shadow:0 0 0 10px rgba(42,122,75,0);} }
+
+        .quiz-container { margin: 12px 0; }
+        .quiz-option { display: block; background: white; border: 2px solid #ddd; padding: 14px; margin: 8px 0; cursor: pointer; border-radius: 8px; font-size: 0.9em; touch-action: manipulation; min-height: 48px; }
+        .quiz-option:active { border-color: #2c5aa0; background: #f8fafc; }
+        .quiz-option.selected { border-color: #2c5aa0; background: #e3f2fd; }
+        .quiz-option.correct { border-color: #2a7a4b; background: #e8f5e9; }
+        .quiz-option.incorrect { border-color: #c62828; background: #ffebee; }
+        .feedback { padding: 12px; margin: 10px 0; display: none; font-size: 0.9em; border-radius: 8px; }
+        .feedback.correct { background: #e8f5e9; border: 1px solid #2a7a4b; color: #1b5e20; display: block; }
+        .feedback.incorrect { background: #ffebee; border: 1px solid #c62828; color: #b71c1c; display: block; }
+        .check-btn { background: #2a7a4b; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 8px; font-size: 0.9em; min-height: 44px; touch-action: manipulation; }
+        ul, ol { margin-left: 18px; margin-top: 8px; }
+        li { margin-bottom: 4px; font-size: 0.9em; }
+
+        .sim-area { border: 2px solid #2c5aa0; border-radius: 8px; overflow: hidden; margin: 15px 0; background: white; }
+        .sim-canvas-wrap { position: relative; width: 100%; background: #1a1a2e; }
+        .sim-canvas-wrap canvas { display: block; width: 100%; height: auto; }
+        .sim-controls { padding: 14px; background: #f0f4f8; border-top: 1px solid #ddd; }
+        .slider-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+        .slider-row label { font-size: 0.85em; font-weight: 600; min-width: 130px; }
+        .slider-row input[type="range"] { flex: 1; height: 28px; touch-action: manipulation; }
+        .slider-row .slider-val { font-size: 0.9em; font-weight: 600; min-width: 55px; text-align: right; color: #2c5aa0; }
+        .sim-readout { display: flex; justify-content: space-around; padding: 10px; background: #e3f2fd; border-top: 1px solid #ddd; font-size: 0.9em; }
+        .readout-item { text-align: center; }
+        .readout-item .label { font-size: 0.75em; color: #555; }
+        .readout-item .value { font-size: 1.2em; font-weight: 700; color: #2c5aa0; }
+        .sim-hint { background: #f0f4f8; padding: 8px 12px; font-size: 0.8em; color: #555; border-top: 1px solid #ddd; }
+        .btn-reset { background: #78909c; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 0.85em; cursor: pointer; min-height: 44px; min-width: 44px; touch-action: manipulation; }
+        .btn-reset:active { background: #546e7a; }
+
+        .niveau-badge { display: inline-block; font-size: 0.8em; padding: 1px 8px; border-radius: 4px; margin-right: 4px; font-weight: 600; }
+        .niveau-1 .niveau-badge { background: #e8f5e9; color: #2a7a4b; }
+        .niveau-2 .niveau-badge { background: #e3f2fd; color: #1565c0; }
+        .niveau-3 .niveau-badge { background: #f3e5f5; color: #7b1fa2; }
+        .aufgabe { margin: 10px 0; padding: 10px; border-radius: 6px; }
+        .aufgabe.niveau-1 { border-left: 4px solid #2a7a4b; background: #fafafa; }
+        .aufgabe.niveau-2 { border-left: 4px solid #1565c0; background: #fafafa; }
+        .aufgabe.niveau-3 { border-left: 4px solid #7b1fa2; background: #fafafa; }
+
+        .compare-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85em; }
+        .compare-table th { background: #2c5aa0; color: white; padding: 10px; text-align: left; }
+        .compare-table td { border: 1px solid #ddd; padding: 10px; }
+        .compare-table tr:nth-child(even) { background: #f9f9f9; }
+
+        .fc-progress { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 0.9em; color: #666; }
+        .fc-progress-bar { flex: 1; height: 6px; background: #e0e0e0; border-radius: 3px; margin: 0 10px; overflow: hidden; }
+        .fc-progress-fill { height: 100%; background: #2a7a4b; transition: width 0.3s; width: 0%; }
+        .fc-streak { color: #ff9800; font-weight: 600; }
+        .fc-wrapper { -webkit-perspective: 1000px; perspective: 1000px; height: 220px; touch-action: pan-y; margin: 14px auto; max-width: 400px; }
+        .fc-card { position: relative; width: 100%; height: 100%; -webkit-transform-style: preserve-3d; transform-style: preserve-3d; transition: transform 0.4s; cursor: pointer; }
+        .fc-card.flipped { transform: rotateY(180deg); }
+        .fc-face { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); text-align: center; }
+        .fc-front { background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc4 100%); color: white; }
+        .fc-back { background: white; color: #333; transform: rotateY(180deg); border: 2px solid #2c5aa0; }
+        .fc-term { font-size: 1.5em; font-weight: 700; margin-bottom: 6px; }
+        .fc-hint { font-size: 0.85em; opacity: 0.8; }
+        .fc-definition { font-size: 1.15em; line-height: 1.4; }
+        .fc-buttons { display: flex; gap: 10px; margin-top: 10px; max-width: 400px; margin-left: auto; margin-right: auto; }
+        .fc-btn-wrong, .fc-btn-correct { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 0.95em; font-weight: 600; cursor: pointer; min-height: 48px; touch-action: manipulation; }
+        .fc-btn-wrong { background: #ffebee; color: #c62828; border: 2px solid #ef5350; }
+        .fc-btn-correct { background: #e8f5e9; color: #2a7a4b; border: 2px solid #2a7a4b; }
+        .fc-btn-wrong:active { background: #ffcdd2; }
+        .fc-btn-correct:active { background: #c8e6c9; }
+        .fc-complete { text-align: center; padding: 30px; display: none; }
+        .fc-complete .fc-score { font-size: 2.5em; font-weight: 700; color: #2a7a4b; }
+
+        @media (max-width:500px) { .slider-row{flex-wrap:wrap;} .slider-row label{min-width:100%;} .sim-readout{flex-wrap:wrap;gap:8px;} }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>LP-09c: Transformator</h1>
+        <p>Physik Klasse 9 &mdash; Aufbau &amp; &Uuml;bersetzungsverh&auml;ltnis</p>
+    </header>
+    <div class="step-nav" id="stepNav">
+        <button class="step-nav-item active" onclick="goToStep(1)">1</button>
+        <button class="step-nav-item locked" onclick="goToStep(2)">2</button>
+        <button class="step-nav-item locked" onclick="goToStep(3)">3</button>
+        <button class="step-nav-item locked" onclick="goToStep(4)">4</button>
+        <button class="step-nav-item locked" onclick="goToStep(5)">5</button>
+        <button class="step-nav-item locked" onclick="goToStep(6)">6</button>
+    </div>
+    <div class="container">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+        <!-- SCHRITT 1: PHAENOMEN -->
+        <div class="section active" id="section1">
+            <span class="ew-label ew-phaenomen">Ph&auml;nomen</span>
+            <h2>Schritt 1: Strom aus der Steckdose &mdash; aber wie?</h2>
+            <p>Im Kraftwerk erzeugt ein Generator Wechselspannung. Der Strom muss oft &uuml;ber hunderte Kilometer transportiert werden. Dabei gibt es ein Problem:</p>
+            <div class="leitfrage"><strong>Problem:</strong> Im Kraftwerk werden ca. 20.000&nbsp;V erzeugt. Auf der Hochspannungsleitung sind es 380.000&nbsp;V. Bei dir zu Hause kommen 230&nbsp;V an.<br>Wie kann sich die Spannung so ver&auml;ndern?</div>
+            <p style="margin-top:12px;">Zwischen Kraftwerk und Steckdose wird die Spannung mehrfach erh&ouml;ht und wieder verringert. Das Ger&auml;t, das das macht, hei&szlig;t <strong>Transformator</strong> (kurz: Trafo).</p>
+            <div class="info-box"><strong>Wo begegnen dir Transformatoren?</strong><ul><li>Im Ladeger&auml;t deines Handys (von 230&nbsp;V auf ca. 5&nbsp;V)</li><li>Auf Strommasten (Hochspannung heruntertransformieren)</li><li>Im Netzteil deines Laptops</li></ul></div>
+            <div class="nav-buttons"><span></span><button class="nav-next" disabled onclick="goToStep(2)">Weiter &rarr;</button></div>
+        </div>
+
+        <!-- SCHRITT 2: HYPOTHESE + AUFBAU -->
+        <div class="section" id="section2">
+            <span class="ew-label ew-hypothese">Hypothese</span>
+            <h2>Schritt 2: Aufbau des Transformators</h2>
+            <p>Ein Transformator besteht aus nur drei Teilen:</p>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;">
+                <div style="flex:1;min-width:200px;background:#e3f2fd;padding:14px;border-radius:8px;border:2px solid #2c5aa0;"><strong style="color:#2c5aa0;">1. Eisenkern</strong><p style="font-size:0.9em;margin-top:4px;">Geschlossener Ring aus Eisen &mdash; leitet das Magnetfeld von einer Spule zur anderen.</p></div>
+                <div style="flex:1;min-width:200px;background:#e8f5e9;padding:14px;border-radius:8px;border:2px solid #2a7a4b;"><strong style="color:#2a7a4b;">2. Prim&auml;rspule</strong><p style="font-size:0.9em;margin-top:4px;">Hier flie&szlig;t der Strom <strong>hinein</strong> (Eingangsseite). Hat N<sub>1</sub>&nbsp;Windungen.</p></div>
+                <div style="flex:1;min-width:200px;background:#fff3e0;padding:14px;border-radius:8px;border:2px solid #b35c00;"><strong style="color:#b35c00;">3. Sekund&auml;rspule</strong><p style="font-size:0.9em;margin-top:4px;">Hier kommt der Strom <strong>heraus</strong> (Ausgangsseite). Hat N<sub>2</sub>&nbsp;Windungen.</p></div>
+            </div>
+            <div class="info-box"><strong>Wie funktioniert das?</strong> Die Wechselspannung in der Prim&auml;rspule erzeugt ein sich st&auml;ndig &auml;nderndes Magnetfeld im Eisenkern. Dieses wechselnde Magnetfeld induziert eine Spannung in der Sekund&auml;rspule. (Das ist <strong>Induktion</strong> &mdash; das kennt ihr schon!)</div>
+            <div class="protokoll-box"><ul><li><strong>Kasten 1:</strong> Trage die drei Bauteile des Transformators ein.</li></ul></div>
+            <h3>Vermutung</h3>
+            <div class="leitfrage"><strong>Leitfrage:</strong> Was passiert mit der Ausgangsspannung, wenn die Sekund&auml;rspule <em>mehr</em> Windungen hat als die Prim&auml;rspule?</div>
+            <div class="quiz-container" id="quiz1">
+                <div class="quiz-option" onclick="selectOption('quiz1',0)">Die Ausgangsspannung wird <strong>gr&ouml;&szlig;er</strong> als die Eingangsspannung.</div>
+                <div class="quiz-option" onclick="selectOption('quiz1',1)">Die Ausgangsspannung bleibt <strong>gleich</strong>.</div>
+                <div class="quiz-option" onclick="selectOption('quiz1',2)">Die Ausgangsspannung wird <strong>kleiner</strong> als die Eingangsspannung.</div>
+            </div>
+            <button class="check-btn" onclick="checkQuiz(1,0,'Richtig! Mehr Windungen auf der Sekundaerseite erhoehen die Spannung. Jetzt pruefen wir das mit der Simulation!','Nicht ganz. Ueberlege: Jede Windung traegt einen kleinen Anteil zur Gesamtspannung bei. Mehr Windungen bedeuten ...?')">Pr&uuml;fen</button>
+            <div id="quiz1-feedback" class="feedback"></div>
+            <div class="nav-buttons"><button class="btn-secondary" onclick="goToStep(1)">&larr; Zur&uuml;ck</button><button class="nav-next" disabled onclick="goToStep(3)">Weiter &rarr;</button></div>
+        </div>
+
+        <!-- SCHRITT 3: EXPERIMENT -->
+        <div class="section" id="section3">
+            <span class="ew-label ew-experiment">Experiment</span>
+            <h2>Schritt 3: Transformator-Simulation</h2>
+            <p>Ver&auml;ndere die Windungszahlen und beobachte, wie sich die Ausgangsspannung &auml;ndert.</p>
+            <div class="sim-area">
+                <div class="sim-canvas-wrap"><canvas id="trafoCanvas" width="700" height="380"></canvas></div>
+                <div class="sim-readout">
+                    <div class="readout-item"><div class="label">Eingang U<sub>1</sub></div><div class="value" id="readU1">12 V</div></div>
+                    <div class="readout-item"><div class="label">Prim&auml;r N<sub>1</sub></div><div class="value" id="readN1">100</div></div>
+                    <div class="readout-item"><div class="label">Sekund&auml;r N<sub>2</sub></div><div class="value" id="readN2">200</div></div>
+                    <div class="readout-item"><div class="label">Ausgang U<sub>2</sub></div><div class="value" id="readU2" style="color:#b35c00;">24 V</div></div>
+                </div>
+                <div class="sim-controls">
+                    <div class="slider-row"><label for="sliderN1">Prim&auml;rspule N<sub>1</sub>:</label><input type="range" id="sliderN1" min="50" max="500" step="50" value="100"><span class="slider-val" id="valN1">100</span></div>
+                    <div class="slider-row"><label for="sliderN2">Sekund&auml;rspule N<sub>2</sub>:</label><input type="range" id="sliderN2" min="50" max="500" step="50" value="200"><span class="slider-val" id="valN2">200</span></div>
+                    <div class="slider-row"><label for="sliderU1">Eingangsspannung U<sub>1</sub>:</label><input type="range" id="sliderU1" min="1" max="24" step="1" value="12"><span class="slider-val" id="valU1">12 V</span></div>
+                    <div style="margin-top:10px;"><button class="btn-reset" onclick="resetSim()">Zur&uuml;cksetzen</button></div>
+                </div>
+                <div class="sim-hint">Tipp: Stelle verschiedene Kombinationen ein und notiere die Werte auf dem Arbeitsblatt.</div>
+            </div>
+            <h3>Auftr&auml;ge</h3>
+            <div class="aufgabe niveau-1"><span class="niveau-badge">&#9733;</span><p><strong>Auftrag 1:</strong> Stelle N<sub>1</sub>&nbsp;=&nbsp;100 und U<sub>1</sub>&nbsp;=&nbsp;12&nbsp;V ein. Ver&auml;ndere N<sub>2</sub> (100, 200, 300, 400). Was passiert mit U<sub>2</sub>?</p></div>
+            <div class="aufgabe niveau-2"><span class="niveau-badge">&#9733;&#9733;</span><p><strong>Auftrag 2:</strong> Stelle N<sub>2</sub>&nbsp;=&nbsp;200 und U<sub>1</sub>&nbsp;=&nbsp;12&nbsp;V ein. Ver&auml;ndere N<sub>1</sub> (100, 200, 400). Wie &auml;ndert sich U<sub>2</sub>?</p></div>
+            <div class="protokoll-box"><ul><li><strong>Tabelle 1:</strong> Trage die Messwerte aus Auftrag 1 und 2 in die Tabelle auf dem Arbeitsblatt ein.</li></ul></div>
+            <div class="nav-buttons"><button class="btn-secondary" onclick="goToStep(2)">&larr; Zur&uuml;ck</button><button class="nav-next" disabled onclick="goToStep(4)">Weiter &rarr;</button></div>
+        </div>
+
+        <!-- SCHRITT 4: AUSWERTUNG + DEUTUNG -->
+        <div class="section" id="section4">
+            <span class="ew-label ew-deutung">Auswertung &amp; Deutung</span>
+            <h2>Schritt 4: Was hast du beobachtet?</h2>
+            <div class="quiz-container" id="quiz2">
+                <p><strong>Frage:</strong> Was passiert mit U<sub>2</sub>, wenn N<sub>2</sub> gr&ouml;&szlig;er wird (bei gleichem N<sub>1</sub>)?</p>
+                <div class="quiz-option" onclick="selectOption('quiz2',0)">U<sub>2</sub> wird gr&ouml;&szlig;er (Spannung steigt)</div>
+                <div class="quiz-option" onclick="selectOption('quiz2',1)">U<sub>2</sub> bleibt gleich</div>
+                <div class="quiz-option" onclick="selectOption('quiz2',2)">U<sub>2</sub> wird kleiner (Spannung sinkt)</div>
+            </div>
+            <button class="check-btn" onclick="checkQuiz(2,0,'Richtig! Mehr Windungen auf der Sekundaerseite bedeuten hoehere Ausgangsspannung.','Schau dir deine Messwerte nochmal an. Was passierte, als du N2 von 100 auf 400 erhoeht hast?')">Pr&uuml;fen</button>
+            <div id="quiz2-feedback" class="feedback"></div>
+            <h3 style="margin-top:18px;">Die Regel</h3>
+            <div class="erkenntnis-box">
+                <p><strong>Mehr Windungen auf der Sekund&auml;rseite &rarr; h&ouml;here Ausgangsspannung</strong></p>
+                <p style="margin-top:6px;">Weniger Windungen auf der Sekund&auml;rseite &rarr; niedrigere Ausgangsspannung</p>
+                <p style="margin-top:10px;font-size:0.9em;">Das Verh&auml;ltnis der Windungszahlen bestimmt das Verh&auml;ltnis der Spannungen. Das nennt man <strong>&Uuml;bersetzungsverh&auml;ltnis</strong>.</p>
+            </div>
+            <h3>Hoch- oder Niederspannung?</h3>
+            <table class="compare-table">
+                <thead><tr><th></th><th>Hochspannungstrafo</th><th>Niederspannungstrafo</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Windungen</strong></td><td>N<sub>2</sub> &gt; N<sub>1</sub></td><td>N<sub>2</sub> &lt; N<sub>1</sub></td></tr>
+                    <tr><td><strong>Spannung</strong></td><td>U<sub>2</sub> &gt; U<sub>1</sub> (erh&ouml;ht)</td><td>U<sub>2</sub> &lt; U<sub>1</sub> (verringert)</td></tr>
+                    <tr><td><strong>Beispiel</strong></td><td>Kraftwerk &rarr; Hochspannungsleitung</td><td>Steckdose &rarr; Handy-Ladeger&auml;t</td></tr>
+                </tbody>
+            </table>
+            <div class="protokoll-box"><ul><li><strong>Kasten 2:</strong> Vervollst&auml;ndige die Regeln zum &Uuml;bersetzungsverh&auml;ltnis.</li><li><strong>Kasten 3:</strong> Ordne Hochspannungs- und Niederspannungstransformator zu.</li></ul></div>
+            <div class="nav-buttons"><button class="btn-secondary" onclick="goToStep(3)">&larr; Zur&uuml;ck</button><button class="nav-next" disabled onclick="goToStep(5)">Weiter &rarr;</button></div>
+        </div>
+
+        <!-- SCHRITT 5: VERALLGEMEINERUNG -->
+        <div class="section" id="section5">
+            <span class="ew-label ew-verallgemeinerung">Verallgemeinerung</span>
+            <h2>Schritt 5: Der Transformator im Alltag</h2>
+            <div class="erkenntnis-box">
+                <p><strong>Merksatz:</strong> Ein Transformator besteht aus einem Eisenkern, einer Prim&auml;rspule (N<sub>1</sub>) und einer Sekund&auml;rspule (N<sub>2</sub>). Er kann Wechselspannung erh&ouml;hen oder verringern. Je mehr Windungen die Sekund&auml;rspule im Vergleich zur Prim&auml;rspule hat, desto h&ouml;her ist die Ausgangsspannung.</p>
+                <p style="margin-top:8px;font-size:0.9em;"><strong>Wichtig:</strong> Ein Transformator funktioniert <em>nur</em> mit Wechselspannung! Bei Gleichspannung &auml;ndert sich das Magnetfeld nicht &mdash; keine Induktion.</p>
+            </div>
+            <h3>Warum Hochspannung f&uuml;r den Transport?</h3>
+            <div class="alltagsbezug"><div class="alltagsbezug-header">Alltagsbezug: Stromtransport</div><p style="font-size:0.9em;">Beim Stromtransport geht Energie durch W&auml;rme in den Leitungen verloren. Je h&ouml;her die Spannung, desto geringer der Stromfluss &mdash; und desto weniger Verluste. Deshalb wird die Spannung f&uuml;r den Transport auf <strong>380.000&nbsp;V</strong> hochtransformiert und erst in der N&auml;he der Verbraucher wieder heruntertransformiert.</p></div>
+            <h3>Quiz: Transformator-Typen</h3>
+            <div class="quiz-container" id="quiz3">
+                <p><strong>Frage:</strong> Ein Ladeger&auml;t wandelt 230&nbsp;V in 5&nbsp;V f&uuml;r dein Handy um. Was gilt?</p>
+                <div class="quiz-option" onclick="selectOption('quiz3',0)">N<sub>1</sub> &gt; N<sub>2</sub> (Prim&auml;rspule hat mehr Windungen)</div>
+                <div class="quiz-option" onclick="selectOption('quiz3',1)">N<sub>1</sub> &lt; N<sub>2</sub> (Sekund&auml;rspule hat mehr Windungen)</div>
+                <div class="quiz-option" onclick="selectOption('quiz3',2)">N<sub>1</sub> = N<sub>2</sub> (gleiche Windungszahl)</div>
+            </div>
+            <button class="check-btn" onclick="checkQuiz(3,0,'Richtig! Die Spannung soll verringert werden (230 V auf 5 V), also muss die Primaerspule mehr Windungen haben. Das ist ein Niederspannungstransformator.','Denke nach: Die Spannung soll kleiner werden. Welche Spule braucht dann mehr Windungen?')">Pr&uuml;fen</button>
+            <div id="quiz3-feedback" class="feedback"></div>
+            <div class="aufgabe niveau-3" style="margin-top:14px;"><span class="niveau-badge">&#9733;&#9733;&#9733;</span><p><strong>Transferaufgabe:</strong> Erkl&auml;re, warum ein Transformator mit Gleichspannung <em>nicht</em> funktioniert. Nutze den Begriff &bdquo;Induktion&ldquo;.</p></div>
+            <div class="protokoll-box"><ul><li><strong>Kasten 4:</strong> Erg&auml;nze den Merksatz und die Erkl&auml;rung zum Stromtransport.</li><li><strong>Aufgabe 4 (&#9733;&#9733;&#9733;):</strong> Transferaufgabe auf dem AB beantworten.</li></ul></div>
+            <div class="nav-buttons"><button class="btn-secondary" onclick="goToStep(4)">&larr; Zur&uuml;ck</button><button class="nav-next" onclick="goToStep(6)">Weiter &rarr;</button></div>
+        </div>
+
+        <!-- SCHRITT 6: SICHERUNG -->
+        <div class="section" id="section6">
+            <span class="ew-label ew-sicherung">Sicherung</span>
+            <h2>Schritt 6: Selbstcheck &mdash; Flashcards</h2>
+            <p>Teste dein Wissen! Tippe auf die Karte, um die Antwort zu sehen.</p>
+            <div id="fcApp">
+                <div class="fc-progress"><span><span id="fcCurrent">1</span> / <span id="fcTotal">8</span></span><div class="fc-progress-bar"><div class="fc-progress-fill" id="fcProgressFill"></div></div><span class="fc-streak" id="fcStreak"></span></div>
+                <div class="fc-wrapper" id="fcWrapper"><div class="fc-card" id="fcCard"><div class="fc-face fc-front"><div class="fc-term" id="fcTerm"></div><div class="fc-hint">Tippe zum Umdrehen</div></div><div class="fc-face fc-back"><div class="fc-definition" id="fcDef"></div></div></div></div>
+                <div class="fc-buttons" id="fcBtns" style="display:none;"><button class="fc-btn-wrong" onclick="fcNext(false)">Nochmal &uuml;ben</button><button class="fc-btn-correct" onclick="fcNext(true)">Gewusst!</button></div>
+            </div>
+            <div class="fc-complete" id="fcComplete"><p style="font-size:1.1em;">Flashcards fertig!</p><div class="fc-score" id="fcScore"></div><p id="fcResult" style="margin-top:8px;"></p><button class="check-btn" style="margin-top:14px;" onclick="fcRestart()">Nochmal</button></div>
+            <div class="protokoll-box" style="margin-top:18px;"><ul><li><strong>Selbstcheck:</strong> F&uuml;lle den Selbstcheck auf dem Arbeitsblatt aus.</li></ul></div>
+            <div class="nav-buttons"><button class="btn-secondary" onclick="goToStep(5)">&larr; Zur&uuml;ck</button><span aria-hidden="true"></span></div>
+        </div>
+    </div>
+
+    <script>
+        var currentSection=1,totalSections=6,selectedAnswers={},PREFIX='lp09ctrafo',maxStep=1;
+        function safeGetItem(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+        function safeSetItem(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+        function updateProgress(){var p=((currentSection-1)/(totalSections-1))*100;document.getElementById('progressFill').style.width=p+'%';var ni=document.querySelectorAll('.step-nav-item');ni.forEach(function(it,i){var s=i+1;it.classList.remove('active','done','locked');if(s>maxStep)it.classList.add('locked');else if(s<currentSection)it.classList.add('done');else if(s===currentSection)it.classList.add('active');});}
+        function goToStep(n){if(n<1||n>totalSections||n>maxStep)return;document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});document.getElementById('section'+n).classList.add('active');currentSection=n;if(n>=5&&maxStep<6){maxStep=6;safeSetItem(PREFIX+'-maxStep',maxStep);}updateProgress();safeSetItem(PREFIX+'-step',n);window.scrollTo({top:0,behavior:'smooth'});}
+        function selectOption(qid,idx){var o=document.querySelectorAll('#'+qid+' .quiz-option');o.forEach(function(x){x.classList.remove('selected','correct','incorrect');});o[idx].classList.add('selected');selectedAnswers[qid]=idx;}
+        function checkQuiz(n,cor,cm,im){var qid='quiz'+n,fb=document.getElementById(qid+'-feedback'),o=document.querySelectorAll('#'+qid+' .quiz-option');if(selectedAnswers[qid]===undefined){alert('Bitte waehle eine Antwort.');return;}o.forEach(function(x,i){x.classList.remove('correct','incorrect');if(i===cor)x.classList.add('correct');});if(selectedAnswers[qid]===cor){fb.textContent=cm;fb.className='feedback correct';}else{o[selectedAnswers[qid]].classList.add('incorrect');fb.textContent=im;fb.className='feedback incorrect';}unlockGate(currentSection);}
+        function unlockGate(s){if(maxStep<=s){maxStep=s+1;if(maxStep>totalSections)maxStep=totalSections;safeSetItem(PREFIX+'-maxStep',maxStep);}var b=document.querySelector('#section'+s+' .nav-next');if(b){b.disabled=false;b.classList.add('unlocked');}updateProgress();}
+        function restoreState(){var sm=safeGetItem(PREFIX+'-maxStep');if(sm)maxStep=parseInt(sm,10);for(var i=1;i<maxStep&&i<totalSections;i++){var b=document.querySelector('#section'+i+' .nav-next');if(b){b.disabled=false;b.classList.add('unlocked');}}var ss=safeGetItem(PREFIX+'-step');if(ss){var st=parseInt(ss,10);if(st<=maxStep){goToStep(st);return;}}updateProgress();}
+
+        var canvas=document.getElementById('trafoCanvas'),ctx=canvas.getContext('2d'),simN1=100,simN2=200,simU1=12,animTime=0;
+        function calcU2(){return Math.round((simU1*simN2/simN1)*10)/10;}
+        function updateReadouts(){document.getElementById('readU1').textContent=simU1+' V';document.getElementById('readN1').textContent=simN1;document.getElementById('readN2').textContent=simN2;document.getElementById('readU2').textContent=calcU2()+' V';}
+        function drawArrow(c,x1,y1,x2,y2){var dx=x2-x1,dy=y2-y1,l=Math.sqrt(dx*dx+dy*dy);if(l<1)return;var ux=dx/l,uy=dy/l,h=6;c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.strokeStyle=c.fillStyle;c.lineWidth=2;c.stroke();c.beginPath();c.moveTo(x2,y2);c.lineTo(x2-h*ux+h*0.5*uy,y2-h*uy-h*0.5*ux);c.lineTo(x2-h*ux-h*0.5*uy,y2-h*uy+h*0.5*ux);c.closePath();c.fill();}
+        function drawTrafo(){var W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);var cX=200,cY=80,cW=300,cH=220,th=40;ctx.fillStyle='#5c6370';ctx.fillRect(cX,cY,cW,th);ctx.fillRect(cX,cY+cH-th,cW,th);ctx.fillRect(cX,cY,th,cH);ctx.fillRect(cX+cW-th,cY,th,cH);ctx.fillStyle='#8a9bb0';ctx.font='13px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText('Eisenkern',cX+cW/2,cY+cH/2+5);var n1v=Math.max(3,Math.round(simN1/50)),pX=cX+th+5,pT=cY+th+10,pH=cH-2*th-20,s1=pH/(n1v+1);ctx.strokeStyle='#4caf50';ctx.lineWidth=3;for(var i=1;i<=n1v;i++){var yy=pT+i*s1;ctx.beginPath();ctx.ellipse(pX+30,yy,28,8,0,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#4caf50';ctx.font='bold 14px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText('Primaerspule',pX+30,cY+cH+30);ctx.fillText('N\u2081 = '+simN1,pX+30,cY+cH+48);var n2v=Math.max(3,Math.round(simN2/50)),sX=cX+cW-th-65,s2=pH/(n2v+1);ctx.strokeStyle='#ff9800';ctx.lineWidth=3;for(var j=1;j<=n2v;j++){var y2=pT+j*s2;ctx.beginPath();ctx.ellipse(sX+30,y2,28,8,0,0,Math.PI*2);ctx.stroke();}ctx.fillStyle='#ff9800';ctx.font='bold 14px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText('Sekundaerspule',sX+30,cY+cH+30);ctx.fillText('N\u2082 = '+simN2,sX+30,cY+cH+48);var ph=Math.sin(animTime*2);ctx.globalAlpha=0.3+0.5*Math.abs(ph);var d=ph>0?1:-1;ctx.fillStyle='#a0c4ff';for(var a=0;a<4;a++){var ax=cX+60+a*60;drawArrow(ctx,ax,cY+th/2,ax+d*30,cY+th/2);}for(var b=0;b<4;b++){var bx=cX+60+b*60;drawArrow(ctx,bx,cY+cH-th/2,bx-d*30,cY+cH-th/2);}ctx.globalAlpha=1.0;ctx.fillStyle='#4caf50';ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='right';ctx.fillText('U\u2081 = '+simU1+' V',cX-20,cY+cH/2);ctx.font='12px -apple-system,sans-serif';ctx.fillText('(Eingang)',cX-20,cY+cH/2+18);ctx.strokeStyle='#4caf50';ctx.lineWidth=2;ctx.beginPath();ctx.arc(cX-50,cY+cH/2-30,12,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(cX-58,cY+cH/2-30);ctx.bezierCurveTo(cX-54,cY+cH/2-38,cX-46,cY+cH/2-22,cX-42,cY+cH/2-30);ctx.stroke();var u2v=calcU2();ctx.fillStyle='#ff9800';ctx.font='bold 16px -apple-system,sans-serif';ctx.textAlign='left';ctx.fillText('U\u2082 = '+u2v+' V',cX+cW+20,cY+cH/2);ctx.font='12px -apple-system,sans-serif';ctx.fillText('(Ausgang)',cX+cW+20,cY+cH/2+18);var lb='';if(simN2>simN1){lb='Hochspannungstrafo (U\u2082 > U\u2081)';ctx.fillStyle='#ef5350';}else if(simN2<simN1){lb='Niederspannungstrafo (U\u2082 < U\u2081)';ctx.fillStyle='#4caf50';}else{lb='N\u2081 = N\u2082  \u2192  U\u2081 = U\u2082';ctx.fillStyle='#90a4ae';}ctx.font='bold 14px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText(lb,W/2,H-10);}
+        function animLoop(){animTime+=0.02;drawTrafo();requestAnimationFrame(animLoop);}
+        function resetSim(){simN1=100;simN2=200;simU1=12;document.getElementById('sliderN1').value=100;document.getElementById('sliderN2').value=200;document.getElementById('sliderU1').value=12;document.getElementById('valN1').textContent='100';document.getElementById('valN2').textContent='200';document.getElementById('valU1').textContent='12 V';updateReadouts();}
+        document.getElementById('sliderN1').addEventListener('input',function(){simN1=parseInt(this.value,10);document.getElementById('valN1').textContent=simN1;updateReadouts();});
+        document.getElementById('sliderN2').addEventListener('input',function(){simN2=parseInt(this.value,10);document.getElementById('valN2').textContent=simN2;updateReadouts();});
+        document.getElementById('sliderU1').addEventListener('input',function(){simU1=parseInt(this.value,10);document.getElementById('valU1').textContent=simU1+' V';updateReadouts();});
+        var simInteracted=false;function onSimInteract(){if(!simInteracted){simInteracted=true;unlockGate(3);}}
+        document.getElementById('sliderN1').addEventListener('input',onSimInteract);document.getElementById('sliderN2').addEventListener('input',onSimInteract);document.getElementById('sliderU1').addEventListener('input',onSimInteract);
+
+        var fcCards=[{term:'Transformator',def:'Geraet, das Wechselspannung erhoehen oder verringern kann.'},{term:'3 Bauteile des Trafos',def:'Eisenkern, Primaerspule (N\u2081), Sekundaerspule (N\u2082)'},{term:'Primaerspule',def:'Eingangsseite \u2014 hier fliesst der Strom hinein.'},{term:'Sekundaerspule',def:'Ausgangsseite \u2014 hier wird die neue Spannung erzeugt.'},{term:'Hochspannungstrafo',def:'N\u2082 > N\u2081 \u2192 Ausgangsspannung groesser als Eingangsspannung.'},{term:'Niederspannungstrafo',def:'N\u2082 < N\u2081 \u2192 Ausgangsspannung kleiner als Eingangsspannung.'},{term:'Warum nur Wechselspannung?',def:'Nur Wechselspannung erzeugt ein sich aenderndes Magnetfeld \u2192 Induktion.'},{term:'Warum Hochspannung beim Transport?',def:'Hohe Spannung = weniger Strom = weniger Waermeverluste in den Leitungen.'}];
+        var fcIndex=0,fcCorrect=0,fcStreak=0,fcFlipped=false;
+        function fcUpdateCard(){if(fcIndex>=fcCards.length){fcShowComplete();return;}var c=fcCards[fcIndex];document.getElementById('fcTerm').textContent=c.term;document.getElementById('fcDef').textContent=c.def;document.getElementById('fcCard').classList.remove('flipped');fcFlipped=false;document.getElementById('fcBtns').style.display='none';document.getElementById('fcCurrent').textContent=fcIndex+1;document.getElementById('fcTotal').textContent=fcCards.length;document.getElementById('fcProgressFill').style.width=(fcIndex/fcCards.length*100)+'%';document.getElementById('fcStreak').textContent=fcStreak>0?('\uD83D\uDD25 '+fcStreak):'';}
+        function fcFlip(){if(fcFlipped)return;fcFlipped=true;document.getElementById('fcCard').classList.add('flipped');document.getElementById('fcBtns').style.display='flex';}
+        function fcNext(ok){if(ok){fcCorrect++;fcStreak++;}else{fcStreak=0;}fcIndex++;fcUpdateCard();}
+        function fcShowComplete(){var p=Math.round((fcCorrect/fcCards.length)*100);document.getElementById('fcApp').style.display='none';document.getElementById('fcComplete').style.display='block';document.getElementById('fcScore').textContent=p+'%';document.getElementById('fcResult').textContent=fcCorrect+' von '+fcCards.length+' gewusst!';}
+        function fcRestart(){fcIndex=0;fcCorrect=0;fcStreak=0;document.getElementById('fcApp').style.display='block';document.getElementById('fcComplete').style.display='none';fcUpdateCard();}
+        document.getElementById('fcWrapper').addEventListener('click',fcFlip);
+
+        updateReadouts();animLoop();fcUpdateCard();setTimeout(function(){unlockGate(1);},5000);restoreState();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernpfad: Kraefte zerlegen - Geneigte Ebene | Physik 10E</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16px; line-height: 1.6; color: #222; background: #f5f5f5;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        :root {
+            --physik: #2c5aa0; --physik-light: #e8f0fa;
+            --success: #2a7a4b; --success-light: #e8f5e9;
+            --warning: #b35c00; --warning-light: #fff3e0;
+            --error: #c62828; --error-light: #ffebee;
+            --gray: #666; --border: #ddd;
+        }
+        header { background: var(--physik); color: white; padding: 20px; text-align: center; }
+        header h1 { font-size: 1.4em; font-weight: 600; margin-bottom: 5px; }
+        header .meta { font-size: 0.85em; opacity: 0.9; }
+        .progress-bar { background: #ddd; height: 8px; width: 100%; }
+        .progress-fill { background: var(--physik); height: 100%; width: 0%; transition: width 0.3s; }
+        .step-indicator { display: flex; justify-content: center; gap: 8px; padding: 15px; background: white; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .step-dot { width: 16px; height: 16px; border-radius: 50%; background: #ddd; cursor: pointer; transition: all 0.2s; position: relative; }
+        .step-dot::before { content: ''; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+        .step-dot:hover { transform: scale(1.2); }
+        .step-dot.active { background: var(--physik); }
+        .step-dot.completed { background: var(--success); }
+        .step { display: none; background: white; padding: 25px; margin: 20px 0; border: 1px solid var(--border); }
+        .step.active { display: block; }
+        .step h2 { color: var(--physik); font-size: 1.3em; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--physik-light); }
+        .step h3 { font-size: 1.1em; margin: 20px 0 10px 0; color: #333; }
+        .info-box { background: var(--physik-light); border-left: 4px solid var(--physik); padding: 15px; margin: 15px 0; }
+        .ab-box { background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px; margin: 15px 0; }
+        .formel-box { background: #f9f9f9; border: 2px solid var(--physik); padding: 20px; margin: 20px 0; text-align: center; font-size: 1.3em; }
+        .merksatz { background: var(--success-light); border-left: 4px solid var(--success); padding: 15px; margin: 15px 0; font-weight: 500; }
+        .wichtig { background: var(--warning-light); border: 2px solid var(--warning); padding: 15px; margin: 15px 0; }
+        .sim-container { background: #f9f9f9; border: 1px solid var(--border); padding: 15px; margin: 20px 0; }
+        .sim-container h4 { color: var(--physik); margin-bottom: 10px; font-size: 1em; }
+        canvas { display: block; margin: 10px auto; background: white; border: 1px solid var(--border); touch-action: none; max-width: 100%; }
+        .sim-controls { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; align-items: center; justify-content: center; }
+        .sim-controls label { display: flex; align-items: center; gap: 8px; font-size: 0.9em; min-height: 44px; padding: 4px 8px; cursor: pointer; }
+        .sim-controls input[type="range"] { width: 140px; height: 44px; }
+        .sim-readout { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px; justify-content: center; font-size: 0.95em; }
+        .readout-item { background: white; border: 1px solid var(--border); padding: 8px 14px; min-width: 130px; text-align: center; }
+        .readout-item .label { font-size: 0.8em; color: var(--gray); }
+        .readout-item .value { font-size: 1.2em; font-weight: 600; }
+        button { padding: 10px 20px; font-size: 1em; cursor: pointer; border: none; background: var(--physik); color: white; min-height: 44px; }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: white; color: var(--physik); border: 2px solid var(--physik); }
+        .btn-success { background: var(--success); }
+        .var { font-style: italic; }
+        .exercise { background: #fafafa; border: 1px solid var(--border); padding: 20px; margin: 20px 0; }
+        .exercise-title { font-weight: 600; color: var(--physik); margin-bottom: 10px; }
+        .niveau-badge { font-size: 0.8em; padding: 2px 8px; border-radius: 3px; background: var(--physik-light); color: var(--physik); }
+        .quiz-option { display: block; padding: 12px 15px; margin: 8px 0; background: white; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s; min-height: 44px; }
+        .quiz-option:hover { border-color: var(--physik); }
+        .quiz-option.selected { border-color: var(--physik); background: var(--physik-light); }
+        .quiz-option.correct { border-color: var(--success); background: var(--success-light); }
+        .quiz-option.wrong { border-color: var(--error); background: var(--error-light); }
+        .feedback { margin-top: 15px; padding: 12px; display: none; }
+        .feedback.correct { display: block; background: var(--success-light); border-left: 4px solid var(--success); color: var(--success); }
+        .feedback.incorrect { display: block; background: var(--error-light); border-left: 4px solid var(--error); color: #333; }
+        .feedback.hint { display: block; background: var(--warning-light); border-left: 4px solid var(--warning); color: #333; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .messwert-tabelle { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .messwert-tabelle th, .messwert-tabelle td { border: 1px solid var(--border); padding: 10px; text-align: center; }
+        .messwert-tabelle th { background: var(--physik-light); color: var(--physik); font-weight: 600; }
+        .messwert-tabelle input { width: 80px; padding: 6px; text-align: center; border: 1px solid var(--border); font-size: 1em; }
+        .input-inline { display: inline-block; padding: 6px 12px; border: 1px solid var(--border); font-size: 1em; width: 100px; text-align: center; }
+        .scenario-card { background: white; border: 2px solid var(--border); padding: 20px; margin: 15px 0; transition: border-color 0.2s; }
+        .scenario-card.solved { border-color: var(--success); }
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            .step { padding: 15px; }
+            canvas { max-width: 100%; height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Kraefte zerlegen &ndash; Geneigte Ebene</h1>
+    <div class="meta">Physik 10E | DS 7 | KW 11 | 2 &times; 40 Min (SEV)</div>
+</header>
+
+<div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+</div>
+
+<div class="step-indicator" id="stepIndicator"></div>
+
+<div class="container">
+
+    <!-- ================================================================
+         SCHRITT 1: PHAENOMEN
+         ================================================================ -->
+    <div class="step active" id="step1">
+        <h2>1. Ein Alltagsphaenomen</h2>
+
+        <div class="info-box" style="background: #fff8e1; border-color: #ffc107;">
+            <strong>Reaktivierung:</strong> Letzte Stunde habt ihr Kraefte <em>addiert</em> (Kraefteparallelogramm). Heute gehen wir den umgekehrten Weg: Kraefte <em>zerlegen</em>.
+        </div>
+
+        <h3>Situation</h3>
+        <p>Ein Lieferwagen mit Masse <span class="var">m</span> = 1000&thinsp;kg steht auf einer Rampe. Der Fahrer loest die Handbremse &ndash; was passiert?</p>
+
+        <div class="sim-container">
+            <h4>Animation: Kiste auf Rampe</h4>
+            <canvas id="rampeIntro" width="700" height="350"></canvas>
+            <div class="sim-controls">
+                <button onclick="playIntro()">Abspielen</button>
+                <button class="btn-secondary" onclick="resetIntro()">Zuruecksetzen</button>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Was beobachtest du?</strong></p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q1" style="margin-right: 10px;">
+                    Die Kiste gleitet die Rampe hinunter &ndash; eine Kraft zieht sie hangabwaerts
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q1" style="margin-right: 10px;">
+                    Die Kiste bleibt stehen, weil die Gewichtskraft senkrecht nach unten wirkt
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q1" style="margin-right: 10px;">
+                    Die Kiste fliegt von der Rampe weg
+                </label>
+            </div>
+            <button onclick="checkMC('q1')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q1"></div>
+        </div>
+
+        <div class="info-box">
+            <strong>Kernfrage:</strong> Die Gewichtskraft <span class="var">F</span><sub>G</sub> zeigt senkrecht nach unten. Aber die Kiste bewegt sich <em>entlang der Schraege</em>. Wie kommt das? Welche Kraft treibt die Kiste die Rampe hinunter?
+        </div>
+
+        <div class="nav-buttons">
+            <span></span>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 2: HYPOTHESE
+         ================================================================ -->
+    <div class="step" id="step2">
+        <h2>2. Hypothese aufstellen</h2>
+
+        <div class="info-box" style="background: #fff3e0; border-color: #ff9800;">
+            <strong>Deine Aufgabe:</strong> Was vermutest du &ndash; wie haengt die Kraft, die die Kiste die Rampe hinunterzieht, mit dem Neigungswinkel zusammen?
+        </div>
+
+        <div class="exercise">
+            <p><strong>Welche Hypothese erscheint dir sinnvoll?</strong></p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q2a" style="margin-right: 10px;">
+                    Je steiler die Rampe, desto groesser die Kraft hangabwaerts
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q2a" style="margin-right: 10px;">
+                    Die Kraft hangabwaerts ist immer gleich der Gewichtskraft
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q2a" style="margin-right: 10px;">
+                    Je steiler die Rampe, desto kleiner die Kraft hangabwaerts
+                </label>
+            </div>
+            <button onclick="checkMC('q2a')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q2a"></div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Notiere deine Hypothese in <strong>Aufgabe 1</strong> auf dem AB.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 3: IDEE DER KRAEFTEZERLEGUNG
+         ================================================================ -->
+    <div class="step" id="step3">
+        <h2>3. Idee: Kraefte zerlegen</h2>
+
+        <div class="info-box">
+            Letzte Stunde hast du zwei Kraefte zu einer resultierenden Kraft <em>zusammengesetzt</em> (Addition). Jetzt machst du das <strong>Gegenteil</strong>: Eine bekannte Kraft in zwei sinnvolle <strong>Komponenten</strong> zerlegen.
+        </div>
+
+        <h3>Warum zerlegen?</h3>
+        <p>Die Gewichtskraft <span class="var">F</span><sub>G</sub> wirkt senkrecht nach unten. Aber auf einer schiefen Ebene sind zwei Richtungen wichtig:</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+            <div style="background: #ffebee; border: 2px solid #c62828; padding: 15px; text-align: center;">
+                <strong style="color: #c62828;"><span class="var">F</span><sub>H</sub></strong><br>
+                Hangabtriebskraft<br>
+                <em style="font-size: 0.85em;">parallel zur Schraege</em><br>
+                <span style="font-size: 0.85em; color: var(--gray);">Zieht den Koerper hangabwaerts</span>
+            </div>
+            <div style="background: #e3f2fd; border: 2px solid #1565c0; padding: 15px; text-align: center;">
+                <strong style="color: #1565c0;"><span class="var">F</span><sub>N</sub></strong><br>
+                Normalkraft<br>
+                <em style="font-size: 0.85em;">senkrecht zur Schraege</em><br>
+                <span style="font-size: 0.85em; color: var(--gray);">Drueckt den Koerper auf die Ebene</span>
+            </div>
+        </div>
+
+        <div class="wichtig">
+            <strong>Prinzip der Kraeftezerlegung:</strong><br>
+            Die Gewichtskraft ist die <em>Resultierende</em> von Hangabtriebskraft und Normalkraft:<br>
+            <span class="var">F</span><sub>G</sub> = <span class="var">F</span><sub>H</sub> + <span class="var">F</span><sub>N</sub> (vektoriell)
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Lies den Infotext und ergaenze die Luecken in <strong>Aufgabe 2</strong> auf dem AB.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 4: SIMULATION - GENEIGTE EBENE
+         ================================================================ -->
+    <div class="step" id="step4">
+        <h2>4. Experiment: Simulation der geneigten Ebene</h2>
+
+        <p>Untersuche, wie sich die Kraefte aendern, wenn du den Neigungswinkel variierst.</p>
+
+        <div class="sim-container">
+            <h4>Simulation: Kraeftezerlegung an der geneigten Ebene</h4>
+            <canvas id="simCanvas" width="700" height="450"></canvas>
+            <div class="sim-controls">
+                <label>
+                    Neigungswinkel &alpha;: <strong id="angleDisplay">30</strong>&deg;
+                    <input type="range" id="angleSlider" min="5" max="85" value="30" step="5">
+                </label>
+                <label>
+                    Masse <span class="var">m</span>: <strong id="massDisplay">10</strong>&thinsp;kg
+                    <input type="range" id="massSlider" min="5" max="50" value="10" step="5">
+                </label>
+                <button class="btn-secondary" onclick="resetSim()">Zuruecksetzen</button>
+            </div>
+            <div class="sim-readout">
+                <div class="readout-item">
+                    <div class="label"><span class="var">F</span><sub>G</sub></div>
+                    <div class="value" id="fgValue">100 N</div>
+                </div>
+                <div class="readout-item" style="border-color: #c62828;">
+                    <div class="label" style="color: #c62828;"><span class="var">F</span><sub>H</sub></div>
+                    <div class="value" id="fhValue" style="color: #c62828;">50,0 N</div>
+                </div>
+                <div class="readout-item" style="border-color: #1565c0;">
+                    <div class="label" style="color: #1565c0;"><span class="var">F</span><sub>N</sub></div>
+                    <div class="value" id="fnValue" style="color: #1565c0;">86,6 N</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Auftraege:</strong>
+            <ol style="margin: 10px 0 0 20px;">
+                <li>Setze die Masse auf 10&thinsp;kg (F<sub>G</sub> = 100&thinsp;N).</li>
+                <li>Stelle den Winkel auf die Werte in der Tabelle ein.</li>
+                <li>Lies <span class="var">F</span><sub>H</sub> und <span class="var">F</span><sub>N</sub> ab und trage die Werte ein.</li>
+            </ol>
+        </div>
+
+        <h3>Messwerttabelle</h3>
+        <p style="font-size: 0.9em; color: var(--gray); margin-bottom: 10px;">Masse: <span class="var">m</span> = 10&thinsp;kg, also <span class="var">F</span><sub>G</sub> = 100&thinsp;N (mit <span class="var">g</span> = 10&thinsp;N/kg)</p>
+
+        <table class="messwert-tabelle">
+            <thead>
+                <tr>
+                    <th>&alpha; in &deg;</th>
+                    <th><span class="var">F</span><sub>H</sub> in N</th>
+                    <th><span class="var">F</span><sub>N</sub> in N</th>
+                    <th>sin(&alpha;)</th>
+                    <th>cos(&alpha;)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>10</td><td><input id="fh10" type="number" step="0.1"></td><td><input id="fn10" type="number" step="0.1"></td><td>0,17</td><td>0,98</td></tr>
+                <tr><td>20</td><td><input id="fh20" type="number" step="0.1"></td><td><input id="fn20" type="number" step="0.1"></td><td>0,34</td><td>0,94</td></tr>
+                <tr><td>30</td><td><input id="fh30" type="number" step="0.1"></td><td><input id="fn30" type="number" step="0.1"></td><td>0,50</td><td>0,87</td></tr>
+                <tr><td>45</td><td><input id="fh45" type="number" step="0.1"></td><td><input id="fn45" type="number" step="0.1"></td><td>0,71</td><td>0,71</td></tr>
+                <tr><td>60</td><td><input id="fh60" type="number" step="0.1"></td><td><input id="fn60" type="number" step="0.1"></td><td>0,87</td><td>0,50</td></tr>
+            </tbody>
+        </table>
+
+        <button onclick="checkMesswerte()" style="margin-top: 10px;">Messwerte pruefen</button>
+        <div class="feedback" id="fb-messwerte"></div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Uebertrage die Messwerte in die Tabelle in <strong>Aufgabe 3</strong> auf dem AB.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 5: AUSWERTUNG
+         ================================================================ -->
+    <div class="step" id="step5">
+        <h2>5. Auswertung: Was zeigen die Daten?</h2>
+
+        <div class="info-box">
+            Schau dir deine Messwerte an. Vergleiche die Spalten <span class="var">F</span><sub>H</sub> und sin(&alpha;) sowie <span class="var">F</span><sub>N</sub> und cos(&alpha;).
+        </div>
+
+        <div class="exercise">
+            <p><strong>Welchen Zusammenhang erkennst du zwischen <span class="var">F</span><sub>H</sub> und sin(&alpha;)?</strong></p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q5a" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> &middot; sin(&alpha;) &mdash; die Hangabtriebskraft ist proportional zu sin(&alpha;)
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q5a" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> &middot; cos(&alpha;)
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q5a" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> &middot; &alpha;
+                </label>
+            </div>
+            <button onclick="checkMC('q5a')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q5a"></div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Und fuer <span class="var">F</span><sub>N</sub>?</strong></p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option">
+                    <input type="radio" name="q5b" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> &middot; sin(&alpha;)
+                </label>
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q5b" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> &middot; cos(&alpha;)
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q5b" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> / &alpha;
+                </label>
+            </div>
+            <button onclick="checkMC('q5b')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q5b"></div>
+        </div>
+
+        <h3>Geometrischer Zusammenhang</h3>
+
+        <div class="sim-container">
+            <h4>Kraftdreieck: Warum sin und cos?</h4>
+            <canvas id="dreieckCanvas" width="500" height="350"></canvas>
+        </div>
+
+        <div class="info-box">
+            <strong>Erklaerung:</strong> Die Gewichtskraft <span class="var">F</span><sub>G</sub> ist die Hypotenuse eines rechtwinkligen Dreiecks. Die Hangabtriebskraft <span class="var">F</span><sub>H</sub> liegt gegenueber dem Winkel &alpha; (Gegenkathete), die Normalkraft <span class="var">F</span><sub>N</sub> ist die Ankathete. Daher:
+            <br><br>
+            sin(&alpha;) = Gegenkathete / Hypotenuse = <span class="var">F</span><sub>H</sub> / <span class="var">F</span><sub>G</sub>
+            <br>
+            cos(&alpha;) = Ankathete / Hypotenuse = <span class="var">F</span><sub>N</sub> / <span class="var">F</span><sub>G</sub>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 6: DEUTUNG & FORMELN
+         ================================================================ -->
+    <div class="step" id="step6">
+        <h2>6. Die Formeln der Kraeftezerlegung</h2>
+
+        <div class="formel-box">
+            <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> &middot; sin(&alpha;) = <span class="var">m</span> &middot; <span class="var">g</span> &middot; sin(&alpha;)
+        </div>
+
+        <div class="formel-box">
+            <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> &middot; cos(&alpha;) = <span class="var">m</span> &middot; <span class="var">g</span> &middot; cos(&alpha;)
+        </div>
+
+        <div class="merksatz">
+            <strong>Merksatz:</strong> Auf einer geneigten Ebene mit Neigungswinkel &alpha; wird die Gewichtskraft in zwei Komponenten zerlegt: Die <strong>Hangabtriebskraft</strong> <span class="var">F</span><sub>H</sub> wirkt parallel zur Schraege (hangabwaerts), die <strong>Normalkraft</strong> <span class="var">F</span><sub>N</sub> wirkt senkrecht zur Schraege (drueckt den Koerper auf die Ebene).
+        </div>
+
+        <h3>Grenzfaelle</h3>
+
+        <div class="exercise">
+            <p><strong>Was passiert bei &alpha; = 0&deg; (waagerecht)?</strong></p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q6a" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = 0 und <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> &mdash; keine Hangabtriebskraft, volle Normalkraft
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q6a" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> und <span class="var">F</span><sub>N</sub> = 0
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q6a" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub>/2
+                </label>
+            </div>
+            <button onclick="checkMC('q6a')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q6a"></div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Und bei &alpha; = 90&deg; (senkrechte Wand)?</strong></p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option">
+                    <input type="radio" name="q6b" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = 0 und <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub>
+                </label>
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q6b" style="margin-right: 10px;">
+                    <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> und <span class="var">F</span><sub>N</sub> = 0 &mdash; freier Fall!
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q6b" style="margin-right: 10px;">
+                    Beide Kraefte verschwinden
+                </label>
+            </div>
+            <button onclick="checkMC('q6b')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q6b"></div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Vervollstaendige die Merksaetze und Formeln in <strong>Aufgabe 4</strong> auf dem AB.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 7: RECHENBEISPIEL
+         ================================================================ -->
+    <div class="step" id="step7">
+        <h2>7. Rechenbeispiel: Kiste auf Rampe</h2>
+
+        <div class="info-box">
+            <strong>Aufgabe:</strong> Eine Kiste (<span class="var">m</span> = 20&thinsp;kg) steht auf einer Rampe mit &alpha; = 30&deg;.<br>
+            Berechne <span class="var">F</span><sub>H</sub> und <span class="var">F</span><sub>N</sub>.
+        </div>
+
+        <h3>Schritt-fuer-Schritt-Loesung</h3>
+
+        <div style="background: #f9f9f9; padding: 20px; margin: 15px 0; border: 1px solid var(--border);">
+            <p><strong>Gegeben:</strong> <span class="var">m</span> = 20&thinsp;kg, &alpha; = 30&deg;, <span class="var">g</span> = 10&thinsp;N/kg</p>
+            <p style="margin-top: 10px;"><strong>Gesucht:</strong> <span class="var">F</span><sub>H</sub>, <span class="var">F</span><sub>N</sub></p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px dashed var(--border);">
+            <p><strong>Schritt 1:</strong> Gewichtskraft berechnen</p>
+            <p style="margin-left: 20px; margin-top: 5px;">
+                <span class="var">F</span><sub>G</sub> = <span class="var">m</span> &middot; <span class="var">g</span> = 20&thinsp;kg &middot; 10&thinsp;N/kg = <strong>200&thinsp;N</strong>
+            </p>
+            <p style="margin-top: 10px;"><strong>Schritt 2:</strong> Hangabtriebskraft</p>
+            <p style="margin-left: 20px; margin-top: 5px;">
+                <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> &middot; sin(30&deg;) = 200&thinsp;N &middot; 0,5 = <strong>100&thinsp;N</strong>
+            </p>
+            <p style="margin-top: 10px;"><strong>Schritt 3:</strong> Normalkraft</p>
+            <p style="margin-left: 20px; margin-top: 5px;">
+                <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> &middot; cos(30&deg;) = 200&thinsp;N &middot; 0,866 &asymp; <strong>173&thinsp;N</strong>
+            </p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px dashed var(--border);">
+            <p><strong>Probe (Pythagoras):</strong></p>
+            <p style="margin-left: 20px; margin-top: 5px;">
+                <span class="var">F</span><sub>H</sub>&sup2; + <span class="var">F</span><sub>N</sub>&sup2; = 100&sup2; + 173&sup2; = 10&thinsp;000 + 29&thinsp;929 = 39&thinsp;929 &asymp; 200&sup2; = 40&thinsp;000 &check;
+            </p>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Verstaendnis-Check:</strong> Warum ist die Probe <span class="var">F</span><sub>H</sub>&sup2; + <span class="var">F</span><sub>N</sub>&sup2; = <span class="var">F</span><sub>G</sub>&sup2; und nicht einfach <span class="var">F</span><sub>H</sub> + <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q7" style="margin-right: 10px;">
+                    Weil <span class="var">F</span><sub>H</sub> und <span class="var">F</span><sub>N</sub> senkrecht aufeinander stehen (Satz des Pythagoras)
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q7" style="margin-right: 10px;">
+                    Weil Kraefte immer quadratisch addiert werden
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q7" style="margin-right: 10px;">
+                    Das ist nur eine Naeherung
+                </label>
+            </div>
+            <button onclick="checkMC('q7')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q7"></div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 8: UEBUNGSAUFGABEN
+         ================================================================ -->
+    <div class="step" id="step8">
+        <h2>8. Uebungsaufgaben</h2>
+
+        <div class="info-box">
+            Berechne die folgenden Aufgaben. Du kannst die Simulation (Schritt 4) zur Kontrolle nutzen.
+        </div>
+
+        <div class="scenario-card" id="sc1">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>Aufgabe A: Ski-Hang</strong>
+                <span class="niveau-badge">GY</span>
+            </div>
+            <p style="margin-top: 10px;">Ein Skifahrer (<span class="var">m</span> = 80&thinsp;kg) steht auf einem Hang mit &alpha; = 20&deg;.</p>
+            <p style="margin-top: 5px;">Berechne <span class="var">F</span><sub>H</sub> und <span class="var">F</span><sub>N</sub>.</p>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin: 5px 0;"><span class="var">F</span><sub>H</sub> = <input class="input-inline" id="sc1fh" type="number" step="1"> N</label>
+                <label style="display: block; margin: 5px 0;"><span class="var">F</span><sub>N</sub> = <input class="input-inline" id="sc1fn" type="number" step="1"> N</label>
+            </div>
+            <button onclick="checkScenario(1, 80, 20)" style="margin-top: 10px;">Pruefen</button>
+            <div class="feedback" id="fb-sc1"></div>
+        </div>
+
+        <div class="scenario-card" id="sc2">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>Aufgabe B: Parkhaus-Rampe</strong>
+                <span class="niveau-badge">GY</span>
+            </div>
+            <p style="margin-top: 10px;">Ein Auto (<span class="var">m</span> = 1500&thinsp;kg) faehrt eine Parkhaus-Rampe mit &alpha; = 15&deg; hinauf.</p>
+            <p style="margin-top: 5px;">Welche Hangabtriebskraft muss der Motor mindestens ueberwinden?</p>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin: 5px 0;"><span class="var">F</span><sub>H</sub> = <input class="input-inline" id="sc2fh" type="number" step="1"> N</label>
+            </div>
+            <button onclick="checkScenario(2, 1500, 15)" style="margin-top: 10px;">Pruefen</button>
+            <div class="feedback" id="fb-sc2"></div>
+        </div>
+
+        <div class="scenario-card" id="sc3">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong>Aufgabe C: Dacharbeiter</strong>
+                <span class="niveau-badge">GY</span>
+            </div>
+            <p style="margin-top: 10px;">Ein Dachdecker (<span class="var">m</span> = 75&thinsp;kg) steht auf einem Dach mit &alpha; = 45&deg;.</p>
+            <p style="margin-top: 5px;">a) Berechne <span class="var">F</span><sub>H</sub> und <span class="var">F</span><sub>N</sub>.</p>
+            <p style="margin-top: 5px;">b) Warum sind beide Werte gleich gross?</p>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin: 5px 0;"><span class="var">F</span><sub>H</sub> = <input class="input-inline" id="sc3fh" type="number" step="1"> N</label>
+                <label style="display: block; margin: 5px 0;"><span class="var">F</span><sub>N</sub> = <input class="input-inline" id="sc3fn" type="number" step="1"> N</label>
+            </div>
+            <button onclick="checkScenario(3, 75, 45)" style="margin-top: 10px;">Pruefen</button>
+            <div class="feedback" id="fb-sc3"></div>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Rechne die Aufgaben auf dem AB (<strong>Aufgaben 5a&ndash;5c</strong>) mit vollstaendigem Loesungsweg (Gegeben, Gesucht, Loesung, Antwort).
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 9: TRANSFER
+         ================================================================ -->
+    <div class="step" id="step9">
+        <h2>9. Transfer: Alltagssituationen</h2>
+
+        <h3>A) Warum werden steile Strassen im Winter gesperrt?</h3>
+
+        <div class="exercise">
+            <p>Bei Glatteis sinkt die maximale Haftreibungskraft stark ab. Erklaere mit <span class="var">F</span><sub>H</sub>, warum steile Strassen dann gefaehrlich sind.</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option" data-correct="true">
+                    <input type="radio" name="q9a" style="margin-right: 10px;">
+                    Bei steileren Strassen ist <span class="var">F</span><sub>H</sub> groesser. Wenn <span class="var">F</span><sub>H</sub> die Haftreibung uebersteigt, rutscht das Auto.
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q9a" style="margin-right: 10px;">
+                    Die Gewichtskraft wird bei Glatteis groesser.
+                </label>
+                <label class="quiz-option">
+                    <input type="radio" name="q9a" style="margin-right: 10px;">
+                    Die Normalkraft drueckt das Auto von der Strasse.
+                </label>
+            </div>
+            <button onclick="checkMC('q9a')" style="margin-top: 15px;">Pruefen</button>
+            <div class="feedback" id="fb-q9a"></div>
+        </div>
+
+        <h3>B) Rollstuhlrampe</h3>
+
+        <div class="exercise">
+            <p>Laut DIN-Norm duerfen Rollstuhlrampen maximal 6&thinsp;% Steigung haben (ca. &alpha; = 3,4&deg;).</p>
+            <p style="margin-top: 10px;">Ein Rollstuhlfahrer mit Rollstuhl hat zusammen <span class="var">m</span> = 90&thinsp;kg. Berechne <span class="var">F</span><sub>H</sub> auf dieser Rampe.</p>
+            <div style="margin-top: 15px;">
+                <label style="display: block; margin: 5px 0;">
+                    <span class="var">F</span><sub>H</sub> = <input class="input-inline" id="rampe-fh" type="number" step="1"> N
+                </label>
+            </div>
+            <button onclick="checkRampe()" style="margin-top: 10px;">Pruefen</button>
+            <div class="feedback" id="fb-rampe"></div>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);"><em>Hinweis: sin(3,4&deg;) &asymp; 0,059</em></p>
+        </div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Bearbeite die Transferaufgaben in <strong>Aufgabe 6</strong> auf dem AB.
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button onclick="nextStep()">Weiter &rarr;</button>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         SCHRITT 10: ZUSAMMENFASSUNG + QUIZ
+         ================================================================ -->
+    <div class="step" id="step10">
+        <h2>10. Zusammenfassung &amp; Selbstcheck</h2>
+
+        <div class="merksatz">
+            <strong>Kraeftezerlegung an der geneigten Ebene:</strong><br><br>
+            Die Gewichtskraft <span class="var">F</span><sub>G</sub> = <span class="var">m</span> &middot; <span class="var">g</span> wird in zwei Komponenten zerlegt:<br><br>
+            &bull; <strong>Hangabtriebskraft:</strong> <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub> &middot; sin(&alpha;) &mdash; parallel zur Schraege, hangabwaerts<br>
+            &bull; <strong>Normalkraft:</strong> <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub> &middot; cos(&alpha;) &mdash; senkrecht zur Schraege<br><br>
+            Es gilt: <span class="var">F</span><sub>H</sub>&sup2; + <span class="var">F</span><sub>N</sub>&sup2; = <span class="var">F</span><sub>G</sub>&sup2; (Satz des Pythagoras)
+        </div>
+
+        <h3>Abschluss-Quiz</h3>
+
+        <div class="exercise">
+            <p><strong>Frage 1:</strong> Welche Kraft zieht einen Koerper die schiefe Ebene hinunter?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="quiz1" style="margin-right: 10px;"> Die Gewichtskraft <span class="var">F</span><sub>G</sub></label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz1" style="margin-right: 10px;"> Die Hangabtriebskraft <span class="var">F</span><sub>H</sub></label>
+                <label class="quiz-option"><input type="radio" name="quiz1" style="margin-right: 10px;"> Die Normalkraft <span class="var">F</span><sub>N</sub></label>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Frage 2:</strong> Mit welcher Formel berechnet man <span class="var">F</span><sub>H</sub>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="quiz2" style="margin-right: 10px;"> <span class="var">F</span><sub>H</sub> = <span class="var">m</span> &middot; <span class="var">g</span> &middot; cos(&alpha;)</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz2" style="margin-right: 10px;"> <span class="var">F</span><sub>H</sub> = <span class="var">m</span> &middot; <span class="var">g</span> &middot; sin(&alpha;)</label>
+                <label class="quiz-option"><input type="radio" name="quiz2" style="margin-right: 10px;"> <span class="var">F</span><sub>H</sub> = <span class="var">m</span> &middot; <span class="var">g</span> &middot; tan(&alpha;)</label>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Frage 3:</strong> Bei &alpha; = 45&deg; gilt:</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="quiz3" style="margin-right: 10px;"> <span class="var">F</span><sub>H</sub> &gt; <span class="var">F</span><sub>N</sub></label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz3" style="margin-right: 10px;"> <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>N</sub></label>
+                <label class="quiz-option"><input type="radio" name="quiz3" style="margin-right: 10px;"> <span class="var">F</span><sub>H</sub> &lt; <span class="var">F</span><sub>N</sub></label>
+            </div>
+        </div>
+
+        <div class="exercise">
+            <p><strong>Frage 4:</strong> Ein Koerper mit <span class="var">F</span><sub>G</sub> = 500&thinsp;N liegt auf einer 30&deg;-Rampe. Wie gross ist <span class="var">F</span><sub>H</sub>?</p>
+            <div style="margin-top: 10px;">
+                <label class="quiz-option"><input type="radio" name="quiz4" style="margin-right: 10px;"> 433 N</label>
+                <label class="quiz-option" data-correct="true"><input type="radio" name="quiz4" style="margin-right: 10px;"> 250 N</label>
+                <label class="quiz-option"><input type="radio" name="quiz4" style="margin-right: 10px;"> 500 N</label>
+            </div>
+        </div>
+
+        <button onclick="checkQuiz()" style="margin-top: 20px;">Quiz auswerten</button>
+        <div class="feedback" id="fb-quiz"></div>
+
+        <div class="ab-box">
+            <strong>Arbeitsblatt:</strong> Vervollstaendige die Zusammenfassung in <strong>Aufgabe 7</strong> auf dem AB.
+        </div>
+
+        <h3>Ausblick: Test S1</h3>
+
+        <div class="wichtig">
+            <strong>Naechste Stunde (Fr 20.03.):</strong> Test S1 Dynamik (40&thinsp;Min).<br>
+            Themen: Newton I, II, III, Kraefteparallelogramm, Kraeftezerlegung.<br><br>
+            <strong>Zur Vorbereitung:</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li>Alle Merksaetze im Hefter durchgehen</li>
+                <li>Rechenaufgaben nochmals ueberpruefen</li>
+                <li>Formeln: <span class="var">F</span> = <span class="var">m</span>&middot;<span class="var">a</span>, <span class="var">F</span><sub>H</sub> = <span class="var">F</span><sub>G</sub>&middot;sin(&alpha;), <span class="var">F</span><sub>N</sub> = <span class="var">F</span><sub>G</sub>&middot;cos(&alpha;)</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: var(--success-light); border: 2px solid var(--success);">
+            <p style="font-size: 1.2em; color: var(--success);"><strong>Lernpfad abgeschlossen!</strong></p>
+            <p style="margin-top: 10px;">Du kannst jetzt Kraefte an der geneigten Ebene zerlegen und berechnen.</p>
+            <p style="margin-top: 10px; font-size: 0.9em; color: var(--gray);">
+                Naechste Stunde: Test S1 Dynamik
+            </p>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn-secondary" onclick="prevStep()">&larr; Zurueck</button>
+            <button class="btn-success" onclick="finish()">Abschliessen</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// =====================================================================
+// KONFIGURATION (ES5-kompatibel)
+// =====================================================================
+var PREFIX = 'lp-physik-10e-04-kraeftezerlegung';
+var TOTAL_STEPS = 10;
+var currentStep = 1;
+var G = 10; // g = 10 N/kg
+
+// =====================================================================
+// NAVIGATION
+// =====================================================================
+function initSteps() {
+    var ind = document.getElementById('stepIndicator');
+    ind.innerHTML = '';
+    for (var i = 1; i <= TOTAL_STEPS; i++) {
+        var dot = document.createElement('div');
+        dot.className = 'step-dot' + (i === 1 ? ' active' : '');
+        dot.setAttribute('data-step', i);
+        dot.addEventListener('click', (function(s) {
+            return function() { if (s <= currentStep) goToStep(s); };
+        })(i));
+        ind.appendChild(dot);
+    }
+}
+
+function goToStep(n) {
+    var steps = document.querySelectorAll('.step');
+    var dots = document.querySelectorAll('.step-dot');
+    for (var i = 0; i < steps.length; i++) {
+        steps[i].classList.remove('active');
+        dots[i].classList.remove('active');
+        if (i < n - 1) dots[i].classList.add('completed');
+    }
+    steps[n - 1].classList.add('active');
+    dots[n - 1].classList.add('active');
+    currentStep = n;
+    document.getElementById('progressFill').style.width = ((n / TOTAL_STEPS) * 100) + '%';
+    localStorage.setItem(PREFIX + '-step', n);
+    window.scrollTo(0, 0);
+}
+
+window.nextStep = function() { if (currentStep < TOTAL_STEPS) goToStep(currentStep + 1); };
+window.prevStep = function() { if (currentStep > 1) goToStep(currentStep - 1); };
+window.finish = function() {
+    localStorage.setItem(PREFIX + '-done', 'true');
+    alert('Lernpfad abgeschlossen! Vergiss nicht, dein Arbeitsblatt fertig auszufuellen und fuer den Test zu lernen.');
+};
+
+// =====================================================================
+// MC-CHECKER (generisch)
+// =====================================================================
+window.checkMC = function(name) {
+    var opts = document.querySelectorAll('input[name="' + name + '"]');
+    var fb = document.getElementById('fb-' + name);
+    var correct = false;
+    for (var i = 0; i < opts.length; i++) {
+        var label = opts[i].closest('.quiz-option');
+        if (opts[i].checked) {
+            if (label.getAttribute('data-correct') === 'true') {
+                label.classList.add('correct');
+                correct = true;
+            } else {
+                label.classList.add('wrong');
+            }
+        }
+        if (label.getAttribute('data-correct') === 'true' && !correct) {
+            label.classList.add('correct');
+        }
+    }
+    if (fb) {
+        fb.className = 'feedback ' + (correct ? 'correct' : 'incorrect');
+        fb.textContent = correct ? 'Richtig!' : 'Nicht ganz. Die richtige Antwort ist markiert.';
+        fb.style.display = 'block';
+    }
+};
+
+// =====================================================================
+// INTRO-ANIMATION (Schritt 1)
+// =====================================================================
+var introCanvas, introCtx, introAnim, introBoxX, introRunning;
+
+function initIntro() {
+    introCanvas = document.getElementById('rampeIntro');
+    if (!introCanvas) return;
+    introCtx = introCanvas.getContext('2d');
+    introBoxX = 350;
+    introRunning = false;
+    drawIntro();
+}
+
+function drawIntro() {
+    var ctx = introCtx;
+    var w = introCanvas.width, h = introCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.fillStyle = '#f0f4f8';
+    ctx.fillRect(0, 0, w, h);
+
+    // Ground
+    ctx.fillStyle = '#8B7355';
+    ctx.fillRect(0, h - 30, w, 30);
+
+    // Ramp (30 degree)
+    var angle = 30 * Math.PI / 180;
+    var rampStartX = 100, rampStartY = h - 30;
+    var rampLen = 450;
+    var rampEndX = rampStartX + rampLen * Math.cos(angle);
+    var rampEndY = rampStartY - rampLen * Math.sin(angle);
+
+    ctx.fillStyle = '#bbb';
+    ctx.beginPath();
+    ctx.moveTo(rampStartX, rampStartY);
+    ctx.lineTo(rampEndX, rampEndY);
+    ctx.lineTo(rampEndX, rampStartY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Angle arc
+    ctx.beginPath();
+    ctx.arc(rampEndX, rampStartY, 40, Math.PI, Math.PI + angle, true);
+    ctx.strokeStyle = '#2c5aa0';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#2c5aa0';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('\u03B1 = 30\u00B0', rampEndX - 75, rampStartY - 10);
+
+    // Box position along ramp
+    var bx = rampStartX + introBoxX * Math.cos(angle);
+    var by = rampStartY - introBoxX * Math.sin(angle);
+
+    var boxSize = 40;
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(-angle);
+    ctx.fillStyle = '#e65100';
+    ctx.fillRect(-boxSize / 2, -boxSize, boxSize, boxSize);
+    ctx.strokeStyle = '#bf360c';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-boxSize / 2, -boxSize, boxSize, boxSize);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('m', 0, -boxSize / 2);
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = '#333';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'left';
+    if (introRunning) {
+        ctx.fillText('Die Kiste rutscht...', 20, 25);
+    } else if (introBoxX < 100) {
+        ctx.fillText('Angekommen!', 20, 25);
+    } else {
+        ctx.fillText('Handbremse loesen \u2192 Start druecken', 20, 25);
+    }
+}
+
+function playIntro() {
+    if (introRunning) return;
+    introRunning = true;
+    introBoxX = 350;
+    function animate() {
+        introBoxX -= 2;
+        if (introBoxX < 30) {
+            introRunning = false;
+            drawIntro();
+            return;
+        }
+        drawIntro();
+        introAnim = requestAnimationFrame(animate);
+    }
+    animate();
+}
+
+function resetIntro() {
+    if (introAnim) cancelAnimationFrame(introAnim);
+    introRunning = false;
+    introBoxX = 350;
+    drawIntro();
+}
+
+// =====================================================================
+// HAUPTSIMULATION (Schritt 4)
+// =====================================================================
+var simCanvas, simCtx;
+
+function initSim() {
+    simCanvas = document.getElementById('simCanvas');
+    if (!simCanvas) return;
+    simCtx = simCanvas.getContext('2d');
+
+    document.getElementById('angleSlider').addEventListener('input', updateSim);
+    document.getElementById('massSlider').addEventListener('input', updateSim);
+
+    updateSim();
+}
+
+function updateSim() {
+    var alpha = parseInt(document.getElementById('angleSlider').value);
+    var mass = parseInt(document.getElementById('massSlider').value);
+
+    document.getElementById('angleDisplay').textContent = alpha;
+    document.getElementById('massDisplay').textContent = mass;
+
+    var fg = mass * G;
+    var rad = alpha * Math.PI / 180;
+    var fh = fg * Math.sin(rad);
+    var fn = fg * Math.cos(rad);
+
+    document.getElementById('fgValue').textContent = fg.toFixed(0) + ' N';
+    document.getElementById('fhValue').textContent = fh.toFixed(1) + ' N';
+    document.getElementById('fnValue').textContent = fn.toFixed(1) + ' N';
+
+    drawSim(alpha, mass, fg, fh, fn);
+}
+
+function drawSim(alpha, mass, fg, fh, fn) {
+    var ctx = simCtx;
+    var w = simCanvas.width, h = simCanvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    var rad = alpha * Math.PI / 180;
+
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, w, h);
+
+    // Ground line (dashed)
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(50, h - 60);
+    ctx.lineTo(w - 50, h - 60);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Ramp
+    var rampBaseX = 120, rampBaseY = h - 60;
+    var rampLen = 320;
+    var rampTopX = rampBaseX + rampLen * Math.cos(rad);
+    var rampTopY = rampBaseY - rampLen * Math.sin(rad);
+
+    ctx.fillStyle = '#e0e0e0';
+    ctx.beginPath();
+    ctx.moveTo(rampBaseX, rampBaseY);
+    ctx.lineTo(rampTopX, rampTopY);
+    ctx.lineTo(rampTopX, rampBaseY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(rampBaseX, rampBaseY);
+    ctx.lineTo(rampTopX, rampTopY);
+    ctx.stroke();
+
+    // Angle arc
+    var arcR = 50;
+    ctx.beginPath();
+    ctx.arc(rampTopX, rampBaseY, arcR, Math.PI, Math.PI + rad, true);
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    var arcMid = Math.PI + rad / 2;
+    ctx.fillText('\u03B1=' + alpha + '\u00B0', rampTopX + (arcR + 18) * Math.cos(arcMid), rampBaseY + (arcR + 18) * Math.sin(arcMid));
+
+    // Box on ramp
+    var boxDist = rampLen * 0.45;
+    var boxCenterX = rampBaseX + boxDist * Math.cos(rad);
+    var boxCenterY = rampBaseY - boxDist * Math.sin(rad);
+    var boxSize = 44;
+
+    ctx.save();
+    ctx.translate(boxCenterX, boxCenterY);
+    ctx.rotate(-rad);
+    ctx.fillStyle = '#e65100';
+    ctx.fillRect(-boxSize / 2, -boxSize, boxSize, boxSize);
+    ctx.strokeStyle = '#bf360c';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-boxSize / 2, -boxSize, boxSize, boxSize);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(mass + ' kg', 0, -boxSize / 2);
+    ctx.restore();
+
+    // Force scale
+    var maxForce = 50 * G;
+    var scale = 130 / maxForce;
+    var fgLen = fg * scale;
+    var fhLen = fh * scale;
+    var fnLen = fn * scale;
+    if (fgLen < 20) fgLen = 20;
+    if (fhLen < 8) fhLen = 8;
+    if (fnLen < 8) fnLen = 8;
+
+    // FG arrow (straight down, green)
+    drawArrow(ctx, boxCenterX, boxCenterY, boxCenterX, boxCenterY + fgLen, '#2e7d32', 3);
+    ctx.fillStyle = '#2e7d32';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('FG=' + fg.toFixed(0) + 'N', boxCenterX + 8, boxCenterY + fgLen + 5);
+
+    // FH arrow (along ramp downhill, red)
+    var fhDirX = -Math.cos(rad);
+    var fhDirY = Math.sin(rad);
+    drawArrow(ctx, boxCenterX, boxCenterY, boxCenterX + fhLen * fhDirX, boxCenterY + fhLen * fhDirY, '#c62828', 3);
+    ctx.fillStyle = '#c62828';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('FH=' + fh.toFixed(1) + 'N', boxCenterX + fhLen * fhDirX - 8, boxCenterY + fhLen * fhDirY - 5);
+
+    // FN arrow (perpendicular into ramp, blue)
+    var fnDirX = Math.sin(rad);
+    var fnDirY = Math.cos(rad);
+    drawArrow(ctx, boxCenterX, boxCenterY, boxCenterX - fnLen * fnDirX, boxCenterY + fnLen * fnDirY, '#1565c0', 3);
+    ctx.fillStyle = '#1565c0';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('FN=' + fn.toFixed(1) + 'N', boxCenterX - fnLen * fnDirX + 8, boxCenterY + fnLen * fnDirY + 15);
+
+    // Dashed parallelogram lines
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(boxCenterX, boxCenterY + fgLen);
+    ctx.lineTo(boxCenterX + fhLen * fhDirX, boxCenterY + fhLen * fhDirY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(boxCenterX, boxCenterY + fgLen);
+    ctx.lineTo(boxCenterX - fnLen * fnDirX, boxCenterY + fnLen * fnDirY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Legend
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#2e7d32';
+    ctx.fillText('\u25CF Gewichtskraft FG', 20, 25);
+    ctx.fillStyle = '#c62828';
+    ctx.fillText('\u25CF Hangabtriebskraft FH', 20, 42);
+    ctx.fillStyle = '#1565c0';
+    ctx.fillText('\u25CF Normalkraft FN', 20, 59);
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, lw) {
+    var headLen = 12;
+    var angle = Math.atan2(y2 - y1, x2 - x1);
+
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = lw;
+
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
+    ctx.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fill();
+}
+
+function resetSim() {
+    document.getElementById('angleSlider').value = 30;
+    document.getElementById('massSlider').value = 10;
+    updateSim();
+}
+
+// =====================================================================
+// KRAFTDREIECK (Schritt 5)
+// =====================================================================
+function initDreieck() {
+    var canvas = document.getElementById('dreieckCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var w = canvas.width, h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, w, h);
+
+    var cx = 220, cy = 60;
+    var alpha = 30 * Math.PI / 180;
+    var fgLen = 200;
+
+    // FG (hypotenuse, straight down)
+    var fgEndX = cx, fgEndY = cy + fgLen;
+    drawArrow(ctx, cx, cy, fgEndX, fgEndY, '#2e7d32', 3);
+
+    var fhMag = fgLen * Math.sin(alpha);
+    var fnMag = fgLen * Math.cos(alpha);
+
+    // FN direction: perpendicular to slope, pointing into ramp
+    var fnDirX = Math.sin(alpha);
+    var fnDirY = Math.cos(alpha);
+    var fnEndX = cx - fnMag * fnDirX;
+    var fnEndY = cy + fnMag * fnDirY;
+
+    // FN arrow
+    drawArrow(ctx, cx, cy, fnEndX, fnEndY, '#1565c0', 3);
+
+    // FH arrow from FN tip to FG tip
+    drawArrow(ctx, fnEndX, fnEndY, fgEndX, fgEndY, '#c62828', 3);
+
+    // Right angle marker
+    var markSize = 12;
+    ctx.strokeStyle = '#666';
+    ctx.lineWidth = 1;
+    var toFg = { x: fgEndX - fnEndX, y: fgEndY - fnEndY };
+    var toOr = { x: cx - fnEndX, y: cy - fnEndY };
+    var lenFg = Math.sqrt(toFg.x * toFg.x + toFg.y * toFg.y);
+    var lenOr = Math.sqrt(toOr.x * toOr.x + toOr.y * toOr.y);
+    if (lenFg > 0 && lenOr > 0) {
+        var uFg = { x: toFg.x / lenFg, y: toFg.y / lenFg };
+        var uOr = { x: toOr.x / lenOr, y: toOr.y / lenOr };
+        ctx.beginPath();
+        ctx.moveTo(fnEndX + markSize * uFg.x, fnEndY + markSize * uFg.y);
+        ctx.lineTo(fnEndX + markSize * (uFg.x + uOr.x), fnEndY + markSize * (uFg.y + uOr.y));
+        ctx.lineTo(fnEndX + markSize * uOr.x, fnEndY + markSize * uOr.y);
+        ctx.stroke();
+    }
+
+    // Labels
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#2e7d32';
+    ctx.fillText('FG (Hypotenuse)', fgEndX + 10, (cy + fgEndY) / 2);
+    ctx.fillStyle = '#1565c0';
+    ctx.textAlign = 'right';
+    ctx.fillText('FN (Ankathete)', fnEndX - 10, (cy + fnEndY) / 2);
+    ctx.fillStyle = '#c62828';
+    ctx.textAlign = 'center';
+    ctx.fillText('FH (Gegenkathete)', (fnEndX + fgEndX) / 2, fgEndY + 25);
+
+    // Alpha angle at top
+    var angFG = Math.PI / 2;
+    var angFN = Math.atan2(fnEndY - cy, fnEndX - cx);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 35, angFN, angFG);
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('\u03B1', cx - 50, cy + 45);
+
+    // Formulas
+    ctx.font = '13px sans-serif';
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'left';
+    var fx = 300, fy = 100;
+    ctx.fillText('sin(\u03B1) = Gegenk. / Hypot.', fx, fy);
+    ctx.fillStyle = '#c62828';
+    ctx.fillText('sin(\u03B1) = FH / FG', fx + 15, fy + 22);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('\u2192 FH = FG \u00B7 sin(\u03B1)', fx + 15, fy + 48);
+
+    ctx.fillStyle = '#333';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('cos(\u03B1) = Ankat. / Hypot.', fx, fy + 85);
+    ctx.fillStyle = '#1565c0';
+    ctx.fillText('cos(\u03B1) = FN / FG', fx + 15, fy + 107);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('\u2192 FN = FG \u00B7 cos(\u03B1)', fx + 15, fy + 133);
+}
+
+// =====================================================================
+// MESSWERTE PRUEFEN (Schritt 4)
+// =====================================================================
+window.checkMesswerte = function() {
+    var angles = [10, 20, 30, 45, 60];
+    var fg = 100;
+    var allOk = true;
+    var filled = 0;
+
+    for (var i = 0; i < angles.length; i++) {
+        var a = angles[i];
+        var rad = a * Math.PI / 180;
+        var expectedFH = fg * Math.sin(rad);
+        var expectedFN = fg * Math.cos(rad);
+
+        var inputFH = document.getElementById('fh' + a);
+        var inputFN = document.getElementById('fn' + a);
+
+        if (inputFH.value !== '') {
+            filled++;
+            var valFH = parseFloat(inputFH.value);
+            if (Math.abs(valFH - expectedFH) > 2) {
+                inputFH.style.borderColor = '#c62828';
+                allOk = false;
+            } else {
+                inputFH.style.borderColor = '#2a7a4b';
+            }
+        }
+        if (inputFN.value !== '') {
+            filled++;
+            var valFN = parseFloat(inputFN.value);
+            if (Math.abs(valFN - expectedFN) > 2) {
+                inputFN.style.borderColor = '#c62828';
+                allOk = false;
+            } else {
+                inputFN.style.borderColor = '#2a7a4b';
+            }
+        }
+    }
+
+    var fb = document.getElementById('fb-messwerte');
+    if (filled < 6) {
+        fb.className = 'feedback hint';
+        fb.textContent = 'Bitte fuelle mindestens 3 Zeilen vollstaendig aus (FH und FN).';
+        fb.style.display = 'block';
+    } else if (allOk) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Alle Messwerte stimmen! Vergleiche FH mit sin(\u03B1) und FN mit cos(\u03B1) \u2013 erkennst du den Zusammenhang?';
+        fb.style.display = 'block';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.textContent = 'Einige Werte weichen ab (rot markiert). Stelle den Winkel in der Simulation ein und lies nochmals ab.';
+        fb.style.display = 'block';
+    }
+};
+
+// =====================================================================
+// SZENARIEN PRUEFEN (Schritt 8)
+// =====================================================================
+window.checkScenario = function(id, mass, angle) {
+    var rad = angle * Math.PI / 180;
+    var fg = mass * G;
+    var expectedFH = fg * Math.sin(rad);
+    var expectedFN = fg * Math.cos(rad);
+
+    var fb = document.getElementById('fb-sc' + id);
+    var card = document.getElementById('sc' + id);
+    var fhInput = document.getElementById('sc' + id + 'fh');
+    var fnInput = document.getElementById('sc' + id + 'fn');
+
+    var fhVal = parseFloat(fhInput.value);
+    var tolerance = expectedFH * 0.08 + 5;
+
+    if (id === 2) {
+        if (isNaN(fhVal)) {
+            fb.className = 'feedback hint';
+            fb.textContent = 'Bitte berechne FH.';
+            fb.style.display = 'block';
+            return;
+        }
+        if (Math.abs(fhVal - expectedFH) < tolerance) {
+            fb.className = 'feedback correct';
+            fb.textContent = 'Richtig! FH \u2248 ' + Math.round(expectedFH) + ' N. Das muss der Motor mindestens aufbringen.';
+            fb.style.display = 'block';
+            card.classList.add('solved');
+        } else {
+            fb.className = 'feedback incorrect';
+            fb.textContent = 'Tipp: FH = m\u00B7g\u00B7sin(' + angle + '\u00B0) = ' + mass + '\u00B710\u00B7sin(' + angle + '\u00B0).';
+            fb.style.display = 'block';
+        }
+        return;
+    }
+
+    var fnVal = parseFloat(fnInput.value);
+    var tolFN = expectedFN * 0.08 + 5;
+
+    if (isNaN(fhVal) || isNaN(fnVal)) {
+        fb.className = 'feedback hint';
+        fb.textContent = 'Bitte berechne beide Werte.';
+        fb.style.display = 'block';
+        return;
+    }
+
+    var fhOk = Math.abs(fhVal - expectedFH) < tolerance;
+    var fnOk = Math.abs(fnVal - expectedFN) < tolFN;
+
+    if (fhOk && fnOk) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Richtig! FH \u2248 ' + Math.round(expectedFH) + ' N, FN \u2248 ' + Math.round(expectedFN) + ' N.';
+        if (id === 3) {
+            fb.textContent += ' Bei 45\u00B0 ist sin(\u03B1) = cos(\u03B1) \u2248 0,71, daher FH = FN.';
+        }
+        fb.style.display = 'block';
+        card.classList.add('solved');
+    } else {
+        fb.className = 'feedback incorrect';
+        var hint = 'Tipp: FG = ' + fg + ' N. ';
+        if (!fhOk) hint += 'FH = ' + fg + '\u00B7sin(' + angle + '\u00B0). ';
+        if (!fnOk) hint += 'FN = ' + fg + '\u00B7cos(' + angle + '\u00B0). ';
+        fb.textContent = hint;
+        fb.style.display = 'block';
+    }
+};
+
+// =====================================================================
+// ROLLSTUHLRAMPE (Schritt 9)
+// =====================================================================
+window.checkRampe = function() {
+    var fb = document.getElementById('fb-rampe');
+    var input = document.getElementById('rampe-fh');
+    var val = parseFloat(input.value);
+    var expected = 90 * G * Math.sin(3.4 * Math.PI / 180);
+
+    if (isNaN(val)) {
+        fb.className = 'feedback hint';
+        fb.textContent = 'Bitte gib einen Wert ein.';
+        fb.style.display = 'block';
+        return;
+    }
+
+    if (Math.abs(val - expected) < 8) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Richtig! FH \u2248 ' + Math.round(expected) + ' N. Das entspricht ungefaehr der Kraft, um 5 kg anzuheben \u2013 gerade noch per Hand machbar.';
+        fb.style.display = 'block';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.textContent = 'Nicht ganz. Rechne: FH = 90\u00B710\u00B70,059 = ?';
+        fb.style.display = 'block';
+    }
+};
+
+// =====================================================================
+// ABSCHLUSS-QUIZ (Schritt 10)
+// =====================================================================
+window.checkQuiz = function() {
+    var correct = 0;
+    var total = 4;
+    var names = ['quiz1', 'quiz2', 'quiz3', 'quiz4'];
+
+    for (var q = 0; q < names.length; q++) {
+        var opts = document.querySelectorAll('input[name="' + names[q] + '"]');
+        for (var i = 0; i < opts.length; i++) {
+            var label = opts[i].closest('.quiz-option');
+            if (opts[i].checked) {
+                if (label.getAttribute('data-correct') === 'true') {
+                    label.classList.add('correct');
+                    correct++;
+                } else {
+                    label.classList.add('wrong');
+                }
+            }
+            if (label.getAttribute('data-correct') === 'true') {
+                label.classList.add('correct');
+            }
+        }
+    }
+
+    var fb = document.getElementById('fb-quiz');
+    if (correct === total) {
+        fb.className = 'feedback correct';
+        fb.textContent = 'Perfekt! ' + correct + '/' + total + ' richtig. Du beherrschst die Kraeftezerlegung!';
+    } else {
+        fb.className = 'feedback incorrect';
+        fb.textContent = correct + '/' + total + ' richtig. Die korrekten Antworten sind markiert.';
+    }
+    fb.style.display = 'block';
+};
+
+// =====================================================================
+// INIT
+// =====================================================================
+(function() {
+    initSteps();
+    initIntro();
+    initSim();
+    initDreieck();
+
+    var saved = localStorage.getItem(PREFIX + '-step');
+    if (saved) {
+        goToStep(parseInt(saved));
+    }
+})();
+</script>
+
+</body>
+</html>

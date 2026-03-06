@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Erwärmungskurve | Physik Klasse 6</title>
+<style>
+:root {
+    --bg: #f0f4f8;
+    --white: #ffffff;
+    --border: #d0d7de;
+    --text: #1a1a2e;
+    --text-sec: #444;
+    --text-muted: #888;
+    --accent: #2c5aa0;
+    --accent-light: #e8f0fa;
+    --success: #2a7a4b;
+    --success-bg: #e8f5e9;
+    --warning: #b35c00;
+    --warning-bg: #fff3e0;
+    --danger: #c62828;
+    --danger-bg: #ffebee;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    min-height: 100vh;
+}
+.container { max-width: 640px; margin: 0 auto; padding: 0 16px 100px; }
+header { text-align: center; padding: 20px 0 8px; }
+header h1 { font-size: 1.4em; color: var(--accent); margin-bottom: 4px; }
+header .meta { font-size: 0.85em; color: var(--text-muted); }
+.progress-wrap { background: var(--border); border-radius: 6px; height: 6px; margin: 12px 0 8px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.4s; width: 0%; }
+.section { display: none; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 16px; margin-bottom: 16px; }
+.section.active { display: block; }
+.section h2 { font-size: 1.15em; color: var(--accent); margin-bottom: 12px; }
+.section h3 { font-size: 1em; color: var(--text); margin: 16px 0 8px; }
+.btn { display: inline-block; padding: 12px 24px; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; min-height: 44px; min-width: 44px; text-align: center; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #1e4080; }
+.btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #1e6e3a; }
+.btn-sm { padding: 8px 16px; font-size: 0.9em; }
+.btn-block { display: block; width: 100%; margin-top: 12px; }
+.info-box { background: var(--accent-light); border-left: 4px solid var(--accent); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.95em; }
+.warn-box { background: var(--warning-bg); border-left: 4px solid var(--warning); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.95em; }
+.success-box { background: var(--success-bg); border-left: 4px solid var(--success); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.95em; }
+.hefter { background: #f3e8ff; border-left: 4px solid #7c3aed; padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 12px 0; font-size: 0.9em; }
+.hefter::before { content: '\1F4D3 '; }
+.quiz-feedback { padding: 10px 14px; border-radius: 8px; margin-top: 8px; font-weight: 600; display: none; }
+.quiz-feedback.show { display: block; }
+.correct-fb { background: var(--success-bg); color: var(--success); }
+.incorrect-fb { background: var(--danger-bg); color: var(--danger); }
+.hidden { display: none !important; }
+select, input[type="number"] { font-size: 1em; padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px; min-height: 44px; background: var(--white); }
+select:focus, input:focus { border-color: var(--accent); outline: none; }
+.correct-fill { border-color: var(--success) !important; background: var(--success-bg) !important; }
+.incorrect-fill { border-color: var(--danger) !important; background: var(--danger-bg) !important; }
+.mc-option { display: block; padding: 12px 16px; margin: 6px 0; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; min-height: 44px; font-size: 0.95em; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+.mc-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.mc-option.selected { border-color: var(--accent); background: var(--accent-light); font-weight: 600; }
+.mc-option.correct { border-color: var(--success); background: var(--success-bg); }
+.mc-option.wrong { border-color: var(--danger); background: var(--danger-bg); }
+.mc-option.disabled { pointer-events: none; opacity: 0.85; }
+.sim-canvas-wrap { background: #1a1a2e; border-radius: var(--radius); padding: 8px; margin: 12px 0; text-align: center; overflow: hidden; }
+.sim-canvas-wrap canvas { width: 100%; max-width: 560px; border-radius: 8px; touch-action: none; }
+.sim-controls { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+.data-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.9em; }
+.data-table th, .data-table td { border: 1px solid var(--border); padding: 8px 10px; text-align: center; }
+.data-table th { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+.data-table input { width: 60px; text-align: center; border: 1px solid var(--border); border-radius: 4px; padding: 4px; font-size: 0.95em; min-height: 36px; }
+.star { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 700; margin-bottom: 4px; }
+.star1 { background: #e8f5e9; color: #2a7a4b; }
+.star2 { background: #fff3e0; color: #b35c00; }
+.star3 { background: #fce4ec; color: #c62828; }
+.nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--border); padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+.nav-bottom .sec-info { font-size: 0.85em; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+    <h1>Erwärmungskurve</h1>
+    <p class="meta">Physik Klasse 6 &middot; Temperatur (Teil 2)</p>
+</header>
+<div class="progress-wrap"><div class="progress-fill" id="progFill"></div></div>
+
+<!-- SECTION 1: Phänomen -->
+<div class="section" id="sec1">
+    <h2>1. Was passiert beim Erhitzen?</h2>
+    <p>Du hast letzte Stunde Thermometer kennengelernt und die Celsiusskala verstanden. Heute schauen wir genauer hin:</p>
+    <div class="info-box">
+        <strong>Frage:</strong> Was passiert mit der Temperatur, wenn wir Wasser von Zimmertemperatur bis zum Kochen erhitzen?
+    </div>
+    <p style="margin-top:12px;">Stell dir vor: Ein Topf Wasser steht auf dem Herd. Die Flamme brennt gleichmäßig.</p>
+    <ul style="margin:8px 0 8px 20px;">
+        <li>Am Anfang ist das Wasser kalt (ca. 20 °C).</li>
+        <li>Nach ein paar Minuten steigen Blasen auf.</li>
+        <li>Irgendwann kocht das Wasser und dampft.</li>
+    </ul>
+    <p><strong>Aber steigt die Temperatur die ganze Zeit gleichmäßig an?</strong> Das finden wir jetzt heraus!</p>
+    <div class="hefter">AB-02, Aufgabe H1: Schreibe deine Vermutung auf.</div>
+    <button class="btn btn-primary btn-block" onclick="goSec(2)">Weiter: Meine Vermutung</button>
+</div>
+
+<!-- SECTION 2: Hypothese -->
+<div class="section" id="sec2">
+    <h2>2. Meine Vermutung</h2>
+    <p>Was denkst du: Wie verändert sich die Temperatur beim Erhitzen von Wasser?</p>
+    <div id="hypoQ" style="margin:12px 0;">
+        <div class="mc-option" data-q="hypo" data-v="a" onclick="selectMC(this)">Die Temperatur steigt gleichmäßig an, immer weiter nach oben.</div>
+        <div class="mc-option" data-q="hypo" data-v="b" onclick="selectMC(this)">Die Temperatur steigt erst an, bleibt dann irgendwann stehen.</div>
+        <div class="mc-option" data-q="hypo" data-v="c" onclick="selectMC(this)">Die Temperatur springt plötzlich hoch, wenn das Wasser kocht.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="hypoCheck" onclick="checkHypo()" disabled>Vermutung bestätigen</button>
+    <div class="quiz-feedback" id="hypoFb"></div>
+    <button class="btn btn-success btn-block hidden" id="hypoNext" onclick="goSec(3)">Weiter zum Experiment</button>
+</div>
+
+<!-- SECTION 3: Simulation -->
+<div class="section" id="sec3">
+    <h2>3. Simulationsexperiment: Wasser erhitzen</h2>
+    <p>Wir erhitzen Wasser und messen alle 30 Sekunden die Temperatur. Beobachte genau!</p>
+    <div class="sim-canvas-wrap">
+        <canvas id="simCanvas" width="560" height="380"></canvas>
+    </div>
+    <div class="sim-controls">
+        <button class="btn btn-primary" id="simStartBtn" onclick="simStart()">Experiment starten</button>
+        <button class="btn btn-sm" id="simSpeedBtn" onclick="simSpeed()" style="background:#555;color:#fff;" class="hidden">Schneller</button>
+    </div>
+    <div id="simStatus" style="text-align:center;margin:8px 0;font-weight:600;color:var(--accent);"></div>
+    <div id="simTable" class="hidden">
+        <h3>Messwerte</h3>
+        <table class="data-table">
+            <thead><tr><th>Zeit (s)</th><th>Temperatur (°C)</th></tr></thead>
+            <tbody id="simTbody"></tbody>
+        </table>
+        <div class="hefter">AB-02, Tabelle T1: Übertrage die Messwerte in dein Arbeitsblatt.</div>
+    </div>
+    <button class="btn btn-success btn-block hidden" id="simNext" onclick="goSec(4)">Weiter: Diagramm zeichnen</button>
+</div>
+
+<!-- SECTION 4: Diagramm -->
+<div class="section" id="sec4">
+    <h2>4. ϑ(t)-Diagramm zeichnen</h2>
+    <p>Jetzt trägst du deine Messwerte in ein Diagramm ein — genau wie bei den s(t)-Diagrammen!</p>
+    <div class="info-box">
+        <strong>Erinnerung:</strong> Beim s(t)-Diagramm war die <em>Zeit</em> auf der x-Achse und der <em>Weg</em> auf der y-Achse. Jetzt ist es genauso — nur mit <strong>Temperatur ϑ</strong> statt Weg.
+    </div>
+    <div class="sim-canvas-wrap">
+        <canvas id="graphCanvas" width="560" height="400"></canvas>
+    </div>
+    <p style="text-align:center;font-size:0.9em;color:var(--text-muted);">Tippe auf das Diagramm, um Messpunkte einzutragen.</p>
+    <div id="graphStatus" style="text-align:center;margin:8px 0;font-size:0.95em;"></div>
+    <button class="btn btn-sm" onclick="graphReset()" style="background:var(--warning);color:#fff;margin:4px auto;display:block;">Punkte zurücksetzen</button>
+    <button class="btn btn-primary btn-block hidden" id="graphShowLine" onclick="graphConnect()">Punkte verbinden</button>
+    <div class="hefter">AB-02, Diagramm D1: Zeichne das ϑ(t)-Diagramm auf deinem Arbeitsblatt.</div>
+    <button class="btn btn-success btn-block hidden" id="graphNext" onclick="goSec(5)">Weiter: Auswertung</button>
+</div>
+
+<!-- SECTION 5: Auswertung & Deutung -->
+<div class="section" id="sec5">
+    <h2>5. Was zeigt das Diagramm?</h2>
+    <div class="sim-canvas-wrap" style="background:#fff;padding:4px;">
+        <canvas id="refGraph" width="560" height="300"></canvas>
+    </div>
+    <p>Schau dir die Erwärmungskurve genau an. Du siehst zwei Bereiche:</p>
+    <div style="display:flex;gap:12px;margin:12px 0;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;background:var(--accent-light);padding:12px;border-radius:8px;">
+            <strong style="color:var(--accent);">Bereich 1: Anstieg</strong><br>
+            Die Temperatur steigt von 20 °C auf 100 °C.
+        </div>
+        <div style="flex:1;min-width:200px;background:var(--warning-bg);padding:12px;border-radius:8px;">
+            <strong style="color:var(--warning);">Bereich 2: Plateau</strong><br>
+            Bei 100 °C bleibt die Temperatur stehen — obwohl weiter geheizt wird!
+        </div>
+    </div>
+    <h3>Warum bleibt die Temperatur bei 100 °C stehen?</h3>
+    <div id="deutungQ" style="margin:12px 0;">
+        <div class="mc-option" data-q="deut" data-v="a" onclick="selectMC(this)">Der Herd gibt keine Energie mehr ab.</div>
+        <div class="mc-option" data-q="deut" data-v="b" onclick="selectMC(this)">Die Energie wird gebraucht, um das Wasser in Dampf zu verwandeln.</div>
+        <div class="mc-option" data-q="deut" data-v="c" onclick="selectMC(this)">Das Thermometer ist kaputt und zeigt immer 100 °C.</div>
+    </div>
+    <button class="btn btn-primary btn-block" id="deutCheck" onclick="checkDeut()" disabled>Prüfen</button>
+    <div class="quiz-feedback" id="deutFb"></div>
+    <div class="success-box hidden" id="deutExplain">
+        <strong>Genau!</strong> Beim Sieden (Kochen) wird die gesamte zugeführte Energie gebraucht, um flüssiges Wasser in Wasserdampf zu verwandeln. Die Temperatur bleibt dabei bei <strong>100 °C</strong> — das ist die <strong>Siedetemperatur</strong> von Wasser.
+    </div>
+    <div class="hefter hidden" id="deutHefter">AB-02, Aufgabe K1: Fülle den Merksatz aus.</div>
+    <button class="btn btn-success btn-block hidden" id="deutNext" onclick="goSec(6)">Weiter: Merksatz</button>
+</div>
+
+<!-- SECTION 6: Merksatz (Lückentext) -->
+<div class="section" id="sec6">
+    <h2>6. Merksatz</h2>
+    <div style="background:var(--accent-light);padding:16px;border-radius:var(--radius);margin:12px 0;font-size:1.05em;line-height:1.8;">
+        Wenn man Wasser erhitzt, steigt die Temperatur zuerst
+        <select id="lk1" onchange="checkLuecke()">
+            <option value="">...</option>
+            <option value="an">an</option>
+            <option value="ab">ab</option>
+            <option value="garnicht">gar nicht</option>
+        </select>.
+        Bei <select id="lk2" onchange="checkLuecke()">
+            <option value="">...</option>
+            <option value="0">0 °C</option>
+            <option value="100">100 °C</option>
+            <option value="50">50 °C</option>
+        </select>
+        beginnt das Wasser zu
+        <select id="lk3" onchange="checkLuecke()">
+            <option value="">...</option>
+            <option value="sieden">sieden</option>
+            <option value="gefrieren">gefrieren</option>
+            <option value="verdunsten">verdunsten</option>
+        </select>.
+        Die Temperatur bleibt dann
+        <select id="lk4" onchange="checkLuecke()">
+            <option value="">...</option>
+            <option value="gleich">gleich</option>
+            <option value="steigt">steigt weiter</option>
+            <option value="sinkt">sinkt</option>
+        </select>,
+        weil die Energie für die
+        <select id="lk5" onchange="checkLuecke()">
+            <option value="">...</option>
+            <option value="umwandlung">Umwandlung in Dampf</option>
+            <option value="erwaermung">weitere Erwärmung</option>
+            <option value="abkuehlung">Abkühlung</option>
+        </select>
+        gebraucht wird.
+    </div>
+    <div class="quiz-feedback" id="lkFb"></div>
+    <button class="btn btn-success btn-block hidden" id="lkNext" onclick="goSec(7)">Weiter: Diagramm lesen</button>
+</div>
+
+<!-- SECTION 7: Diagramm-Lesen (differenziert) -->
+<div class="section" id="sec7">
+    <h2>7. Diagramm lesen</h2>
+    <p>Hier siehst du eine Erwärmungskurve. Beantworte die Fragen dazu.</p>
+    <div class="sim-canvas-wrap" style="background:#fff;padding:4px;">
+        <canvas id="readGraph" width="560" height="280"></canvas>
+    </div>
+
+    <div style="margin:16px 0;">
+        <p><span class="star star1">&#9733;</span> <strong>Welche Temperatur hat das Wasser nach 120 Sekunden?</strong></p>
+        <div class="mc-option" data-q="read1" data-v="60" onclick="selectMC(this)">60 °C</div>
+        <div class="mc-option" data-q="read1" data-v="80" onclick="selectMC(this)">80 °C</div>
+        <div class="mc-option" data-q="read1" data-v="100" onclick="selectMC(this)">100 °C</div>
+    </div>
+
+    <div style="margin:16px 0;" id="read2wrap" class="hidden">
+        <p><span class="star star2">&#9733;&#9733;</span> <strong>Ab welcher Zeit beginnt das Plateau?</strong></p>
+        <div class="mc-option" data-q="read2" data-v="120" onclick="selectMC(this)">Nach 120 Sekunden</div>
+        <div class="mc-option" data-q="read2" data-v="240" onclick="selectMC(this)">Nach 240 Sekunden</div>
+        <div class="mc-option" data-q="read2" data-v="300" onclick="selectMC(this)">Nach 300 Sekunden</div>
+    </div>
+
+    <div style="margin:16px 0;" id="read3wrap" class="hidden">
+        <p><span class="star star3">&#9733;&#9733;&#9733;</span> <strong>Was passiert beim Plateau mit der Energie?</strong></p>
+        <div class="mc-option" data-q="read3" data-v="dampf" onclick="selectMC(this)">Die Energie verwandelt Wasser in Dampf (Zustandsänderung).</div>
+        <div class="mc-option" data-q="read3" data-v="verloren" onclick="selectMC(this)">Die Energie geht verloren.</div>
+        <div class="mc-option" data-q="read3" data-v="temp" onclick="selectMC(this)">Die Energie erwärmt den Topf statt des Wassers.</div>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="readCheck" onclick="checkRead()" disabled>Antworten prüfen</button>
+    <div class="quiz-feedback" id="readFb"></div>
+    <button class="btn btn-success btn-block hidden" id="readNext" onclick="goSec(8)">Weiter: Zusammenfassung</button>
+</div>
+
+<!-- SECTION 8: Zusammenfassung -->
+<div class="section" id="sec8">
+    <h2>8. Was du heute gelernt hast</h2>
+    <div class="success-box">
+        <strong>Zusammenfassung:</strong>
+        <ul style="margin:8px 0 0 16px;">
+            <li>Beim Erhitzen von Wasser steigt die Temperatur <strong>nicht</strong> endlos an.</li>
+            <li>Bei <strong>100 °C</strong> (Siedetemperatur) gibt es ein <strong>Plateau</strong> — die Temperatur bleibt gleich.</li>
+            <li>Die Energie wird für die <strong>Umwandlung</strong> von Wasser zu Dampf gebraucht.</li>
+            <li>Man stellt den Temperaturverlauf als <strong>ϑ(t)-Diagramm</strong> dar (wie ein s(t)-Diagramm, aber mit Temperatur).</li>
+        </ul>
+    </div>
+    <div class="info-box">
+        <strong>Vergleich mit dem s(t)-Diagramm:</strong><br>
+        <table style="width:100%;font-size:0.9em;margin-top:8px;">
+            <tr><td></td><td><strong>s(t)-Diagramm</strong></td><td><strong>ϑ(t)-Diagramm</strong></td></tr>
+            <tr><td>x-Achse</td><td>Zeit t</td><td>Zeit t</td></tr>
+            <tr><td>y-Achse</td><td>Weg s</td><td>Temperatur ϑ</td></tr>
+            <tr><td>Steigung</td><td>= Geschwindigkeit</td><td>= Erwärmungsrate</td></tr>
+            <tr><td>Waagerecht</td><td>= Stillstand</td><td>= Siedeplateau</td></tr>
+        </table>
+    </div>
+    <div class="hefter">AB-02: Überprüfe, ob alle Aufgaben ausgefüllt sind. Hefte das Arbeitsblatt ab.</div>
+    <div id="score" style="text-align:center;margin:20px 0;padding:16px;background:var(--accent-light);border-radius:var(--radius);">
+        <p style="font-size:1.2em;font-weight:700;color:var(--accent);" id="scoreText"></p>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="resetAll()">Von vorne beginnen</button>
+</div>
+
+</div><!-- container -->
+
+<div class="nav-bottom">
+    <span class="sec-info" id="secInfo">1 / 8</span>
+    <span style="font-size:0.8em;color:var(--text-muted);">LP-02 Erwärmungskurve</span>
+</div>
+
+<script>
+/* === STATE === */
+var PREFIX = 'lp-temp-02';
+var TOTAL_SEC = 8;
+var state = {
+    sec: 1,
+    hypo: '',
+    simDone: false,
+    simData: [],
+    graphPts: [],
+    graphConnected: false,
+    deut: '',
+    deutDone: false,
+    lkDone: false,
+    read1: '', read2: '', read3: '',
+    readDone: false,
+    score: 0
+};
+
+function save() { try { localStorage.setItem(PREFIX, JSON.stringify(state)); } catch(e) {} }
+function load() { try { var s = localStorage.getItem(PREFIX); if (s) state = JSON.parse(s); } catch(e) {} }
+
+/* === NAV === */
+function goSec(n) {
+    if (n < 1 || n > TOTAL_SEC) return;
+    state.sec = n;
+    save();
+    render();
+}
+
+function render() {
+    for (var i = 1; i <= TOTAL_SEC; i++) {
+        var el = document.getElementById('sec' + i);
+        if (el) el.className = i === state.sec ? 'section active' : 'section';
+    }
+    document.getElementById('progFill').style.width = Math.round((state.sec / TOTAL_SEC) * 100) + '%';
+    document.getElementById('secInfo').textContent = state.sec + ' / ' + TOTAL_SEC;
+
+    if (state.sec === 3 && state.simDone) restoreSim();
+    if (state.sec === 4) initGraph();
+    if (state.sec === 5) drawRefGraph('refGraph', 560, 300);
+    if (state.sec === 7) drawReadGraph();
+    if (state.sec === 8) showScore();
+
+    restoreMCSelections();
+    restoreLuecke();
+    window.scrollTo(0, 0);
+}
+
+/* === MC HELPER === */
+function selectMC(el) {
+    var q = el.getAttribute('data-q');
+    var v = el.getAttribute('data-v');
+    var opts = document.querySelectorAll('.mc-option[data-q="' + q + '"]');
+    for (var i = 0; i < opts.length; i++) opts[i].className = 'mc-option';
+    el.className = 'mc-option selected';
+    state[q] = v;
+    save();
+    // enable check buttons
+    if (q === 'hypo') document.getElementById('hypoCheck').disabled = false;
+    if (q === 'deut') document.getElementById('deutCheck').disabled = false;
+    if (q === 'read1' || q === 'read2' || q === 'read3') {
+        if (state.read1) document.getElementById('readCheck').disabled = false;
+    }
+}
+
+function restoreMCSelections() {
+    var qs = ['hypo', 'deut', 'read1', 'read2', 'read3'];
+    for (var qi = 0; qi < qs.length; qi++) {
+        var q = qs[qi];
+        if (state[q]) {
+            var opts = document.querySelectorAll('.mc-option[data-q="' + q + '"]');
+            for (var i = 0; i < opts.length; i++) {
+                if (opts[i].getAttribute('data-v') === state[q]) opts[i].className = 'mc-option selected';
+            }
+        }
+    }
+    if (state.hypo) document.getElementById('hypoCheck').disabled = false;
+    if (state.deutDone) {
+        show('deutExplain'); show('deutHefter'); show('deutNext');
+        disableMC('deut');
+    }
+    if (state.readDone) { show('readNext'); disableMC('read1'); disableMC('read2'); disableMC('read3'); }
+}
+
+function disableMC(q) {
+    var opts = document.querySelectorAll('.mc-option[data-q="' + q + '"]');
+    for (var i = 0; i < opts.length; i++) opts[i].classList.add('disabled');
+}
+
+/* === SECTION 2: HYPOTHESE === */
+function checkHypo() {
+    var fb = document.getElementById('hypoFb');
+    fb.className = 'quiz-feedback show';
+    fb.style.background = 'var(--accent-light)';
+    fb.style.color = 'var(--accent)';
+    fb.innerHTML = 'Deine Vermutung: <strong>' +
+        (state.hypo === 'a' ? 'Gleichmäßiger Anstieg' : state.hypo === 'b' ? 'Anstieg + Stopp' : 'Plötzlicher Sprung') +
+        '</strong>. Ob das stimmt, prüfen wir jetzt im Experiment!';
+    show('hypoNext');
+    save();
+}
+
+/* === SECTION 3: SIMULATION === */
+var simInterval = null;
+var simTime = 0;
+var simTemp = 20;
+var simRunning = false;
+var simSpeedFactor = 1;
+var SIM_DATA_EXPECTED = [];
+
+function generateExpectedData() {
+    SIM_DATA_EXPECTED = [];
+    for (var t = 0; t <= 360; t += 30) {
+        var temp;
+        if (t <= 240) {
+            temp = 20 + (80 / 240) * t;
+        } else {
+            temp = 100;
+        }
+        temp = Math.round(temp);
+        SIM_DATA_EXPECTED.push({ t: t, temp: temp });
+    }
+}
+
+function simStart() {
+    generateExpectedData();
+    document.getElementById('simStartBtn').disabled = true;
+    show('simSpeedBtn');
+    simTime = 0;
+    simTemp = 20;
+    state.simData = [];
+    simRunning = true;
+    simTick();
+    simInterval = setInterval(function() { if (simRunning) simTick(); }, 1000 / simSpeedFactor);
+}
+
+function simSpeed() {
+    simSpeedFactor = simSpeedFactor === 1 ? 3 : 1;
+    document.getElementById('simSpeedBtn').textContent = simSpeedFactor === 1 ? 'Schneller' : 'Normal';
+    if (simInterval) clearInterval(simInterval);
+    simInterval = setInterval(function() { if (simRunning) simTick(); }, 1000 / simSpeedFactor);
+}
+
+function simTick() {
+    simTime += 10;
+    if (simTime <= 240) {
+        simTemp = 20 + (80 / 240) * simTime;
+    } else {
+        simTemp = 100;
+    }
+    simTemp = Math.round(simTemp * 10) / 10;
+
+    drawSim(simTime, simTemp);
+
+    if (simTime % 30 === 0) {
+        state.simData.push({ t: simTime, temp: Math.round(simTemp) });
+        updateSimTable();
+    }
+
+    document.getElementById('simStatus').textContent =
+        'Zeit: ' + simTime + ' s | Temperatur: ' + Math.round(simTemp) + ' °C';
+
+    if (simTime >= 360) {
+        simRunning = false;
+        if (simInterval) clearInterval(simInterval);
+        state.simDone = true;
+        document.getElementById('simStatus').innerHTML =
+            '<span style="color:var(--success);">Experiment beendet! Alle Messwerte aufgenommen.</span>';
+        show('simNext');
+        show('simTable');
+        save();
+    }
+}
+
+function drawSim(time, temp) {
+    var c = document.getElementById('simCanvas');
+    if (!c) return;
+    var ctx = c.getContext('2d');
+    var w = c.width, h = c.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = '#e8f0fa';
+    ctx.fillRect(0, 0, w, h);
+
+    // Beaker
+    var bx = 180, by = 80, bw = 200, bh = 220;
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx, by + bh);
+    ctx.lineTo(bx + bw, by + bh);
+    ctx.lineTo(bx + bw, by);
+    ctx.stroke();
+
+    // Water level
+    var waterH = bh * 0.8;
+    var waterY = by + bh - waterH;
+    var waterColor = temp < 50 ? '#64b5f6' : temp < 80 ? '#42a5f5' : temp < 100 ? '#ef9a9a' : '#ef5350';
+    ctx.fillStyle = waterColor;
+    ctx.fillRect(bx + 2, waterY, bw - 4, waterH - 2);
+
+    // Bubbles when boiling
+    if (temp >= 95) {
+        var numBubbles = Math.min(Math.floor((temp - 95) * 3), 15);
+        for (var i = 0; i < numBubbles; i++) {
+            var bxr = bx + 20 + Math.random() * (bw - 40);
+            var byr = waterY + 20 + Math.random() * (waterH - 40);
+            var br = 3 + Math.random() * 6;
+            ctx.beginPath();
+            ctx.arc(bxr, byr, br, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.fill();
+        }
+    }
+
+    // Steam when boiling
+    if (temp >= 100) {
+        ctx.fillStyle = 'rgba(200,200,200,0.4)';
+        for (var j = 0; j < 5; j++) {
+            var sx = bx + 30 + Math.random() * (bw - 60);
+            var sy = by - 10 - Math.random() * 40;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 8 + Math.random() * 12, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    // Flame
+    ctx.fillStyle = '#ff6f00';
+    var fx = bx + bw / 2;
+    var fy = by + bh + 30;
+    ctx.beginPath();
+    ctx.moveTo(fx - 30, fy + 20);
+    ctx.quadraticCurveTo(fx - 15, fy - 10, fx, fy - 25);
+    ctx.quadraticCurveTo(fx + 15, fy - 10, fx + 30, fy + 20);
+    ctx.fill();
+    ctx.fillStyle = '#ffca28';
+    ctx.beginPath();
+    ctx.moveTo(fx - 15, fy + 15);
+    ctx.quadraticCurveTo(fx - 5, fy, fx, fy - 10);
+    ctx.quadraticCurveTo(fx + 5, fy, fx + 15, fy + 15);
+    ctx.fill();
+
+    // Thermometer
+    var tx = bx + bw + 40, ty = by + 10, tw = 24, th = 180;
+    ctx.fillStyle = '#ddd';
+    ctx.fillRect(tx, ty, tw, th);
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(tx, ty, tw, th);
+
+    // Mercury
+    var mercH = Math.max(0, ((temp - 0) / 120) * th);
+    ctx.fillStyle = '#e53935';
+    ctx.fillRect(tx + 4, ty + th - mercH, tw - 8, mercH);
+
+    // Temp display
+    ctx.fillStyle = '#1a1a2e';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(temp) + ' °C', tx + tw / 2, ty - 8);
+
+    // Time display
+    ctx.font = '14px sans-serif';
+    ctx.fillText('t = ' + time + ' s', w / 2, h - 10);
+
+    // Scale marks on thermometer
+    ctx.fillStyle = '#666';
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'left';
+    for (var m = 0; m <= 120; m += 20) {
+        var my = ty + th - (m / 120) * th;
+        ctx.fillRect(tx + tw, my, 6, 1);
+        ctx.fillText(m + '°', tx + tw + 8, my + 4);
+    }
+}
+
+function updateSimTable() {
+    show('simTable');
+    var tbody = document.getElementById('simTbody');
+    tbody.innerHTML = '';
+    for (var i = 0; i < state.simData.length; i++) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + state.simData[i].t + '</td><td>' + state.simData[i].temp + '</td>';
+        tbody.appendChild(tr);
+    }
+}
+
+function restoreSim() {
+    if (state.simDone) {
+        updateSimTable();
+        show('simTable');
+        show('simNext');
+        document.getElementById('simStartBtn').disabled = true;
+        document.getElementById('simStatus').innerHTML =
+            '<span style="color:var(--success);">Experiment beendet!</span>';
+        drawSim(360, 100);
+    }
+}
+
+/* === SECTION 4: GRAPH === */
+var graphCtx = null;
+var GRAPH_PAD = { left: 55, right: 20, top: 20, bottom: 45 };
+var GRAPH_MAX_T = 360;
+var GRAPH_MAX_TEMP = 120;
+
+function initGraph() {
+    var c = document.getElementById('graphCanvas');
+    if (!c) return;
+    graphCtx = c.getContext('2d');
+    drawGraphGrid(graphCtx, c.width, c.height);
+    drawGraphPoints();
+    if (state.graphPts.length >= 6) show('graphShowLine');
+    if (state.graphConnected) { show('graphNext'); graphConnect(); }
+
+    c.ontouchstart = function(e) { e.preventDefault(); graphTap(e.touches[0], c); };
+    c.onclick = function(e) { graphTap(e, c); };
+}
+
+function drawGraphGrid(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    var pl = GRAPH_PAD.left, pr = GRAPH_PAD.right, pt = GRAPH_PAD.top, pb = GRAPH_PAD.bottom;
+    var gw = w - pl - pr, gh = h - pt - pb;
+
+    // Grid
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    for (var t = 0; t <= GRAPH_MAX_T; t += 60) {
+        var x = pl + (t / GRAPH_MAX_T) * gw;
+        ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, pt + gh); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(t + ' s', x, h - 8);
+    }
+    for (var tmp = 0; tmp <= GRAPH_MAX_TEMP; tmp += 20) {
+        var y = pt + gh - (tmp / GRAPH_MAX_TEMP) * gh;
+        ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(pl + gw, y); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(tmp + ' °C', pl - 6, y + 4);
+    }
+
+    // Axes
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(pl, pt); ctx.lineTo(pl, pt + gh); ctx.lineTo(pl + gw, pt + gh); ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = '#333'; ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Zeit t (s)', pl + gw / 2, h - 1);
+    ctx.save();
+    ctx.translate(14, pt + gh / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Temperatur ϑ (°C)', 0, 0);
+    ctx.restore();
+}
+
+function graphTap(e, canvas) {
+    if (state.graphConnected) return;
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var cx = (e.clientX - rect.left) * scaleX;
+    var cy = (e.clientY - rect.top) * scaleY;
+
+    var pl = GRAPH_PAD.left, pt = GRAPH_PAD.top;
+    var gw = canvas.width - pl - GRAPH_PAD.right;
+    var gh = canvas.height - pt - GRAPH_PAD.bottom;
+
+    var t = Math.round(((cx - pl) / gw) * GRAPH_MAX_T);
+    var temp = Math.round(((gh - (cy - pt)) / gh) * GRAPH_MAX_TEMP);
+
+    if (t < 0 || t > GRAPH_MAX_T || temp < 0 || temp > GRAPH_MAX_TEMP) return;
+
+    state.graphPts.push({ t: t, temp: temp });
+    save();
+    drawGraphPoints();
+
+    var status = document.getElementById('graphStatus');
+    status.textContent = state.graphPts.length + ' Punkt(e) eingetragen';
+
+    if (state.graphPts.length >= 6) show('graphShowLine');
+}
+
+function drawGraphPoints() {
+    if (!graphCtx) return;
+    var c = document.getElementById('graphCanvas');
+    drawGraphGrid(graphCtx, c.width, c.height);
+
+    var pl = GRAPH_PAD.left, pt = GRAPH_PAD.top;
+    var gw = c.width - pl - GRAPH_PAD.right;
+    var gh = c.height - pt - GRAPH_PAD.bottom;
+
+    for (var i = 0; i < state.graphPts.length; i++) {
+        var p = state.graphPts[i];
+        var x = pl + (p.t / GRAPH_MAX_T) * gw;
+        var y = pt + gh - (p.temp / GRAPH_MAX_TEMP) * gh;
+        graphCtx.beginPath();
+        graphCtx.arc(x, y, 5, 0, Math.PI * 2);
+        graphCtx.fillStyle = var_accent();
+        graphCtx.fill();
+    }
+}
+
+function var_accent() { return '#2c5aa0'; }
+
+function graphConnect() {
+    state.graphConnected = true;
+    save();
+    if (!graphCtx) return;
+    var c = document.getElementById('graphCanvas');
+    drawGraphPoints();
+
+    var sorted = state.graphPts.slice().sort(function(a, b) { return a.t - b.t; });
+    if (sorted.length < 2) return;
+
+    var pl = GRAPH_PAD.left, pt = GRAPH_PAD.top;
+    var gw = c.width - pl - GRAPH_PAD.right;
+    var gh = c.height - pt - GRAPH_PAD.bottom;
+
+    graphCtx.beginPath();
+    graphCtx.strokeStyle = var_accent();
+    graphCtx.lineWidth = 2;
+    for (var i = 0; i < sorted.length; i++) {
+        var x = pl + (sorted[i].t / GRAPH_MAX_T) * gw;
+        var y = pt + gh - (sorted[i].temp / GRAPH_MAX_TEMP) * gh;
+        if (i === 0) graphCtx.moveTo(x, y); else graphCtx.lineTo(x, y);
+    }
+    graphCtx.stroke();
+    show('graphNext');
+}
+
+function graphReset() {
+    state.graphPts = [];
+    state.graphConnected = false;
+    save();
+    hide('graphShowLine');
+    hide('graphNext');
+    document.getElementById('graphStatus').textContent = '';
+    initGraph();
+}
+
+/* === SECTION 5: REFERENCE GRAPH === */
+function drawRefGraph(canvasId, w, h) {
+    var c = document.getElementById(canvasId);
+    if (!c) return;
+    var ctx = c.getContext('2d');
+    drawGraphGridGeneric(ctx, w, h, 360, 120);
+
+    var pl = 55, pt = 20;
+    var gw = w - pl - 20;
+    var gh = h - pt - 45;
+
+    // Draw ideal curve
+    ctx.beginPath();
+    ctx.strokeStyle = var_accent();
+    ctx.lineWidth = 3;
+    for (var t = 0; t <= 360; t += 2) {
+        var temp = t <= 240 ? 20 + (80 / 240) * t : 100;
+        var x = pl + (t / 360) * gw;
+        var y = pt + gh - (temp / 120) * gh;
+        if (t === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = var_accent();
+    ctx.font = 'bold 11px sans-serif';
+    var x1 = pl + (120 / 360) * gw;
+    var y1 = pt + gh - (60 / 120) * gh;
+    ctx.fillText('Anstieg', x1, y1 - 10);
+
+    var x2 = pl + (300 / 360) * gw;
+    var y2 = pt + gh - (100 / 120) * gh;
+    ctx.fillStyle = var_warning();
+    ctx.fillText('Plateau (100 °C)', x2 - 30, y2 - 10);
+}
+
+function var_warning() { return '#b35c00'; }
+
+function drawGraphGridGeneric(ctx, w, h, maxT, maxTemp) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    var pl = 55, pr = 20, pt = 20, pb = 45;
+    var gw = w - pl - pr, gh = h - pt - pb;
+
+    ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+    for (var t = 0; t <= maxT; t += 60) {
+        var x = pl + (t / maxT) * gw;
+        ctx.beginPath(); ctx.moveTo(x, pt); ctx.lineTo(x, pt + gh); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(t + ' s', x, h - 8);
+    }
+    for (var tmp = 0; tmp <= maxTemp; tmp += 20) {
+        var y = pt + gh - (tmp / maxTemp) * gh;
+        ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(pl + gw, y); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(tmp + ' °C', pl - 6, y + 4);
+    }
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(pl, pt); ctx.lineTo(pl, pt + gh); ctx.lineTo(pl + gw, pt + gh); ctx.stroke();
+
+    ctx.fillStyle = '#333'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Zeit t (s)', pl + gw / 2, h - 1);
+    ctx.save(); ctx.translate(14, pt + gh / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Temperatur ϑ (°C)', 0, 0); ctx.restore();
+}
+
+/* === SECTION 5: DEUTUNG === */
+function checkDeut() {
+    var fb = document.getElementById('deutFb');
+    if (state.deut === 'b') {
+        fb.className = 'quiz-feedback show correct-fb';
+        fb.textContent = 'Richtig!';
+        state.deutDone = true;
+        show('deutExplain'); show('deutHefter'); show('deutNext');
+        disableMC('deut');
+        state.score++;
+    } else {
+        fb.className = 'quiz-feedback show incorrect-fb';
+        fb.textContent = 'Nicht ganz. Denke daran: Der Herd heizt weiter, aber die Temperatur steigt nicht. Wo geht die Energie hin?';
+    }
+    save();
+}
+
+/* === SECTION 6: LÜCKENTEXT === */
+function checkLuecke() {
+    var a = gv('lk1'), b = gv('lk2'), c = gv('lk3'), d = gv('lk4'), e = gv('lk5');
+    if (!a || !b || !c || !d || !e) return;
+
+    var correct = a === 'an' && b === '100' && c === 'sieden' && d === 'gleich' && e === 'umwandlung';
+    var fb = document.getElementById('lkFb');
+    if (correct) {
+        fb.className = 'quiz-feedback show correct-fb';
+        fb.textContent = 'Perfekt! Merksatz vollständig richtig.';
+        state.lkDone = true;
+        state.score++;
+        show('lkNext');
+        disableEl('lk1'); disableEl('lk2'); disableEl('lk3'); disableEl('lk4'); disableEl('lk5');
+    } else {
+        fb.className = 'quiz-feedback show incorrect-fb';
+        fb.textContent = 'Noch nicht ganz richtig. Überprüfe deine Auswahl.';
+        markSel('lk1', a === 'an'); markSel('lk2', b === '100'); markSel('lk3', c === 'sieden');
+        markSel('lk4', d === 'gleich'); markSel('lk5', e === 'umwandlung');
+    }
+    save();
+}
+
+function restoreLuecke() {
+    if (state.lkDone) {
+        setVal('lk1', 'an'); setVal('lk2', '100'); setVal('lk3', 'sieden');
+        setVal('lk4', 'gleich'); setVal('lk5', 'umwandlung');
+        disableEl('lk1'); disableEl('lk2'); disableEl('lk3'); disableEl('lk4'); disableEl('lk5');
+        show('lkNext');
+        var fb = document.getElementById('lkFb');
+        fb.className = 'quiz-feedback show correct-fb';
+        fb.textContent = 'Perfekt! Merksatz vollständig richtig.';
+    }
+}
+
+function gv(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = v; }
+function disableEl(id) { var el = document.getElementById(id); if (el) el.disabled = true; }
+function markSel(id, ok) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.className = '';
+    el.classList.add(ok ? 'correct-fill' : 'incorrect-fill');
+}
+
+/* === SECTION 7: READ GRAPH === */
+function drawReadGraph() {
+    var c = document.getElementById('readGraph');
+    if (!c) return;
+    drawRefGraph('readGraph', 560, 280);
+    // Add dotted lines for reading
+    var ctx = c.getContext('2d');
+    var pl = 55, pt = 20, gw = 560 - 55 - 20, gh = 280 - 20 - 45;
+    // Dotted line at t=120
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#999';
+    ctx.lineWidth = 1;
+    var x120 = pl + (120 / 360) * gw;
+    var tempAt120 = 20 + (80 / 240) * 120; // = 60
+    var y60 = pt + gh - (tempAt120 / 120) * gh;
+    ctx.beginPath(); ctx.moveTo(x120, pt + gh); ctx.lineTo(x120, y60); ctx.lineTo(pl, y60); ctx.stroke();
+    ctx.setLineDash([]);
+    // Mark point
+    ctx.beginPath(); ctx.arc(x120, y60, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#c62828'; ctx.fill();
+}
+
+function checkRead() {
+    var score = 0;
+    var total = 1;
+
+    // Check read1
+    var opts1 = document.querySelectorAll('.mc-option[data-q="read1"]');
+    for (var i = 0; i < opts1.length; i++) {
+        if (opts1[i].classList.contains('selected')) {
+            if (opts1[i].getAttribute('data-v') === '60') { opts1[i].classList.add('correct'); score++; }
+            else opts1[i].classList.add('wrong');
+        }
+        opts1[i].classList.add('disabled');
+    }
+
+    // Unlock star 2
+    show('read2wrap');
+    if (state.read2) {
+        total++;
+        var opts2 = document.querySelectorAll('.mc-option[data-q="read2"]');
+        for (var j = 0; j < opts2.length; j++) {
+            if (opts2[j].classList.contains('selected')) {
+                if (opts2[j].getAttribute('data-v') === '240') { opts2[j].classList.add('correct'); score++; }
+                else opts2[j].classList.add('wrong');
+            }
+            opts2[j].classList.add('disabled');
+        }
+        // Unlock star 3
+        show('read3wrap');
+        if (state.read3) {
+            total++;
+            var opts3 = document.querySelectorAll('.mc-option[data-q="read3"]');
+            for (var k = 0; k < opts3.length; k++) {
+                if (opts3[k].classList.contains('selected')) {
+                    if (opts3[k].getAttribute('data-v') === 'dampf') { opts3[k].classList.add('correct'); score++; }
+                    else opts3[k].classList.add('wrong');
+                }
+                opts3[k].classList.add('disabled');
+            }
+        }
+    }
+
+    state.score += score;
+    state.readDone = true;
+    save();
+
+    var fb = document.getElementById('readFb');
+    fb.className = 'quiz-feedback show ' + (score === total ? 'correct-fb' : 'incorrect-fb');
+    fb.textContent = score + ' von ' + total + ' richtig!';
+    show('readNext');
+}
+
+/* === SECTION 8: SCORE === */
+function showScore() {
+    var maxScore = 4; // deut + luecke + up to 2 from read
+    var pct = Math.round((state.score / maxScore) * 100);
+    document.getElementById('scoreText').textContent =
+        state.score + ' von ' + maxScore + ' Punkte (' + pct + '%)';
+}
+
+/* === HELPERS === */
+function show(id) { var el = document.getElementById(id); if (el) el.classList.remove('hidden'); }
+function hide(id) { var el = document.getElementById(id); if (el) el.classList.add('hidden'); }
+
+function resetAll() {
+    if (confirm('Wirklich alles zurücksetzen?')) {
+        localStorage.removeItem(PREFIX);
+        location.reload();
+    }
+}
+
+/* === INIT === */
+load();
+render();
+</script>
+</body>
+</html>
